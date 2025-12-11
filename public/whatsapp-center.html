@@ -3,185 +3,266 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SabanConnect | Master Hub v15.5</title>
-    <link rel="icon" type="image/png" href="icons/icon-192.png">
+    <title>SabanConnect | Revolution</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap');
         body { background-color: #d1d7db; font-family: 'Heebo', sans-serif; height: 100vh; overflow: hidden; display: flex; }
+        
+        /* Layout */
         .wa-container { width: 100%; display: flex; background: #fff; max-width: 1600px; margin: 0 auto; box-shadow: 0 4px 20px rgba(0,0,0,0.1); height: 100vh; }
-        .sidebar { width: 30%; border-left: 1px solid #e9edef; background: #fff; display: flex; flex-direction: column; position: relative; }
-        .chat-area { flex: 1; display: flex; flex-direction: column; background-color: #efeae2; background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); }
-        .msg { max-width: 65%; padding: 8px 12px; border-radius: 8px; margin-bottom: 8px; font-size: 14px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+        .sidebar { width: 30%; border-left: 1px solid #e9edef; background: #fff; display: flex; flex-direction: column; }
+        .chat-area { flex: 1; display: flex; flex-direction: column; background-color: #efeae2; background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); position: relative; }
+        
+        /* Messages */
+        .msg { max-width: 70%; padding: 8px 12px; border-radius: 8px; margin-bottom: 8px; font-size: 14px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); line-height: 1.4; }
         .msg-in { align-self: flex-start; background: #fff; border-top-right-radius: 0; }
         .msg-out { align-self: flex-end; background: #d9fdd3; border-top-left-radius: 0; }
         .msg-internal { align-self: center; background: #fff9c4; border: 1px dashed #fbc02d; font-size: 12px; max-width: 80%; text-align: center; }
-        .bot-badge { font-size: 9px; background: #e0f2f1; color: #00695c; padding: 1px 4px; border-radius: 4px; font-weight: bold; margin-right: 5px; }
-        .control-panel { position: absolute; top: 70px; left: 20px; background: rgba(255,255,255,0.95); padding: 10px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 8px; z-index: 10; border: 1px solid #e5e5ea; }
-        .stories-bar { display: flex; gap: 15px; padding: 15px; overflow-x: auto; border-bottom: 1px solid #e9edef; background: #f7f9fa; scrollbar-width: none; }
-        .story-item { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; min-width: 60px; }
-        .story-img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2px solid #25d366; padding: 2px; }
-        .story-name { font-size: 11px; }
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 50; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
-        .modal-box { background: white; padding: 20px; border-radius: 12px; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        
+        /* Bot & Cards */
+        .bot-badge { font-size: 9px; background: #e0f2f1; color: #00695c; padding: 1px 4px; border-radius: 4px; font-weight: bold; margin-right: 5px; border: 1px solid #b2dfdb; }
+        .product-card { border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin-top: 5px; background: #f8fafc; }
+        .product-img { width: 100%; height: 120px; object-fit: contain; background: white; border-bottom: 1px solid #eee; }
+        .team-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; margin-top: 5px; }
+        .team-card { background: #f1f5f9; padding: 5px; border-radius: 6px; display: flex; align-items: center; gap: 5px; cursor: pointer; border: 1px solid #e2e8f0; }
+        .team-card:hover { background: #e2e8f0; }
+        
+        /* Animations */
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .sparkle { animation: sparkle 1.5s infinite; }
+        @keyframes sparkle { 0% { opacity: 0.5; transform: scale(1); } 50% { opacity: 1; transform: scale(1.2); } 100% { opacity: 0.5; transform: scale(1); } }
+
+        /* Welcome Popup */
+        .welcome-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        .welcome-box { background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 450px; text-align: center; position: relative; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5); animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        /* Scrollbar */
         ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
     </style>
 </head>
 <body>
 
-    <div class="wa-container">
+    <div id="welcomeModal" class="welcome-overlay">
+        <div class="welcome-box">
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-400 to-blue-500"></div>
+            <div class="mb-4 flex justify-center">
+                <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center text-4xl shadow-inner">
+                    🤖
+                </div>
+            </div>
+            <h1 class="text-2xl font-black text-slate-800 mb-2">ברוך הבא למהפכה!</h1>
+            <p class="text-gray-600 text-sm mb-6 leading-relaxed">
+                <span class="font-bold text-green-600">שחר</span>, מעכשיו אתה חלק מהמשפחה הדיגיטלית של ח.סבן.<br>
+                בנינו עבורך את המערכת המתקדמת בענף, כי הזמן שלך שווה כסף.<br>
+                אנחנו כאן כדי לתת לך שירות 24/7, מהיר, מדויק ועם חיוך.
+            </p>
+            <button onclick="startOnboarding()" class="w-full bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-slate-800 transition shadow-lg flex items-center justify-center gap-2">
+                אני בפנים! 🚀 <span class="text-xs font-normal opacity-70">(התחל סיור)</span>
+            </button>
+            <div class="mt-4 text-[10px] text-gray-400">Powered by SabanOS v16.0</div>
+        </div>
+    </div>
+
+    <div class="wa-container filter blur-sm transition duration-500" id="appContainer">
+        
         <div class="sidebar">
             <div class="bg-[#f0f2f5] p-3 flex justify-between items-center border-b h-16">
                 <div class="flex items-center gap-3">
-                    <img src="https://i.pravatar.cc/150?img=60" class="w-10 h-10 rounded-full object-cover">
+                    <img src="https://ui-avatars.com/api/?name=Rami+Admin&background=075E54&color=fff" class="w-10 h-10 rounded-full">
                     <div class="text-gray-600 text-sm font-bold">רמי (מנהל)</div>
                 </div>
-                <div class="flex gap-3 text-gray-500">
-                    <button onclick="openGroupModal()" class="hover:bg-gray-200 p-2 rounded-full transition"><i class="fas fa-plus text-lg text-green-600"></i></button>
-                    <i class="fas fa-ellipsis-v p-2"></i>
-                </div>
+                <div class="flex gap-3 text-gray-500"><i class="fas fa-plus"></i><i class="fas fa-ellipsis-v"></i></div>
             </div>
             <div class="p-2 border-b bg-white"><input type="text" placeholder="חיפוש..." class="w-full bg-[#f0f2f5] rounded-lg px-4 py-2 text-sm outline-none"></div>
-            <div class="stories-bar" id="storiesBar"></div>
-            <div class="flex-1 overflow-y-auto bg-white" id="chatList"></div>
-        </div>
-
-        <div class="chat-area relative">
-            <div class="bg-[#f0f2f5] p-3 flex justify-between items-center border-b shadow-sm h-16">
-                <div class="flex items-center gap-3">
-                    <img id="activeAvatar" src="" class="w-10 h-10 rounded-full object-cover">
-                    <div><div class="font-bold text-gray-800" id="activeName"></div><div class="text-xs text-green-600">מחובר</div></div>
+            
+            <div class="flex-1 overflow-y-auto bg-white">
+                <div class="p-3 bg-[#f0f2f5] border-l-4 border-green-500 flex items-center gap-3 cursor-pointer">
+                    <img src="https://i.pravatar.cc/150?img=11" class="w-12 h-12 rounded-full border-2 border-green-500 p-0.5">
+                    <div class="flex-1">
+                        <div class="flex justify-between"><span class="font-bold text-sm">שחר שאול</span><span class="text-[10px] text-green-600">עכשיו</span></div>
+                        <div class="text-xs text-gray-500 flex items-center gap-1"><i class="fas fa-robot text-green-600"></i> מתחילים מהפכה...</div>
+                    </div>
                 </div>
             </div>
-            <div class="control-panel">
-                <div class="text-[10px] uppercase font-bold text-gray-400">בקרת בוט</div>
-                <button id="botToggle" onclick="toggleBot()" class="flex items-center gap-2 px-3 py-1.5 rounded bg-green-100 text-green-700 text-xs font-bold border border-green-200"><i class="fas fa-robot"></i> פעיל (Auto)</button>
-                <button onclick="toggleInternal()" id="internalBtn" class="flex items-center gap-2 px-3 py-1.5 rounded bg-white text-gray-600 text-xs font-bold border border-gray-200 hover:bg-yellow-50"><i class="fas fa-eye-slash"></i> הערה פנימית</button>
+        </div>
+
+        <div class="chat-area">
+            <div class="bg-[#f0f2f5] p-3 flex items-center gap-3 border-b shadow-sm h-16">
+                <img src="https://i.pravatar.cc/150?img=11" class="w-10 h-10 rounded-full">
+                <div><div class="font-bold text-gray-800">שחר שאול (לקוח VIP)</div><div class="text-xs text-green-600">מחובר</div></div>
             </div>
-            <div class="flex-1 p-5 overflow-y-auto flex flex-col" id="messagesBox"></div>
+
+            <div class="flex-1 p-5 overflow-y-auto flex flex-col gap-2" id="messagesBox"></div>
+
             <div class="bg-[#f0f2f5] p-3 flex items-center gap-3" id="inputArea">
+                <i class="fas fa-plus text-gray-500 text-xl cursor-pointer hover:text-green-600 transition" title="כלים חכמים"></i>
                 <input type="text" id="msgInput" class="flex-1 bg-white rounded-lg px-4 py-3 text-sm outline-none" placeholder="הקלד הודעה..." onkeydown="if(event.key === 'Enter') sendMessage()">
                 <button onclick="sendMessage()" class="text-gray-500 hover:text-[#00a884]"><i class="fas fa-paper-plane text-xl"></i></button>
             </div>
         </div>
     </div>
 
-    <div id="groupModal" class="modal-overlay hidden">
-        <div class="modal-box">
-            <h3 class="font-bold text-lg mb-4 text-gray-700">יצירה חדשה</h3>
-            <div class="space-y-3">
-                <div><label class="text-xs text-gray-500">שם</label><input type="text" id="newGroupName" class="w-full border p-2 rounded text-sm outline-none"></div>
-                <div><label class="text-xs text-gray-500">תמונה (URL)</label><input type="text" id="newGroupImg" class="w-full border p-2 rounded text-sm outline-none" placeholder="https://..."></div>
-                <div><label class="text-xs text-gray-500">סוג</label><select id="newGroupType" class="w-full border p-2 rounded text-sm bg-white"><option value="user">👤 לקוח</option><option value="truck">🚚 לוגיסטיקה</option><option value="cart">🛒 רכש</option><option value="hammer">🔨 תפעול</option></select></div>
-                <div class="flex justify-end gap-2 mt-4"><button onclick="document.getElementById('groupModal').classList.add('hidden')" class="px-4 py-1 text-sm bg-gray-200 rounded">ביטול</button><button onclick="createNewGroup()" class="px-4 py-1 text-sm bg-green-600 text-white rounded font-bold">צור</button></div>
-            </div>
-        </div>
-    </div>
-
     <script>
-        // --- LOGISTICS BRAIN (Enhanced for Bot) ---
-        class LogisticsBrain {
-            constructor() { this.branches = [{name: 'החרש', lat: 32.1462, lng: 34.8951}, {name: 'התלמיד', lat: 32.1554, lng: 34.8872}]; }
-            async analyze(msg) {
-                // Address Detection
-                if (msg.length > 5 && (msg.includes("רחוב") || msg.includes("שד") || msg.includes("דרך") || msg.includes("כפר") || msg.includes("נתניה"))) {
-                    try {
-                        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(msg)}&countrycodes=il&limit=1`;
-                        const res = await fetch(url);
-                        const data = await res.json();
-                        
-                        if (data.length > 0) {
-                            const lat = data[0].lat, lng = data[0].lon;
-                            const bbox = `${lng-0.01},${lat-0.01},${lng+0.01},${lat+0.01}`;
-                            const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lng}`;
-                            
-                            return `🎯 איתרתי את הכתובת: <b>${data[0].display_name.split(',')[0]}</b><br><iframe width="100%" height="150" src="${mapUrl}" style="border:0; border-radius:8px; margin-top:5px;"></iframe><br>⏱️ מחשב זמני הגעה...`;
-                        }
-                    } catch(e) {}
-                }
-                if (msg.includes("מתי") || msg.includes("הגעה")) return "אני בודק מיקום... תן לי כתובת מדויקת בבקשה.";
-                return null;
+        // --- LOGISTICS BRAIN (The Math) ---
+        const LOGISTICS = {
+            harash: { lat: 32.1462, lng: 34.8951 },
+            drivers: {
+                hachmat: { base: "Taibeh", start: "06:30" },
+                ali: { base: "Kafr Qasim", start: "06:00" }
+            },
+            calc: (dest) => {
+                // סימולציה: חישוב אמיתי היה משתמש בקואורדינטות
+                return {
+                    dist: 12.5, // ק"מ
+                    time: 35, // דקות
+                    driver: "חכמת",
+                    base: "החרש"
+                };
             }
+        };
+
+        // --- SIMULATION ENGINE ---
+        let step = 0;
+        const chatBox = document.getElementById('messagesBox');
+
+        function startOnboarding() {
+            document.getElementById('welcomeModal').classList.add('hidden');
+            document.getElementById('appContainer').classList.remove('blur-sm');
+            
+            // Step 1: The Intro
+            setTimeout(() => botMsg(`אהלן שחר! 👋<br>אני <b>Chat-Saban</b>, החבר החדש שלך.<br>אני כאן כדי לדאוג לך להכל - מהזמנות ועד מנופים.`), 1000);
+            
+            setTimeout(() => {
+                botMsg(`רמי יצא להפסקת סיגריה 🚬 (כרגיל...), אז אני לוקח פיקוד.<br>בוא תכיר את הנבחרת שאיתנו בקבוצה:`);
+                showTeamGrid();
+            }, 3500);
+
+            setTimeout(() => botMsg(`מוכן להתחיל? תכתוב לי <b>"יאללה"</b> או תשאל כל מה שבא לך!`), 6000);
         }
-        const brain = new LogisticsBrain();
 
-        // --- CHAT LOGIC ---
-        let chats = [
-            { id: 1, name: "שחר שאול", type: "user", imgUrl: "https://i.pravatar.cc/150?img=11", msgs: [{t:'in', txt:'מתי הבלוקים מגיעים?', time:'10:00'}], bot: true },
-            { id: 2, name: "קבוצת נהגים", type: "truck", imgUrl: "", msgs: [{t:'internal', txt:'לשים לב לפקקים', time:'08:00'}], bot: false },
-            { id: 3, name: "יוסי קבלן", type: "user", imgUrl: "https://i.pravatar.cc/150?img=33", msgs: [{t:'in', txt:'תשלח לי מחירון', time:'09:30'}], bot: true }
-        ];
-        let activeId = 1;
-        let internalMode = false;
+        // --- CHAT FUNCTIONS ---
 
-        function render() {
-            renderStories();
-            const list = document.getElementById('chatList');
-            list.innerHTML = chats.map(c => `
-                <div onclick="switchChat(${c.id})" class="p-3 cursor-pointer hover:bg-[#f5f6f6] flex items-center gap-3 ${activeId===c.id ? 'bg-[#f0f2f5]' : ''} border-b border-[#f0f2f5]">
-                    <div class="relative">${getAvatarHtml(c)}</div>
-                    <div class="flex-1 min-w-0">
-                        <div class="flex justify-between"><div class="font-bold text-sm truncate text-[#111b21]">${c.name}</div><div class="text-[11px] text-[#667781]">${c.msgs.length > 0 ? c.msgs[c.msgs.length-1].time : ''}</div></div>
-                        <div class="text-[13px] text-[#667781] truncate">${c.msgs.length > 0 ? c.msgs[c.msgs.length-1].txt : 'אין הודעות'}</div>
-                    </div>
+        function userMsg(text) {
+            const time = new Date().toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'});
+            chatBox.innerHTML += `
+                <div class="msg msg-out fade-in">
+                    ${text}
+                    <div class="text-[9px] text-gray-500 text-left mt-1">${time} <i class="fas fa-check"></i></div>
+                </div>`;
+            scrollToBottom();
+            analyzeUserText(text);
+        }
+
+        function botMsg(html) {
+            const time = new Date().toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'});
+            chatBox.innerHTML += `
+                <div class="msg msg-in fade-in">
+                    <span class="bot-badge"><i class="fas fa-robot"></i> SabanAI</span>
+                    ${html}
+                    <div class="text-[9px] text-gray-400 text-left mt-1">${time}</div>
+                </div>`;
+            scrollToBottom();
+        }
+
+        function internalMsg(text) {
+            chatBox.innerHTML += `
+                <div class="msg msg-internal fade-in">
+                    <i class="fas fa-lock"></i> <b>הערה פנימית:</b> ${text}
+                </div>`;
+            scrollToBottom();
+        }
+
+        function showTeamGrid() {
+            const html = `
+            <div class="team-grid">
+                <div class="team-card" onclick="alert('פותח צ\'אט פרטי עם הראל')"><img src="https://ui-avatars.com/api/?name=Harel&background=000&color=fff" class="w-6 h-6 rounded-full"><span class="text-xs font-bold">הראל (מנכ"ל)</span></div>
+                <div class="team-card"><img src="https://ui-avatars.com/api/?name=Rami&background=blue&color=fff" class="w-6 h-6 rounded-full"><span class="text-xs font-bold">רמי (תפעול)</span></div>
+                <div class="team-card"><img src="https://ui-avatars.com/api/?name=Nat&background=orange&color=fff" class="w-6 h-6 rounded-full"><span class="text-xs font-bold">נתנאל (רכש)</span></div>
+                <div class="team-card"><img src="https://ui-avatars.com/api/?name=Oren&background=green&color=fff" class="w-6 h-6 rounded-full"><span class="text-xs font-bold">אורן (מחסן)</span></div>
+            </div>`;
+            botMsg(html);
+        }
+
+        function showProductCard(name, price, img) {
+            const html = `
+            <div class="product-card">
+                <div class="product-img flex items-center justify-center p-2"><img src="${img}" class="max-h-full"></div>
+                <div class="p-2">
+                    <div class="font-bold text-sm text-slate-800">${name}</div>
+                    <div class="text-xs text-green-600 font-bold mb-1">₪${price}</div>
+                    <button class="w-full bg-green-600 text-white text-xs py-1.5 rounded font-bold shadow">הוסף להזמנה</button>
                 </div>
-            `).join('');
+            </div>`;
+            botMsg(`מצאתי! הנה זה:<br>${html}`);
+        }
 
-            const chat = chats.find(c => c.id === activeId);
-            if(chat) {
-                document.getElementById('activeName').innerText = chat.name;
-                document.getElementById('activeAvatar').src = chat.imgUrl || `https://ui-avatars.com/api/?name=${chat.name}&background=${getAvatarColorHex(chat.type)}&color=fff`;
-                const box = document.getElementById('messagesBox');
-                box.innerHTML = chat.msgs.map(m => `
-                    <div class="msg ${m.t === 'in' ? 'msg-in' : (m.t === 'internal' ? 'msg-internal' : 'msg-out')}">
-                        ${m.bot ? '<span class="bot-badge"><i class="fas fa-robot"></i> AI</span>' : ''}
-                        ${m.t === 'internal' ? '<i class="fas fa-eye-slash"></i> ' : ''}${m.txt}
-                        <div class="text-[9px] text-gray-400 text-left mt-1">${m.time}</div>
-                    </div>
-                `).join('');
-                box.scrollTop = box.scrollHeight;
-                updateBotBtn(chat.bot);
+        function scrollToBottom() { chatBox.scrollTop = chatBox.scrollHeight; }
+
+        function sendMessage() {
+            const input = document.getElementById('msgInput');
+            const text = input.value;
+            if(!text) return;
+            
+            // בדיקת הערה פנימית (אם מתחיל ב-!)
+            if(text.startsWith('!')) {
+                internalMsg(text.substring(1));
+            } else {
+                userMsg(text);
+            }
+            input.value = '';
+        }
+
+        // --- THE BRAIN (Logic) ---
+        function analyzeUserText(text) {
+            const clean = text.toLowerCase();
+
+            // 1. Tagging System (@Oren)
+            if (clean.includes('@')) {
+                const tagged = clean.split('@')[1].split(' ')[0];
+                setTimeout(() => internalMsg(`🔔 <b>התראה:</b> ${tagged} תויג בשיחה ונשלחה לו הודעה.`), 500);
+                setTimeout(() => botMsg(`אין בעיה, קראתי ל-${tagged}. הוא מצטרף.`), 1500);
+                return;
+            }
+
+            // 2. Scenario: Product Request (603)
+            if (clean.includes('603') || clean.includes('דבק') || clean.includes('פלסטומר')) {
+                setTimeout(() => botMsg(`רגע אחד, בודק במלאי... <i class="fas fa-spinner fa-spin"></i>`), 500);
+                setTimeout(() => showProductCard(
+                    "תרמוקיר פלסטומר 603", 
+                    "38.00", 
+                    "https://termokir.co.il/wp-content/uploads/2019/07/Plastomer-603.png" // תמונה להמחשה
+                ), 1500);
+                return;
+            }
+
+            // 3. Scenario: Crane Logistics (7 AM)
+            if (clean.includes('מנוף') && clean.includes('7') && (clean.includes('מחר') || clean.includes('בוקר'))) {
+                setTimeout(() => botMsg(`בודק לך בסידור העבודה... 🚚`), 1000);
+                setTimeout(() => {
+                    const ans = `
+                    <b>בדיקת היתכנות לוגיסטית:</b><br>
+                    📍 יעד: אבן יהודה (מרחק: 12 ק"מ מהחרש)<br>
+                    👷 נהג: חכמת (מתחיל ב-06:30 בטייבה)<br>
+                    <br>
+                    ✅ <b>מסקנה:</b> אפשרי בהחלט.<br>
+                    חכמת יגיע למחסן ב-06:45, יעמיס, ואצלך ב-07:15 בערך.<br>
+                    לשריין לך?
+                    `;
+                    botMsg(ans);
+                }, 3000);
+                return;
+            }
+
+            // 4. Default: Joke
+            if (clean.includes('יאללה') || clean.includes('שלום')) {
+                setTimeout(() => botMsg(`מעולה! אני פה. דבר אליי חופשי.<br>טיפ: נסה לכתוב <b>"צריך מנוף למחר ב-7"</b> או <b>"תביא דבק 603"</b> ותראה קסם. 😉`), 1000);
             }
         }
 
-        function renderStories() {
-            const bar = document.getElementById('storiesBar');
-            bar.innerHTML = chats.filter(c => c.type === 'user').map(u => `
-                <div class="story-item" onclick="switchChat(${u.id})"><img src="${u.imgUrl || 'https://i.pravatar.cc/150'}" class="story-img"><div class="story-name">${u.name.split(' ')[0]}</div></div>
-            `).join('');
-        }
-
-        function getAvatarHtml(chat) { return chat.imgUrl ? `<img src="${chat.imgUrl}" class="w-12 h-12 rounded-full object-cover">` : `<div class="w-12 h-12 rounded-full flex items-center justify-center font-bold text-white shadow-sm ${getAvatarColor(chat.type)}"><i class="fas ${getIcon(chat.type)} text-lg"></i></div>`; }
-        function switchChat(id) { activeId = id; render(); }
-        function openGroupModal() { document.getElementById('groupModal').classList.remove('hidden'); }
-        function createNewGroup() {
-            const name = document.getElementById('newGroupName').value;
-            if(!name) return alert("חובה להזין שם");
-            const newChat = { id: Date.now(), name: name, type: document.getElementById('newGroupType').value, imgUrl: document.getElementById('newGroupImg').value, msgs: [], bot: true };
-            chats.unshift(newChat); document.getElementById('groupModal').classList.add('hidden'); activeId = newChat.id; render();
-        }
-        function getIcon(type) { if(type === 'truck') return 'fa-truck-moving'; if(type === 'cart') return 'fa-shopping-cart'; if(type === 'hammer') return 'fa-hammer'; return 'fa-user'; }
-        function getAvatarColor(type) { if(type === 'truck') return 'bg-purple-600'; if(type === 'cart') return 'bg-orange-500'; if(type === 'hammer') return 'bg-blue-600'; return 'bg-gray-400'; }
-        function getAvatarColorHex(type) { if(type === 'truck') return '9333ea'; if(type === 'cart') return 'f97316'; if(type === 'hammer') return '2563eb'; return '9ca3af'; }
-
-        async function sendMessage() {
-            const txt = document.getElementById('msgInput').value; if(!txt) return;
-            const chat = chats.find(c => c.id === activeId); const time = new Date().toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'});
-            if(internalMode) { chat.msgs.push({t:'internal', txt: txt, time: time}); toggleInternal(); } else { chat.msgs.push({t:'out', txt: txt, time: time}); }
-            document.getElementById('msgInput').value = ''; render();
-            if (!internalMode && chat.bot) { 
-                const reply = await brain.analyze(txt); 
-                if (reply) { setTimeout(() => { chat.msgs.push({t:'in', txt: reply, time: time, bot: true}); render(); }, 1500); } 
-            }
-        }
-
-        function toggleBot() { const chat = chats.find(c => c.id === activeId); chat.bot = !chat.bot; render(); }
-        function updateBotBtn(active) { const btn = document.getElementById('botToggle'); if(active) { btn.className = "flex items-center gap-2 px-3 py-1.5 rounded bg-green-100 text-green-700 text-xs font-bold border border-green-200"; btn.innerHTML = '<i class="fas fa-robot"></i> פעיל (Auto)'; } else { btn.className = "flex items-center gap-2 px-3 py-1.5 rounded bg-red-100 text-red-700 text-xs font-bold border border-red-200"; btn.innerHTML = '<i class="fas fa-user"></i> ידני (Human)'; } }
-        function toggleInternal() { internalMode = !internalMode; const input = document.getElementById('msgInput'); const area = document.getElementById('inputArea'); const btn = document.getElementById('internalBtn'); if(internalMode) { area.style.backgroundColor = '#fff9c4'; input.placeholder = "הערה פנימית (מוסתרת)..."; btn.classList.add('bg-yellow-100', 'border-yellow-300'); } else { area.style.backgroundColor = '#f0f2f5'; input.placeholder = "הקלד הודעה..."; btn.classList.remove('bg-yellow-100', 'border-yellow-300'); } }
-
-        render();
     </script>
 </body>
-
 </html>
