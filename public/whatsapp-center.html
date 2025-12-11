@@ -3,44 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SabanConnect | Revolution</title>
+    <title>SabanConnect | Revolution v16.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap');
         body { background-color: #d1d7db; font-family: 'Heebo', sans-serif; height: 100vh; overflow: hidden; display: flex; }
-        
-        /* Layout */
         .wa-container { width: 100%; display: flex; background: #fff; max-width: 1600px; margin: 0 auto; box-shadow: 0 4px 20px rgba(0,0,0,0.1); height: 100vh; }
         .sidebar { width: 30%; border-left: 1px solid #e9edef; background: #fff; display: flex; flex-direction: column; }
         .chat-area { flex: 1; display: flex; flex-direction: column; background-color: #efeae2; background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); position: relative; }
-        
-        /* Messages */
         .msg { max-width: 70%; padding: 8px 12px; border-radius: 8px; margin-bottom: 8px; font-size: 14px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); line-height: 1.4; }
         .msg-in { align-self: flex-start; background: #fff; border-top-right-radius: 0; }
         .msg-out { align-self: flex-end; background: #d9fdd3; border-top-left-radius: 0; }
         .msg-internal { align-self: center; background: #fff9c4; border: 1px dashed #fbc02d; font-size: 12px; max-width: 80%; text-align: center; }
-        
-        /* Bot & Cards */
         .bot-badge { font-size: 9px; background: #e0f2f1; color: #00695c; padding: 1px 4px; border-radius: 4px; font-weight: bold; margin-right: 5px; border: 1px solid #b2dfdb; }
         .product-card { border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin-top: 5px; background: #f8fafc; }
         .product-img { width: 100%; height: 120px; object-fit: contain; background: white; border-bottom: 1px solid #eee; }
         .team-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; margin-top: 5px; }
         .team-card { background: #f1f5f9; padding: 5px; border-radius: 6px; display: flex; align-items: center; gap: 5px; cursor: pointer; border: 1px solid #e2e8f0; }
         .team-card:hover { background: #e2e8f0; }
-        
-        /* Animations */
         .fade-in { animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .sparkle { animation: sparkle 1.5s infinite; }
-        @keyframes sparkle { 0% { opacity: 0.5; transform: scale(1); } 50% { opacity: 1; transform: scale(1.2); } 100% { opacity: 0.5; transform: scale(1); } }
-
-        /* Welcome Popup */
         .welcome-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
         .welcome-box { background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 450px; text-align: center; position: relative; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5); animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        
-        /* Scrollbar */
         ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
     </style>
 </head>
@@ -49,55 +35,34 @@
     <div id="welcomeModal" class="welcome-overlay">
         <div class="welcome-box">
             <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-400 to-blue-500"></div>
-            <div class="mb-4 flex justify-center">
-                <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center text-4xl shadow-inner">
-                    🤖
-                </div>
-            </div>
+            <div class="mb-4 flex justify-center"><div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center text-4xl shadow-inner">🤖</div></div>
             <h1 class="text-2xl font-black text-slate-800 mb-2">ברוך הבא למהפכה!</h1>
-            <p class="text-gray-600 text-sm mb-6 leading-relaxed">
-                <span class="font-bold text-green-600">שחר</span>, מעכשיו אתה חלק מהמשפחה הדיגיטלית של ח.סבן.<br>
-                בנינו עבורך את המערכת המתקדמת בענף, כי הזמן שלך שווה כסף.<br>
-                אנחנו כאן כדי לתת לך שירות 24/7, מהיר, מדויק ועם חיוך.
-            </p>
-            <button onclick="startOnboarding()" class="w-full bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-slate-800 transition shadow-lg flex items-center justify-center gap-2">
-                אני בפנים! 🚀 <span class="text-xs font-normal opacity-70">(התחל סיור)</span>
-            </button>
+            <p class="text-gray-600 text-sm mb-6 leading-relaxed"><span class="font-bold text-green-600">שחר</span>, מעכשיו אתה חלק מהמשפחה הדיגיטלית של ח.סבן.<br>אנחנו כאן כדי לתת לך שירות 24/7, מהיר, מדויק ועם חיוך.</p>
+            <button onclick="startOnboarding()" class="w-full bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-slate-800 transition shadow-lg flex items-center justify-center gap-2">אני בפנים! 🚀 <span class="text-xs font-normal opacity-70">(התחל סיור)</span></button>
             <div class="mt-4 text-[10px] text-gray-400">Powered by SabanOS v16.0</div>
         </div>
     </div>
 
     <div class="wa-container filter blur-sm transition duration-500" id="appContainer">
-        
         <div class="sidebar">
             <div class="bg-[#f0f2f5] p-3 flex justify-between items-center border-b h-16">
-                <div class="flex items-center gap-3">
-                    <img src="https://ui-avatars.com/api/?name=Rami+Admin&background=075E54&color=fff" class="w-10 h-10 rounded-full">
-                    <div class="text-gray-600 text-sm font-bold">רמי (מנהל)</div>
-                </div>
+                <div class="flex items-center gap-3"><img src="https://ui-avatars.com/api/?name=Rami+Admin&background=075E54&color=fff" class="w-10 h-10 rounded-full"><div class="text-gray-600 text-sm font-bold">רמי (מנהל)</div></div>
                 <div class="flex gap-3 text-gray-500"><i class="fas fa-plus"></i><i class="fas fa-ellipsis-v"></i></div>
             </div>
             <div class="p-2 border-b bg-white"><input type="text" placeholder="חיפוש..." class="w-full bg-[#f0f2f5] rounded-lg px-4 py-2 text-sm outline-none"></div>
-            
             <div class="flex-1 overflow-y-auto bg-white">
                 <div class="p-3 bg-[#f0f2f5] border-l-4 border-green-500 flex items-center gap-3 cursor-pointer">
                     <img src="https://i.pravatar.cc/150?img=11" class="w-12 h-12 rounded-full border-2 border-green-500 p-0.5">
-                    <div class="flex-1">
-                        <div class="flex justify-between"><span class="font-bold text-sm">שחר שאול</span><span class="text-[10px] text-green-600">עכשיו</span></div>
-                        <div class="text-xs text-gray-500 flex items-center gap-1"><i class="fas fa-robot text-green-600"></i> מתחילים מהפכה...</div>
-                    </div>
+                    <div class="flex-1"><div class="flex justify-between"><span class="font-bold text-sm">שחר שאול</span><span class="text-[10px] text-green-600">עכשיו</span></div><div class="text-xs text-gray-500 flex items-center gap-1"><i class="fas fa-robot text-green-600"></i> מתחילים מהפכה...</div></div>
                 </div>
             </div>
         </div>
-
         <div class="chat-area">
             <div class="bg-[#f0f2f5] p-3 flex items-center gap-3 border-b shadow-sm h-16">
                 <img src="https://i.pravatar.cc/150?img=11" class="w-10 h-10 rounded-full">
                 <div><div class="font-bold text-gray-800">שחר שאול (לקוח VIP)</div><div class="text-xs text-green-600">מחובר</div></div>
             </div>
-
             <div class="flex-1 p-5 overflow-y-auto flex flex-col gap-2" id="messagesBox"></div>
-
             <div class="bg-[#f0f2f5] p-3 flex items-center gap-3" id="inputArea">
                 <i class="fas fa-plus text-gray-500 text-xl cursor-pointer hover:text-green-600 transition" title="כלים חכמים"></i>
                 <input type="text" id="msgInput" class="flex-1 bg-white rounded-lg px-4 py-3 text-sm outline-none" placeholder="הקלד הודעה..." onkeydown="if(event.key === 'Enter') sendMessage()">
@@ -107,25 +72,22 @@
     </div>
 
     <script>
-        // --- LOGISTICS BRAIN (The Math) ---
-        const LOGISTICS = {
-            harash: { lat: 32.1462, lng: 34.8951 },
-            drivers: {
-                hachmat: { base: "Taibeh", start: "06:30" },
-                ali: { base: "Kafr Qasim", start: "06:00" }
-            },
-            calc: (dest) => {
-                // סימולציה: חישוב אמיתי היה משתמש בקואורדינטות
-                return {
-                    dist: 12.5, // ק"מ
-                    time: 35, // דקות
-                    driver: "חכמת",
-                    base: "החרש"
-                };
-            }
-        };
+        // --- צלצול והרשאות ---
+        const alertSound = new Audio("https://notificationsounds.com/storage/sounds-file-sounds-1233-elegant.mp3");
 
-        // --- SIMULATION ENGINE ---
+        function requestSystemPermissions() {
+            if (Notification.permission !== "granted") {
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") {
+                        new Notification("SabanOS", { body: "המערכת מוכנה!", icon: "icons/icon-192.png" });
+                        playAlert();
+                    }
+                });
+            }
+        }
+        function playAlert() { alertSound.play().catch(e => console.log("Sound blocked")); }
+        
+        // --- LOGISTICS & CHAT ---
         let step = 0;
         const chatBox = document.getElementById('messagesBox');
 
@@ -133,70 +95,41 @@
             document.getElementById('welcomeModal').classList.add('hidden');
             document.getElementById('appContainer').classList.remove('blur-sm');
             
-            // Step 1: The Intro
-            setTimeout(() => botMsg(`אהלן שחר! 👋<br>אני <b>Chat-Saban</b>, החבר החדש שלך.<br>אני כאן כדי לדאוג לך להכל - מהזמנות ועד מנופים.`), 1000);
-            
-            setTimeout(() => {
-                botMsg(`רמי יצא להפסקת סיגריה 🚬 (כרגיל...), אז אני לוקח פיקוד.<br>בוא תכיר את הנבחרת שאיתנו בקבוצה:`);
-                showTeamGrid();
-            }, 3500);
+            // הפעלת סאונד והרשאות רק אחרי שהמשתמש לחץ על כפתור
+            playAlert();
+            requestSystemPermissions();
 
+            setTimeout(() => botMsg(`אהלן שחר! 👋<br>אני <b>Chat-Saban</b>, החבר החדש שלך.<br>אני כאן כדי לדאוג לך להכל - מהזמנות ועד מנופים.`), 1000);
+            setTimeout(() => { botMsg(`רמי יצא להפסקת סיגריה 🚬 (כרגיל...), אז אני לוקח פיקוד.<br>בוא תכיר את הנבחרת שאיתנו בקבוצה:`); showTeamGrid(); }, 3500);
             setTimeout(() => botMsg(`מוכן להתחיל? תכתוב לי <b>"יאללה"</b> או תשאל כל מה שבא לך!`), 6000);
         }
 
-        // --- CHAT FUNCTIONS ---
-
         function userMsg(text) {
             const time = new Date().toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'});
-            chatBox.innerHTML += `
-                <div class="msg msg-out fade-in">
-                    ${text}
-                    <div class="text-[9px] text-gray-500 text-left mt-1">${time} <i class="fas fa-check"></i></div>
-                </div>`;
+            chatBox.innerHTML += `<div class="msg msg-out fade-in">${text}<div class="text-[9px] text-gray-500 text-left mt-1">${time} <i class="fas fa-check"></i></div></div>`;
             scrollToBottom();
             analyzeUserText(text);
         }
 
         function botMsg(html) {
             const time = new Date().toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'});
-            chatBox.innerHTML += `
-                <div class="msg msg-in fade-in">
-                    <span class="bot-badge"><i class="fas fa-robot"></i> SabanAI</span>
-                    ${html}
-                    <div class="text-[9px] text-gray-400 text-left mt-1">${time}</div>
-                </div>`;
+            chatBox.innerHTML += `<div class="msg msg-in fade-in"><span class="bot-badge"><i class="fas fa-robot"></i> SabanAI</span>${html}<div class="text-[9px] text-gray-400 text-left mt-1">${time}</div></div>`;
             scrollToBottom();
+            playAlert(); // צפצוף בהודעה נכנסת
         }
 
         function internalMsg(text) {
-            chatBox.innerHTML += `
-                <div class="msg msg-internal fade-in">
-                    <i class="fas fa-lock"></i> <b>הערה פנימית:</b> ${text}
-                </div>`;
+            chatBox.innerHTML += `<div class="msg msg-internal fade-in"><i class="fas fa-lock"></i> <b>הערה פנימית:</b> ${text}</div>`;
             scrollToBottom();
         }
 
         function showTeamGrid() {
-            const html = `
-            <div class="team-grid">
-                <div class="team-card" onclick="alert('פותח צ\'אט פרטי עם הראל')"><img src="https://ui-avatars.com/api/?name=Harel&background=000&color=fff" class="w-6 h-6 rounded-full"><span class="text-xs font-bold">הראל (מנכ"ל)</span></div>
-                <div class="team-card"><img src="https://ui-avatars.com/api/?name=Rami&background=blue&color=fff" class="w-6 h-6 rounded-full"><span class="text-xs font-bold">רמי (תפעול)</span></div>
-                <div class="team-card"><img src="https://ui-avatars.com/api/?name=Nat&background=orange&color=fff" class="w-6 h-6 rounded-full"><span class="text-xs font-bold">נתנאל (רכש)</span></div>
-                <div class="team-card"><img src="https://ui-avatars.com/api/?name=Oren&background=green&color=fff" class="w-6 h-6 rounded-full"><span class="text-xs font-bold">אורן (מחסן)</span></div>
-            </div>`;
+            const html = `<div class="team-grid"><div class="team-card"><img src="https://ui-avatars.com/api/?name=Harel&background=000&color=fff" class="w-6 h-6 rounded-full"><span class="text-xs font-bold">הראל (מנכ"ל)</span></div><div class="team-card"><img src="https://ui-avatars.com/api/?name=Rami&background=blue&color=fff" class="w-6 h-6 rounded-full"><span class="text-xs font-bold">רמי (תפעול)</span></div><div class="team-card"><img src="https://ui-avatars.com/api/?name=Nat&background=orange&color=fff" class="w-6 h-6 rounded-full"><span class="text-xs font-bold">נתנאל (רכש)</span></div><div class="team-card"><img src="https://ui-avatars.com/api/?name=Oren&background=green&color=fff" class="w-6 h-6 rounded-full"><span class="text-xs font-bold">אורן (מחסן)</span></div></div>`;
             botMsg(html);
         }
 
         function showProductCard(name, price, img) {
-            const html = `
-            <div class="product-card">
-                <div class="product-img flex items-center justify-center p-2"><img src="${img}" class="max-h-full"></div>
-                <div class="p-2">
-                    <div class="font-bold text-sm text-slate-800">${name}</div>
-                    <div class="text-xs text-green-600 font-bold mb-1">₪${price}</div>
-                    <button class="w-full bg-green-600 text-white text-xs py-1.5 rounded font-bold shadow">הוסף להזמנה</button>
-                </div>
-            </div>`;
+            const html = `<div class="product-card"><div class="product-img flex items-center justify-center p-2"><img src="${img}" class="max-h-full"></div><div class="p-2"><div class="font-bold text-sm text-slate-800">${name}</div><div class="text-xs text-green-600 font-bold mb-1">₪${price}</div><button class="w-full bg-green-600 text-white text-xs py-1.5 rounded font-bold shadow">הוסף להזמנה</button></div></div>`;
             botMsg(`מצאתי! הנה זה:<br>${html}`);
         }
 
@@ -206,63 +139,32 @@
             const input = document.getElementById('msgInput');
             const text = input.value;
             if(!text) return;
-            
-            // בדיקת הערה פנימית (אם מתחיל ב-!)
-            if(text.startsWith('!')) {
-                internalMsg(text.substring(1));
-            } else {
-                userMsg(text);
-            }
+            if(text.startsWith('!')) { internalMsg(text.substring(1)); } else { userMsg(text); }
             input.value = '';
         }
 
-        // --- THE BRAIN (Logic) ---
         function analyzeUserText(text) {
             const clean = text.toLowerCase();
-
-            // 1. Tagging System (@Oren)
             if (clean.includes('@')) {
                 const tagged = clean.split('@')[1].split(' ')[0];
                 setTimeout(() => internalMsg(`🔔 <b>התראה:</b> ${tagged} תויג בשיחה ונשלחה לו הודעה.`), 500);
                 setTimeout(() => botMsg(`אין בעיה, קראתי ל-${tagged}. הוא מצטרף.`), 1500);
                 return;
             }
-
-            // 2. Scenario: Product Request (603)
-            if (clean.includes('603') || clean.includes('דבק') || clean.includes('פלסטומר')) {
+            if (clean.includes('603') || clean.includes('דבק')) {
                 setTimeout(() => botMsg(`רגע אחד, בודק במלאי... <i class="fas fa-spinner fa-spin"></i>`), 500);
-                setTimeout(() => showProductCard(
-                    "תרמוקיר פלסטומר 603", 
-                    "38.00", 
-                    "https://termokir.co.il/wp-content/uploads/2019/07/Plastomer-603.png" // תמונה להמחשה
-                ), 1500);
+                setTimeout(() => showProductCard("תרמוקיר פלסטומר 603", "38.00", "https://termokir.co.il/wp-content/uploads/2019/07/Plastomer-603.png"), 1500);
                 return;
             }
-
-            // 3. Scenario: Crane Logistics (7 AM)
-            if (clean.includes('מנוף') && clean.includes('7') && (clean.includes('מחר') || clean.includes('בוקר'))) {
+            if (clean.includes('מנוף') && clean.includes('7')) {
                 setTimeout(() => botMsg(`בודק לך בסידור העבודה... 🚚`), 1000);
-                setTimeout(() => {
-                    const ans = `
-                    <b>בדיקת היתכנות לוגיסטית:</b><br>
-                    📍 יעד: אבן יהודה (מרחק: 12 ק"מ מהחרש)<br>
-                    👷 נהג: חכמת (מתחיל ב-06:30 בטייבה)<br>
-                    <br>
-                    ✅ <b>מסקנה:</b> אפשרי בהחלט.<br>
-                    חכמת יגיע למחסן ב-06:45, יעמיס, ואצלך ב-07:15 בערך.<br>
-                    לשריין לך?
-                    `;
-                    botMsg(ans);
-                }, 3000);
+                setTimeout(() => { botMsg(`<b>בדיקת היתכנות:</b><br>📍 יעד: אבן יהודה<br>👷 נהג: חכמת (מתחיל 06:30)<br>✅ <b>אפשרי.</b> חכמת יגיע ב-07:15. לשריין?`); }, 3000);
                 return;
             }
-
-            // 4. Default: Joke
             if (clean.includes('יאללה') || clean.includes('שלום')) {
-                setTimeout(() => botMsg(`מעולה! אני פה. דבר אליי חופשי.<br>טיפ: נסה לכתוב <b>"צריך מנוף למחר ב-7"</b> או <b>"תביא דבק 603"</b> ותראה קסם. 😉`), 1000);
+                setTimeout(() => botMsg(`מעולה! אני פה. נסה לכתוב <b>"צריך מנוף למחר ב-7"</b> או <b>"תביא דבק 603"</b>.`), 1000);
             }
         }
-
     </script>
 </body>
 </html>
