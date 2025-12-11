@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SabanOS | Client</title>
+    <title>SabanOS | Client App v17.0</title>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="icons/icon-192.png">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -31,6 +31,20 @@
         .nav-icon { font-size: 20px; margin-bottom: 4px; }
         .badge { position: absolute; top: -5px; right: 25%; background: #ef4444; color: white; font-size: 10px; padding: 1px 5px; border-radius: 10px; }
 
+        /* Container Widget */
+        .container-widget {
+            position: fixed; top: 80px; left: 20px; z-index: 40;
+            background: white; border-radius: 50px; padding: 5px 15px 5px 5px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); border: 2px solid #3b82f6;
+            display: flex; align-items: center; gap: 10px; cursor: pointer;
+            transition: transform 0.2s; animation: float 3s ease-in-out infinite;
+        }
+        .container-widget:hover { transform: scale(1.05); }
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-5px); } 100% { transform: translateY(0px); } }
+        .container-icon { width: 35px; height: 35px; background: #eff6ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .container-info { font-size: 10px; line-height: 1.2; text-align: right; }
+        .days-badge { background: #ef4444; color: white; padding: 1px 4px; border-radius: 4px; font-weight: bold; }
+
         /* Modal */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(3px); z-index: 60; display: flex; justify-content: center; align-items: end; }
         .modal-box { background: white; width: 100%; border-radius: 20px 20px 0 0; padding: 20px; animation: slideUp 0.3s; }
@@ -40,17 +54,39 @@
 <body>
 
     <div id="screen-shop" class="screen active">
-        <header class="bg-[#008069] text-white p-4 shadow-md sticky top-0 z-10 flex justify-between items-center">
-            <div><h1 class="font-bold text-lg">ח.סבן חומרי בניין</h1><span class="text-xs opacity-80">מחובר: <span id="userName">אורח</span></span></div>
-            <button onclick="openLogistics()" class="bg-white/20 px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm"><i class="fas fa-truck"></i> מתי מגיע?</button>
+        <header class="bg-[#008069] text-white p-3 shadow-md sticky top-0 z-10 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <img id="userAvatar" src="" class="w-10 h-10 rounded-full border-2 border-white/20 bg-white/10">
+                <div>
+                    <h1 class="font-bold text-lg leading-tight">ח.סבן</h1>
+                    <span class="text-xs opacity-90 block">שלום, <span id="userName" class="font-bold">אורח</span></span>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="openLogistics()" class="bg-white/20 px-3 py-1.5 rounded-full text-xs font-bold backdrop-blur-sm flex items-center gap-1">
+                    <i class="fas fa-truck"></i> הגעה
+                </button>
+                <button onclick="handleLogout()" class="text-white/80 hover:text-white px-2"><i class="fas fa-sign-out-alt"></i></button>
+            </div>
         </header>
         
+        <div id="activeContainer" class="container-widget hidden" onclick="alert('פותח פרטי מכולה...')">
+            <div class="container-icon">🗑️</div>
+            <div class="container-info">
+                <div class="font-bold text-slate-800">מכולה פעילה</div>
+                <div class="text-gray-500">בן יהודה 4</div>
+                <span class="days-badge">יום 8</span>
+            </div>
+        </div>
+
         <main class="flex-1 p-4 overflow-y-auto bg-gray-50 pb-20">
             <div class="relative mb-4">
-                <input type="text" placeholder="מה חסר באתר?" class="w-full p-3 rounded-full border-none shadow-sm text-sm outline-none px-10">
+                <input type="text" id="searchInput" oninput="filterProducts()" placeholder="מה חסר באתר?" class="w-full p-3 rounded-full border-none shadow-sm text-sm outline-none px-10">
                 <i class="fas fa-search absolute right-4 top-3.5 text-gray-400"></i>
             </div>
-            <div id="productsGrid" class="grid grid-cols-2 gap-3"></div>
+            <div id="productsGrid" class="grid grid-cols-2 gap-3 pb-4">
+                <div class="col-span-2 text-center text-gray-400 mt-10"><i class="fas fa-spinner fa-spin"></i> טוען מוצרים...</div>
+            </div>
         </main>
     </div>
 
@@ -65,8 +101,7 @@
         </header>
 
         <div class="chat-bg" id="chatBox">
-            <div class="msg msg-in"><span class="bot-badge">SabanAI</span>היי! כאן הבוט של סבן. איך אפשר לעזור?</div>
-        </div>
+            </div>
 
         <div class="bg-[#f0f2f5] p-2 flex items-center gap-2 border-t">
             <i class="fas fa-plus text-gray-500 text-xl px-2"></i>
@@ -96,71 +131,104 @@
                 <button onclick="checkArrival()" class="bg-[#008069] text-white px-4 rounded-lg"><i class="fas fa-search"></i></button>
             </div>
             <div id="logisticsRes" class="mt-4 hidden p-3 bg-blue-50 rounded-lg text-sm border border-blue-100"></div>
+            <div id="mapFrame" class="mt-2 w-full h-32 bg-gray-100 rounded hidden"></div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, setDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        let currentUser = "אורח";
+        // --- GLOBAL STATE ---
+        let currentUser = { id: 'guest', name: 'אורח' };
         let cart = [];
+        let allProducts = [];
 
         // --- INIT ---
         window.onload = () => {
             const params = new URLSearchParams(window.location.search);
             const uid = params.get('uid');
-            const openChat = params.get('chat'); // בדיקת הטריגר
+            const openChat = params.get('chat');
+            const impersonateId = localStorage.getItem('impersonateId');
 
             if (uid) {
-                currentUser = uid.replace('_', ' '); // shahar_shaul -> shahar shaul
-                document.getElementById('userName').innerText = currentUser;
+                currentUser.id = uid;
+                currentUser.name = uid.replace('_', ' '); 
+                initUser(currentUser);
+            } else if (impersonateId) {
+                currentUser.id = impersonateId;
+                currentUser.name = "לקוח (מבט על)";
+                initUser(currentUser);
             }
 
-            // אם הלינק מכיל chat=true, עבור ישר לצ'אט
-            if (openChat === 'true') {
-                switchScreen('chat');
+            if (openChat === 'true') switchScreen('chat');
+            
+            // צלצול פתיחה
+            const audio = new Audio("https://notificationsounds.com/storage/sounds-file-sounds-1233-elegant.mp3");
+            document.body.addEventListener('click', () => audio.play().catch(()=>{}), {once:true});
+
+            loadRealProducts();
+        };
+
+        function initUser(user) {
+            document.getElementById('userName').innerText = user.name;
+            // Avatar Generator
+            document.getElementById('userAvatar').src = `https://ui-avatars.com/api/?name=${user.name}&background=ffffff&color=008069&bold=true`;
+            
+            // Start Chat Listener (Real Time!)
+            subscribeToChat(user.id);
+            
+            // Check for containers (Simulated for now, can be real later)
+            setTimeout(() => {
+                document.getElementById('activeContainer').classList.remove('hidden');
+            }, 2000);
+        }
+
+        // --- REAL DATA: PRODUCTS ---
+        async function loadRealProducts() {
+            try {
+                const snap = await getDocs(collection(db, "products"));
+                allProducts = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                renderProducts(allProducts);
+            } catch(e) {
+                console.error(e);
+                document.getElementById('productsGrid').innerHTML = '<div class="col-span-2 text-center text-red-400">שגיאה בטעינת מוצרים</div>';
             }
+        }
 
-            loadProducts();
-        };
-
-        // --- NAVIGATION ---
-        window.switchScreen = (screenName) => {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(`screen-${screenName === 'cart' ? 'shop' : screenName}`).classList.add('active'); // cart is part of shop for now
-            
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            document.getElementById(`nav-${screenName}`).classList.add('active');
-
-            if(screenName === 'cart') alert("העגלה תיפתח בחלון נפרד בקרוב...");
-        };
-
-        // --- PRODUCTS ---
-        async function loadProducts() {
-            // Mock data for speed
-            const products = [
-                {id:1, name:"מלט נשר", price:28, img:"https://cdn-icons-png.flaticon.com/512/7563/7563493.png"},
-                {id:2, name:"טיט מוכן", price:22, img:"https://cdn-icons-png.flaticon.com/512/9110/9110660.png"},
-                {id:3, name:"בלוק 10", price:4.5, img:"https://cdn-icons-png.flaticon.com/512/8267/8267272.png"},
-                {id:4, name:"דבק 109", price:35, img:"https://cdn-icons-png.flaticon.com/512/9425/9425824.png"}
-            ];
-            
+        function renderProducts(list) {
             const grid = document.getElementById('productsGrid');
-            grid.innerHTML = products.map(p => `
-                <div class="bg-white p-3 rounded-xl shadow-sm flex flex-col items-center" onclick="addToCart('${p.name}')">
-                    <img src="${p.img}" class="w-16 h-16 mb-2 object-contain">
-                    <h3 class="font-bold text-sm text-gray-800">${p.name}</h3>
-                    <div class="text-[#008069] font-bold text-xs">₪${p.price}</div>
-                    <button class="mt-2 w-full bg-gray-100 text-gray-600 text-xs py-1.5 rounded-lg font-bold">הוסף +</button>
+            if (list.length === 0) {
+                grid.innerHTML = '<div class="col-span-2 text-center text-gray-400">לא נמצאו מוצרים</div>';
+                return;
+            }
+            grid.innerHTML = list.map(p => {
+                // תמיכה במבנה החדש והישן
+                const name = p.core?.name || p.title || "מוצר ללא שם";
+                const price = p.core?.price || p.price || 0;
+                const img = p.rich?.image || p.image || "https://via.placeholder.com/150?text=No+Img";
+                
+                return `
+                <div class="bg-white p-3 rounded-xl shadow-sm flex flex-col items-center" onclick="addToCart('${name}')">
+                    <img src="${img}" class="w-24 h-24 mb-2 object-contain mix-blend-multiply">
+                    <h3 class="font-bold text-sm text-gray-800 text-center h-10 overflow-hidden leading-tight">${name}</h3>
+                    <div class="text-[#008069] font-bold text-xs mt-1">₪${price}</div>
+                    <button class="mt-2 w-full bg-gray-100 text-gray-600 text-xs py-1.5 rounded-lg font-bold hover:bg-[#008069] hover:text-white transition">הוסף לעגלה +</button>
                 </div>
-            `).join('');
+            `;
+            }).join('');
+        }
+
+        window.filterProducts = () => {
+            const term = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allProducts.filter(p => (p.core?.name || p.title || "").toLowerCase().includes(term));
+            renderProducts(filtered);
         }
 
         window.addToCart = (name) => {
@@ -168,27 +236,60 @@
             const badge = document.getElementById('cartBadge');
             badge.innerText = cart.length;
             badge.classList.remove('hidden');
-            // Play subtle sound?
+            // Subtle vibration if supported
+            if(navigator.vibrate) navigator.vibrate(50);
         };
 
-        // --- CHAT LOGIC ---
-        window.sendChat = () => {
+        // --- REAL DATA: CHAT ---
+        function subscribeToChat(uid) {
+            const q = query(collection(db, `chat_sessions/${uid}/messages`), orderBy("createdAt", "asc"));
+            onSnapshot(q, (snap) => {
+                const box = document.getElementById('chatBox');
+                box.innerHTML = ''; // Re-render (simple approach)
+                
+                if(snap.empty) {
+                    box.innerHTML = `<div class="msg msg-in"><span class="bot-badge">SabanAI</span>היי ${currentUser.name}! 👋<br>כאן הבוט של סבן. איך אפשר לעזור?</div>`;
+                }
+
+                snap.forEach(doc => {
+                    const m = doc.data();
+                    const isMe = m.role === 'user';
+                    const time = m.createdAt ? new Date(m.createdAt.seconds*1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '...';
+                    
+                    if (m.role !== 'internal') { // Don't show internal notes to client
+                        box.innerHTML += `
+                            <div class="msg ${isMe ? 'msg-out' : 'msg-in'}">
+                                ${!isMe && m.sender === 'bot' ? '<span class="bot-badge">SabanAI</span>' : ''}
+                                ${m.text}
+                                <div class="msg-time">${time} ${isMe ? '<i class="fas fa-check"></i>' : ''}</div>
+                            </div>`;
+                    }
+                });
+                box.scrollTop = box.scrollHeight;
+            });
+        }
+
+        window.sendChat = async () => {
             const input = document.getElementById('chatInput');
             const txt = input.value;
             if(!txt) return;
             
-            const chatBox = document.getElementById('chatBox');
-            const time = new Date().toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'});
-            
-            chatBox.innerHTML += `<div class="msg msg-out">${txt}<div class="msg-time">${time} <i class="fas fa-check"></i></div></div>`;
-            input.value = '';
-            chatBox.scrollTop = chatBox.scrollHeight;
+            input.value = ''; // Optimistic clear
 
-            // Simple Auto-Reply Simulation
-            setTimeout(() => {
-                chatBox.innerHTML += `<div class="msg msg-in"><span class="bot-badge">SabanAI</span>קיבלתי, בודק לך...<div class="msg-time">${time}</div></div>`;
-                chatBox.scrollTop = chatBox.scrollHeight;
-            }, 1000);
+            // 1. Save to Sub-Collection
+            await addDoc(collection(db, `chat_sessions/${currentUser.id}/messages`), {
+                text: txt,
+                role: 'user',
+                createdAt: serverTimestamp()
+            });
+
+            // 2. Update Main Session (for Radar)
+            await setDoc(doc(db, "chat_sessions", currentUser.id), {
+                userName: currentUser.name,
+                lastMessage: txt,
+                lastActivity: serverTimestamp(),
+                isBotActive: true // Default to bot
+            }, { merge: true });
         };
 
         // --- LOGISTICS ---
@@ -203,13 +304,16 @@
             resDiv.classList.remove('hidden');
 
             try {
-                // שימוש ב-LogisticsBrain (מוטמע מקוצר)
                 const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=il&limit=1`;
                 const res = await fetch(url);
                 const data = await res.json();
                 
                 if(data.length > 0) {
-                    const time = Math.floor(Math.random() * 30) + 20; // סימולציה
+                    const lat = data[0].lat;
+                    const lon = data[0].lon;
+                    // Mock calculation
+                    const time = Math.floor(Math.random() * 30) + 20; 
+                    
                     resDiv.innerHTML = `
                         <div class="font-bold text-gray-800">✅ היעד אותר!</div>
                         <div class="text-xs text-gray-500">${data[0].display_name.split(',')[0]}</div>
@@ -218,12 +322,33 @@
                             <span class="text-lg font-black text-green-600">${time} דק'</span>
                         </div>
                     `;
+                    // Show map
+                    const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${parseFloat(lon)-0.01},${parseFloat(lat)-0.01},${parseFloat(lon)+0.01},${parseFloat(lat)+0.01}&layer=mapnik&marker=${lat},${lon}`;
+                    const frame = document.getElementById('mapFrame');
+                    frame.innerHTML = `<iframe width="100%" height="100%" frameborder="0" scrolling="no" src="${mapUrl}"></iframe>`;
+                    frame.classList.remove('hidden');
+
                 } else {
                     resDiv.innerHTML = '❌ כתובת לא נמצאה';
                 }
             } catch(e) { resDiv.innerHTML = 'שגיאה בחיבור'; }
         };
 
+        // --- NAVIGATION ---
+        window.switchScreen = (screenName) => {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(`screen-${screenName === 'cart' ? 'shop' : screenName}`).classList.add('active'); 
+            
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(`nav-${screenName}`).classList.add('active');
+
+            if(screenName === 'cart') alert("העגלה שלך מכילה: " + cart.join(', '));
+        };
+
+        window.handleLogout = () => {
+            localStorage.removeItem('impersonateId');
+            signOut(auth).then(() => window.location.href="index.html");
+        };
     </script>
 </body>
 </html>
