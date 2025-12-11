@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SabanOS Studio | Trainer Edition</title>
+    <title>SabanOS Studio | Admin Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -17,15 +17,7 @@
         .center-stage { flex: 1; background: #f8fafc; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
         .preview-pane { width: 380px; background: #e2e8f0; border-right: 1px solid #e2e8f0; display: flex; justify-content: center; padding-top: 20px; }
         
-        /* Modals */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 100; opacity: 0; pointer-events: none; transition: 0.3s; }
-        .modal-overlay.open { opacity: 1; pointer-events: all; }
-        .modal-box { background: white; width: 90%; max-width: 500px; border-radius: 16px; padding: 0; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); display: flex; flex-direction: column; max-height: 80vh; transform: scale(0.95); transition: 0.3s; }
-        .modal-overlay.open .modal-box { transform: scale(1); }
-        .prod-item { display: flex; gap: 12px; padding: 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: 0.2s; align-items: center; }
-        .prod-item:hover { background: #f8fafc; }
-        
-        /* Template Item */
+        /* List Items */
         .template-card { padding: 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: 0.2s; position: relative; display: flex; justify-content: space-between; align-items: center; }
         .template-card:hover { background-color: #f8fafc; }
         .template-card.active { background-color: #eff6ff; border-right: 4px solid #3b82f6; }
@@ -40,11 +32,7 @@
             box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: 0.2s; user-select: none;
         }
         .tree-node:hover { border-color: #3b82f6; color: #3b82f6; transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        .node-delete { 
-            position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; 
-            background: #ef4444; color: white; border-radius: 50%; display: flex; 
-            align-items: center; justify-content: center; font-size: 10px; opacity: 0; transition: 0.2s;
-        }
+        .node-delete { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; background: #ef4444; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; opacity: 0; transition: 0.2s; }
         .tree-node:hover .node-delete { opacity: 1; }
 
         /* Simulator */
@@ -53,10 +41,10 @@
         .bubble { padding: 10px 14px; border-radius: 12px; font-size: 13px; margin-bottom: 10px; max-width: 85%; box-shadow: 0 1px 1px rgba(0,0,0,0.1); line-height: 1.5; position: relative; }
         .bubble-bot { background: white; color: #1f2937; border-top-right-radius: 0; }
         
-        /* Effects */
-        .anim-pulse { animation: pulse-blue 2s infinite; }
-        @keyframes pulse-blue { 0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(59, 130, 246, 0); } 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } }
-        
+        /* Category Filters */
+        .cat-filter { font-size: 11px; font-weight: bold; padding: 4px 8px; border-radius: 6px; cursor: pointer; background: #f1f5f9; color: #64748b; }
+        .cat-filter.active { background: #3b82f6; color: white; }
+
         /* Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
@@ -66,10 +54,10 @@
 
     <div class="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6 shadow-sm z-50">
         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg"><i class="fas fa-graduation-cap"></i></div>
+            <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg"><i class="fas fa-brain"></i></div>
             <div>
-                <h1 class="font-bold text-lg leading-tight">SabanOS Trainer</h1>
-                <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">v11.0</span>
+                <h1 class="font-bold text-lg leading-tight">SabanOS Brain</h1>
+                <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">v24.0</span>
             </div>
         </div>
         <div class="flex gap-2">
@@ -77,7 +65,7 @@
                 <span class="w-2 h-2 rounded-full bg-gray-300"></span> טוען...
             </div>
             <button onclick="saveCurrent()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-bold shadow flex items-center gap-2 transition cursor-pointer">
-                <i class="fas fa-cloud-upload-alt"></i> שמור מוח
+                <i class="fas fa-save"></i> שמור שינויים
             </button>
         </div>
     </div>
@@ -86,12 +74,15 @@
         
         <div class="sidebar">
             <div class="p-4 border-b border-gray-200 bg-slate-50">
-                <button onclick="loadTrainingData()" class="w-full bg-orange-100 hover:bg-orange-200 text-orange-700 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 border border-orange-200 transition cursor-pointer mb-3">
-                    <i class="fas fa-dumbbell"></i> טען שאלות לא פתורות
-                </button>
+                <div class="flex gap-2 mb-3 overflow-x-auto pb-1">
+                    <span class="cat-filter active" onclick="filterList('all')">הכל</span>
+                    <span class="cat-filter" onclick="filterList('container')">🗑️ מכולות</span>
+                    <span class="cat-filter" onclick="filterList('permit')">🏛️ היתרים</span>
+                    <span class="cat-filter" onclick="filterList('logistics')">🚚 לוגיסטיקה</span>
+                </div>
 
                 <div class="relative">
-                    <input type="text" id="searchInput" oninput="renderList()" placeholder="חפש בתבניות..." class="w-full bg-white border border-slate-300 rounded-lg p-2 pl-9 text-sm outline-none focus:border-blue-500 shadow-sm">
+                    <input type="text" id="searchInput" oninput="renderList()" placeholder="חפש תבנית..." class="w-full bg-white border border-slate-300 rounded-lg p-2 pl-9 text-sm outline-none focus:border-blue-500 shadow-sm">
                     <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
                 </div>
                 <div class="flex justify-between items-center mt-3 px-1">
@@ -105,16 +96,16 @@
         <div class="center-stage">
             
             <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex flex-wrap gap-2 items-center">
-                <div class="text-[10px] font-bold text-gray-400 uppercase mr-1">כלים:</div>
-                <button onclick="openProductPicker()" class="bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-700 flex items-center gap-2 transition cursor-pointer">
-                    <i class="fas fa-box-open"></i> הוסף מוצר
-                </button>
-                <button onclick="insertTag('{שם_לקוח}')" class="bg-slate-50 hover:bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 cursor-pointer"><i class="fas fa-user"></i> לקוח</button>
+                <div class="text-[10px] font-bold text-gray-400 uppercase mr-1">מכולות:</div>
+                <button onclick="insertTag('2.80 מטר')" class="bg-orange-50 hover:bg-orange-100 border border-orange-200 px-3 py-1.5 rounded-lg text-xs font-bold text-orange-700 cursor-pointer">רוחב שער</button>
+                <button onclick="insertTag('4.5 מטר')" class="bg-orange-50 hover:bg-orange-100 border border-orange-200 px-3 py-1.5 rounded-lg text-xs font-bold text-orange-700 cursor-pointer">גובה הנפה</button>
+                <button onclick="insertTag('[LINK_HERZLIYA]')" class="bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-700 cursor-pointer">לינק הרצליה</button>
+                
                 <div class="w-px h-6 bg-gray-200 mx-1"></div>
-                <div class="text-[10px] font-bold text-gray-400 uppercase mr-1">אפקטים:</div>
-                <button onclick="insertTag('[אפקט: טעינה]')" class="bg-purple-50 hover:bg-purple-100 border border-purple-200 px-3 py-1.5 rounded-lg text-xs font-bold text-purple-700 cursor-pointer"><i class="fas fa-spinner"></i> טוען</button>
-                <button onclick="insertTag('[אפקט: אישור]')" class="bg-green-50 hover:bg-green-100 border border-green-200 px-3 py-1.5 rounded-lg text-xs font-bold text-green-700 cursor-pointer"><i class="fas fa-check-circle"></i> אישור V</button>
-                <button onclick="insertTag('[אזהרה]')" class="bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-lg text-xs font-bold text-red-700 cursor-pointer"><i class="fas fa-exclamation-triangle"></i> אזהרה</button>
+                
+                <div class="text-[10px] font-bold text-gray-400 uppercase mr-1">כללי:</div>
+                <button onclick="insertTag('{שם_לקוח}')" class="bg-slate-50 hover:bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 cursor-pointer"><i class="fas fa-user"></i> שם</button>
+                <button onclick="insertTag('[אזהרה]')" class="bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-lg text-xs font-bold text-red-700 cursor-pointer"><i class="fas fa-exclamation-triangle"></i></button>
             </div>
 
             <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex flex-col gap-4 flex-1">
@@ -127,10 +118,9 @@
 
             <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
                 <div class="flex justify-between items-center mb-3">
-                    <label class="text-xs font-bold text-gray-500 uppercase flex items-center gap-2"><i class="fas fa-sitemap"></i> עץ החלטות (כפתורים ללקוח)</label>
-                    <button onclick="addBranch()" class="text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-1.5 rounded-lg border border-blue-200 font-bold transition cursor-pointer">+ הוסף ענף</button>
+                    <label class="text-xs font-bold text-gray-500 uppercase flex items-center gap-2"><i class="fas fa-sitemap"></i> כפתורים ללקוח</label>
+                    <button onclick="addBranch()" class="text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-1.5 rounded-lg border border-blue-200 font-bold transition cursor-pointer">+ הוסף כפתור</button>
                 </div>
-                <div class="text-[10px] text-gray-400 mb-2">💡 טיפ: לחץ פעמיים על כפתור כדי לערוך טקסט, או על ה-X למחיקה.</div>
                 <div id="treeContainer" class="tree-node-container"></div>
             </div>
         </div>
@@ -154,19 +144,6 @@
 
     </div>
 
-    <div id="productModal" class="modal-overlay">
-        <div class="modal-box">
-            <div class="p-4 border-b border-gray-100 flex justify-between items-center">
-                <h3 class="font-bold text-slate-800">בחר מוצר להוספה</h3>
-                <button onclick="closeModal()" class="text-gray-400 hover:text-red-500 cursor-pointer"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="p-4 bg-slate-50 border-b border-gray-100">
-                <input type="text" id="productSearchInput" oninput="filterProducts()" placeholder="חפש מוצר (למשל: סיקה)..." class="w-full border border-gray-300 rounded-lg p-2 text-sm outline-none focus:border-blue-500">
-            </div>
-            <div id="productsList" class="overflow-y-auto p-2 h-80 custom-scroll"></div>
-        </div>
-    </div>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, getDocs, doc, setDoc, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -177,12 +154,9 @@
 
         let templates = [];
         let activeIdx = -1;
-        
-        const dummyProducts = [
-            { name: "סיקה סרם 255", price: 45 }, { name: "תרמוקיר 603", price: 38 }, { name: "מיסטר פיקס 181", price: 22 }, 
-            { name: "מלט נשר שחור", price: 28 }, { name: "טיח גבס 720", price: 26 }
-        ];
+        let currentFilter = 'all';
 
+        // --- INIT ---
         window.onload = async () => { await loadTemplates(); };
 
         // 1. DATA LOADING
@@ -194,7 +168,8 @@
                     id: d.id, 
                     title: d.data().title || "ללא שם",
                     content: d.data().content || "",
-                    buttons: Array.isArray(d.data().buttons) ? d.data().buttons : []
+                    buttons: Array.isArray(d.data().buttons) ? d.data().buttons : [],
+                    keywords: d.data().keywords || []
                 }));
                 if (templates.length === 0) templates = [{ id: 'demo', title: 'הדגמה', content: 'היי!', buttons: [] }];
                 renderList();
@@ -203,30 +178,28 @@
             } catch(e) { console.error(e); }
         }
 
-        // 2. TRAINING MODE (החידוש)
-        window.loadTrainingData = () => {
-            const trainingQs = [
-                { id: 'tr_1', title: '❓ שאלה לא פתורה: "יש שליכט?"', content: 'הלקוח שאל: "האם יש לכם שליכט צבעוני?"\n[אפקט: חשיבה]\n\n(רמי, תכתוב כאן את התשובה והוסף כפתורים רלוונטיים)', buttons: [] },
-                { id: 'tr_2', title: '❓ שאלה לא פתורה: "מחירון הובלה"', content: 'הלקוח שאל: "כמה עולה הובלה לרעננה?"\n\n(רמי, הוסף כאן טבלת מחירים או קישור)', buttons: [] },
-                { id: 'tr_3', title: '❓ שאלה לא פתורה: "שעות פתיחה בשישי"', content: 'הלקוח שאל: "עד מתי פתוח בשישי?"', buttons: ["עד 13:00", "סגור"] }
-            ];
-            
-            if(confirm("לטעון 3 שאלות אימון למערכת?")) {
-                templates = [...trainingQs, ...templates];
-                renderList();
-                selectTemplate(0);
-                alert("נטענו שאלות לא פתורות. התחל לערוך!");
-            }
+        // 2. LIST & FILTER
+        window.filterList = (type) => {
+            currentFilter = type;
+            document.querySelectorAll('.cat-filter').forEach(el => el.classList.remove('active'));
+            event.target.classList.add('active');
+            renderList();
         }
 
-        // 3. RENDER LIST & DELETE
         window.renderList = () => {
             const list = document.getElementById('listContainer');
             const search = document.getElementById('searchInput').value.toLowerCase();
             list.innerHTML = '';
 
             templates.forEach((t, i) => {
+                // Search Filter
                 if(!t.title.toLowerCase().includes(search)) return;
+                
+                // Category Filter (Logic)
+                if (currentFilter === 'container' && !t.title.includes('מכול')) return;
+                if (currentFilter === 'permit' && !t.title.includes('היתר')) return;
+                if (currentFilter === 'logistics' && (!t.title.includes('גישה') && !t.title.includes('הובלה'))) return;
+
                 const div = document.createElement('div');
                 div.className = `template-card ${i === activeIdx ? 'active' : ''}`;
                 div.innerHTML = `
@@ -242,20 +215,12 @@
         }
 
         window.deleteTemplate = async (index) => {
-            if(confirm("למחוק את התבנית לצמיתות?")) {
+            if(confirm("למחוק?")) {
                 const t = templates[index];
-                if (!t.id.startsWith('new_') && !t.id.startsWith('tr_')) {
-                    await deleteDoc(doc(db, "faq", t.id)); // Delete from DB
-                }
+                if (!t.id.startsWith('new_')) await deleteDoc(doc(db, "faq", t.id));
                 templates.splice(index, 1);
                 renderList();
                 if(templates.length > 0) selectTemplate(0);
-                else {
-                    document.getElementById('editTitle').value = "";
-                    document.getElementById('editor').value = "";
-                    document.getElementById('treeContainer').innerHTML = "";
-                    document.getElementById('previewArea').innerHTML = "";
-                }
             }
         }
 
@@ -269,14 +234,13 @@
             updatePreview();
         }
 
-        // 4. VISUAL TREE
+        // 3. TREE EDITOR
         window.renderTree = () => {
             const container = document.getElementById('treeContainer');
             if(!templates[activeIdx].buttons) templates[activeIdx].buttons = [];
-            
             container.innerHTML = templates[activeIdx].buttons.map((btn, i) => `
                 <div class="tree-node" title="דאבל-קליק לעריכה" ondblclick="editBranch(${i})">
-                    ${btn}
+                    ${btn.label || btn}
                     <div class="node-delete" onclick="removeBranch(${i})"><i class="fas fa-times"></i></div>
                 </div>
             `).join('');
@@ -284,29 +248,30 @@
 
         window.addBranch = () => {
             if (activeIdx === -1) return;
-            templates[activeIdx].buttons.push("כפתור חדש");
+            templates[activeIdx].buttons.push({ label: "כפתור חדש", action: "next_node", payload: "" });
             renderTree();
             updatePreview();
         }
 
         window.editBranch = (i) => {
-            const newVal = prompt("ערוך טקסט כפתור:", templates[activeIdx].buttons[i]);
-            if(newVal) {
-                templates[activeIdx].buttons[i] = newVal;
+            const current = templates[activeIdx].buttons[i];
+            const label = prompt("טקסט הכפתור:", current.label || current);
+            if(label) {
+                templates[activeIdx].buttons[i] = { label: label, action: "next_node", payload: "" }; // Simplified
                 renderTree();
                 updatePreview();
             }
         }
 
         window.removeBranch = (i) => {
-            if(confirm("למחוק כפתור זה?")) {
+            if(confirm("למחוק?")) {
                 templates[activeIdx].buttons.splice(i, 1);
                 renderTree();
                 updatePreview();
             }
         }
 
-        // 5. PREVIEW ENGINE
+        // 4. PREVIEW & SAVE
         window.updateState = () => {
             if(activeIdx === -1) return;
             templates[activeIdx].title = document.getElementById('editTitle').value;
@@ -317,16 +282,9 @@
         window.updatePreview = () => {
             if(activeIdx === -1) return;
             let text = templates[activeIdx].content || '';
+            text = text.replace(/\n/g, "<br>").replace(/{שם_לקוח}/g, "<b>שחר</b>").replace(/\[אזהרה\]/g, `<div class="bg-red-50 border border-red-200 text-red-800 text-xs p-2 rounded mt-2"><i class="fas fa-exclamation-circle"></i> שים לב!</div>`);
             
-            text = text.replace(/\n/g, "<br>");
-            text = text.replace(/{שם_לקוח}/g, "<b>שחר</b>").replace(/{נהג}/g, "<b>אחמד</b>");
-            
-            text = text.replace(/\[אפקט: טעינה\]/g, `<div class="bg-white p-2 rounded mb-2 border border-gray-100 flex items-center gap-2 text-xs text-gray-500"><i class="fas fa-circle-notch fa-spin text-blue-500"></i> מחפש במלאי...</div>`);
-            text = text.replace(/\[אפקט: אישור\]/g, `<div class="flex flex-col items-center justify-center p-4"><div class="text-2xl mb-1">✅</div><div class="text-xs text-green-600 font-bold">הושלם בהצלחה!</div></div>`);
-            text = text.replace(/\[מוצר: (.*?) \| (.*?)\]/g, `<div class="bg-white p-2 rounded border mt-2 flex gap-3 shadow-sm items-center cursor-pointer hover:bg-slate-50"><div class="w-10 h-10 bg-gray-100 rounded flex items-center justify-center text-gray-400"><i class="fas fa-box"></i></div><div><div class="font-bold text-xs text-slate-800">$1</div><div class="text-[10px] text-blue-600 font-bold">₪$2</div></div><div class="mr-auto"><i class="fas fa-chevron-left text-gray-300 text-xs"></i></div></div>`);
-            text = text.replace(/\[אזהרה\]/g, `<div class="bg-red-50 border border-red-200 text-red-800 text-xs p-2 rounded mt-2 flex items-start gap-2"><i class="fas fa-exclamation-circle mt-0.5"></i> שים לב!</div>`);
-
-            const btns = (templates[activeIdx].buttons || []).map(b => `<div class="bg-white text-teal-700 text-center py-2 rounded-lg border border-gray-200 text-xs font-bold shadow-sm mt-1 cursor-pointer hover:bg-teal-50 transition">${b}</div>`).join('');
+            const btns = (templates[activeIdx].buttons || []).map(b => `<div class="bg-white text-teal-700 text-center py-2 rounded-lg border border-gray-200 text-xs font-bold shadow-sm mt-1">${b.label || b}</div>`).join('');
 
             document.getElementById('previewArea').innerHTML = `
                 <div class="flex justify-end mb-4"><div class="bubble bg-blue-600 text-white shadow-md rounded-tl-none text-xs">שאלה מהלקוח...</div></div>
@@ -335,33 +293,21 @@
             `;
         }
 
-        // 6. TOOLS
-        window.openProductPicker = () => { document.getElementById('productModal').classList.add('open'); filterProducts(); }
-        window.closeModal = () => document.getElementById('productModal').classList.remove('open');
-        window.filterProducts = () => {
-            const q = document.getElementById('productSearchInput').value.toLowerCase(); const list = document.getElementById('productsList');
-            list.innerHTML = dummyProducts.filter(p => p.name.toLowerCase().includes(q)).map(p => `<div class="prod-item" onclick="window.insertProduct('${p.name}', '${p.price}')"><div class="w-8 h-8 bg-gray-200 rounded flex items-center justify-center"><i class="fas fa-cube text-gray-400 text-xs"></i></div><div class="flex-1"><div class="font-bold text-xs text-slate-700">${p.name}</div><div class="text-[10px] text-gray-500">מק"ט: 12345</div></div><div class="font-bold text-xs text-blue-600">₪${p.price}</div></div>`).join('');
-        }
-        window.insertProduct = (name, price) => { window.insertTag(`[מוצר: ${name} | ${price}]`); window.closeModal(); }
-        window.insertTag = (tag) => { const el = document.getElementById('editor'); const start = el.selectionStart; el.value = el.value.substring(0, start) + tag + el.value.substring(el.selectionEnd); el.focus(); window.updateState(); }
-        window.addNew = () => { templates.unshift({ id: 'new_' + Date.now(), title: 'חדש', content: '', buttons: [] }); window.renderList(); window.selectTemplate(0); }
-        
         window.saveCurrent = async () => {
             if(activeIdx === -1) return; updateStatus('saving', 'שומר...');
             try { 
                 const t = templates[activeIdx]; 
-                const ref = t.id.startsWith('new_') || t.id.startsWith('tr_') ? doc(collection(db, "faq")) : doc(db, "faq", t.id); 
-                await setDoc(ref, { title: t.title, content: t.content, buttons: t.buttons, updatedAt: serverTimestamp() }); 
-                if(t.id.startsWith('new_') || t.id.startsWith('tr_')) t.id = ref.id; 
+                const ref = t.id.startsWith('new_') ? doc(collection(db, "faq")) : doc(db, "faq", t.id); 
+                await setDoc(ref, { title: t.title, content: t.content, buttons: t.buttons, keywords: t.keywords || [], updatedAt: serverTimestamp() }); 
+                if(t.id.startsWith('new_')) t.id = ref.id; 
                 updateStatus('online', 'נשמר!'); 
             } catch(e) { updateStatus('error', 'שגיאה'); }
         }
 
-        function updateStatus(state, text) {
-            const el = document.getElementById('statusIndicator');
-            let color = state === 'online' ? 'bg-green-500' : (state === 'saving' ? 'bg-yellow-500' : 'bg-gray-300');
-            el.innerHTML = `<span class="w-2 h-2 rounded-full ${color}"></span> ${text}`;
-        }
+        // 5. UTILS
+        window.insertTag = (tag) => { const el = document.getElementById('editor'); const start = el.selectionStart; el.value = el.value.substring(0, start) + tag + el.value.substring(el.selectionEnd); el.focus(); updateState(); }
+        window.addNew = () => { templates.unshift({ id: 'new_' + Date.now(), title: 'חדש', content: '', buttons: [] }); renderList(); selectTemplate(0); }
+        function updateStatus(state, text) { const el = document.getElementById('statusIndicator'); let color = state === 'online' ? 'bg-green-500' : (state === 'saving' ? 'bg-yellow-500' : 'bg-gray-300'); el.innerHTML = `<span class="w-2 h-2 rounded-full ${color}"></span> ${text}`; }
 
     </script>
 </body>
