@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SabanOS Admin - מרכז שליטה</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body { background-color: #0f172a; color: white; font-family: 'Segoe UI', sans-serif; }
+        .input-dark { background: #1e293b; border: 1px solid #334155; color: white; padding: 0.6rem; border-radius: 0.5rem; width: 100%; transition: 0.2s; }
+        .input-dark:focus { border-color: #38bdf8; outline: none; }
+        .glass-panel { background: #1e293b; border: 1px solid #334155; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
+        .phone-frame { border: 8px solid #334155; border-radius: 30px; overflow: hidden; background: #f3f4f6; position: relative; height: 600px; width: 320px; margin: 0 auto; display: flex; flex-direction: column; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, updateDoc, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563", measurementId: "G-PQGYJ2YQRK" };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        window.db = db;
+        window.firebaseData = { collection, addDoc, getDocs, deleteDoc, updateDoc, doc, onSnapshot, setDoc };
+    </script>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        const Icon = ({ name, size=16 }) => { useEffect(() => lucide.createIcons(), [name]); return <i data-lucide={name} style={{fontSize: size}}></i>; };
+
+        // --- 1. Product Search (Hybrid) ---
+        const ProductSearch = ({ onSelect }) => {
+            const [query, setQuery] = useState('');
+            const [results, setResults] = useState([]);
+            const [loading, setLoading] = useState(false);
+            const [source, setSource] = useState('');
+
+            const searchProduct = async () => {
+                if (!query) return;
+                setLoading(true); setResults([]); setSource('');
+                try {
+                    const res = await fetch(`https://www.googleapis.com/customsearch/v1?key=AIzaSyBtTsufWhuB7_Xn6TUONpGQ7ydlpmgynUI&cx=3331a7d5c75e14f26&q=${encodeURIComponent(query)}`);
+                    if (res.status === 429) throw new Error("429");
+                    const data = await res.json();
+                    if (data.items) { setResults(data.items); setSource('google'); } else throw new Error("No Results");
+                } catch (e) {
+                    try {
+                        const aiPrompt = `JSON for product "${query}": title(Hebrew), snippet(short desc), image(https://cdn-icons-png.flaticon.com/512/1040/1040237.png).`;
+                        const aiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyAdfGVrmr90Mp9ZhNMItD81iaE8OipKwz0`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ contents: [{ parts: [{ text: aiPrompt }] }] }) });
+                        const aiData = await aiRes.json();
+                        const prod = JSON.parse(aiData.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '').trim());
+                        setResults([prod]); setSource('ai');
+                    } catch (err) { alert("לא נמצא"); }
+                } finally { setLoading(false); }
+            };
+
+            return (
+                <div className="bg-gray-800 p-4 rounded-xl border border-gray-700 mb-6">
+                    <h3 className="font-bold text-teal-400 mb-2 flex gap-2"><Icon name="search"/> איתור מהרשת {source && <span className="text-[10px] bg-blue-600 px-2 rounded">{source}</span>}</h3>
+                    <div className="flex gap-2 mb-2"><input value={query} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>e.key==='Enter'&&searchProduct()} className="input-dark flex-1" placeholder="שם מוצר..."/><button onClick={searchProduct} className="bg-teal-600 px-4 rounded">{loading ? '...' : 'חפש'}</button></div>
+                    <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto custom-scroll">
+                        {results.map((r,i) => (<div key={i} className="bg-gray-700 p-2 rounded flex gap-2 cursor-pointer hover:bg-gray-600" onClick={()=>onSelect({title: r.title, description: r.snippet, image: r.image || r.pagemap?.cse_image?.[0]?.src})}><img src={r.image || r.pagemap?.cse_image?.[0]?.src} className="w-10 h-10 bg-white rounded object-contain"/><div className="text-xs overflow-hidden"><div className="font-bold truncate">{r.title}</div><div className="truncate text-gray-400">{r.snippet}</div></div></div>))}
+                    </div>
+                </div>
+            );
+        };
+
+        // --- 2. Categories Manager ---
+        const CategoriesManager = ({ categories }) => {
+            const [newCat, setNewCat] = useState({id:'', name:''});
+            const add = async () => {
+                if(!newCat.id || !newCat.name) return;
+                await window.firebaseData.setDoc(window.firebaseData.doc(window.db, "categories", newCat.id), newCat);
+                setNewCat({id:'', name:''});
+            };
+            const remove = async (id) => { if(confirm('למחוק?')) await window.firebaseData.deleteDoc(window.firebaseData.doc(window.db, "categories", id)); };
+            return (
+                <div className="bg-gray-800 p-4 rounded-xl border border-gray-700 mb-6">
+                    <h3 className="font-bold text-purple-400 mb-2 flex gap-2"><Icon name="layers"/> ניהול קטגוריות</h3>
+                    <div className="flex gap-2 mb-2"><input value={newCat.name} onChange={e=>setNewCat({...newCat, name:e.target.value})} placeholder="שם (גבס)" className="input-dark flex-1"/><input value={newCat.id} onChange={e=>setNewCat({...newCat, id:e.target.value})} placeholder="מזהה (drywall)" className="input-dark w-1/3"/><button onClick={add} className="bg-purple-600 px-3 rounded">+</button></div>
+                    <div className="flex flex-wrap gap-2">{categories.map(c=>(<span key={c.id} className="bg-gray-700 px-2 py-1 rounded text-xs border border-gray-600 flex items-center gap-1">{c.name} <button onClick={()=>remove(c.id)} className="text-red-400 hover:text-red-200">x</button></span>))}</div>
+                </div>
+            );
+        };
+
+        // --- 3. Variants Manager ---
+        const VariantsManager = ({ variants, setVariants }) => {
+            const [v, setV] = useState({label:'', price:''});
+            const add = () => { if(v.label && v.price) { setVariants([...variants, {...v, price: Number(v.price)}]); setV({label:'', price:''}); }};
+            return (
+                <div className="bg-gray-900/50 p-3 rounded border border-gray-600 mt-2">
+                    <div className="text-sm font-bold text-yellow-400 mb-2">📏 מידות וגדלים</div>
+                    <div className="flex gap-2 mb-2"><input value={v.label} onChange={e=>setV({...v, label:e.target.value})} placeholder="מידה (למשל 70/300)" className="input-dark text-xs flex-1"/><input value={v.price} onChange={e=>setV({...v, price:e.target.value})} type="number" placeholder="מחיר" className="input-dark text-xs w-20"/><button type="button" onClick={add} className="bg-teal-600 px-2 rounded">+</button></div>
+                    <div className="space-y-1">{variants.map((item,i)=>(<div key={i} className="flex justify-between bg-gray-800 p-1 px-2 rounded text-xs"><span>{item.label}</span><span>₪{item.price} <button type="button" onClick={()=>setVariants(variants.filter((_,x)=>x!==i))} className="text-red-400 font-bold ml-1">x</button></span></div>))}</div>
+                </div>
+            );
+        };
+
+        // --- TAB 1: Inventory & Products ---
+        const InventoryTab = () => {
+            const [products, setProducts] = useState([]);
+            const [categories, setCategories] = useState([]);
+            const [form, setForm] = useState({ title: '', category: 'all', price: '', hasVariants: false, variants: [], description: '', image: '', complementaryIds: [] });
+            const [editingId, setEditingId] = useState(null);
+            
+            const { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } = window.firebaseData;
+            const db = window.db;
+
+            useEffect(() => {
+                const u1 = onSnapshot(collection(db, "products"), s => setProducts(s.docs.map(d=>({id:d.id, ...d.data()}))));
+                const u2 = onSnapshot(collection(db, "categories"), s => setCategories(s.docs.map(d=>({id:d.id, ...d.data()}))));
+                return () => { u1(); u2(); };
+            }, []);
+
+            const save = async (e) => {
+                e.preventDefault();
+                const data = { ...form, price: form.hasVariants ? 0 : Number(form.price), updatedAt: new Date() };
+                if(editingId) await updateDoc(doc(db,"products",editingId), data);
+                else await addDoc(collection(db,"products"), {...data, createdAt: new Date()});
+                setForm({ title: '', category: 'all', price: '', hasVariants: false, variants: [], description: '', image: '', complementaryIds: [] });
+                setEditingId(null); alert("נשמר");
+            };
+
+            return (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="md:col-span-1">
+                        <ProductSearch onSelect={d => setForm(prev => ({...prev, ...d}))} />
+                        <CategoriesManager categories={categories} />
+                        
+                        <div className="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                            <h2 className="text-xl font-bold mb-4">{editingId ? 'עריכה' : 'מוצר חדש'}</h2>
+                            <form onSubmit={save} className="space-y-3">
+                                <input value={form.title} onChange={e=>setForm({...form, title:e.target.value})} placeholder="שם מוצר" className="input-dark" required/>
+                                <select value={form.category} onChange={e=>setForm({...form, category:e.target.value})} className="input-dark">{categories.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select>
+                                <div className="flex items-center gap-2"><input type="checkbox" checked={form.hasVariants} onChange={e=>setForm({...form, hasVariants:e.target.checked})} /><span className="text-sm">יש מידות?</span></div>
+                                {form.hasVariants ? <VariantsManager variants={form.variants} setVariants={v=>setForm({...form, variants:v})}/> : <input type="number" value={form.price} onChange={e=>setForm({...form, price:e.target.value})} placeholder="מחיר" className="input-dark" required/>}
+                                <input value={form.image} onChange={e=>setForm({...form, image:e.target.value})} placeholder="תמונה URL" className="input-dark"/>
+                                <textarea value={form.description} onChange={e=>setForm({...form, description:e.target.value})} placeholder="תיאור" className="input-dark h-20"></textarea>
+                                <button className="w-full bg-teal-600 py-2 rounded font-bold">שמור</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div className="md:col-span-2 grid gap-2 content-start">
+                        {products.map(p => (
+                            <div key={p.id} className="bg-gray-800 p-3 rounded flex justify-between items-center border border-gray-700">
+                                <div className="flex gap-3 items-center">
+                                    <img src={p.image} className="w-10 h-10 bg-white rounded object-contain"/>
+                                    <div><div className="font-bold">{p.title}</div><div className="text-xs text-gray-400">{p.hasVariants ? `${p.variants.length} מידות` : `₪${p.price}`}</div></div>
+                                </div>
+                                <div className="flex gap-2"><button onClick={()=>{setEditingId(p.id); setForm(p); window.scrollTo({top:0})}}><Icon name="edit-2" size={16} className="text-yellow-400"/></button><button onClick={()=>deleteDoc(doc(db,"products",p.id))}><Icon name="trash-2" size={16} className="text-red-400"/></button></div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        // --- TAB 2: Chat Studio ---
+        const ChatStudioTab = () => {
+            const [faqs, setFaqs] = useState([]);
+            const [form, setForm] = useState({ scenarioId: '', keywords: '', answer: '', buttons: [] });
+            const [editingId, setEditingId] = useState(null);
+            const { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } = window.firebaseData;
+            const db = window.db;
+
+            useEffect(() => onSnapshot(collection(db, "faq"), s => setFaqs(s.docs.map(d=>({id:d.id, ...d.data()})))), []);
+
+            const save = async () => {
+                const kw = Array.isArray(form.keywords) ? form.keywords : form.keywords.split(',');
+                if(editingId) await updateDoc(doc(db,"faq",editingId), {...form, keywords: kw});
+                else await addDoc(collection(db,"faq"), {...form, keywords: kw});
+                setForm({ scenarioId: '', keywords: '', answer: '', buttons: [] }); setEditingId(null); alert("נשמר");
+            };
+
+            const addButton = () => setForm({...form, buttons: [...form.buttons, {label:'כפתור', action:'order_popup'}]});
+            const updateBtn = (i, f, v) => { const b = [...form.buttons]; b[i][f]=v; setForm({...form, buttons:b}); };
+
+            return (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-[80vh]">
+                    <div className="overflow-y-auto custom-scroll pr-2">
+                        <div className="bg-gray-800 p-6 rounded-xl border border-gray-700 mb-6">
+                            <h2 className="font-bold mb-4 text-teal-400">עורך הבוט</h2>
+                            <div className="space-y-3">
+                                <div className="flex gap-2"><input value={form.scenarioId} onChange={e=>setForm({...form, scenarioId:e.target.value})} placeholder="ID (glue_start)" className="input-dark w-1/3"/><input value={form.keywords} onChange={e=>setForm({...form, keywords:e.target.value})} placeholder="מילות מפתח (דבק, קרמיקה)" className="input-dark flex-1"/></div>
+                                <textarea value={form.answer} onChange={e=>setForm({...form, answer:e.target.value})} placeholder="תשובה (תומך HTML)" className="input-dark h-32"></textarea>
+                                <div className="bg-gray-900/50 p-3 rounded">
+                                    <div className="flex justify-between mb-2"><span className="text-xs">כפתורים</span><button onClick={addButton} className="text-xs bg-teal-600 px-2 rounded">+</button></div>
+                                    {form.buttons.map((b, i) => (
+                                        <div key={i} className="flex gap-2 mb-2"><input value={b.label} onChange={e=>updateBtn(i,'label',e.target.value)} className="input-dark text-xs flex-1"/><select value={b.action} onChange={e=>updateBtn(i,'action',e.target.value)} className="input-dark text-xs w-24"><option value="order_popup">טופס</option><option value="next_node">המשך</option><option value="add_to_cart">עגלה</option></select></div>
+                                    ))}
+                                </div>
+                                <button onClick={save} className="w-full bg-teal-600 py-2 rounded font-bold">שמור תרחיש</button>
+                            </div>
+                        </div>
+                        <div className="space-y-2">{faqs.map(f => (<div key={f.id} className="bg-gray-800 p-3 rounded border border-gray-700 flex justify-between group"><div><div className="text-xs text-yellow-400">{f.keywords}</div><div className="text-sm truncate">{f.answer}</div></div><button onClick={()=>{setEditingId(f.id); setForm({ ...f, keywords: f.keywords.join(',') })}}><Icon name="edit-2" size={14}/></button></div>))}</div>
+                    </div>
+                    {/* Simulator placeholder */}
+                    <div className="hidden md:flex justify-center items-center bg-gray-900 rounded-3xl border border-gray-800">
+                        <div className="phone-frame flex flex-col justify-center items-center text-gray-500">
+                            <Icon name="smartphone" size={48}/>
+                            <span>הסימולטור פעיל ב-Client</span>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [tab, setTab] = useState('inventory');
+            return (
+                <div className="max-w-7xl mx-auto min-h-screen p-4">
+                    <header className="flex justify-between items-center mb-6 pb-4 border-b border-gray-700">
+                        <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-blue-500">SabanOS Admin</h1>
+                        <div className="flex gap-2 bg-gray-800 p-1 rounded-lg">
+                            <button onClick={()=>setTab('inventory')} className={`px-4 py-2 rounded-md transition ${tab==='inventory' ? 'bg-teal-600 text-white' : 'text-gray-400 hover:text-white'}`}>📦 מלאי וקטלוג</button>
+                            <button onClick={()=>setTab('chat')} className={`px-4 py-2 rounded-md transition ${tab==='chat' ? 'bg-teal-600 text-white' : 'text-gray-400 hover:text-white'}`}>🤖 סטודיו בוט</button>
+                        </div>
+                    </header>
+                    {tab === 'inventory' ? <InventoryTab /> : <ChatStudioTab />}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
