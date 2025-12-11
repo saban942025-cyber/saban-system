@@ -3,53 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SabanOS | Client Logic v24.0</title>
+    <title>SabanOS | Client App v25.0</title>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="icons/icon-192.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { background-color: #e5e7eb; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        /* --- CORE LAYOUT --- */
+        body { background-color: #e5e7eb; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; height: 100dvh; width: 100vw; overflow: hidden; display: flex; flex-direction: column; }
         
-        .app-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; padding-bottom: 75px; }
-        .screen { display: none; flex-direction: column; height: 100%; width: 100%; }
+        .app-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; padding-bottom: 75px; /* Space for Bottom Nav */ }
+        
+        .screen { display: none; flex-direction: column; height: 100%; width: 100%; overflow: hidden; }
         .screen.active { display: flex; animation: fadeIn 0.2s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.99); } to { opacity: 1; transform: scale(1); } }
 
-        /* Chat UI */
-        .chat-content { flex: 1; overflow-y: auto; background-color: #efeae2; background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { max-width: 85%; padding: 10px 14px; border-radius: 12px; font-size: 15px; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.1); line-height: 1.4; }
+        /* --- CHAT ENGINE (THE FIX) --- */
+        .chat-layout { display: flex; flex-direction: column; height: 100%; width: 100%; }
+        
+        .chat-content { 
+            flex: 1; 
+            overflow-y: auto; 
+            overflow-x: hidden;
+            background-color: #efeae2; 
+            background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); 
+            padding: 15px; 
+            padding-bottom: 20px;
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px; 
+            scroll-behavior: smooth; /* גלילה חלקה */
+        }
+
+        .chat-input-area { 
+            flex-shrink: 0; 
+            background: #f0f2f5; 
+            padding: 10px; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            border-top: 1px solid #e5e7eb; 
+            z-index: 20; 
+        }
+
+        /* Messages */
+        .msg { 
+            max-width: 85%; 
+            padding: 10px 14px; 
+            border-radius: 12px; 
+            font-size: 15px; 
+            position: relative; 
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1); 
+            line-height: 1.4; 
+            word-wrap: break-word;      /* מונע זליגה */
+            overflow-wrap: break-word;  /* מונע זליגה */
+        }
+        
         .msg-in { align-self: flex-start; background: #fff; border-top-right-radius: 0; }
         .msg-out { align-self: flex-end; background: #d9fdd3; border-top-left-radius: 0; }
+        
         .msg-time { font-size: 10px; color: #999; text-align: left; margin-top: 4px; display: flex; justify-content: flex-end; gap: 4px; }
         .bot-badge { font-size: 10px; color: #008069; font-weight: bold; display: block; margin-bottom: 4px; }
         
-        /* Action Buttons in Chat */
-        .chat-btn { display: block; width: 100%; text-align: center; padding: 10px; margin-top: 8px; background: #f0fdf4; color: #166534; font-weight: bold; border-radius: 8px; font-size: 13px; border: 1px solid #bbf7d0; transition: 0.2s; }
-        .chat-btn:active { transform: scale(0.98); background: #dcfce7; }
-        .chat-btn.danger { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+        /* Buttons in Chat */
+        .chat-btn { display: block; width: 100%; text-align: center; padding: 12px; margin-top: 8px; background: white; color: #008069; font-weight: bold; border-radius: 8px; font-size: 14px; border: 1px solid #e5e7eb; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: 0.1s; }
+        .chat-btn:active { background: #f0fdf4; transform: scale(0.98); }
 
-        /* Nav Bar */
-        .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 75px; background: rgba(255,255,255,0.98); border-top: 1px solid #e5e5eb; display: grid; grid-template-columns: 1fr 1fr 1fr; z-index: 50; padding-bottom: 5px; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #8e8e93; cursor: pointer; }
+        /* Navigation */
+        .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 75px; background: rgba(255,255,255,0.98); border-top: 1px solid #e5e5eb; display: grid; grid-template-columns: 1fr 1fr 1fr; z-index: 50; padding-bottom: 5px; box-shadow: 0 -4px 20px rgba(0,0,0,0.03); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; cursor: pointer; transition: 0.2s; }
         .nav-item.active { color: #008069; transform: translateY(-2px); }
         .nav-item i { font-size: 24px; margin-bottom: 4px; }
         .nav-item span { font-size: 11px; font-weight: 700; }
-        .badge { background: #ef4444; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; position: absolute; margin-top: -30px; margin-right: -20px; }
+        .badge { background: #ef4444; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; position: absolute; margin-top: -30px; margin-right: -20px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
 
-        /* Product & Container Buttons */
-        .container-main-btn { background: linear-gradient(135deg, #f97316, #ea580c); color: white; padding: 12px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(234, 88, 12, 0.3); cursor: pointer; }
-        .product-card { background: white; border-radius: 12px; padding: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: space-between; height: 180px; }
-        .product-img { width: 100%; height: 80px; object-fit: contain; margin-bottom: 10px; mix-blend-multiply; }
+        /* Widgets */
+        .container-btn { background: linear-gradient(135deg, #f97316, #ea580c); color: white; padding: 15px; border-radius: 16px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; box-shadow: 0 8px 20px -5px rgba(234, 88, 12, 0.4); cursor: pointer; transition: transform 0.1s; }
+        .container-btn:active { transform: scale(0.98); }
+        
+        .product-card { background: white; border-radius: 16px; padding: 10px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: space-between; height: 190px; }
+        .product-img { width: 100%; height: 85px; object-fit: contain; margin-bottom: 10px; mix-blend-multiply; }
+
+        /* Modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 100; display: flex; justify-content: center; align-items: flex-end; opacity: 0; pointer-events: none; transition: 0.3s; }
+        .modal-overlay.open { opacity: 1; pointer-events: all; }
+        .modal-box { background: white; width: 100%; max-width: 600px; border-radius: 24px 24px 0 0; padding: 25px; transform: translateY(100%); transition: 0.3s cubic-bezier(0.32, 0.72, 0, 1); max-height: 85vh; overflow-y: auto; }
+        .modal-overlay.open .modal-box { transform: translateY(0); }
     </style>
 </head>
 <body>
 
     <div class="app-container">
         
-        <header class="bg-[#008069] text-white p-4 shadow-md sticky top-0 z-20 flex justify-between items-center">
+        <header class="bg-[#008069] text-white p-4 shadow-md sticky top-0 z-20 flex justify-between items-center h-16 flex-shrink-0">
             <div class="flex items-center gap-3">
-                <img id="userAvatar" src="" class="w-10 h-10 rounded-full border-2 border-white/30 bg-white/10">
+                <img id="userAvatar" src="" class="w-9 h-9 rounded-full border-2 border-white/30 bg-white/10">
                 <div>
                     <h1 class="font-bold text-lg leading-tight">ח.סבן</h1>
                     <span class="text-xs opacity-90 block">שלום, <span id="userName" class="font-bold">אורח</span></span>
@@ -59,21 +107,26 @@
         </header>
 
         <div id="screen-shop" class="screen active bg-gray-50">
-            <div class="p-4">
+            <div class="p-4 flex-1 overflow-y-auto">
+                
                 <div class="grid grid-cols-1 gap-3 mb-4">
-                    <div onclick="startContainerFlow()" class="container-main-btn active:scale-95 transition">
-                        <div class="flex items-center gap-3">
+                    <div onclick="startContainerFlow()" class="container-btn">
+                        <div class="flex items-center gap-4">
                             <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-xl"><i class="fas fa-trash-alt"></i></div>
                             <div>
-                                <div class="font-bold text-sm">הזמנת מכולה</div>
+                                <div class="font-bold text-base">הזמנת מכולה</div>
                                 <div class="text-xs opacity-90">הצבה / החלפה / פינוי</div>
                             </div>
                         </div>
-                        <i class="fas fa-chevron-left bg-white/20 rounded-full p-1 text-xs"></i>
+                        <i class="fas fa-chevron-left bg-white/20 rounded-full p-1.5 text-xs"></i>
                     </div>
                 </div>
 
-                <input type="text" id="searchInput" oninput="filterProducts()" placeholder="חיפוש מוצר..." class="w-full p-3 mb-4 bg-white rounded-xl text-sm outline-none shadow-sm border border-gray-100 focus:border-green-500 transition">
+                <div class="relative mb-6">
+                    <input type="text" id="searchInput" oninput="filterProducts()" placeholder="חיפוש מוצר..." class="w-full p-3.5 pl-10 bg-white rounded-xl text-sm outline-none shadow-sm border border-gray-100 focus:border-green-500 transition">
+                    <i class="fas fa-search absolute left-3 top-4 text-gray-400"></i>
+                </div>
+
                 <div id="productsGrid" class="grid grid-cols-2 gap-3 pb-4"></div>
             </div>
         </div>
@@ -87,8 +140,10 @@
                 <div id="cartItemsList" class="space-y-3 mb-6"></div>
                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
                     <h3 class="font-bold text-xs text-gray-500 uppercase mb-3 tracking-wider">פרטי הזמנה</h3>
-                    <input type="text" id="projName" placeholder="שם הפרויקט" class="w-full bg-white border border-gray-200 p-3 rounded-lg text-sm mb-2 outline-none focus:border-green-500">
-                    <input type="text" id="contactName" placeholder="איש קשר" class="w-full bg-white border border-gray-200 p-3 rounded-lg text-sm outline-none focus:border-green-500">
+                    <div class="space-y-3">
+                        <input type="text" id="projName" placeholder="שם הפרויקט" class="w-full bg-white border border-gray-200 p-3 rounded-lg text-sm outline-none focus:border-green-500">
+                        <input type="text" id="contactName" placeholder="איש קשר" class="w-full bg-white border border-gray-200 p-3 rounded-lg text-sm outline-none focus:border-green-500">
+                    </div>
                 </div>
             </div>
             <div class="p-4 border-t bg-white">
@@ -99,10 +154,14 @@
         </div>
 
         <div id="screen-chat" class="screen">
-            <div class="chat-content" id="chatBox"></div>
-            <div class="bg-[#f0f2f5] p-2 flex items-center gap-2 border-t fixed bottom-20 w-full max-w-[1600px] z-20">
-                <input type="text" id="chatInput" placeholder="הקלד הודעה..." class="flex-1 bg-white rounded-full py-2.5 px-4 text-sm outline-none border border-gray-200 focus:border-green-500 transition" onkeydown="if(event.key === 'Enter') sendChat()">
-                <button onclick="sendChat()" class="w-10 h-10 bg-[#008069] rounded-full flex items-center justify-center text-white shadow-sm transform active:scale-90 transition"><i class="fas fa-paper-plane text-sm"></i></button>
+            <div class="chat-layout">
+                <div class="chat-content" id="chatBox"></div>
+
+                <div class="chat-input-area">
+                    <div class="flex-shrink-0 cursor-pointer text-gray-500 p-2 rounded-full hover:bg-gray-200" onclick="startContainerFlow()"><i class="fas fa-plus text-xl"></i></div>
+                    <input type="text" id="chatInput" placeholder="הקלד הודעה..." class="flex-1 bg-white rounded-full py-2.5 px-4 text-sm outline-none border border-gray-200 focus:border-green-500 transition" onkeydown="if(event.key === 'Enter') sendChat()">
+                    <button onclick="sendChat()" class="w-10 h-10 bg-[#008069] rounded-full flex-shrink-0 flex items-center justify-center text-white shadow-sm transform active:scale-90 transition"><i class="fas fa-paper-plane text-sm"></i></button>
+                </div>
             </div>
         </div>
 
@@ -114,6 +173,19 @@
         <div onclick="switchScreen('chat')" class="nav-item nav-chat" id="nav-chat"><i class="fas fa-comments"></i><span>צ'אט</span></div>
     </nav>
 
+    <div id="logisticsModal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 class="font-bold text-lg mb-3 flex items-center gap-2"><i class="fas fa-map-marked-alt text-blue-500"></i> בדיקת הגעה</h3>
+            <div class="flex gap-2 mb-3">
+                <input type="text" id="destInput" placeholder="כתובת (למשל: ויצמן 14 כפר סבא)" class="flex-1 bg-gray-100 p-3 rounded-xl text-sm outline-none border focus:border-blue-500">
+                <button onclick="checkArrival()" class="bg-blue-600 text-white px-5 rounded-xl font-bold shadow"><i class="fas fa-search"></i></button>
+            </div>
+            <div id="logisticsRes" class="p-3 bg-blue-50 rounded-xl text-sm border border-blue-100 hidden"></div>
+            <div id="mapFrame" class="mt-2 w-full h-32 bg-gray-100 rounded hidden"></div>
+            <button onclick="closeLogisticsModal()" class="w-full mt-4 text-gray-400 text-sm py-2">סגור</button>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, getDocs, doc, setDoc, onSnapshot, query, orderBy, serverTimestamp, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -124,17 +196,17 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        // --- STATE & CONFIG ---
+        // --- STATE ---
         let currentUser = { id: 'guest', name: 'אורח' };
         let cart = [];
         let allProducts = [];
-        let chatFlowState = null; // 'container_type', 'logistics', 'address', 'permit'
+        let chatFlowState = null;
 
-        // City Data (The Brain)
+        // City Permits Logic
         const cityPermits = {
-            "הרצליה": { url: "https://www.herzliya.muni.il/tofas-hazmana-mchola/", warn: "⚠️ בהרצליה יש פקחים עם מסופונים! חובה היתר." },
-            "תל אביב": { url: "https://www.tel-aviv.gov.il/", warn: "⚠️ בתל אביב חובה לסמן במחזירי אור." },
-            "רעננה": { url: "https://www.raanana.muni.il/", warn: "⚠️ ברעננה אין להציב על מדרכות." }
+            "הרצליה": { url: "https://www.herzliya.muni.il/tofas-hazmana-mchola/", warn: "⚠️ בהרצליה חובה היתר (קנס מידי)!" },
+            "תל אביב": { url: "https://www.tel-aviv.gov.il/", warn: "⚠️ בתל אביב חובה סימון זוהר למכולה." },
+            "רעננה": { url: "https://www.raanana.muni.il/", warn: "⚠️ ברעננה אסור להציב על מדרכה." }
         };
 
         // --- INIT ---
@@ -145,6 +217,7 @@
             if (uid) {
                 let hebrewName = uid.replace('_', ' ');
                 if(uid.includes('shahar')) hebrewName = "שחר שאול";
+                if(uid.includes('bar')) hebrewName = "בר אורן";
                 currentUser.id = uid; currentUser.name = hebrewName;
                 document.getElementById('userName').innerText = currentUser.name;
                 document.getElementById('userAvatar').src = `https://ui-avatars.com/api/?name=${currentUser.name}&background=ffffff&color=008069&bold=true`;
@@ -153,7 +226,7 @@
             loadRealProducts();
         };
 
-        // --- CHAT & BOT ENGINE (UPDATED) ---
+        // --- CHAT ENGINE (AUTO-SCROLL FIX) ---
         function subscribeToChat(uid) {
             const q = query(collection(db, `chat_sessions/${uid}/messages`), orderBy("createdAt", "asc"));
             onSnapshot(q, (snap) => {
@@ -167,8 +240,15 @@
                         box.innerHTML += `<div class="msg ${isMe ? 'msg-out' : 'msg-in'}">${!isMe && m.sender === 'bot' ? '<span class="bot-badge">SabanAI</span>' : ''}${m.text}<div class="msg-time">${time}</div></div>`;
                     }
                 });
-                box.scrollTop = box.scrollHeight;
+                scrollToBottom();
             });
+        }
+
+        function scrollToBottom() {
+            const box = document.getElementById('chatBox');
+            if(box) {
+                setTimeout(() => box.scrollTop = box.scrollHeight, 100);
+            }
         }
 
         window.sendChat = async () => {
@@ -177,50 +257,47 @@
             if(!txt) return;
             input.value = '';
 
-            // Save User Message
             await addDoc(collection(db, `chat_sessions/${currentUser.id}/messages`), { text: txt, role: 'user', createdAt: serverTimestamp() });
             await setDoc(doc(db, "chat_sessions", currentUser.id), { userName: currentUser.name, lastMessage: txt, lastActivity: serverTimestamp(), type: 'client', isBotActive: true }, { merge: true });
 
             triggerBotResponse(txt);
         };
 
-        // --- THE LOGIC MASTER ---
+        // --- BOT BRAIN (CONTAINER LOGIC) ---
         async function triggerBotResponse(userText) {
             let reply = "";
             const clean = userText.toLowerCase();
 
-            // 1. FLOW: CONTAINER (מכולות)
+            // 1. FLOW: CONTAINER
             if (chatFlowState === 'container_address') {
-                // Check for City
                 let cityFound = null;
                 for (const city in cityPermits) { if (clean.includes(city)) cityFound = city; }
 
                 if (cityFound) {
                     const data = cityPermits[cityFound];
-                    reply = `${data.warn}<br>כדי להימנע מקנס, כנס להוציא היתר:<br><a href="${data.url}" target="_blank" class="text-blue-600 underline font-bold">לחץ כאן לאתר העירייה</a><br><br>אחרי שיש לך אישור, כתוב לי: <b>"יש היתר"</b>.`;
+                    reply = `${data.warn}<br>כדי להימנע מקנס, אנא הוצא היתר:<br><a href="${data.url}" target="_blank" class="text-blue-600 underline font-bold">לחץ להוצאת היתר</a><br><br>יש היתר? לחץ: <button onclick="botSend('יש היתר')" class="chat-btn">✅ יש לי היתר</button>`;
                     chatFlowState = 'waiting_permit';
                 } else {
-                    reply = "מעולה. רשמתי את הכתובת. המשאית בדרך! 🚚";
+                    reply = "מעולה. הכתובת נקלטה. פתחתי כרטיס לנהג! 🚚";
                     chatFlowState = null;
                 }
             } 
             else if (chatFlowState === 'waiting_permit') {
                 if (clean.includes("יש היתר")) {
-                    reply = "אלוף! 🏆 הסטטוס שונה ל-<b>'מאושר להצבה'</b>.<br>פתחתי כרטיס לנהג. תודה שחר!";
+                    reply = "אלוף! 🏆 הסטטוס שונה ל-<b>'מאושר להצבה'</b>.<br>המשאית בדרך.";
                     chatFlowState = null;
                 } else {
-                    reply = "אני מחכה לאישור... כתוב <b>'יש היתר'</b> כשיש לך.";
+                    reply = "מחכה לאישור... כתוב לי כשיש לך.";
                 }
             }
-            // General Triggers
+            // General
             else if (clean.includes("מכולה")) {
-                // Start Flow
-                reply = `היי ${currentUser.name}, אנחנו מספקים מכולות <b>8 קוב</b> בלבד (פסולת בניין).<br>מה תרצה לעשות?<br>
-                <button onclick="botAction('placement')" class="chat-btn">🏗️ הצבה (מכולה ריקה)</button>
+                reply = `היי ${currentUser.name}, אנחנו מספקים מכולות <b>8 קוב</b> (פסולת בניין).<br>מה הפעולה הנדרשת?<br>
+                <button onclick="botAction('placement')" class="chat-btn">🏗️ הצבה (חדשה)</button>
                 <button onclick="botAction('swap')" class="chat-btn">🔄 החלפה (מלא לריק)</button>
                 <button onclick="botAction('removal')" class="chat-btn">🚛 פינוי גמר</button>`;
             } 
-            else if (clean.includes("מתי") || clean.includes("הגעה")) {
+            else if (clean.includes("מתי")) {
                 reply = "בודק מיקום נהג... 🛰️ (מיד אעדכן)";
             }
 
@@ -229,21 +306,23 @@
 
         window.botAction = (action) => {
             let userTxt = action === 'placement' ? 'אני צריך הצבה.' : (action === 'swap' ? 'צריך החלפה.' : 'פינוי גמר.');
-            // Simulate user sending message
-            document.getElementById('chatInput').value = userTxt;
-            sendChat();
+            botSend(userTxt);
 
-            // Next Bot Step (Logistics Check)
             setTimeout(() => {
                 let nextReply = "";
                 if (action === 'placement') {
-                    nextReply = `<b>בדיקת לוגיסטיקה:</b> 🚛<br>1. האם רוחב השער מעל <b>2.80 מ'</b>?<br>2. האם יש גובה <b>4.5 מ'</b> להנפה?<br>3. האם הפסולת נקייה (בלי גזם/אשפה)?<br><br>אם הכל תקין - <b>כתוב לי את הכתובת והעיר.</b>`;
+                    nextReply = `<b>בדיקת לוגיסטיקה:</b> 🚛<br>1. רוחב שער מעל <b>2.80 מ'</b>?<br>2. גובה הנפה <b>4.5 מ'</b>?<br>3. פסולת נקייה?<br><br>אם תקין - <b>כתוב לי את הכתובת והעיר.</b>`;
                     chatFlowState = 'container_address';
                 } else {
-                    nextReply = "סבבה. המכולה מלאה? (לא גדוש).<br>כתוב לי מתי להגיע.";
+                    nextReply = "מתי להגיע? (היום/מחר)";
                 }
                 sendBotMessage(nextReply);
             }, 1000);
+        };
+
+        window.botSend = (txt) => {
+            document.getElementById('chatInput').value = txt;
+            sendChat();
         };
 
         async function sendBotMessage(html) {
@@ -253,7 +332,7 @@
             }, 1000);
         }
 
-        // --- ORDER FLOW ---
+        // --- ORDER TO CHAT ---
         window.analyzeAndMoveToChat = async () => {
             if (cart.length === 0) return alert("העגלה ריקה");
             const itemsList = cart.map(i => `▫️ ${i.name} (x${i.qty})`).join('<br>');
@@ -266,16 +345,14 @@
             await setDoc(doc(db, "chat_sessions", currentUser.id), { userName: currentUser.name, lastMessage: "הזמנה חדשה", lastActivity: serverTimestamp(), type: 'client', isBotActive: true }, { merge: true });
             
             setTimeout(() => {
-                const reply = `קיבלתי את ההזמנה! ✅<br>היא עברה לאישור הסידור (יואב/רמי).<br>אעדכן ברגע שהסחורה יוצאת.`;
+                const reply = `קיבלתי! ✅<br>הועבר לאישור הסידור.<br>מספר הזמנה: #${Math.floor(Math.random()*9000)+1000}`;
                 sendBotMessage(reply);
             }, 1000);
+            
             cart = []; updateCartUI();
         };
 
-        // --- STANDARD FUNCTIONS (Products, Nav, etc.) ---
-        window.startContainerFlow = () => { switchScreen('chat'); triggerBotResponse("מכולה"); };
-        window.checkLogisticsInChat = () => { switchScreen('chat'); triggerBotResponse("מתי"); };
-        
+        // --- PRODUCTS ---
         async function loadRealProducts() {
             try {
                 const snap = await getDocs(collection(db, "products"));
@@ -297,8 +374,22 @@
         function renderCartItems() { const list = document.getElementById('cartItemsList'); if(list) list.innerHTML = cart.length ? cart.map((item, i) => `<div class="bg-white p-3 rounded-xl border border-gray-100 flex justify-between items-center shadow-sm"><div><div class="font-bold text-sm text-gray-800">${item.name}</div><div class="text-xs text-gray-500">₪${item.price} ליח'</div></div><div class="flex items-center gap-3 bg-gray-50 p-1 rounded-lg"><div class="w-7 h-7 bg-white shadow-sm rounded-md flex items-center justify-center cursor-pointer text-gray-600 hover:text-red-500" onclick="updateQty(${i}, -1)">-</div><span class="font-bold text-sm w-4 text-center">${item.qty}</span><div class="w-7 h-7 bg-white shadow-sm rounded-md flex items-center justify-center cursor-pointer text-green-600" onclick="updateQty(${i}, 1)">+</div></div></div>`).join('') : '<div class="text-center text-gray-400 py-10">העגלה ריקה</div>'; }
         window.updateQty = (i, d) => { cart[i].qty += d; if (cart[i].qty <= 0) cart.splice(i, 1); updateCartUI(); };
         window.clearCart = () => { cart = []; updateCartUI(); };
-        window.switchScreen = (name) => { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(`screen-${name}`).classList.add('active'); document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); document.querySelector(`.nav-${name}`).classList.add('active'); };
+
+        // --- UTILS ---
+        window.switchScreen = (name) => {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(`screen-${name}`).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); document.querySelector(`.nav-${name}`).classList.add('active');
+            scrollToBottom();
+        };
+        window.startContainerFlow = () => { switchScreen('chat'); triggerBotResponse("מכולה"); };
+        window.checkLogisticsInChat = () => { switchScreen('chat'); triggerBotResponse("מתי"); };
         window.handleLogout = () => { localStorage.removeItem('impersonateId'); signOut(auth).then(() => window.location.href="index.html"); };
+        window.closeLogisticsModal = () => document.getElementById('logisticsModal').classList.remove('open');
+        window.checkArrival = () => {
+            document.getElementById('logisticsRes').classList.remove('hidden');
+            document.getElementById('logisticsRes').innerHTML = '<i class="fas fa-spinner fa-spin"></i> מחשב...';
+            setTimeout(() => { document.getElementById('logisticsRes').innerHTML = '✅ נמצא בקרבת מקום!'; }, 1000);
+        };
     </script>
 </body>
 </html>
