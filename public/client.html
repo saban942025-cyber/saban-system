@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SabanOS | Client App v15.5</title>
+    <title>SabanOS | Client App v15.6</title>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="icons/icon-192.png">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -149,14 +149,33 @@
         }
         const brain = new LogisticsBrain();
 
-        // --- APP LOGIC ---
+        // --- APP LOGIC (Security & Access) ---
         let cart = [];
         let products = [];
         let activeUserId = null;
 
         onAuthStateChanged(auth, async (user) => {
-            if (!user) window.location.href = "index.html";
-            activeUserId = user.uid;
+            // בדיקת פרמטר ב-URL (כניסה דרך לינק)
+            const urlParams = new URLSearchParams(window.location.search);
+            const linkUid = urlParams.get('uid');
+            // בדיקת מצב התחזות (Admin Impersonate)
+            const impersonateId = localStorage.getItem('impersonateId');
+
+            if (user) {
+                activeUserId = user.uid; // מחובר רגיל
+            } else if (linkUid) {
+                activeUserId = linkUid; // מחובר דרך לינק
+                console.log("Logged in via Link as:", linkUid);
+            } else if (impersonateId) {
+                activeUserId = impersonateId; // מחובר דרך התחזות
+                console.log("Impersonating:", impersonateId);
+            } else {
+                // אם אף אחד מהתנאים לא מתקיים -> החוצה
+                window.location.href = "index.html";
+                return;
+            }
+
+            // טעינת מוצרים
             const pSnap = await getDocs(collection(db, "products"));
             products = pSnap.docs.map(d => ({id: d.id, ...d.data()}));
             renderProducts(products);
@@ -221,8 +240,10 @@
             alert("ההזמנה נשלחה!"); cart = []; document.getElementById('cartCount').innerText = 0;
         });
 
-        window.handleLogout = () => signOut(auth).then(() => window.location.href="index.html");
+        window.handleLogout = () => {
+            localStorage.removeItem('impersonateId'); // נקה התחזות
+            signOut(auth).then(() => window.location.href="index.html");
+        };
     </script>
 </body>
-
 </html>
