@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SabanOS | Client App v17.0</title>
+    <title>SabanOS | Client App v18.0</title>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="icons/icon-192.png">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -11,102 +11,136 @@
     <style>
         body { background-color: #f0f2f5; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
-        /* Screens Transition */
+        /* Screens */
         .screen { display: none; height: 100%; flex-direction: column; overflow: hidden; }
         .screen.active { display: flex; animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Chat Styling */
-        .chat-bg { background-color: #efeae2; background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { max-width: 75%; padding: 8px 12px; border-radius: 8px; font-size: 14px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); line-height: 1.4; }
-        .msg-in { align-self: flex-start; background: #fff; border-top-right-radius: 0; }
-        .msg-out { align-self: flex-end; background: #d9fdd3; border-top-left-radius: 0; }
-        .msg-time { font-size: 10px; color: #999; text-align: left; margin-top: 2px; }
-        .bot-badge { font-size: 10px; color: #008069; font-weight: bold; display: block; margin-bottom: 2px; }
-
-        /* Navigation Bar */
+        /* Navigation */
         .nav-bar { background: white; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-around; padding: 10px 0; padding-bottom: 20px; z-index: 50; }
         .nav-item { display: flex; flex-direction: column; align-items: center; color: #9ca3af; font-size: 10px; cursor: pointer; width: 33%; }
         .nav-item.active { color: #008069; font-weight: bold; }
         .nav-icon { font-size: 20px; margin-bottom: 4px; }
         .badge { position: absolute; top: -5px; right: 25%; background: #ef4444; color: white; font-size: 10px; padding: 1px 5px; border-radius: 10px; }
 
-        /* Container Widget */
-        .container-widget {
-            position: fixed; top: 80px; left: 20px; z-index: 40;
-            background: white; border-radius: 50px; padding: 5px 15px 5px 5px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2); border: 2px solid #3b82f6;
-            display: flex; align-items: center; gap: 10px; cursor: pointer;
-            transition: transform 0.2s; animation: float 3s ease-in-out infinite;
-        }
-        .container-widget:hover { transform: scale(1.05); }
-        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-5px); } 100% { transform: translateY(0px); } }
-        .container-icon { width: 35px; height: 35px; background: #eff6ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; }
-        .container-info { font-size: 10px; line-height: 1.2; text-align: right; }
-        .days-badge { background: #ef4444; color: white; padding: 1px 4px; border-radius: 4px; font-weight: bold; }
+        /* Cart Items */
+        .cart-item { background: white; padding: 10px; margin-bottom: 8px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .qty-btn { width: 24px; height: 24px; background: #e5e7eb; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; }
 
-        /* Modal */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(3px); z-index: 60; display: flex; justify-content: center; align-items: end; }
-        .modal-box { background: white; width: 100%; border-radius: 20px 20px 0 0; padding: 20px; animation: slideUp 0.3s; }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        /* Confirmation Modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 60; display: flex; justify-content: center; align-items: center; }
+        .modal-box { background: white; width: 90%; max-width: 400px; border-radius: 16px; padding: 20px; max-height: 80vh; overflow-y: auto; position: relative; }
+        
+        .bot-analysis { background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 13px; color: #166534; }
+        .bot-warning { background: #fef2f2; border: 1px solid #fecaca; padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 13px; color: #991b1b; display: flex; gap: 8px; align-items: start; }
     </style>
 </head>
 <body>
 
-    <div id="screen-shop" class="screen active">
-        <header class="bg-[#008069] text-white p-3 shadow-md sticky top-0 z-10 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <img id="userAvatar" src="" class="w-10 h-10 rounded-full border-2 border-white/20 bg-white/10">
-                <div>
-                    <h1 class="font-bold text-lg leading-tight">ח.סבן</h1>
-                    <span class="text-xs opacity-90 block">שלום, <span id="userName" class="font-bold">אורח</span></span>
-                </div>
-            </div>
-            <div class="flex gap-2">
-                <button onclick="openLogistics()" class="bg-white/20 px-3 py-1.5 rounded-full text-xs font-bold backdrop-blur-sm flex items-center gap-1">
-                    <i class="fas fa-truck"></i> הגעה
-                </button>
-                <button onclick="handleLogout()" class="text-white/80 hover:text-white px-2"><i class="fas fa-sign-out-alt"></i></button>
-            </div>
-        </header>
-        
-        <div id="activeContainer" class="container-widget hidden" onclick="alert('פותח פרטי מכולה...')">
-            <div class="container-icon">🗑️</div>
-            <div class="container-info">
-                <div class="font-bold text-slate-800">מכולה פעילה</div>
-                <div class="text-gray-500">בן יהודה 4</div>
-                <span class="days-badge">יום 8</span>
+    <header class="bg-[#008069] text-white p-3 shadow-md sticky top-0 z-10 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <img id="userAvatar" src="" class="w-9 h-9 rounded-full border border-white/30">
+            <div>
+                <h1 class="font-bold text-lg leading-tight">ח.סבן</h1>
+                <span class="text-[10px] opacity-90 block">מחובר: <span id="userName" class="font-bold">...</span></span>
             </div>
         </div>
+        <button onclick="handleLogout()" class="text-white/80 hover:text-white px-2"><i class="fas fa-sign-out-alt"></i></button>
+    </header>
 
-        <main class="flex-1 p-4 overflow-y-auto bg-gray-50 pb-20">
-            <div class="relative mb-4">
-                <input type="text" id="searchInput" oninput="filterProducts()" placeholder="מה חסר באתר?" class="w-full p-3 rounded-full border-none shadow-sm text-sm outline-none px-10">
-                <i class="fas fa-search absolute right-4 top-3.5 text-gray-400"></i>
+    <div id="screen-shop" class="screen active">
+        <div class="p-3 bg-white shadow-sm z-10">
+            <input type="text" id="searchInput" oninput="filterProducts()" placeholder="חפש מוצר (מלט, בלוק...)" class="w-full p-2 bg-gray-100 rounded-lg text-sm outline-none border border-transparent focus:border-green-500 transition">
+        </div>
+        <main class="flex-1 p-3 overflow-y-auto bg-gray-50 pb-24">
+            <div id="productsGrid" class="grid grid-cols-2 gap-3"></div>
+        </main>
+    </div>
+
+    <div id="screen-cart" class="screen">
+        <main class="flex-1 p-3 overflow-y-auto bg-gray-50 pb-24">
+            <h2 class="font-bold text-lg mb-3 text-gray-700">🛒 העגלה שלך</h2>
+            <div id="cartItemsList" class="mb-6">
+                </div>
+
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                <h3 class="font-bold text-sm text-gray-800 mb-3 border-b pb-2">פרטי פרויקט ואיש קשר</h3>
+                
+                <div id="lastContactBox" class="hidden mb-3 bg-blue-50 p-2 rounded text-xs text-blue-700 flex justify-between items-center cursor-pointer border border-blue-100" onclick="fillLastContact()">
+                    <span><i class="fas fa-history"></i> השתמש בפרטים אחרונים (יוסי)</span>
+                    <i class="fas fa-chevron-left"></i>
+                </div>
+
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-xs text-gray-500">שם הפרויקט / אתר</label>
+                        <input type="text" id="projName" placeholder="למשל: וילה משפחת כהן" class="w-full border p-2 rounded text-sm focus:border-green-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500">כתובת למשלוח</label>
+                        <input type="text" id="projAddr" placeholder="רחוב ועיר" class="w-full border p-2 rounded text-sm focus:border-green-500 outline-none">
+                    </div>
+                    <div class="flex gap-2">
+                        <div class="flex-1">
+                            <label class="text-xs text-gray-500">שם איש קשר</label>
+                            <input type="text" id="contactName" placeholder="מקבל הסחורה" class="w-full border p-2 rounded text-sm focus:border-green-500 outline-none">
+                        </div>
+                        <div class="flex-1">
+                            <label class="text-xs text-gray-500">טלפון</label>
+                            <input type="tel" id="contactPhone" placeholder="050..." class="w-full border p-2 rounded text-sm focus:border-green-500 outline-none">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500">הערות לנהג / שיטת פריקה</label>
+                        <select id="deliveryType" class="w-full border p-2 rounded text-sm bg-white focus:border-green-500 outline-none">
+                            <option value="manual">פריקה רגילה (ליד המשאית)</option>
+                            <option value="crane">מנוף (קומה/גג)</option>
+                            <option value="pickup">איסוף עצמי</option>
+                        </select>
+                    </div>
+                </div>
             </div>
-            <div id="productsGrid" class="grid grid-cols-2 gap-3 pb-4">
-                <div class="col-span-2 text-center text-gray-400 mt-10"><i class="fas fa-spinner fa-spin"></i> טוען מוצרים...</div>
+
+            <div class="mt-4">
+                <button onclick="analyzeAndReview()" class="w-full bg-[#008069] text-white py-3 rounded-xl font-bold shadow-lg flex justify-center items-center gap-2">
+                    <i class="fas fa-robot"></i> נתח הזמנה ושלח לאישור
+                </button>
             </div>
         </main>
     </div>
 
-    <div id="screen-chat" class="screen">
-        <header class="bg-[#f0f2f5] p-3 shadow-sm border-b flex items-center gap-3 sticky top-0 z-10">
-            <div class="w-10 h-10 bg-[#008069] rounded-full flex items-center justify-center text-white font-bold text-lg">S</div>
-            <div class="flex-1">
-                <div class="font-bold text-gray-800">מוקד הזמנות - ח.סבן</div>
-                <div class="text-xs text-green-600">● מחובר כעת</div>
-            </div>
-            <i class="fas fa-phone text-[#008069] text-lg"></i>
-        </header>
-
-        <div class="chat-bg" id="chatBox">
+    <div id="reviewModal" class="modal-overlay hidden">
+        <div class="modal-box">
+            <div class="text-center mb-4">
+                <div class="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-xl mb-2"><i class="fas fa-clipboard-check"></i></div>
+                <h3 class="font-bold text-lg">שיקוף הזמנה - אישור סופי</h3>
+                <p class="text-xs text-gray-500">SabanAI ניתח את ההזמנה שלך</p>
             </div>
 
-        <div class="bg-[#f0f2f5] p-2 flex items-center gap-2 border-t">
-            <i class="fas fa-plus text-gray-500 text-xl px-2"></i>
-            <input type="text" id="chatInput" placeholder="הקלד הודעה..." class="flex-1 bg-white rounded-full py-2 px-4 text-sm outline-none" onkeydown="if(event.key === 'Enter') sendChat()">
-            <button onclick="sendChat()" class="w-10 h-10 bg-[#008069] rounded-full flex items-center justify-center text-white shadow-sm"><i class="fas fa-paper-plane"></i></button>
+            <div class="bg-gray-50 p-3 rounded-lg text-sm mb-4 border border-gray-200">
+                <div class="flex justify-between border-b pb-2 mb-2">
+                    <span class="font-bold">פרויקט:</span>
+                    <span id="reviewProject">---</span>
+                </div>
+                <div class="flex justify-between border-b pb-2 mb-2">
+                    <span class="font-bold">איש קשר:</span>
+                    <span id="reviewContact">---</span>
+                </div>
+                <div class="max-h-32 overflow-y-auto mb-2">
+                    <ul id="reviewItems" class="list-disc pr-4 text-xs text-gray-600 space-y-1"></ul>
+                </div>
+                <div class="flex justify-between font-bold text-lg pt-2 border-t border-gray-300">
+                    <span>סה"כ לתשלום:</span>
+                    <span id="reviewTotal" class="text-green-700">0.00 ₪</span>
+                </div>
+            </div>
+
+            <div id="botFeedbackArea"></div>
+
+            <div class="flex gap-2 mt-6">
+                <button onclick="document.getElementById('reviewModal').classList.add('hidden')" class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg font-bold text-sm">ערוך שוב</button>
+                <button onclick="confirmOrder()" class="flex-1 bg-[#008069] text-white py-2 rounded-lg font-bold text-sm shadow">מאשר ושולח ✅</button>
+            </div>
         </div>
     </div>
 
@@ -118,231 +152,236 @@
             <i class="fas fa-shopping-cart nav-icon"></i><span>עגלה</span>
             <span id="cartBadge" class="badge hidden">0</span>
         </div>
-        <div onclick="switchScreen('chat')" class="nav-item" id="nav-chat">
-            <i class="fas fa-comments nav-icon"></i><span>צ'אט שירות</span>
-        </div>
     </nav>
-
-    <div id="logisticsModal" class="modal-overlay hidden" onclick="if(event.target === this) this.classList.add('hidden')">
-        <div class="modal-box">
-            <h3 class="font-bold text-lg mb-3">בדיקת הגעה 🚚</h3>
-            <div class="flex gap-2">
-                <input type="text" id="destInput" placeholder="לאן? (למשל: ויצמן 14 כפר סבא)" class="flex-1 bg-gray-100 p-3 rounded-lg text-sm">
-                <button onclick="checkArrival()" class="bg-[#008069] text-white px-4 rounded-lg"><i class="fas fa-search"></i></button>
-            </div>
-            <div id="logisticsRes" class="mt-4 hidden p-3 bg-blue-50 rounded-lg text-sm border border-blue-100"></div>
-            <div id="mapFrame" class="mt-2 w-full h-32 bg-gray-100 rounded hidden"></div>
-        </div>
-    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, setDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, serverTimestamp, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        // --- GLOBAL STATE ---
-        let currentUser = { id: 'guest', name: 'אורח' };
-        let cart = [];
+        // --- STATE ---
+        let cart = []; // Array of objects: { id, name, price, qty, logicData }
         let allProducts = [];
+        let currentUser = { id: 'guest', name: 'אורח' };
 
         // --- INIT ---
         window.onload = () => {
             const params = new URLSearchParams(window.location.search);
-            const uid = params.get('uid');
-            const openChat = params.get('chat');
-            const impersonateId = localStorage.getItem('impersonateId');
-
+            const uid = params.get('uid') || localStorage.getItem('impersonateId');
+            
             if (uid) {
                 currentUser.id = uid;
-                currentUser.name = uid.replace('_', ' '); 
-                initUser(currentUser);
-            } else if (impersonateId) {
-                currentUser.id = impersonateId;
-                currentUser.name = "לקוח (מבט על)";
-                initUser(currentUser);
+                currentUser.name = uid.replace('_', ' ');
+                document.getElementById('userName').innerText = currentUser.name;
+                document.getElementById('userAvatar').src = `https://ui-avatars.com/api/?name=${currentUser.name}&background=ffffff&color=008069&bold=true`;
             }
 
-            if (openChat === 'true') switchScreen('chat');
-            
-            // צלצול פתיחה
-            const audio = new Audio("https://notificationsounds.com/storage/sounds-file-sounds-1233-elegant.mp3");
-            document.body.addEventListener('click', () => audio.play().catch(()=>{}), {once:true});
-
-            loadRealProducts();
+            loadProducts();
+            checkLastContact();
         };
 
-        function initUser(user) {
-            document.getElementById('userName').innerText = user.name;
-            // Avatar Generator
-            document.getElementById('userAvatar').src = `https://ui-avatars.com/api/?name=${user.name}&background=ffffff&color=008069&bold=true`;
-            
-            // Start Chat Listener (Real Time!)
-            subscribeToChat(user.id);
-            
-            // Check for containers (Simulated for now, can be real later)
-            setTimeout(() => {
-                document.getElementById('activeContainer').classList.remove('hidden');
-            }, 2000);
-        }
-
-        // --- REAL DATA: PRODUCTS ---
-        async function loadRealProducts() {
+        // --- PRODUCTS & CART ---
+        async function loadProducts() {
             try {
                 const snap = await getDocs(collection(db, "products"));
                 allProducts = snap.docs.map(d => ({id: d.id, ...d.data()}));
                 renderProducts(allProducts);
-            } catch(e) {
-                console.error(e);
-                document.getElementById('productsGrid').innerHTML = '<div class="col-span-2 text-center text-red-400">שגיאה בטעינת מוצרים</div>';
-            }
+            } catch(e) { console.error(e); }
         }
 
         function renderProducts(list) {
             const grid = document.getElementById('productsGrid');
-            if (list.length === 0) {
-                grid.innerHTML = '<div class="col-span-2 text-center text-gray-400">לא נמצאו מוצרים</div>';
-                return;
-            }
             grid.innerHTML = list.map(p => {
-                // תמיכה במבנה החדש והישן
-                const name = p.core?.name || p.title || "מוצר ללא שם";
-                const price = p.core?.price || p.price || 0;
-                const img = p.rich?.image || p.image || "https://via.placeholder.com/150?text=No+Img";
+                const name = p.core?.name || p.title;
+                const price = p.core?.price || p.price;
+                const img = p.rich?.image || p.image || "https://via.placeholder.com/100?text=No+Img";
                 
+                // לוגיקה לבוט (האם כבד? האם צריך מנוף?)
+                const logistics = JSON.stringify(p.logistics || {});
+
                 return `
-                <div class="bg-white p-3 rounded-xl shadow-sm flex flex-col items-center" onclick="addToCart('${name}')">
-                    <img src="${img}" class="w-24 h-24 mb-2 object-contain mix-blend-multiply">
-                    <h3 class="font-bold text-sm text-gray-800 text-center h-10 overflow-hidden leading-tight">${name}</h3>
-                    <div class="text-[#008069] font-bold text-xs mt-1">₪${price}</div>
-                    <button class="mt-2 w-full bg-gray-100 text-gray-600 text-xs py-1.5 rounded-lg font-bold hover:bg-[#008069] hover:text-white transition">הוסף לעגלה +</button>
-                </div>
-            `;
+                <div class="bg-white p-3 rounded-xl shadow-sm flex flex-col items-center justify-between h-48" onclick='addToCart("${p.id}", "${name}", ${price}, ${logistics})'>
+                    <img src="${img}" class="w-20 h-20 object-contain mb-2 mix-blend-multiply">
+                    <div class="text-center w-full">
+                        <h3 class="font-bold text-xs text-gray-800 line-clamp-2 h-8 leading-tight">${name}</h3>
+                        <div class="text-[#008069] font-bold text-sm mt-1">₪${price}</div>
+                    </div>
+                    <button class="w-full bg-gray-100 hover:bg-green-50 text-green-700 text-xs py-1.5 rounded-lg font-bold mt-2 transition">+ הוסף</button>
+                </div>`;
             }).join('');
         }
+
+        window.addToCart = (id, name, price, logistics) => {
+            const existing = cart.find(i => i.id === id);
+            if (existing) existing.qty++;
+            else cart.push({ id, name, price, qty: 1, logistics });
+            
+            updateCartBadge();
+            renderCartItems();
+            // Subtle feedback
+            if(navigator.vibrate) navigator.vibrate(20);
+        };
+
+        function updateCartBadge() {
+            const b = document.getElementById('cartBadge');
+            const total = cart.reduce((acc, i) => acc + i.qty, 0);
+            b.innerText = total;
+            b.classList.toggle('hidden', total === 0);
+        }
+
+        // --- CART MANAGEMENT ---
+        function renderCartItems() {
+            const container = document.getElementById('cartItemsList');
+            if (cart.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-400 py-4">העגלה ריקה</div>';
+                return;
+            }
+            container.innerHTML = cart.map((item, i) => `
+                <div class="cart-item">
+                    <div>
+                        <div class="font-bold text-sm text-gray-800">${item.name}</div>
+                        <div class="text-xs text-gray-500">₪${item.price} ליח'</div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="qty-btn" onclick="updateQty(${i}, -1)">-</div>
+                        <span class="font-bold text-sm w-4 text-center">${item.qty}</span>
+                        <div class="qty-btn" onclick="updateQty(${i}, 1)">+</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.updateQty = (index, delta) => {
+            cart[index].qty += delta;
+            if (cart[index].qty <= 0) cart.splice(index, 1);
+            renderCartItems();
+            updateCartBadge();
+        };
+
+        // --- CONTACT MEMORY ---
+        function checkLastContact() {
+            const last = JSON.parse(localStorage.getItem('last_contact'));
+            if (last) {
+                const box = document.getElementById('lastContactBox');
+                box.querySelector('span').innerHTML = `<i class="fas fa-history"></i> השתמש באחרון: <b>${last.name}</b> (${last.proj})`;
+                box.classList.remove('hidden');
+            }
+        }
+
+        window.fillLastContact = () => {
+            const last = JSON.parse(localStorage.getItem('last_contact'));
+            if (last) {
+                document.getElementById('projName').value = last.proj;
+                document.getElementById('projAddr').value = last.addr;
+                document.getElementById('contactName').value = last.name;
+                document.getElementById('contactPhone').value = last.phone;
+                document.getElementById('lastContactBox').classList.add('hidden');
+            }
+        };
+
+        // --- BOT ANALYST (SabanLogic) ---
+        window.analyzeAndReview = () => {
+            if (cart.length === 0) return alert("העגלה ריקה");
+            
+            // 1. Gather Data
+            const proj = document.getElementById('projName').value || "לא צוין";
+            const contact = document.getElementById('contactName').value || currentUser.name;
+            const deliveryType = document.getElementById('deliveryType').value;
+            const total = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
+
+            // 2. Run Logic (The Brain)
+            const feedbackArea = document.getElementById('botFeedbackArea');
+            feedbackArea.innerHTML = '';
+            
+            let heavyItems = false;
+            cart.forEach(i => { if (i.logistics?.weight > 20 || i.logistics?.requires_crane) heavyItems = true; });
+
+            // LOGIC RULES
+            if (heavyItems && deliveryType === 'manual') {
+                feedbackArea.innerHTML += `
+                <div class="bot-warning">
+                    <i class="fas fa-exclamation-triangle text-xl"></i>
+                    <div>
+                        <b>שים לב:</b> יש פריטים כבדים בהזמנה (כמו מלט/בלוקים) אבל בחרת <b>"פריקה ידנית"</b>.<br>
+                        האם אתה בטוח שיש מי שיפרוק? נהג לא פורק ידנית.
+                        <br><button onclick="changeDeliveryToCrane()" class="text-blue-600 underline text-xs mt-1">החלף למנוף</button>
+                    </div>
+                </div>`;
+            } else {
+                feedbackArea.innerHTML += `
+                <div class="bot-analysis">
+                    <i class="fas fa-check-circle"></i> ההזמנה נבדקה ונראית תקינה לוגיסטית.
+                </div>`;
+            }
+
+            // 3. Populate Review
+            document.getElementById('reviewProject').innerText = proj;
+            document.getElementById('reviewContact').innerText = contact;
+            document.getElementById('reviewTotal').innerText = `₪${total.toFixed(2)}`;
+            document.getElementById('reviewItems').innerHTML = cart.map(i => `<li>${i.name} (x${i.qty})</li>`).join('');
+
+            document.getElementById('reviewModal').classList.remove('hidden');
+        };
+
+        window.changeDeliveryToCrane = () => {
+            document.getElementById('deliveryType').value = 'crane';
+            document.getElementById('botFeedbackArea').innerHTML = `<div class="bot-analysis"><i class="fas fa-check"></i> עודכן למנוף. תקין.</div>`;
+        };
+
+        // --- SUBMIT ---
+        window.confirmOrder = async () => {
+            // Save contact for next time
+            const contactData = {
+                proj: document.getElementById('projName').value,
+                addr: document.getElementById('projAddr').value,
+                name: document.getElementById('contactName').value,
+                phone: document.getElementById('contactPhone').value
+            };
+            localStorage.setItem('last_contact', JSON.stringify(contactData));
+
+            // Send to Firestore
+            const orderData = {
+                clientId: currentUser.id,
+                clientName: currentUser.name,
+                project: contactData.proj,
+                address: contactData.addr,
+                contactPerson: contactData.name,
+                contactPhone: contactData.phone,
+                deliveryType: document.getElementById('deliveryType').value,
+                items: cart,
+                totalPrice: cart.reduce((acc, i) => acc + (i.price * i.qty), 0),
+                status: "new",
+                createdAt: serverTimestamp()
+            };
+
+            await addDoc(collection(db, "orders"), orderData);
+            
+            // Notify & Reset
+            alert("ההזמנה נשלחה בהצלחה! 🚀\nקבלה תשלח לווצאף.");
+            cart = [];
+            updateCartBadge();
+            renderCartItems();
+            document.getElementById('reviewModal').classList.add('hidden');
+            switchScreen('shop');
+        };
+
+        // --- NAVIGATION ---
+        window.switchScreen = (name) => {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(`screen-${name}`).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(`nav-${name}`).classList.add('active');
+        };
 
         window.filterProducts = () => {
             const term = document.getElementById('searchInput').value.toLowerCase();
             const filtered = allProducts.filter(p => (p.core?.name || p.title || "").toLowerCase().includes(term));
             renderProducts(filtered);
-        }
-
-        window.addToCart = (name) => {
-            cart.push(name);
-            const badge = document.getElementById('cartBadge');
-            badge.innerText = cart.length;
-            badge.classList.remove('hidden');
-            // Subtle vibration if supported
-            if(navigator.vibrate) navigator.vibrate(50);
-        };
-
-        // --- REAL DATA: CHAT ---
-        function subscribeToChat(uid) {
-            const q = query(collection(db, `chat_sessions/${uid}/messages`), orderBy("createdAt", "asc"));
-            onSnapshot(q, (snap) => {
-                const box = document.getElementById('chatBox');
-                box.innerHTML = ''; // Re-render (simple approach)
-                
-                if(snap.empty) {
-                    box.innerHTML = `<div class="msg msg-in"><span class="bot-badge">SabanAI</span>היי ${currentUser.name}! 👋<br>כאן הבוט של סבן. איך אפשר לעזור?</div>`;
-                }
-
-                snap.forEach(doc => {
-                    const m = doc.data();
-                    const isMe = m.role === 'user';
-                    const time = m.createdAt ? new Date(m.createdAt.seconds*1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '...';
-                    
-                    if (m.role !== 'internal') { // Don't show internal notes to client
-                        box.innerHTML += `
-                            <div class="msg ${isMe ? 'msg-out' : 'msg-in'}">
-                                ${!isMe && m.sender === 'bot' ? '<span class="bot-badge">SabanAI</span>' : ''}
-                                ${m.text}
-                                <div class="msg-time">${time} ${isMe ? '<i class="fas fa-check"></i>' : ''}</div>
-                            </div>`;
-                    }
-                });
-                box.scrollTop = box.scrollHeight;
-            });
-        }
-
-        window.sendChat = async () => {
-            const input = document.getElementById('chatInput');
-            const txt = input.value;
-            if(!txt) return;
-            
-            input.value = ''; // Optimistic clear
-
-            // 1. Save to Sub-Collection
-            await addDoc(collection(db, `chat_sessions/${currentUser.id}/messages`), {
-                text: txt,
-                role: 'user',
-                createdAt: serverTimestamp()
-            });
-
-            // 2. Update Main Session (for Radar)
-            await setDoc(doc(db, "chat_sessions", currentUser.id), {
-                userName: currentUser.name,
-                lastMessage: txt,
-                lastActivity: serverTimestamp(),
-                isBotActive: true // Default to bot
-            }, { merge: true });
-        };
-
-        // --- LOGISTICS ---
-        window.openLogistics = () => document.getElementById('logisticsModal').classList.remove('hidden');
-        
-        window.checkArrival = async () => {
-            const query = document.getElementById('destInput').value;
-            if(!query) return;
-            
-            const resDiv = document.getElementById('logisticsRes');
-            resDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> מחשב מסלול...';
-            resDiv.classList.remove('hidden');
-
-            try {
-                const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=il&limit=1`;
-                const res = await fetch(url);
-                const data = await res.json();
-                
-                if(data.length > 0) {
-                    const lat = data[0].lat;
-                    const lon = data[0].lon;
-                    // Mock calculation
-                    const time = Math.floor(Math.random() * 30) + 20; 
-                    
-                    resDiv.innerHTML = `
-                        <div class="font-bold text-gray-800">✅ היעד אותר!</div>
-                        <div class="text-xs text-gray-500">${data[0].display_name.split(',')[0]}</div>
-                        <div class="mt-2 flex justify-between items-center bg-white p-2 rounded border">
-                            <span class="text-xs font-bold text-blue-600">יציאה: החרש</span>
-                            <span class="text-lg font-black text-green-600">${time} דק'</span>
-                        </div>
-                    `;
-                    // Show map
-                    const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${parseFloat(lon)-0.01},${parseFloat(lat)-0.01},${parseFloat(lon)+0.01},${parseFloat(lat)+0.01}&layer=mapnik&marker=${lat},${lon}`;
-                    const frame = document.getElementById('mapFrame');
-                    frame.innerHTML = `<iframe width="100%" height="100%" frameborder="0" scrolling="no" src="${mapUrl}"></iframe>`;
-                    frame.classList.remove('hidden');
-
-                } else {
-                    resDiv.innerHTML = '❌ כתובת לא נמצאה';
-                }
-            } catch(e) { resDiv.innerHTML = 'שגיאה בחיבור'; }
-        };
-
-        // --- NAVIGATION ---
-        window.switchScreen = (screenName) => {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(`screen-${screenName === 'cart' ? 'shop' : screenName}`).classList.add('active'); 
-            
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            document.getElementById(`nav-${screenName}`).classList.add('active');
-
-            if(screenName === 'cart') alert("העגלה שלך מכילה: " + cart.join(', '));
         };
 
         window.handleLogout = () => {
