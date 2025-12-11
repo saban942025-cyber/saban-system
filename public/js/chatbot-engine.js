@@ -1,33 +1,27 @@
 export class SabanChatbot {
     constructor(db, userContext) {
         this.db = db;
-        this.user = userContext; // מי הלקוח (שחר שאול)
-        
-        // ידע בסיסי "צרוב" (בהמשך יבוא מהדאטה בייס)
-        this.knowledgeBase = [
-            {
-                keywords: ["דבק", "קרמיקה", "חוץ", "מרפסת"],
-                recommendedSku: "114255", // סיקה 255
-                reason: "עמידות גבוהה לתנאי חוץ וגמישות S1",
-                tip: "אל תשכח למרוח גם על גב האריח (Back Buttering)"
-            },
-            {
-                keywords: ["איטום", "מקלחת", "אמבטיה"],
-                recommendedSku: "50201", // סיקה טופ 107
-                reason: "איטום צמנטי מעולה לחדרים רטובים",
-                tip: "חובה רולקות בחיבורים לפני היישום"
-            }
-        ];
+        this.user = userContext; 
+        this.knowledgeBase = []; // יטען מ-JSON בפועל
     }
 
-    // הפונקציה הראשית: הלקוח שואל
-    async ask(question) {
-        console.log(`Analyzing question: ${question}...`);
+    // טעינת התבניות (אם לא נטענו מבחוץ)
+    async loadTemplates() {
+        try {
+            const response = await fetch('templates.json');
+            this.knowledgeBase = await response.json();
+        } catch (e) { console.error("Error loading templates", e); }
+    }
 
-        // 1. ניתוח מילות מפתח
-        const words = question.toLowerCase().split(" ");
-        
-        // 2. חיפוש במוח
+    async ask(question) {
+        // וודא שטעינו תבניות
+        if (this.knowledgeBase.length === 0) await this.loadTemplates();
+
+        // 1. זיהוי "מכולה" + עיר (לוגיקה חכמה)
+        const logicResponse = this.checkContainerLogic(question);
+        if (logicResponse) return logicResponse;
+
+        // 2. חיפוש רגיל בתבניות
         let bestMatch = null;
         let maxScore = 0;
 
@@ -36,44 +30,37 @@ export class SabanChatbot {
             item.keywords.forEach(kw => {
                 if (question.includes(kw)) score++;
             });
-            
-            if (score > maxScore) {
-                maxScore = score;
-                bestMatch = item;
-            }
+            if (score > maxScore) { maxScore = score; bestMatch = item; }
         });
 
-        // 3. ניסוח תשובה מותאמת אישית
         if (bestMatch && maxScore > 0) {
-            // שליפת פרטי מוצר מלאים (מחיר, מלאי) מהקטלוג שלנו
-            // (כאן נכנס החיבור לקוד הקודם שלנו)
-            
             return {
-                text: `היי ${this.user.name}, לפרויקט שלך אני ממליץ על המוצר הזה:`,
-                sku: bestMatch.recommendedSku,
-                reason: bestMatch.reason,
-                proTip: bestMatch.tip,
-                confidence: "High"
+                text: bestMatch.answer.replace("{name}", this.user.name || "חבר"),
+                buttons: bestMatch.buttons
             };
         } else {
-            // 4. אם הבוט לא יודע -> הפעלת "סוכן נתנאל" (חיפוש בגוגל)
             return {
-                text: "שאלה מעולה. אני בודק מפרטים טכניים ברשת...",
+                text: "מצטער, לא הבנתי בדיוק. נסה לשאול על 'מכולה', 'דבק' או 'הובלה'.",
                 action: "TRIGGER_GOOGLE_SEARCH",
                 query: question
             };
         }
     }
 
-    // פונקציית למידה: הלקוח תיקן אותנו
-    async learn(question, correctSku) {
-        // שמירה לפיירבייס לניתוח עתידי
-        const learningData = {
-            question: question,
-            user_choice: correctSku,
-            timestamp: new Date()
-        };
-        console.log("Learning new pattern:", learningData);
-        // await addDoc(collection(this.db, "bot_learning"), learningData);
+    // --- המוח של המכולות ---
+    checkContainerLogic(text) {
+        // בדיקת היתרים לפי עיר
+        if (text.includes("מכולה") && (text.includes("הרצליה") || text.includes("רעננה"))) {
+            const city = text.includes("הרצליה") ? "herzliya" : "raanana";
+            // שליפת התבנית המתאימה
+            const template = this.knowledgeBase.find(t => t.scenarioId === `permit_${city}`);
+            if (template) {
+                return {
+                    text: template.answer.replace("{name}", this.user.name),
+                    buttons: template.buttons
+                };
+            }
+        }
+        return null;
     }
 }
