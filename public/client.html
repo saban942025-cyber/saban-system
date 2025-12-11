@@ -3,87 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SabanOS | Client App v15.6</title>
+    <title>SabanOS | Client App v16.0</title>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="icons/icon-192.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap');
+        body { font-family: 'Rubik', sans-serif; background-color: #f8fafc; }
+        
         .fade-in { animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        /* Modal */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(3px); z-index: 50; display: flex; justify-content: center; align-items: end; sm:align-items: center; }
-        .modal-box { background: white; width: 100%; max-width: 500px; border-radius: 20px 20px 0 0; padding: 20px; animation: slideUp 0.3s; }
-        @media (min-width: 640px) { .modal-box { border-radius: 20px; animation: fadeIn 0.3s; } }
+        
+        /* Modal Animation */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 50; display: flex; justify-content: center; align-items: end; sm:align-items: center; transition: opacity 0.3s; }
+        .modal-box { background: white; width: 100%; max-width: 500px; border-radius: 24px 24px 0 0; padding: 24px; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 -10px 40px rgba(0,0,0,0.2); }
+        @media (min-width: 640px) { .modal-box { border-radius: 24px; animation: zoomIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); margin: 20px; } }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        /* Product Card */
+        .prod-card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; transition: all 0.2s; position: relative; }
+        .prod-card:active { transform: scale(0.98); }
+        .prod-img-box { height: 120px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; padding: 10px; }
+        .prod-img { max-height: 100%; max-width: 100%; object-fit: contain; mix-blend-mode: multiply; }
+        .add-btn { position: absolute; bottom: 10px; left: 10px; width: 32px; height: 32px; background: #eff6ff; color: #2563eb; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; box-shadow: 0 2px 5px rgba(37, 99, 235, 0.2); }
+        
+        /* Map Container */
+        #mapContainer { height: 180px; width: 100%; background: #e2e8f0; border-radius: 12px; overflow: hidden; border: 1px solid #cbd5e1; margin-bottom: 15px; position: relative; }
+        #mapContainer::after { content: 'טוען מפה...'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #64748b; font-size: 12px; z-index: 0; }
+        iframe { position: relative; z-index: 10; width: 100%; height: 100%; border: none; }
     </style>
 </head>
-<body class="bg-gray-50 h-screen flex flex-col font-sans">
+<body class="flex flex-col h-screen overflow-hidden">
     
-    <nav class="bg-white p-4 shadow flex justify-between items-center sticky top-0 z-20">
-        <div>
-            <h1 class="font-bold text-gray-800 text-lg">ח.סבן חומרי בניין</h1>
-            <span class="text-xs text-gray-500">הזמנות אונליין</span>
+    <header class="bg-white/90 backdrop-blur-md border-b border-slate-200 h-16 flex justify-between items-center px-4 sticky top-0 z-40">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-blue-500/30">S</div>
+            <div>
+                <h1 class="font-bold text-slate-800 text-sm leading-tight">ח.סבן חומרי בניין</h1>
+                <div class="text-[10px] text-green-600 font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> מחובר להזמנות</div>
+            </div>
         </div>
-        <div class="flex gap-3">
-            <button onclick="openLogisticsModal()" class="bg-blue-50 text-blue-600 px-3 py-1 rounded-lg text-xs font-bold border border-blue-200 shadow-sm animate-pulse">
-                <i class="fas fa-clock"></i> מתי מגיע?
+        <div class="flex gap-2">
+            <button onclick="openLogisticsModal()" class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg shadow-blue-500/30 flex items-center gap-1 transition active:scale-95">
+                <i class="fas fa-map-marker-alt"></i> מתי מגיע?
             </button>
-            <button onclick="handleLogout()" class="text-red-500"><i class="fas fa-sign-out-alt"></i></button>
+            <button onclick="handleLogout()" class="w-8 h-8 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center hover:bg-red-50 hover:text-red-500 transition"><i class="fas fa-sign-out-alt"></i></button>
         </div>
-    </nav>
+    </header>
 
-    <main class="flex-1 p-4 overflow-y-auto pb-24">
-        <div class="relative mb-6">
-            <input type="text" id="searchBox" placeholder="מה צריך לאתר? (בלוקים, מלט...)" 
-                   class="w-full p-4 rounded-xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 text-lg outline-none">
-            <i class="fas fa-search absolute left-4 top-5 text-gray-400"></i>
+    <main class="flex-1 overflow-y-auto p-4 pb-28 custom-scroll">
+        
+        <div class="relative mb-6 sticky top-0 z-30 pt-2">
+            <input type="text" id="searchBox" placeholder="מה חסר באתר? (בלוקים, דבק...)" 
+                   class="w-full bg-white h-12 rounded-2xl border border-slate-200 shadow-sm pl-12 pr-4 text-sm font-medium outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition">
+            <i class="fas fa-search absolute left-4 top-5 text-slate-400"></i>
         </div>
 
-        <div id="productsGrid" class="grid grid-cols-2 gap-4"></div>
+        <div id="productsGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            </div>
+        
+        <div id="loadingState" class="text-center py-10 hidden">
+            <i class="fas fa-circle-notch fa-spin text-blue-500 text-2xl"></i>
+            <p class="text-xs text-slate-400 mt-2">טוען קטלוג...</p>
+        </div>
+
     </main>
 
-    <div class="fixed bottom-0 left-0 w-full bg-white border-t p-4 shadow-2xl z-30">
-        <div class="flex justify-between items-center mb-3">
-            <span class="font-bold text-gray-700">סל קניות: <span id="cartCount" class="bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">0</span></span>
-            <button id="sendBtn" class="bg-green-600 text-white px-8 py-2 rounded-full font-bold shadow hover:bg-green-700 transition">שלח הזמנה</button>
+    <div class="fixed bottom-6 left-4 right-4 z-40">
+        <div class="bg-slate-900 text-white p-4 rounded-2xl shadow-2xl flex justify-between items-center border border-slate-700/50 backdrop-blur-xl">
+            <div class="flex items-center gap-3">
+                <div class="relative">
+                    <i class="fas fa-shopping-cart text-xl"></i>
+                    <span id="cartCount" class="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full border-2 border-slate-900 transition-transform">0</span>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-xs text-slate-400">סה"כ לתשלום</span>
+                    <span class="font-bold font-mono text-lg" id="cartTotal">0.00 ₪</span>
+                </div>
+            </div>
+            <button id="sendBtn" class="bg-white text-slate-900 px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg active:scale-95 transition hover:bg-blue-50">
+                שלח הזמנה <i class="fas fa-paper-plane mr-1"></i>
+            </button>
         </div>
     </div>
 
     <div id="logisticsModal" class="modal-overlay hidden" onclick="if(event.target === this) closeLogisticsModal()">
         <div class="modal-box">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold text-slate-800"><i class="fas fa-map-marked-alt text-blue-500"></i> בדיקת הגעה</h3>
-                <button onclick="closeLogisticsModal()" class="text-gray-400"><i class="fas fa-times text-xl"></i></button>
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h3 class="text-xl font-bold text-slate-800">בדיקת הגעה 🚚</h3>
+                    <p class="text-xs text-slate-400">מחשב זמני הגעה ומרחק בזמן אמת</p>
+                </div>
+                <button onclick="closeLogisticsModal()" class="w-8 h-8 bg-slate-100 rounded-full text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
             </div>
             
-            <div class="mb-4">
-                <label class="text-xs font-bold text-gray-500 block mb-1">לאן להגיע?</label>
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 mb-6">
+                <label class="text-[10px] font-bold text-slate-400 uppercase block mb-2">כתובת היעד</label>
                 <div class="flex gap-2">
-                    <input type="text" id="destInput" placeholder="למשל: ויצמן 14 כפר סבא" class="flex-1 bg-gray-100 p-3 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
-                    <button onclick="calculateTime()" class="bg-blue-600 text-white px-4 rounded-lg font-bold shadow"><i class="fas fa-search"></i></button>
+                    <input type="text" id="destInput" placeholder="לדוגמה: ויצמן 14 כפר סבא" class="flex-1 bg-white h-10 rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-blue-500 transition">
+                    <button onclick="calculateTime()" class="w-10 h-10 bg-blue-600 text-white rounded-xl shadow-md active:scale-95 transition flex items-center justify-center">
+                        <i class="fas fa-search"></i>
+                    </button>
                 </div>
             </div>
 
-            <div id="logisticsResult" class="hidden space-y-3">
-                <div id="mapContainer" class="w-full h-40 bg-gray-200 rounded-xl overflow-hidden border border-gray-300"></div>
+            <div id="logisticsResult" class="hidden fade-in">
+                <div id="mapContainer"></div>
                 
-                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                    <div class="flex justify-between items-start border-b border-blue-200 pb-2 mb-2">
-                        <div>
-                            <div class="text-xs text-blue-600 font-bold uppercase">יציאה מסניף</div>
-                            <div class="font-bold text-lg text-slate-800" id="resBranch">---</div>
-                        </div>
-                        <div class="text-left">
-                            <div class="text-xs text-blue-600 font-bold uppercase">מרחק</div>
-                            <div class="font-bold text-lg text-slate-800" id="resDist">---</div>
-                        </div>
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div class="bg-blue-50 p-3 rounded-xl border border-blue-100 text-center">
+                        <div class="text-[10px] text-blue-400 font-bold uppercase mb-1">יציאה מ</div>
+                        <div class="font-bold text-slate-700" id="resBranch">---</div>
                     </div>
-                    <div class="text-center py-2">
-                        <div class="text-sm text-gray-500 mb-1">זמן הגעה משוער (כולל פריקה)</div>
-                        <div class="text-3xl font-black text-green-600" id="resTime">---</div>
-                        <div class="text-xs text-gray-400 mt-1" id="resDetails">---</div>
+                    <div class="bg-indigo-50 p-3 rounded-xl border border-indigo-100 text-center">
+                        <div class="text-[10px] text-indigo-400 font-bold uppercase mb-1">מרחק</div>
+                        <div class="font-bold text-slate-700" id="resDist">---</div>
                     </div>
+                </div>
+
+                <div class="bg-slate-800 text-white p-5 rounded-2xl text-center shadow-lg relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-20 h-20 bg-green-500 rounded-full blur-2xl opacity-20"></div>
+                    <div class="text-xs text-slate-400 mb-1">צפי הגעה משוער (כולל פריקה)</div>
+                    <div class="text-4xl font-black tracking-tight" id="resTime">---</div>
+                    <div class="text-[10px] text-green-400 font-bold mt-2 bg-green-900/30 inline-block px-2 py-1 rounded-full border border-green-500/20" id="resDetails">---</div>
                 </div>
             </div>
         </div>
@@ -99,11 +143,11 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
         
-        // --- LOGISTICS BRAIN (FULL) ---
+        // --- 🧠 THE LOGISTICS BRAIN (Embedded) ---
         class LogisticsBrain {
             constructor() {
                 this.branches = [
-                    { id: 'harash', name: 'סניף החרש (ראשי)', lat: 32.1462, lng: 34.8951 },
+                    { id: 'harash', name: 'סניף החרש', lat: 32.1462, lng: 34.8951 },
                     { id: 'talmid', name: 'סניף התלמיד', lat: 32.1554, lng: 34.8872 }
                 ];
             }
@@ -141,53 +185,59 @@
                 return best;
             }
             calculateETA(distKm) {
-                const driveTime = (distKm / 35) * 60 * 1.2; 
-                const total = Math.round(driveTime + 30); 
+                const driveTime = (distKm / 35) * 60 * 1.2; // 35kmh + traffic factor
+                const total = Math.round(driveTime + 30); // +30min loading
                 const time = new Date(Date.now() + total*60000).toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'});
                 return { minutes: total, time: time };
             }
         }
         const brain = new LogisticsBrain();
 
-        // --- APP LOGIC (Security & Access) ---
+        // --- APP LOGIC ---
         let cart = [];
         let products = [];
         let activeUserId = null;
 
+        // AUTH GUARD: Check Link Login or Admin Impersonation
         onAuthStateChanged(auth, async (user) => {
-            // בדיקת פרמטר ב-URL (כניסה דרך לינק)
             const urlParams = new URLSearchParams(window.location.search);
-            const linkUid = urlParams.get('uid');
-            // בדיקת מצב התחזות (Admin Impersonate)
+            const linkUid = urlParams.get('uid'); // ?uid=xxx
             const impersonateId = localStorage.getItem('impersonateId');
 
-            if (user) {
-                activeUserId = user.uid; // מחובר רגיל
-            } else if (linkUid) {
-                activeUserId = linkUid; // מחובר דרך לינק
-                console.log("Logged in via Link as:", linkUid);
-            } else if (impersonateId) {
-                activeUserId = impersonateId; // מחובר דרך התחזות
-                console.log("Impersonating:", impersonateId);
-            } else {
-                // אם אף אחד מהתנאים לא מתקיים -> החוצה
-                window.location.href = "index.html";
+            if (user) activeUserId = user.uid;
+            else if (linkUid) activeUserId = linkUid;
+            else if (impersonateId) activeUserId = impersonateId;
+            else {
+                window.location.href = "index.html"; // Block access
                 return;
             }
 
-            // טעינת מוצרים
-            const pSnap = await getDocs(collection(db, "products"));
-            products = pSnap.docs.map(d => ({id: d.id, ...d.data()}));
-            renderProducts(products);
+            loadProducts();
         });
+
+        async function loadProducts() {
+            document.getElementById('loadingState').classList.remove('hidden');
+            try {
+                const pSnap = await getDocs(collection(db, "products"));
+                products = pSnap.docs.map(d => ({id: d.id, ...d.data()}));
+                renderProducts(products);
+            } catch(e) { console.error(e); }
+            document.getElementById('loadingState').classList.add('hidden');
+        }
 
         function renderProducts(list) {
             const grid = document.getElementById('productsGrid');
             grid.innerHTML = list.map(p => `
-                <div class="bg-white p-3 rounded-xl border shadow-sm flex flex-col items-center text-center active:scale-95 transition" onclick="addToCart('${p.id}')">
-                    <img src="${p.rich?.image || 'https://via.placeholder.com/50'}" class="w-16 h-16 object-contain mb-2 mix-blend-multiply">
-                    <h3 class="font-bold text-sm h-10 flex items-center justify-center">${p.core?.name || 'מוצר'}</h3>
-                    <div class="text-green-600 font-bold text-xs mt-1">₪${p.core?.price}</div>
+                <div class="prod-card" onclick="addToCart('${p.id}')">
+                    <div class="prod-img-box">
+                        <img src="${p.rich?.image || 'https://via.placeholder.com/100?text=No+Img'}" class="prod-img">
+                    </div>
+                    <div class="p-3">
+                        <h3 class="font-bold text-xs text-slate-800 line-clamp-2 h-8">${p.core?.name || 'מוצר ללא שם'}</h3>
+                        <div class="text-[10px] text-slate-400 mt-1 mb-1">מק"ט: ${p.id}</div>
+                        <div class="font-bold text-green-600 text-sm">₪${p.core?.price}</div>
+                        <div class="add-btn">+</div>
+                    </div>
                 </div>
             `).join('');
         }
@@ -195,22 +245,32 @@
         window.addToCart = (id) => {
             const p = products.find(x => x.id === id);
             cart.push(p);
-            document.getElementById('cartCount').innerText = cart.length;
-            const btn = document.getElementById('cartCount');
-            btn.classList.add('scale-125');
-            setTimeout(()=>btn.classList.remove('scale-125'), 200);
+            updateCartUI();
         };
 
+        function updateCartUI() {
+            const count = document.getElementById('cartCount');
+            const total = document.getElementById('cartTotal');
+            
+            count.innerText = cart.length;
+            count.classList.add('scale-125');
+            setTimeout(()=>count.classList.remove('scale-125'), 200);
+
+            const sum = cart.reduce((acc, item) => acc + (Number(item.core?.price) || 0), 0);
+            total.innerText = sum.toFixed(2) + " ₪";
+        }
+
+        // --- BRAIN UI CONNECTORS ---
         window.openLogisticsModal = () => document.getElementById('logisticsModal').classList.remove('hidden');
         window.closeLogisticsModal = () => document.getElementById('logisticsModal').classList.add('hidden');
 
-        // VISUAL CALCULATION
         window.calculateTime = async () => {
             const query = document.getElementById('destInput').value;
             if(!query) return alert("הכנס כתובת");
             
             const btn = document.querySelector('#logisticsModal button.bg-blue-600');
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            const originalIcon = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
             
             const loc = await brain.locateAddress(query);
             
@@ -223,27 +283,55 @@
                 document.getElementById('resTime').innerText = eta.time;
                 document.getElementById('resDetails').innerText = `זמן משוער: ${eta.minutes} דקות`;
                 
-                // INJECT MAP IFRAME
-                document.getElementById('mapContainer').innerHTML = `<iframe width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="${loc.mapUrl}"></iframe>`;
+                // MAP INJECTION
+                document.getElementById('mapContainer').innerHTML = `<iframe src="${loc.mapUrl}"></iframe>`;
                 
                 document.getElementById('logisticsResult').classList.remove('hidden');
             } else {
-                alert("כתובת לא נמצאה.");
+                alert("לא מצאתי את הכתובת. נסה שם יישוב או רחוב ראשי.");
             }
-            btn.innerHTML = '<i class="fas fa-search"></i>';
+            btn.innerHTML = originalIcon;
         };
 
+        // --- ORDER SUBMIT ---
         document.getElementById('sendBtn').addEventListener('click', async () => {
             if(cart.length === 0) return alert("הסל ריק");
-            const project = prompt("לאיזה פרויקט/אתר?");
-            await addDoc(collection(db, "orders"), { clientId: activeUserId, project: project || "כללי", items: cart, status: "new", createdAt: serverTimestamp() });
-            alert("ההזמנה נשלחה!"); cart = []; document.getElementById('cartCount').innerText = 0;
+            
+            const btn = document.getElementById('sendBtn');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> שולח...';
+            
+            const project = prompt("לאיזה פרויקט/אתר לשייך את ההזמנה?");
+            
+            try {
+                await addDoc(collection(db, "orders"), { 
+                    clientId: activeUserId, 
+                    project: project || "כללי", 
+                    items: cart, 
+                    status: "new", 
+                    createdAt: serverTimestamp() 
+                });
+                
+                alert("✅ ההזמנה נשלחה בהצלחה! אנחנו מטפלים בה.");
+                cart = []; 
+                updateCartUI();
+            } catch(e) {
+                alert("שגיאה בשליחה: " + e.message);
+            } finally {
+                btn.innerHTML = 'שלח הזמנה <i class="fas fa-paper-plane mr-1"></i>';
+            }
         });
 
         window.handleLogout = () => {
-            localStorage.removeItem('impersonateId'); // נקה התחזות
+            localStorage.removeItem('impersonateId');
             signOut(auth).then(() => window.location.href="index.html");
         };
+
+        // Search Filter
+        document.getElementById('searchBox').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = products.filter(p => p.core?.name.toLowerCase().includes(term) || p.id.includes(term));
+            renderProducts(filtered);
+        });
     </script>
 </body>
 </html>
