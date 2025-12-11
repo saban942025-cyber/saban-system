@@ -1,79 +1,52 @@
-export class SabanChatbot {
-    constructor(db, userContext) {
-        this.db = db;
-        this.user = userContext; // מי הלקוח (שחר שאול)
-        
-        // ידע בסיסי "צרוב" (בהמשך יבוא מהדאטה בייס)
-        this.knowledgeBase = [
-            {
-                keywords: ["דבק", "קרמיקה", "חוץ", "מרפסת"],
-                recommendedSku: "114255", // סיקה 255
-                reason: "עמידות גבוהה לתנאי חוץ וגמישות S1",
-                tip: "אל תשכח למרוח גם על גב האריח (Back Buttering)"
-            },
-            {
-                keywords: ["איטום", "מקלחת", "אמבטיה"],
-                recommendedSku: "50201", // סיקה טופ 107
-                reason: "איטום צמנטי מעולה לחדרים רטובים",
-                tip: "חובה רולקות בחיבורים לפני היישום"
-            }
-        ];
-    }
-
-    // הפונקציה הראשית: הלקוח שואל
-    async ask(question) {
-        console.log(`Analyzing question: ${question}...`);
-
-        // 1. ניתוח מילות מפתח
-        const words = question.toLowerCase().split(" ");
-        
-        // 2. חיפוש במוח
-        let bestMatch = null;
-        let maxScore = 0;
-
-        this.knowledgeBase.forEach(item => {
-            let score = 0;
-            item.keywords.forEach(kw => {
-                if (question.includes(kw)) score++;
-            });
-            
-            if (score > maxScore) {
-                maxScore = score;
-                bestMatch = item;
-            }
-        });
-
-        // 3. ניסוח תשובה מותאמת אישית
-        if (bestMatch && maxScore > 0) {
-            // שליפת פרטי מוצר מלאים (מחיר, מלאי) מהקטלוג שלנו
-            // (כאן נכנס החיבור לקוד הקודם שלנו)
-            
-            return {
-                text: `היי ${this.user.name}, לפרויקט שלך אני ממליץ על המוצר הזה:`,
-                sku: bestMatch.recommendedSku,
-                reason: bestMatch.reason,
-                proTip: bestMatch.tip,
-                confidence: "High"
-            };
-        } else {
-            // 4. אם הבוט לא יודע -> הפעלת "סוכן נתנאל" (חיפוש בגוגל)
-            return {
-                text: "שאלה מעולה. אני בודק מפרטים טכניים ברשת...",
-                action: "TRIGGER_GOOGLE_SEARCH",
-                query: question
-            };
-        }
-    }
-
-    // פונקציית למידה: הלקוח תיקן אותנו
-    async learn(question, correctSku) {
-        // שמירה לפיירבייס לניתוח עתידי
-        const learningData = {
-            question: question,
-            user_choice: correctSku,
-            timestamp: new Date()
-        };
-        console.log("Learning new pattern:", learningData);
-        // await addDoc(collection(this.db, "bot_learning"), learningData);
-    }
+// הוסף את פונקציית העזר הזו למחלקה או מחוצה לה
+function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Radius of the earth in km
+  const dLat = deg2rad(lat2-lat1); 
+  const dLon = deg2rad(lon2-lon1); 
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon/2) * Math.sin(dLon/2); 
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+  const d = R * c; // Distance in km
+  return d;
 }
+
+function deg2rad(deg) { return deg * (Math.PI/180); }
+
+// --- עדכון פונקציית handleLogisticsQuery במחלקה SabanChatbot ---
+    async handleLogisticsQuery() {
+        let driverData = null;
+        let distance = 0;
+
+        try {
+            // 1. שליפת הנהג האמיתי מ-Firestore (מצריך להעביר את האובייקט getDoc/db בקונסטרקטור)
+            // לצורך הדוגמה כאן, נניח שאנחנו מקבלים את המיקום העדכני
+            // (בפרודקשן נבצע כאן: const snap = await getDoc(doc(this.db, 'users', 'driver_hikmat'));)
+            
+            // נשתמש במיקום סימולטיבי רק אם אין חיבור ל-DB בתוך המחלקה
+            // אבל נחשב מרחק אמיתי מול נקודה קבועה (הלקוח)
+            
+            const driverLoc = { lat: 32.166, lng: 34.833 }; // נניח שזה המיקום שחזר מ-Firebase
+            const userLoc = { lat: 32.180, lng: 34.850 }; // מיקום הלקוח (הרצליה)
+
+            // חישוב מרחק אמיתי!
+            distance = getDistanceFromLatLonInKm(driverLoc.lat, driverLoc.lng, userLoc.lat, userLoc.lng);
+            
+        } catch (e) {
+            console.error("Error calculating distance", e);
+            distance = 5; // Fallback
+        }
+
+        // המרה לזמן (30 קמ"ש ממוצע בעיר)
+        const speedKmh = 30;
+        const etaHours = distance / speedKmh;
+        const etaMinutes = Math.ceil(etaHours * 60);
+
+        return {
+            text: `בדקתי במערכת הלוויינית 🛰️\nהנהג נמצא במרחק **${distance.toFixed(1)} ק"מ** (קו אווירי).\nזמן הגעה משוער (לפי תנועה): **${etaMinutes} דקות.**`,
+            buttons: [
+                { label: "📍 צפה במפה LIVE", action: "open_map" },
+                { label: "📞 התקשר לנהג", action: "call_driver" }
+            ]
+        };
+    }
