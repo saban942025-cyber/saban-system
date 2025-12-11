@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>SabanOS | ליקוט</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  <script type="module" src="./js/logger.js"></script>
+</head>
+<body class="bg-gray-900 text-white p-4 font-sans">
+    <h1 class="text-2xl font-bold mb-4 text-yellow-400">משימות ליקוט פעילות</h1>
+    <div id="tasks" class="space-y-4"></div>
+
+    <script type="module">
+        import { db, collection, query, where, onSnapshot, updateDoc, doc } from './js/firebase-config.js';
+
+        // מאזין רק להזמנות בסטטוס "picking"
+        const q = query(collection(db, "orders"), where("status", "==", "picking"));
+        
+        onSnapshot(q, (snap) => {
+            document.getElementById('tasks').innerHTML = snap.docs.map(d => {
+                const o = d.data();
+                return `
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                    <div class="flex justify-between mb-4">
+                        <h2 class="text-xl font-bold">${o.clientName}</h2>
+                        <span class="bg-blue-600 px-2 py-1 rounded text-sm">${o.project}</span>
+                    </div>
+                    <ul class="mb-6 space-y-2 text-lg">
+                        ${o.items.map(i => `<li>⬜ ${i.name} - <b>${i.qty}</b></li>`).join('')}
+                    </ul>
+                    <button onclick="window.finishPick('${d.id}')" class="w-full bg-green-600 py-4 rounded-xl font-bold text-xl hover:bg-green-500">
+                        הסתיים - העבר לנהג
+                    </button>
+                </div>`;
+            }).join('');
+            if(snap.empty) document.getElementById('tasks').innerHTML = "<div class='text-gray-500 text-center mt-10'>אין משימות. קח אוויר.</div>";
+        });
+
+        window.finishPick = async (id) => {
+            await updateDoc(doc(db, "orders", id), { status: "loaded" }); // עובר לנהג
+        };
+    </script>
+</body>
+</html>

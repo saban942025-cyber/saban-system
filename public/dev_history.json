@@ -1,0 +1,30 @@
+[
+  {
+    "version": "1.0.0",
+    "date": "2025-12-08",
+    "author": "Gemini & Rami",
+    "module": "Core",
+    "description": "הקמת תשתית Firebase, אימות משתמשים, מבנה תיקיות בסיסי."
+  },
+  {
+    "version": "2.0.0",
+    "date": "2025-12-09",
+    "author": "Gemini & Rami",
+    "module": "Logistics",
+    "description": "הוספת מודול סידור עבודה, שרשרת פיקוד (לקוח->צוות->מחסן->נהג), ביטול מחירים ללקוח."
+  },
+  {
+    "version": "2.1.0",
+    "date": "2025-12-09",
+    "author": "Gemini & Rami",
+    "module": "Comax Bridge",
+    "description": "יצירת מנגנון ייצוא קובץ CSV לקומקס, זיהוי אוטומטי של מק\"טים."
+  },
+  {
+    "version": "3.0.0",
+    "date": "2025-12-09",
+    "author": "Gemini & Rami",
+    "module": "Master & Sentinel",
+    "description": "הוספת דף Master לניהול עליון, מנגנון התחזות ללקוח, ומערכת לוגים (מלשינון) לאיתור תקלות."
+  }
+]

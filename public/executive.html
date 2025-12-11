@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SabanOS | Executive</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap');
+        
+        body { background-color: #f2f2f7; color: #1c1c1e; font-family: 'Heebo', sans-serif; -webkit-tap-highlight-color: transparent; padding-bottom: 90px; }
+        
+        /* iOS Card Style */
+        .ios-card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); margin-bottom: 16px; }
+        
+        /* Header */
+        .header { background: rgba(255,255,255,0.9); backdrop-filter: blur(20px); padding: 20px; padding-top: 50px; position: sticky; top: 0; z-index: 50; border-bottom: 1px solid #e5e5ea; }
+        
+        /* Navigation */
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: rgba(255,255,255,0.95); backdrop-filter: blur(20px); border-top: 1px solid #e5e5ea; display: flex; justify-content: space-around; padding: 10px 0; padding-bottom: 25px; z-index: 50; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: #8e8e93; font-size: 10px; font-weight: 500; width: 25%; }
+        .nav-item.active { color: #007aff; }
+        .nav-icon { font-size: 24px; }
+
+        /* Status Indicators */
+        .status-dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-left: 6px; }
+        .dot-green { background-color: #34c759; box-shadow: 0 0 8px #34c759; }
+        .dot-red { background-color: #ff3b30; box-shadow: 0 0 8px #ff3b30; }
+        .dot-orange { background-color: #ff9500; }
+
+        /* Chat Room */
+        .chat-bubble { padding: 12px 16px; border-radius: 18px; margin-bottom: 8px; font-size: 14px; max-width: 85%; position: relative; }
+        .bubble-client { background: #e9e9eb; color: black; align-self: flex-start; border-bottom-right-radius: 4px; }
+        .bubble-bot { background: #34c759; color: white; align-self: flex-end; border-bottom-left-radius: 4px; }
+        .bubble-harel { background: #007aff; color: white; align-self: flex-end; border-bottom-left-radius: 4px; border: 2px solid #005ecb; } /* הודעת מנכ"ל */
+        
+        /* Dispatch Row */
+        .dispatch-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f2f2f7; }
+        .dispatch-row:last-child { border: none; }
+        
+        /* Animations */
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div class="header flex justify-between items-center">
+        <div>
+            <div class="text-xs text-gray-400 font-bold uppercase tracking-wider">יום רביעי, 04:00</div>
+            <h1 class="text-2xl font-black text-slate-800">בוקר טוב הראל</h1>
+        </div>
+        <img src="https://ui-avatars.com/api/?name=Harel+Saban&background=007aff&color=fff" class="w-10 h-10 rounded-full border-2 border-white shadow-sm">
+    </div>
+
+    <div id="mainContent" class="p-5">
+        </div>
+
+    <div class="nav-bar">
+        <div onclick="showTab('dashboard')" class="nav-item active" id="nav-dashboard">
+            <i class="fas fa-chart-pie nav-icon"></i>
+            <span>מבט על</span>
+        </div>
+        <div onclick="showTab('sidur')" class="nav-item" id="nav-sidur">
+            <i class="fas fa-clipboard-list nav-icon"></i>
+            <span>הסידור</span>
+        </div>
+        <div onclick="showTab('livechat')" class="nav-item" id="nav-livechat">
+            <i class="fas fa-comments nav-icon"></i>
+            <span>חדר מצב</span>
+        </div>
+        <div onclick="showTab('tasks')" class="nav-item" id="nav-tasks">
+            <i class="fas fa-bell nav-icon"></i>
+            <span>משימות</span>
+        </div>
+    </div>
+
+    <script>
+        // === MOCK DATA (Simulating Firebase for Speed) ===
+        const drivers = [
+            { name: "חכמת", status: "בנסיעה", location: "כביש 6", task: "פריקה ברעננה" },
+            { name: "עלי", status: "העמסה", location: "מחסן טייבה", task: "העמסת בלוקים" },
+            { name: "מוחמד", status: "הפסקה", location: "תחנת דלק", task: "-" }
+        ];
+
+        const activeChats = [
+            { id: 1, client: "שחר שאול", status: "פעיל", lastMsg: "מתי המנוף מגיע?", agent: "בוט" },
+            { id: 2, client: "קבלן נתניה", status: "ממתין", lastMsg: "צריך הצעת מחיר למלט", agent: "ראמי" }
+        ];
+
+        // === RENDER FUNCTIONS ===
+
+        function showTab(tabName) {
+            // Update Nav
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(`nav-${tabName}`).classList.add('active');
+            
+            const container = document.getElementById('mainContent');
+            container.innerHTML = ''; // Clear
+
+            if (tabName === 'dashboard') renderDashboard(container);
+            if (tabName === 'sidur') renderSidur(container);
+            if (tabName === 'livechat') renderLiveChat(container);
+            if (tabName === 'tasks') renderTasks(container);
+        }
+
+        // 1. DASHBOARD (04:00 AM View)
+        function renderDashboard(container) {
+            container.innerHTML = `
+                <div class="fade-in">
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div class="ios-card bg-blue-500 text-white flex flex-col justify-between h-32">
+                            <i class="fas fa-truck text-3xl opacity-50"></i>
+                            <div>
+                                <div class="text-3xl font-bold">4</div>
+                                <div class="text-xs opacity-80 font-bold">משאיות בסידור</div>
+                            </div>
+                        </div>
+                        <div class="ios-card bg-white flex flex-col justify-between h-32">
+                            <i class="fas fa-shopping-bag text-3xl text-orange-500"></i>
+                            <div>
+                                <div class="text-3xl font-bold text-slate-800">12</div>
+                                <div class="text-xs text-gray-400 font-bold">הזמנות פתוחות</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ios-card">
+                        <h3 class="font-bold text-gray-500 text-xs uppercase mb-4">בקרת מערכת</h3>
+                        <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                            <span class="text-sm font-bold text-slate-700">חיבור קומקס</span>
+                            <span class="text-xs font-bold text-green-600 flex items-center"><span class="status-dot dot-green"></span> תקין</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                            <span class="text-sm font-bold text-slate-700">נוכחות נהגים</span>
+                            <span class="text-xs font-bold text-orange-500 flex items-center"><span class="status-dot dot-orange"></span> 1 חסר</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2">
+                            <span class="text-sm font-bold text-slate-700">רובוט מכירות</span>
+                            <span class="text-xs font-bold text-green-600 flex items-center"><span class="status-dot dot-green"></span> פעיל</span>
+                        </div>
+                    </div>
+
+                    <h3 class="font-bold text-gray-400 text-xs uppercase mb-2 px-2">פעולות מהירות</h3>
+                    <div class="flex gap-3 overflow-x-auto pb-4">
+                        <button class="bg-white p-4 rounded-2xl shadow-sm min-w-[100px] flex flex-col items-center gap-2" onclick="alert('פותח דוח מכירות...')">
+                            <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-green-600"><i class="fas fa-chart-line"></i></div>
+                            <span class="text-xs font-bold">דוח יומי</span>
+                        </button>
+                        <button class="bg-white p-4 rounded-2xl shadow-sm min-w-[100px] flex flex-col items-center gap-2" onclick="showTab('sidur')">
+                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600"><i class="fas fa-map"></i></div>
+                            <span class="text-xs font-bold">מפת נהגים</span>
+                        </button>
+                        <button class="bg-white p-4 rounded-2xl shadow-sm min-w-[100px] flex flex-col items-center gap-2" onclick="alert('שולח הודעה לכולם...')">
+                            <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-purple-600"><i class="fas fa-bullhorn"></i></div>
+                            <span class="text-xs font-bold">הודעת צוות</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 2. THE SIDUR (Dispatch)
+        function renderSidur(container) {
+            container.innerHTML = `
+                <div class="fade-in">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold">הסידור להיום</h2>
+                        <span class="text-xs bg-slate-200 px-2 py-1 rounded text-slate-600 font-bold">אחראי: ראמי</span>
+                    </div>
+
+                    <div class="ios-card p-0 overflow-hidden">
+                        ${drivers.map(d => `
+                            <div class="dispatch-row px-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center font-bold text-slate-600">${d.name[0]}</div>
+                                    <div>
+                                        <div class="font-bold text-sm">${d.name}</div>
+                                        <div class="text-xs text-gray-400">${d.location}</div>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-xs font-bold ${d.status === 'בנסיעה' ? 'text-blue-600' : 'text-orange-500'}">${d.status}</div>
+                                    <div class="text-[10px] text-gray-400">${d.task}</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <button class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold shadow-lg mt-4 flex items-center justify-center gap-2">
+                        <i class="fas fa-phone"></i> פתח שיחת ועידה (נהגים)
+                    </button>
+                </div>
+            `;
+        }
+
+        // 3. LIVE CHAT (The Eye)
+        function renderLiveChat(container) {
+            container.innerHTML = `
+                <div class="fade-in">
+                    <h2 class="text-xl font-bold mb-4">חדר מצב (Live)</h2>
+                    
+                    <div id="chatList">
+                        ${activeChats.map(c => `
+                            <div onclick="openChatSession(${c.id}, '${c.client}')" class="ios-card flex justify-between items-center active:scale-95 transition transform">
+                                <div class="flex items-center gap-3">
+                                    <div class="relative">
+                                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center font-bold text-blue-600">${c.client[0]}</div>
+                                        <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-sm">${c.client}</div>
+                                        <div class="text-xs text-gray-400 truncate w-40">${c.lastMsg}</div>
+                                    </div>
+                                </div>
+                                <div class="text-center">
+                                    <span class="text-[10px] bg-slate-100 px-2 py-1 rounded text-slate-500 block mb-1">בטיפול: ${c.agent}</span>
+                                    <i class="fas fa-chevron-left text-gray-300 text-xs"></i>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div id="chatSession" class="hidden fixed inset-0 bg-white z-[60] flex flex-col">
+                        <div class="bg-slate-50 p-4 pt-12 border-b flex justify-between items-center shadow-sm">
+                            <div class="flex items-center gap-3">
+                                <button onclick="closeChatSession()"><i class="fas fa-arrow-right text-xl text-slate-600"></i></button>
+                                <div>
+                                    <h3 class="font-bold" id="chatClientName">לקוח</h3>
+                                    <span class="text-xs text-green-600">● מחובר כעת</span>
+                                </div>
+                            </div>
+                            <div class="bg-red-50 text-red-600 px-3 py-1 rounded-full text-xs font-bold border border-red-100">
+                                <i class="fas fa-eye"></i> מצב צפייה
+                            </div>
+                        </div>
+                        
+                        <div class="flex-1 bg-[#f2f2f7] p-4 overflow-y-auto" id="chatMessages">
+                            </div>
+
+                        <div class="p-4 bg-white border-t">
+                            <div class="flex gap-2">
+                                <input type="text" id="managerInput" placeholder="התערב בשיחה (הודעת מנהל)..." class="flex-1 bg-slate-100 rounded-full px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                                <button onclick="sendManagerMsg()" class="bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                            <div class="text-[10px] text-center text-gray-400 mt-2">ההודעה תישלח בשמך ותסומן כדחופה</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 4. TASKS (The Nagger)
+        function renderTasks(container) {
+            container.innerHTML = `
+                <div class="fade-in">
+                    <h2 class="text-xl font-bold mb-4">משימות פתוחות</h2>
+                    
+                    <div class="bg-white p-3 rounded-2xl shadow-sm flex gap-2 mb-6">
+                        <input type="text" placeholder="משימה חדשה..." class="flex-1 bg-transparent outline-none text-sm px-2">
+                        <button class="bg-blue-500 text-white w-8 h-8 rounded-full"><i class="fas fa-plus"></i></button>
+                        <button class="bg-slate-100 text-slate-500 w-8 h-8 rounded-full"><i class="fas fa-microphone"></i></button>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="ios-card p-4 border-r-4 border-red-500 flex justify-between items-center">
+                            <div>
+                                <div class="text-sm font-bold text-slate-800 line-through decoration-slate-300">בדיקת מלאי סיקה</div>
+                                <div class="text-xs text-red-500 font-bold mt-1"><i class="fas fa-clock"></i> איחור של שעתיים (יואב)</div>
+                            </div>
+                            <button class="bg-red-50 text-red-600 px-3 py-1 rounded-lg text-xs font-bold">נדנד 🔔</button>
+                        </div>
+
+                        <div class="ios-card p-4 border-r-4 border-blue-500 flex justify-between items-center">
+                            <div>
+                                <div class="text-sm font-bold text-slate-800">הכנת הזמנה לשחר</div>
+                                <div class="text-xs text-gray-400 mt-1">אחראי: ראמי</div>
+                            </div>
+                            <div class="w-6 h-6 border-2 border-gray-300 rounded-full"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- Logic Helpers ---
+
+        window.openChatSession = (id, name) => {
+            document.getElementById('chatSession').classList.remove('hidden');
+            document.getElementById('chatClientName').innerText = name;
+            
+            // Fake History
+            const chatBox = document.getElementById('chatMessages');
+            chatBox.innerHTML = `
+                <div class="flex flex-col gap-2">
+                    <div class="chat-bubble bubble-client">היי, מתי המשאית מגיעה לרעננה?</div>
+                    <div class="chat-bubble bubble-bot">בודק לך... הנהג עלי בדרך.</div>
+                    <div class="chat-bubble bubble-client">הוא לא עונה לי בטלפון.</div>
+                </div>
+            `;
+        }
+
+        window.closeChatSession = () => {
+            document.getElementById('chatSession').classList.add('hidden');
+        }
+
+        window.sendManagerMsg = () => {
+            const input = document.getElementById('managerInput');
+            const txt = input.value;
+            if(!txt) return;
+            
+            const chatBox = document.getElementById('chatMessages');
+            const div = document.createElement('div');
+            div.className = 'chat-bubble bubble-harel fade-in';
+            div.innerHTML = `<b>הראל:</b> ${txt}`;
+            chatBox.appendChild(div);
+            input.value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // Init
+        showTab('dashboard');
+
+    </script>
+</body>
+</html>

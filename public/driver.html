@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>SabanOS | נהג</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-slate-800 text-white p-4 font-sans">
+    <div id="gpsStatus" class="bg-red-500 text-white text-xs text-center p-1 mb-4 rounded">GPS מנותק</div>
+    <h1 class="text-xl font-bold mb-4">משלוחים על המשאית</h1>
+    <div id="deliveries" class="space-y-4 text-center text-gray-500">טוען...</div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, updateDoc, doc, serverTimestamp, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
+        const app = initializeApp(firebaseConfig); const db = getFirestore(app); const auth = getAuth(app);
+        
+        onAuthStateChanged(auth, (user) => {
+            if (!user) window.location.href = "index.html";
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition((pos) => {
+                    document.getElementById('gpsStatus').className = 'bg-green-600 text-white text-xs text-center p-1 mb-4 rounded';
+                    document.getElementById('gpsStatus').innerText = 'GPS משדר';
+                    updateDoc(doc(db, "users", user.uid), { location: { lat: pos.coords.latitude, lng: pos.coords.longitude }, lastLocationUpdate: serverTimestamp() });
+                });
+            }
+            onSnapshot(query(collection(db, "orders"), where("status", "==", "shipping")), (snap) => {
+                const container = document.getElementById('deliveries');
+                if(snap.empty) { container.innerHTML = "אין משלוחים"; return; }
+                container.innerHTML = snap.docs.map(d => {
+                    const o = d.data();
+                    return `<div class="bg-white text-black p-5 rounded-xl shadow-lg border-r-4 border-purple-600"><h2 class="font-bold text-lg">${o.clientName}</h2><p class="text-gray-600 mb-4">${o.project}</p><a href="https://waze.com/ul?q=${o.project}" target="_blank" class="block w-full bg-blue-100 text-blue-600 py-3 rounded-lg text-center font-bold">נווט</a></div>`;
+                }).join('');
+            });
+        });
+    </script>
+</body>
+</html>

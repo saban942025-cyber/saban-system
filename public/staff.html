@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>SabanOS | סידור עבודה</title>
+    <link rel="manifest" href="manifest.json">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script type="module" src="./js/logger.js"></script>
+</head>
+<body class="bg-gray-100 h-screen flex flex-col font-sans">
+
+    <header class="bg-slate-800 text-white p-4 shadow flex justify-between">
+        <h1 class="font-bold text-xl">מגדל פיקוח (סידור)</h1>
+        <div class="text-sm">מחובר: <span id="staffName"></span></div>
+    </header>
+
+    <main class="flex-1 p-6 overflow-auto">
+        <div class="bg-white rounded-xl shadow border">
+            <div class="p-4 border-b bg-gray-50 flex justify-between items-center">
+                <h2 class="font-bold">הזמנות נכנסות (ממתין לשיבוץ)</h2>
+            </div>
+            <table class="w-full text-right">
+                <thead class="bg-gray-100 text-xs text-gray-500 uppercase">
+                    <tr>
+                        <th class="p-3">לקוח</th>
+                        <th class="p-3">פרויקט</th>
+                        <th class="p-3">פריטים</th>
+                        <th class="p-3 text-center">קומקס</th>
+                        <th class="p-3 text-center">פעולה</th>
+                    </tr>
+                </thead>
+                <tbody id="ordersTable" class="text-sm">
+                    <tr><td colspan="5" class="p-4 text-center">טוען...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script type="module">
+        import { auth, db, onAuthStateChanged, collection, query, where, orderBy, onSnapshot, updateDoc, doc } from './js/firebase-config.js';
+
+        onAuthStateChanged(auth, (user) => {
+            if(!user) window.location.href="index.html";
+            
+            // האזנה להזמנות חדשות
+            const q = query(collection(db, "orders"), where("status", "==", "new"), orderBy("createdAt", "desc"));
+            
+            onSnapshot(q, (snap) => {
+                const tbody = document.getElementById('ordersTable');
+                
+                if (snap.empty) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">אין הזמנות חדשות</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = snap.docs.map(d => {
+                    const o = d.data();
+                    // --- התיקון הקריטי כאן ---
+                    // בדיקה האם o.items קיים לפני שמנסים לרוץ עליו
+                    const itemsList = o.items || []; 
+                    
+                    let itemsText = "";
+                    if (itemsList.length > 0) {
+                        itemsText = itemsList.map(i => `${i.name} (${i.qty})`).join(', ');
+                    } else {
+                        // אם אין רשימת פריטים (אולי טקסט חופשי?)
+                        itemsText = o.rawText || "ללא פירוט";
+                    }
+                    
+                    return `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="p-3 font-bold">${o.clientName || 'לקוח'}</td>
+                        <td class="p-3">${o.project || '-'}</td>
+                        <td class="p-3 truncate max-w-xs" title="${itemsText}">${itemsText}</td>
+                        <td class="p-3 text-center">
+                            <button onclick="window.exportComax('${d.id}')" class="text-green-600 hover:text-green-800" title="הורד קובץ יבוא">
+                                <i class="fas fa-file-excel text-xl"></i>
+                            </button>
+                        </td>
+                        <td class="p-3 text-center">
+                            <button onclick="window.sendToWarehouse('${d.id}')" class="bg-blue-600 text-white px-3 py-1 rounded text-xs">שגר למחסן</button>
+                        </td>
+                    </tr>`;
+                }).join('');
+                
+                window.currentOrders = snap.docs.reduce((acc, d) => ({...acc, [d.id]: d.data()}), {});
+            });
+        });
+
+        window.exportComax = (id) => {
+            const o = window.currentOrders[id];
+            const items = o.items || [];
+            
+            if (items.length === 0) {
+                alert("הזמנה זו מכילה טקסט חופשי בלבד, לא ניתן לייצא לקומקס אוטומטית כרגע.");
+                return;
+            }
+
+            let csvContent = "ClientCode,ItemCode,Quantity,Project,Remarks\n";
+            items.forEach(item => {
+                csvContent += `${o.comaxId || ''},${item.sku || ''},${item.qty},${o.project || ''},SabanOS-${id.slice(0,4)}\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `Comax_Order_${o.clientName}.csv`;
+            link.click();
+        };
+
+        window.sendToWarehouse = async (id) => {
+            if(confirm("לשגר למחסן לליקוט? (הטיימר יתחיל לרוץ)")) {
+                await updateDoc(doc(db, "orders", id), { 
+                    status: "picking",
+                    pickedStartTime: new Date()
+                });
+            }
+        };
+    </script>
+</body>
+</html>

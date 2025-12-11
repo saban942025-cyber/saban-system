@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SabanOS Admin | Video Edition v15.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap');
+        
+        body { background-color: #f8fafc; color: #334155; font-family: 'Rubik', sans-serif; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        
+        /* Layout & Grid */
+        .workspace-grid { display: flex; height: calc(100vh - 60px); overflow: hidden; }
+        .sidebar { width: 300px; background: white; border-left: 1px solid #e2e8f0; display: flex; flex-direction: column; z-index: 20; }
+        .center-stage { flex: 1; background: #f1f5f9; padding: 20px; display: flex; flex-direction: column; gap: 15px; overflow: hidden; }
+        .scrollable-column { flex: 1; overflow-y: auto; padding-right: 5px; padding-bottom: 50px; }
+        .preview-pane { width: 380px; background: #e2e8f0; border-right: 1px solid #e2e8f0; display: flex; justify-content: center; padding-top: 20px; }
+        
+        /* Product List */
+        .prod-card { padding: 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 10px; }
+        .prod-card:hover { background-color: #f8fafc; }
+        .prod-card.active { background-color: #f0fdf4; border-right: 4px solid #16a34a; }
+        .prod-img-thumb { width: 32px; height: 32px; border-radius: 6px; object-fit: contain; background: #fff; border: 1px solid #e2e8f0; }
+
+        /* Simulator Card */
+        .chat-product-card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); max-width: 90%; margin-bottom: 10px; }
+        .chat-card-img-container { position: relative; width: 100%; height: 140px; background: white; border-bottom: 1px solid #f1f5f9; }
+        .chat-card-img { width: 100%; height: 100%; object-fit: contain; padding: 10px; }
+        .chat-card-img-2 { position: absolute; bottom: 5px; left: 5px; width: 40px; height: 40px; border: 1px solid #e2e8f0; border-radius: 6px; background: white; object-fit: contain; padding: 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .chat-card-body { padding: 12px; }
+        
+        /* Video Player Style */
+        .video-container { margin-top: 10px; border-top: 1px solid #f1f5f9; padding-top: 8px; }
+        .video-label { font-size: 10px; font-weight: bold; color: #ef4444; margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
+        .video-frame { width: 100%; height: 150px; border-radius: 8px; background: #000; }
+
+        /* Search Modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 100; opacity: 0; pointer-events: none; transition: 0.3s; }
+        .modal-overlay.open { opacity: 1; pointer-events: all; }
+        .modal-box { background: white; width: 95%; max-width: 1000px; border-radius: 16px; padding: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); display: flex; flex-direction: column; max-height: 90vh; }
+        
+        .result-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; overflow-y: auto; padding: 5px; }
+        .result-card { border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: white; transition: 0.2s; display: flex; flex-direction: column; }
+        .result-card:hover { border-color: #3b82f6; box-shadow: 0 10px 20px -5px rgba(0,0,0,0.1); transform: translateY(-2px); }
+        .res-img-box { height: 120px; background: #000; display: flex; align-items: center; justify-content: center; padding: 0; position: relative; }
+        .res-img { width: 100%; height: 100%; object-fit: cover; opacity: 0.8; }
+        .play-icon { position: absolute; font-size: 30px; color: white; opacity: 0.8; text-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        .res-body { padding: 8px; flex: 1; display: flex; flex-direction: column; }
+        .res-title { font-size: 11px; font-weight: bold; line-height: 1.4; margin-bottom: 8px; color: #1e293b; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 30px; }
+        .res-actions { margin-top: auto; }
+        .res-btn { font-size: 11px; padding: 6px; border-radius: 6px; text-align: center; cursor: pointer; font-weight: bold; width: 100%; background: #ef4444; color: white; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .res-btn:hover { background: #dc2626; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        
+        input, textarea { position: relative; z-index: 10; }
+    </style>
+</head>
+<body>
+
+    <div class="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6 shadow-sm z-50">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-700 rounded-xl flex items-center justify-center text-white shadow-lg"><i class="fas fa-boxes"></i></div>
+            <div>
+                <h1 class="font-bold text-lg leading-tight">SabanOS Catalog</h1>
+                <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Video Edition v15.0</span>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <div id="statusIndicator" class="text-xs font-bold text-gray-400 flex items-center gap-2 px-3 py-1 rounded bg-slate-50 border">
+                <span class="w-2 h-2 rounded-full bg-gray-300"></span> מוכן
+            </div>
+            <button onclick="saveProduct()" class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg text-sm font-bold shadow flex items-center gap-2 transition cursor-pointer">
+                <i class="fas fa-save"></i> שמור מוצר
+            </button>
+        </div>
+    </div>
+
+    <div class="workspace-grid">
+        
+        <div class="sidebar">
+            <div class="p-4 border-b border-gray-200 bg-slate-50">
+                <div class="relative">
+                    <input type="text" id="searchInput" oninput="renderList()" placeholder="חפש במלאי..." class="w-full bg-white border border-slate-300 rounded-lg p-2 pl-9 text-sm outline-none focus:border-green-500 shadow-sm">
+                    <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                </div>
+                <div class="flex justify-between items-center mt-3 px-1">
+                    <span class="text-[10px] text-gray-500" id="totalCount">0 פריטים</span>
+                    <button onclick="addNew()" class="text-green-600 text-xs font-bold hover:bg-green-50 px-2 py-1 rounded transition cursor-pointer">+ מוצר חדש</button>
+                </div>
+            </div>
+            <div class="flex-1 overflow-y-auto" id="listContainer"></div>
+        </div>
+
+        <div class="center-stage">
+            
+            <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex gap-3 items-end flex-shrink-0">
+                <div class="flex-1">
+                    <label class="text-[10px] font-bold text-gray-400 uppercase mb-1 block">שם המוצר (לחיפוש אוטומטי)</label>
+                    <input type="text" id="magicName" placeholder="למשל: סיקה טופ 107" class="w-full text-lg font-bold text-slate-800 border-b border-gray-200 pb-1 outline-none focus:border-green-500 transition">
+                </div>
+                <button onclick="runMagicSearch()" id="magicBtn" class="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md flex items-center gap-2 transition cursor-pointer h-10">
+                    <i class="fas fa-search"></i> חפש (6)
+                </button>
+            </div>
+
+            <div class="flex gap-4 h-full overflow-hidden">
+                
+                <div class="scrollable-column">
+                    
+                    <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm mb-4">
+                        <h3 class="text-xs font-bold text-gray-400 uppercase mb-3 flex items-center gap-2"><i class="fas fa-tag"></i> פרטי בסיס</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-[10px] text-gray-500 font-bold block mb-1">מק"ט</label>
+                                <input type="text" id="sku" class="w-full bg-slate-50 border border-slate-200 rounded p-2 text-sm font-mono" placeholder="114260">
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-gray-500 font-bold block mb-1">מחיר (₪)</label>
+                                <input type="number" id="price" class="w-full bg-slate-50 border border-slate-200 rounded p-2 text-sm font-bold text-green-700" placeholder="0.00" oninput="updatePreview()">
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4 mt-3">
+                            <div>
+                                <label class="text-[10px] text-blue-500 font-bold block mb-1">תמונה ראשית</label>
+                                <input type="text" id="image" class="w-full bg-slate-50 border border-slate-200 rounded p-2 text-xs text-blue-600 truncate" oninput="updatePreview()">
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-purple-500 font-bold block mb-1">תמונה משנית</label>
+                                <input type="text" id="image2" class="w-full bg-slate-50 border border-slate-200 rounded p-2 text-xs text-purple-600 truncate" oninput="updatePreview()">
+                            </div>
+                        </div>
+
+                        <div class="mt-4 pt-4 border-t border-dashed border-gray-200">
+                            <label class="text-[10px] text-red-500 font-bold uppercase mb-2 flex items-center gap-1"><i class="fab fa-youtube"></i> וידאו למוצר</label>
+                            <div class="flex gap-2 mb-2">
+                                <div class="flex-1">
+                                    <input type="text" id="videoUrl" class="w-full bg-red-50 border border-red-200 rounded p-2 text-xs text-red-700" placeholder="הדבק קישור ליוטיוב..." oninput="updatePreview()">
+                                </div>
+                                <div class="w-1/3">
+                                    <select id="videoTitle" class="w-full bg-white border border-gray-200 rounded p-2 text-xs font-bold text-gray-700" onchange="updatePreview()">
+                                        <option value="שיטת יישום">שיטת יישום</option>
+                                        <option value="סרטון הדרכה">סרטון הדרכה</option>
+                                        <option value="סקירת מוצר">סקירת מוצר</option>
+                                        <option value="בטיחות">הוראות בטיחות</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button onclick="searchVideo()" class="w-full bg-red-100 hover:bg-red-200 text-red-700 py-1.5 rounded text-xs font-bold transition flex items-center justify-center gap-2">
+                                <i class="fas fa-search"></i> חפש סרטון ביוטיוב
+                            </button>
+                        </div>
+
+                        <div class="mt-3">
+                            <label class="text-[10px] text-gray-500 font-bold block mb-1">תיאור שיווקי</label>
+                            <textarea id="description" rows="2" class="w-full bg-slate-50 border border-slate-200 rounded p-2 text-sm focus:border-green-500 outline-none" oninput="updatePreview()"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-purple-200 rounded-xl p-5 shadow-sm relative overflow-visible mb-4">
+                        <div class="absolute top-0 left-0 bg-purple-100 text-purple-700 text-[10px] font-bold px-2 py-1 rounded-br z-0">נקודות כוח</div>
+                        <h3 class="text-xs font-bold text-gray-400 uppercase mb-3 mt-2 flex items-center gap-2"><i class="fas fa-list-check"></i> תכונות מוצר</h3>
+                        <textarea id="features" rows="4" class="w-full bg-purple-50/50 border border-purple-200 rounded p-3 text-sm focus:border-purple-500 outline-none leading-relaxed relative z-10" placeholder="✅ עמיד במים&#10;✅ מתייבש מהר" oninput="updatePreview()"></textarea>
+                    </div>
+
+                    <div class="bg-white border border-blue-200 rounded-xl p-5 shadow-sm relative overflow-visible mb-4">
+                        <div class="absolute top-0 left-0 bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-1 rounded-br z-0">מוח הבוט 🧠</div>
+                        <h3 class="text-xs font-bold text-gray-400 uppercase mb-3 mt-2 flex items-center gap-2"><i class="fas fa-microchip"></i> מפרט טכני</h3>
+                        <div class="grid grid-cols-2 gap-3 relative z-10">
+                            <div><label class="text-[10px] text-gray-500 font-bold block mb-1">⏱️ זמן ייבוש</label><input type="text" id="specDry" class="w-full bg-slate-50 border border-slate-200 rounded p-2 text-xs" oninput="updatePreview()"></div>
+                            <div><label class="text-[10px] text-gray-500 font-bold block mb-1">📏 כושר כיסוי</label><input type="text" id="specCover" class="w-full bg-slate-50 border border-slate-200 rounded p-2 text-xs" oninput="updatePreview()"></div>
+                            <div><label class="text-[10px] text-gray-500 font-bold block mb-1">📜 תקן</label><input type="text" id="specStd" class="w-full bg-slate-50 border border-slate-200 rounded p-2 text-xs" oninput="updatePreview()"></div>
+                            <div><label class="text-[10px] text-gray-500 font-bold block mb-1">🏗️ יישום</label><input type="text" id="specApply" class="w-full bg-slate-50 border border-slate-200 rounded p-2 text-xs" oninput="updatePreview()"></div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="preview-pane">
+            <div class="text-center mb-4"><span class="text-xs font-bold text-gray-400 uppercase tracking-widest">תצוגת בוט (Live)</span></div>
+            <div class="w-[320px] bg-[#efe7dd] border-[10px] border-slate-800 rounded-[30px] h-[600px] overflow-hidden shadow-2xl relative flex flex-col">
+                <div class="bg-[#075E54] p-3 text-white flex items-center gap-2 shadow-sm">
+                    <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center"><i class="fas fa-robot text-sm"></i></div>
+                    <div class="text-xs font-bold">המומחה של סבן</div>
+                </div>
+                <div class="flex-1 p-4 overflow-y-auto">
+                    <div class="flex justify-end mb-2"><div class="bg-[#dcf8c6] text-black text-xs p-2 rounded-lg rounded-tr-none shadow-sm max-w-[80%]">יש את זה במלאי?</div></div>
+
+                    <div class="chat-product-card">
+                        <div class="chat-card-img-container flex items-center justify-center">
+                            <img id="simImg" src="" class="chat-card-img">
+                            <img id="simImg2" src="" class="chat-card-img-2 hidden">
+                        </div>
+                        <div class="chat-card-body">
+                            <div class="font-bold text-sm text-slate-800 mb-1" id="simName">שם המוצר</div>
+                            <div class="text-xs text-green-600 font-bold mb-2">₪<span id="simPrice">0.00</span></div>
+                            <div id="simFeatures" class="mb-2 pl-1 border-l-2 border-purple-200"></div>
+                            <div class="flex flex-wrap" id="simSpecs"></div>
+
+                            <div id="simVideoContainer" class="hidden video-container">
+                                <div class="video-label"><i class="fab fa-youtube"></i> <span id="simVideoTitle">שיטת יישום</span></div>
+                                <iframe id="simVideoFrame" class="video-frame" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                            </div>
+
+                            <button class="w-full bg-green-600 text-white text-xs font-bold py-2 rounded mt-2 shadow-sm">הוסף להזמנה</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="resultsModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-3">
+                <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2" id="modalTitle">בחירת תוצאה</h3>
+                <button onclick="closeResults()" class="text-gray-400 hover:text-red-500"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div id="resultsGrid" class="result-grid custom-scroll flex-1"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, doc, setDoc, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const CX_POOL = ["1340c66f5e73a4076"]; 
+        const API_KEY_POOL = ["AIzaSyDLkShn6lBBew-PJJWtzvAe_14UF9Kv-QI"];
+
+        let products = [];
+        let activeId = null;
+        let lastSearchResults = [];
+        let searchMode = 'general'; // 'general' or 'video'
+
+        window.onload = async () => { await loadProducts(); };
+
+        // 1. SEARCH LOGIC (Video & Images)
+        async function executeSearch(query, type) {
+            const btn = type === 'video' ? document.getElementById('statusIndicator') : document.getElementById('magicBtn'); // Indicator fallback
+            searchMode = type;
+            
+            try {
+                const key = API_KEY_POOL[0];
+                const cx = CX_POOL[0];
+                let searchType = type === 'video' ? '' : '&searchType=image';
+                let extraQuery = type === 'video' ? ' youtube tutorial' : ' product packaging';
+                
+                // If video, we append youtube site filter manually if not using siteSearch
+                const url = `https://www.googleapis.com/customsearch/v1?q=${encodeURIComponent(query + extraQuery)}&cx=${cx}&key=${key}${searchType}&num=6`;
+                
+                const res = await fetch(url);
+                if (!res.ok) throw new Error(`API Error: ${res.status}`);
+                const data = await res.json();
+
+                if(data.items && data.items.length > 0) {
+                    lastSearchResults = data.items;
+                    renderSearchResults(data.items, type);
+                    document.getElementById('modalTitle').innerHTML = type === 'video' ? '<i class="fab fa-youtube text-red-600"></i> בחירת סרטון' : '<i class="fab fa-google text-blue-500"></i> בחירת תמונות';
+                    document.getElementById('resultsModal').classList.add('open');
+                } else {
+                    alert("לא נמצאו תוצאות.");
+                }
+            } catch(e) {
+                alert("שגיאה: " + e.message);
+            }
+        }
+
+        window.runMagicSearch = () => {
+            const query = document.getElementById('magicName').value;
+            if(!query) return alert("הכנס שם לחיפוש");
+            document.getElementById('magicBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            executeSearch(query, 'general').finally(()=> document.getElementById('magicBtn').innerHTML = '<i class="fas fa-search"></i> חפש (6)');
+        };
+
+        window.searchVideo = () => {
+            const query = document.getElementById('magicName').value;
+            if(!query) return alert("הכנס שם מוצר קודם");
+            executeSearch(query, 'video');
+        };
+
+        window.renderSearchResults = (items, type) => {
+            const grid = document.getElementById('resultsGrid');
+            grid.innerHTML = items.map((item, i) => {
+                // If video search, try to find thumbnail
+                let imgUrl = type === 'video' && item.pagemap?.cse_thumbnail ? item.pagemap.cse_thumbnail[0].src : (item.link || '');
+                let actions = '';
+
+                if (type === 'video') {
+                    actions = `<button onclick="window.applyResult('video', ${i})" class="res-btn bg-red-600 text-white"><i class="fas fa-play"></i> בחר סרטון זה</button>`;
+                } else {
+                    actions = `
+                        <div class="flex gap-1 mt-auto">
+                            <button onclick="window.applyResult('image1', ${i})" class="res-btn bg-blue-100 text-blue-700 flex-1">תמונה 1</button>
+                            <button onclick="window.applyResult('image2', ${i})" class="res-btn bg-purple-100 text-purple-700 flex-1">תמונה 2</button>
+                            <button onclick="window.applyResult('text', ${i})" class="res-btn bg-green-100 text-green-700 flex-1">תוכן</button>
+                        </div>
+                        <button onclick="window.applyResult('all', ${i})" class="res-btn bg-slate-800 text-white mt-1 w-full">הכל וסגור</button>
+                    `;
+                }
+
+                return `
+                <div class="result-card">
+                    <div class="res-img-box">
+                        <img src="${imgUrl}" class="res-img" onerror="this.src='https://via.placeholder.com/150?text=No+Img'">
+                        ${type==='video' ? '<i class="fas fa-play-circle play-icon"></i>' : ''}
+                    </div>
+                    <div class="res-body">
+                        <div class="res-title" title="${item.title}">${item.title}</div>
+                        ${actions}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        window.applyResult = (mode, index) => {
+            const item = lastSearchResults[index];
+            if (!item) return;
+
+            if (mode === 'video') {
+                document.getElementById('videoUrl').value = item.link;
+                document.getElementById('videoTitle').value = "סרטון הדרכה"; // Default
+            } else {
+                if (mode === 'image1' || mode === 'all') document.getElementById('image').value = item.link;
+                if (mode === 'image2') document.getElementById('image2').value = item.link;
+                if (mode === 'text' || mode === 'all') document.getElementById('description').value = item.title;
+            }
+            
+            updatePreview();
+            if (mode === 'all' || mode === 'video') closeResults();
+        }
+
+        window.closeResults = () => document.getElementById('resultsModal').classList.remove('open');
+
+        // 2. DATA
+        async function loadProducts() {
+            updateStatus('loading', 'טוען...');
+            try {
+                const snap = await getDocs(collection(db, "products"));
+                products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderList();
+                if(products.length > 0) loadProduct(0);
+                updateStatus('online', 'מחובר');
+            } catch(e) { console.error(e); }
+        }
+
+        window.renderList = () => {
+            const list = document.getElementById('listContainer');
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            list.innerHTML = '';
+
+            products.forEach((p, i) => {
+                if(!p.core?.name.toLowerCase().includes(search)) return;
+                const div = document.createElement('div');
+                div.className = `prod-card ${p.id === activeId ? 'active' : ''}`;
+                div.innerHTML = `
+                    <img src="${p.rich?.image || 'https://via.placeholder.com/32'}" class="prod-img-thumb">
+                    <div class="flex-1 min-w-0">
+                        <div class="font-bold text-xs text-slate-700 truncate">${p.core?.name}</div>
+                        <div class="text-[10px] text-gray-400 font-mono">${p.id}</div>
+                    </div>
+                    <div class="text-xs font-bold text-green-600">₪${p.core?.price}</div>
+                `;
+                div.onclick = () => loadProduct(i);
+                list.appendChild(div);
+            });
+            document.getElementById('totalCount').innerText = `${products.length} פריטים`;
+        }
+
+        window.loadProduct = (index) => {
+            const p = products[index];
+            activeId = p.id;
+            
+            document.getElementById('sku').value = p.id;
+            document.getElementById('magicName').value = p.core?.name || '';
+            document.getElementById('price').value = p.core?.price || '';
+            document.getElementById('image').value = p.rich?.image || '';
+            document.getElementById('image2').value = p.rich?.image2 || '';
+            document.getElementById('description').value = p.rich?.description || '';
+            document.getElementById('features').value = p.rich?.features || '';
+            
+            // Video
+            document.getElementById('videoUrl').value = p.rich?.video || '';
+            document.getElementById('videoTitle').value = p.rich?.videoTitle || 'שיטת יישום';
+
+            document.getElementById('specDry').value = p.specs?.dry || '';
+            document.getElementById('specCover').value = p.specs?.cover || '';
+            document.getElementById('specStd').value = p.specs?.std || '';
+            document.getElementById('specApply').value = p.specs?.apply || '';
+
+            document.getElementById('reqCrane').checked = p.logistics?.crane || false;
+            document.getElementById('reqPallet').checked = p.logistics?.pallet || false;
+
+            renderList();
+            updatePreview();
+        }
+
+        // 3. PREVIEW & SAVE
+        window.updatePreview = () => {
+            const name = document.getElementById('magicName').value;
+            const price = document.getElementById('price').value;
+            const img = document.getElementById('image').value;
+            const img2 = document.getElementById('image2').value;
+            
+            document.getElementById('simName').innerText = name || 'שם המוצר';
+            document.getElementById('simPrice').innerText = price || '0.00';
+            
+            const simImg = document.getElementById('simImg');
+            simImg.src = img || 'https://via.placeholder.com/150?text=No+Image';
+            
+            const simImg2 = document.getElementById('simImg2');
+            if(img2) { simImg2.src = img2; simImg2.classList.remove('hidden'); } else { simImg2.classList.add('hidden'); }
+
+            const featuresTxt = document.getElementById('features').value;
+            document.getElementById('simFeatures').innerHTML = featuresTxt.split('\n').filter(f => f.trim()).map(f => 
+                `<div class="sim-feature-item"><i class="fas fa-check-circle sim-feature-icon"></i> ${f}</div>`
+            ).join('');
+
+            // Video logic
+            const vidUrl = document.getElementById('videoUrl').value;
+            const vidTitle = document.getElementById('videoTitle').value;
+            const vidContainer = document.getElementById('simVideoContainer');
+            
+            if (vidUrl && (vidUrl.includes('youtube.com') || vidUrl.includes('youtu.be'))) {
+                let vidId = '';
+                if (vidUrl.includes('v=')) vidId = vidUrl.split('v=')[1].split('&')[0];
+                else if (vidUrl.includes('youtu.be/')) vidId = vidUrl.split('youtu.be/')[1];
+                
+                if (vidId) {
+                    document.getElementById('simVideoTitle').innerText = vidTitle;
+                    document.getElementById('simVideoFrame').src = `https://www.youtube.com/embed/${vidId}`;
+                    vidContainer.classList.remove('hidden');
+                }
+            } else {
+                vidContainer.classList.add('hidden');
+            }
+
+            const specs = [
+                { icon: 'clock', val: document.getElementById('specDry').value },
+                { icon: 'ruler-combined', val: document.getElementById('specCover').value },
+                { icon: 'certificate', val: document.getElementById('specStd').value }
+            ];
+            document.getElementById('simSpecs').innerHTML = specs.filter(s => s.val).map(s => 
+                `<span class="spec-tag"><i class="fas fa-${s.icon}"></i> ${s.val}</span>`
+            ).join('');
+        }
+
+        window.saveProduct = async () => {
+            const sku = document.getElementById('sku').value;
+            if(!sku) return alert("חובה להזין מק\"ט");
+            updateStatus('saving', 'שומר...');
+            
+            const productData = {
+                id: sku,
+                core: {
+                    name: document.getElementById('magicName').value,
+                    price: Number(document.getElementById('price').value),
+                    stock: 999
+                },
+                rich: {
+                    image: document.getElementById('image').value,
+                    image2: document.getElementById('image2').value,
+                    description: document.getElementById('description').value,
+                    features: document.getElementById('features').value,
+                    video: document.getElementById('videoUrl').value, // Save Video
+                    videoTitle: document.getElementById('videoTitle').value
+                },
+                specs: {
+                    dry: document.getElementById('specDry').value,
+                    cover: document.getElementById('specCover').value,
+                    std: document.getElementById('specStd').value,
+                    apply: document.getElementById('specApply').value
+                },
+                logistics: {
+                    crane: document.getElementById('reqCrane').checked,
+                    pallet: document.getElementById('reqPallet').checked
+                },
+                updatedAt: serverTimestamp()
+            };
+
+            try {
+                await setDoc(doc(db, "products", sku), productData);
+                const idx = products.findIndex(p => p.id === sku);
+                if(idx > -1) products[idx] = productData; else products.push(productData);
+                renderList();
+                updateStatus('online', 'נשמר!');
+            } catch(e) { updateStatus('error', 'שגיאה'); }
+        }
+
+        window.addNew = () => {
+            activeId = null;
+            document.querySelectorAll('input').forEach(i => i.value = '');
+            document.querySelectorAll('textarea').forEach(i => i.value = '');
+            document.getElementById('sku').focus();
+            updatePreview();
+        }
+
+        function updateStatus(state, text) {
+            const el = document.getElementById('statusIndicator');
+            let color = state === 'online' ? 'bg-green-500' : (state === 'saving' ? 'bg-yellow-500' : 'bg-gray-300');
+            el.innerHTML = `<span class="w-2 h-2 rounded-full ${color}"></span> ${text}`;
+        }
+
+        ['magicName', 'price', 'image', 'image2', 'videoUrl', 'videoTitle', 'description', 'features', 'specDry', 'specCover', 'specStd', 'specApply'].forEach(id => {
+            document.getElementById(id).addEventListener('input', updatePreview);
+        });
+
+    </script>
+</body>
+</html>
