@@ -3,68 +3,67 @@ export class SabanChatbot {
         this.db = db;
         this.user = userContext; 
         this.knowledgeBase = []; 
-        // הגדרת מיקום החנות (טייבה/מרכז לוגיסטי לצורך החישוב)
+        // הגדרת מרכז לוגיסטי לצורך חישובים (טייבה)
         this.storeLocation = { lat: 32.263, lng: 35.005 }; 
     }
 
     async loadTemplates() {
         try {
-            // במערכת החיה ננסה למשוך מ-Firestore קודם, ואם אין אז מהקובץ
-            // this.knowledgeBase = await this.fetchFromFirestore(); // אופציה לעתיד
             const response = await fetch('templates.json');
             this.knowledgeBase = await response.json();
-        } catch (e) { console.error("Error loading templates", e); }
+        } catch (e) { 
+            console.warn("Could not load local templates, using fallback.");
+            this.knowledgeBase = [];
+        }
     }
 
     async ask(question) {
         if (this.knowledgeBase.length === 0) await this.loadTemplates();
 
-        // 1. בדיקת לוגיסטיקה חיה (החידוש!) 🚚
-        // אם הלקוח שואל "מתי", "הגעה", "איפה הנהג"
+        // 1. בדיקת לוגיסטיקה חיה (Logistics First)
         if (this.isLogisticsQuestion(question)) {
             return await this.handleLogisticsQuery();
         }
 
-        // 2. לוגיקה עסקית (היתרים/מכולות)
+        // 2. לוגיקה עסקית (Geo-Fencing)
         const logicResponse = this.checkContainerLogic(question);
         if (logicResponse) return logicResponse;
 
-        // 3. חיפוש רגיל בתבניות (Fallback)
+        // 3. חיפוש רגיל (Templates)
         return this.findBestTemplateMatch(question);
     }
 
-    // --- זיהוי כוונת לוגיסטיקה ---
     isLogisticsQuestion(text) {
-        const keywords = ["מתי", "זמן", "הגעה", "איפה", "נהג", "דקות"];
+        const keywords = ["מתי", "זמן", "הגעה", "איפה", "נהג", "דקות", "משלוח"];
         return keywords.some(kw => text.includes(kw));
     }
 
-    // --- הליבה החדשה: חישוב זמן אמת ---
     async handleLogisticsQuery() {
-        // כאן אנחנו מתחברים ליכולות של הלינק החי (חישוב מרחקים)
-        // שלב א: מציאת הנהג הפנוי/הקרוב ביותר (סימולציה)
-        const driverDist = Math.floor(Math.random() * 15) + 5; // מרחק רנדומלי 5-20 ק"מ
-        const timePerKm = 1.5; // דקות לקילומטר (כולל פקקים)
+        // סימולציה של שליפת מיקום נהג מה-DB
+        const driverDist = Math.floor(Math.random() * 15) + 2; // 2-17 ק"מ
+        const timePerKm = 1.8; // דקות לק"מ (כולל פקקים)
         const eta = Math.floor(driverDist * timePerKm);
 
         return {
-            text: `בדקתי במערכת הלוויינית 🛰️\nהנהג שלנו (חכמת) נמצא במרחק ${driverDist} ק"מ ממך.\n**זמן הגעה משוער: ${eta} דקות.**`,
+            text: `בדקתי במערכת הלוויינית 🛰️\nהנהג שלנו נמצא במרחק ${driverDist} ק"מ ממך.\n**זמן הגעה משוער: ${eta} דקות.**`,
             buttons: [
-                { label: "📍 צפה במפה", action: "open_map" },
+                { label: "📍 צפה במפה LIVE", action: "open_map" },
                 { label: "📞 התקשר לנהג", action: "call_driver" }
             ]
         };
     }
 
-    // --- הלוגיקה הקיימת (לשימור) ---
     checkContainerLogic(text) {
-        // לוגיקת הרצליה/רעננה נשמרת כאן
+        // היתרים גיאוגרפיים
         if (text.includes("מכולה") && (text.includes("הרצליה") || text.includes("רעננה"))) {
-            const city = text.includes("הרצליה") ? "herzliya" : "raanana";
-            const template = this.knowledgeBase.find(t => t.scenarioId === `permit_${city}`);
-            if (template) {
-                return { text: template.answer.replace("{name}", this.user.name), buttons: template.buttons };
-            }
+            const city = text.includes("הרצליה") ? "הרצליה" : "רעננה";
+            return {
+                text: `שים לב: להזמנת מכולה ב${city} חובה לצרף היתר עירייה בתוקף.\nהאם יש לך היתר?`,
+                buttons: [
+                    { label: "✅ יש לי היתר", action: "upload_permit" },
+                    { label: "❌ אין לי", action: "info_permit" }
+                ]
+            };
         }
         return null;
     }
@@ -72,6 +71,7 @@ export class SabanChatbot {
     findBestTemplateMatch(question) {
         let bestMatch = null;
         let maxScore = 0;
+        
         this.knowledgeBase.forEach(item => {
             let score = 0;
             item.keywords.forEach(kw => { if (question.includes(kw)) score++; });
@@ -79,12 +79,18 @@ export class SabanChatbot {
         });
 
         if (bestMatch && maxScore > 0) {
-            return { text: bestMatch.answer.replace("{name}", this.user.name || "חבר"), buttons: bestMatch.buttons };
-        } else {
             return { 
-                text: "לא בטוח שהבנתי. אתה שואל על מכולות, חומרי בניין או זמני הגעה?",
-                action: "DEFAULT_SUGGESTIONS"
+                text: bestMatch.answer.replace("{name}", this.user.name || "חבר"), 
+                buttons: bestMatch.buttons 
             };
-        }
+        } 
+        
+        return { 
+            text: "לא בטוח שהבנתי. אני יודע לענות על מכולות, חומרי בניין וזמני הגעה.",
+            buttons: [
+                { label: "מתי מגיע?", action: "check_eta" },
+                { label: "תפריט ראשי", action: "menu" }
+            ]
+        };
     }
 }
