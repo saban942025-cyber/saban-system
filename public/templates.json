@@ -1,50 +1,47 @@
 [
   {
-    "scenarioId": "glue_sika_255_drying",
-    "title": "סיקה 255 - זמן ייבוש (מקצועי)",
-    "keywords": ["סיקה 255", "זמן ייבוש", "דבק קרמיקה", "מתי דרוך", "ייבוש דבק"],
-    "answer": "שאלה מצוינת {name}! לגבי <b>סיקה סרם 255</b> (Sika Ceram 255):<br><br>🕓 <b>זמני ייבוש עיקריים:</b><br><ul><li><b>זמן עבודה (Open Time):</b> כ-30 עד 50 דקות מרגע המריחה (ב-20°C).</li><li><b>ייבוש ראשוני (דריכה):</b> כ-24 שעות. רק אז ניתן לדרוך בזהירות ולבצע רובה.</li><li><b>ייבוש סופי (חוזק מלא):</b> כ-28 יום.</li></ul>",
-    "buttons": [
-      { "label": "הוסף סיקה 255", "action": "add_to_cart", "payload": "prod_sika_255" }
-    ]
-  },
-  {
-    "scenarioId": "container_general_info",
-    "title": "מכולה - מידע כללי",
+    "scenarioId": "container_waste_check",
+    "title": "בדיקת סוג פסולת",
     "keywords": ["מכולה", "פסולת", "פינוי", "רמסה"],
-    "answer": "אנחנו מספקים מכולות <b>8 קוב</b> לפסולת בניין בלבד.<br>❌ <b>אסור:</b> גזם, אשפה ביתית, צמיגים (גורר קנסות במטמנה).<br>📅 <b>זמן השכרה:</b> עד 10 ימים (כולל סופ\"ש).<br>האם הפסולת שלך נקייה?",
+    "answer": "היי {name}, אנחנו מספקים מכולות <b>8 קוב</b> בלבד.<br>🛑 <b>חשוב מאוד:</b> המכולות מיועדות ל<b>פסולת בניין בלבד</b> (בטון, בלוקים, קרמיקה).<br>אסור בתכלית האיסור: גזם, אשפה ביתית, צמיגים (גורר קנסות במטמנה).<br><br>האם הפסולת שלך נקייה?",
     "buttons": [
-      { "label": "כן, פסולת בניין", "action": "next_node", "payload": "container_location_check" },
-      { "label": "לא, מעורב/גזם", "action": "next_node", "payload": "container_waste_warning" }
+      { "label": "כן, בניין נקי", "action": "next_node", "payload": "container_logistics" },
+      { "label": "לא, יש ערבוב", "action": "next_node", "payload": "waste_refusal" }
     ]
   },
   {
-    "scenarioId": "container_waste_warning",
-    "title": "מכולה - אזהרת פסולת",
+    "scenarioId": "waste_refusal",
+    "title": "סירוב פסולת",
     "keywords": [],
-    "answer": "🛑 <b>עצור!</b> המכולות שלנו מיועדות לפסולת בניין בלבד.<br>שפיכת גזם או אשפה במטמנות גוררת קנסות כבדים. אנחנו לא יכולים לקחת סיכון.<br>האם מדובר בפסולת בניין נקייה?",
+    "answer": "אני מצטער, אנחנו לא יכולים לקחת את הסיכון. 🛑<br>מטמנות הבניין לא מקבלות פסולת מעורבת, והקנסות כבדים.<br>ממליץ לפנות לקבלן אשפה רגילה.",
     "buttons": [
-      { "label": "הבנתי, זה בניין", "action": "next_node", "payload": "container_location_check" },
-      { "label": "ביטול", "action": "link", "payload": "index.html" }
+      { "label": "תפריט ראשי", "action": "link", "payload": "index.html" }
     ]
   },
   {
-    "scenarioId": "container_logistics_check",
-    "title": "מכולה - בדיקת גישה",
+    "scenarioId": "container_logistics",
+    "title": "בדיקת גישה ולוגיסטיקה",
     "keywords": [],
-    "answer": "כדי שהנהג לא יסתובב בחזרה – בוא נוודא גישה:<br>1. <b>רוחב שער:</b> מינימום 2.80 מטר נטו.<br>2. <b>גובה:</b> להנפה צריך 4.5 מטר פנוי (בלי כבלי חשמל/פרגולה).<br>יש גישה?",
+    "answer": "מצוין. כדי שהנהג לא יסתובב בחזרה – בוא נוודא גישה:<br>1. <b>רוחב שער:</b> משאית רמסה צריכה מינימום <b>2.80 מטר</b> נטו.<br>2. <b>גובה:</b> להנפה המנוף עולה ל-<b>4.5 מטר</b> (ללא כבלים/פרגולה).<br><br>יש גישה תקינה?",
     "buttons": [
-      { "label": "יש גישה מעולה", "action": "order_popup", "payload": "container_order" },
-      { "label": "אצלם לך תמונה", "action": "call_support", "payload": "" }
+      { "label": "יש גישה, המשך", "action": "order_popup", "payload": "container_order_form" },
+      { "label": "לא בטוח, אצלם תמונה", "action": "call_support", "payload": "" }
     ]
   },
   {
-    "scenarioId": "permit_herzliya",
-    "title": "היתר הצבה - הרצליה",
-    "keywords": ["הרצליה", "היתר הרצליה"],
-    "answer": "שחר, תודה! ההזמנה התקבלה ונמצאת בסטטוס <b>'ממתין להיתר'</b> 🎫.<br><br><b>חשוב שתבין!</b> בהרצליה פקחים מסתובבים עם מסופונים. מכולה ללא היתר = קנס תוך שעה 👮.<br>1. כנס ללינק: <a href='https://herzliya.muni.il' target='_blank'>עיריית הרצליה - היתר מכולה</a><br>2. מלא פרטים ומייל.<br><br>קיבלת היתר? לחץ למטה.",
+    "scenarioId": "permit_warning_herzliya",
+    "title": "היתר הרצליה",
+    "keywords": [],
+    "answer": "שחר, תודה! ההזמנה התקבלה בסטטוס <b>'ממתין להיתר'</b> 🎫.<br><br><b>חשוב שתבין אחי!</b> בהרצליה הפקחים מסתובבים אונליין. מכולה ללא היתר = קנס תוך שעה 👮.<br>בוא נעשה את זה חוקי:<br>1. כנס ללינק: <a href='https://www.herzliya.muni.il/tofas-hazmana-mchola/' target='_blank' class='text-blue-600 underline'>עיריית הרצליה - היתר</a><br>2. מלא פרטים ומייל (חובה!).<br><br>קיבלת את ההיתר למייל? לחץ למטה.",
     "buttons": [
-      { "label": "✅ יש היתר! שגר משאית", "action": "next_node", "payload": "container_dispatch_confirm" }
+      { "label": "✅ יש היתר! (מילת קסם)", "action": "next_node", "payload": "permit_confirmed" }
     ]
+  },
+  {
+    "scenarioId": "permit_confirmed",
+    "title": "אישור היתר",
+    "keywords": ["יש היתר"],
+    "answer": "וואו, זה הקסם! ✨<br>סטטוס ההזמנה שונה ל-<b>'בקשת הצבה'</b> (ירוק).<br>פתחתי משימת הצבה לנהג. אעדכן כשהוא יוצא.",
+    "buttons": []
   }
 ]
