@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SabanOS | Client App v16.0</title>
+    <title>SabanOS | Client App v15.7</title>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="icons/icon-192.png">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -11,100 +11,262 @@
     <style>
         .fade-in { animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        /* Container Floating Widget */
-        .container-widget {
-            position: fixed; top: 80px; left: 20px; z-index: 40;
-            background: white; border-radius: 50px; padding: 5px 15px 5px 5px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2); border: 2px solid #3b82f6;
-            display: flex; align-items: center; gap: 10px; cursor: pointer;
-            transition: transform 0.2s; animation: float 3s ease-in-out infinite;
-        }
-        .container-widget:hover { transform: scale(1.05); }
-        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-5px); } 100% { transform: translateY(0px); } }
-        
-        .container-icon { width: 35px; height: 35px; background: #eff6ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; }
-        .container-info { font-size: 10px; line-height: 1.2; text-align: right; }
-        .days-badge { background: #ef4444; color: white; padding: 1px 4px; border-radius: 4px; font-weight: bold; }
+        /* Modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(3px); z-index: 50; display: flex; justify-content: center; align-items: end; sm:align-items: center; }
+        .modal-box { background: white; width: 100%; max-width: 500px; border-radius: 20px 20px 0 0; padding: 20px; animation: slideUp 0.3s; }
+        @media (min-width: 640px) { .modal-box { border-radius: 20px; animation: fadeIn 0.3s; } }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
     </style>
 </head>
 <body class="bg-gray-50 h-screen flex flex-col font-sans">
     
     <nav class="bg-white p-4 shadow flex justify-between items-center sticky top-0 z-20">
-        <div><h1 class="font-bold text-gray-800 text-lg">ח.סבן</h1><span class="text-xs text-gray-500">הזמנות אונליין</span></div>
+        <div>
+            <h1 class="font-bold text-gray-800 text-lg">ח.סבן חומרי בניין</h1>
+            <span class="text-xs text-gray-500">הזמנות אונליין</span>
+        </div>
         <div class="flex gap-3">
-            <button onclick="openLogisticsModal()" class="bg-blue-50 text-blue-600 px-3 py-1 rounded-lg text-xs font-bold border border-blue-200"><i class="fas fa-clock"></i> מתי מגיע?</button>
+            <button onclick="openLogisticsModal()" class="bg-blue-50 text-blue-600 px-3 py-1 rounded-lg text-xs font-bold border border-blue-200 shadow-sm animate-pulse">
+                <i class="fas fa-clock"></i> מתי מגיע?
+            </button>
+            <button onclick="handleLogout()" class="text-red-500"><i class="fas fa-sign-out-alt"></i></button>
         </div>
     </nav>
 
-    <div id="activeContainer" class="container-widget hidden" onclick="alert('פותח פרטי מכולה...')">
-        <div class="container-icon">🗑️</div>
-        <div class="container-info">
-            <div class="font-bold text-slate-800">מכולה פעילה</div>
-            <div class="text-gray-500">בן יהודה 4</div>
-            <span class="days-badge">יום 8</span>
-        </div>
-    </div>
-
     <main class="flex-1 p-4 overflow-y-auto pb-24">
         <div class="relative mb-6">
-            <input type="text" id="searchBox" placeholder="מה צריך? (מכולה, מלט...)" class="w-full p-4 rounded-xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 text-lg outline-none">
+            <input type="text" id="searchBox" placeholder="מה צריך לאתר? (בלוקים, מלט...)" 
+                   class="w-full p-4 rounded-xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 text-lg outline-none">
             <i class="fas fa-search absolute left-4 top-5 text-gray-400"></i>
         </div>
+
         <div id="productsGrid" class="grid grid-cols-2 gap-4"></div>
     </main>
 
     <div class="fixed bottom-0 left-0 w-full bg-white border-t p-4 shadow-2xl z-30">
         <div class="flex justify-between items-center mb-3">
             <span class="font-bold text-gray-700">סל קניות: <span id="cartCount" class="bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">0</span></span>
-            <button id="sendBtn" class="bg-green-600 text-white px-8 py-2 rounded-full font-bold shadow">שלח</button>
+            <button id="sendBtn" class="bg-green-600 text-white px-8 py-2 rounded-full font-bold shadow hover:bg-green-700 transition">שלח הזמנה</button>
         </div>
     </div>
 
-    <div id="logisticsModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center">
-        <div class="bg-white p-5 rounded-xl w-full max-w-sm">
-            <h3 class="font-bold text-lg mb-2">בדיקת הגעה</h3>
-            <input type="text" id="destInput" class="w-full border p-2 rounded mb-2" placeholder="כתובת...">
-            <button onclick="calculateTime()" class="w-full bg-blue-600 text-white py-2 rounded font-bold">בדוק</button>
-            <button onclick="closeLogisticsModal()" class="w-full mt-2 text-gray-500 text-sm">סגור</button>
+    <div id="logisticsModal" class="modal-overlay hidden" onclick="if(event.target === this) closeLogisticsModal()">
+        <div class="modal-box">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-slate-800"><i class="fas fa-map-marked-alt text-blue-500"></i> בדיקת הגעה</h3>
+                <button onclick="closeLogisticsModal()" class="text-gray-400"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            
+            <div class="mb-4">
+                <label class="text-xs font-bold text-gray-500 block mb-1">לאן להגיע?</label>
+                <div class="flex gap-2">
+                    <input type="text" id="destInput" placeholder="למשל: ויצמן 14 כפר סבא" class="flex-1 bg-gray-100 p-3 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                    <button onclick="calculateTime()" class="bg-blue-600 text-white px-4 rounded-lg font-bold shadow"><i class="fas fa-search"></i></button>
+                </div>
+            </div>
+
+            <div id="logisticsResult" class="hidden space-y-3">
+                <div id="mapContainer" class="w-full h-40 bg-gray-200 rounded-xl overflow-hidden border border-gray-300"></div>
+                
+                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                    <div class="flex justify-between items-start border-b border-blue-200 pb-2 mb-2">
+                        <div>
+                            <div class="text-xs text-blue-600 font-bold uppercase">יציאה מסניף</div>
+                            <div class="font-bold text-lg text-slate-800" id="resBranch">---</div>
+                        </div>
+                        <div class="text-left">
+                            <div class="text-xs text-blue-600 font-bold uppercase">מרחק</div>
+                            <div class="font-bold text-lg text-slate-800" id="resDist">---</div>
+                        </div>
+                    </div>
+                    <div class="text-center py-2">
+                        <div class="text-sm text-gray-500 mb-1">זמן הגעה משוער (כולל פריקה)</div>
+                        <div class="text-3xl font-black text-green-600" id="resTime">---</div>
+                        <div class="text-xs text-gray-400 mt-1" id="resDetails">---</div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, serverTimestamp, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app);
 
-        // --- SIMULATION: Check for Active Container ---
-        // בפועל זה יבדוק ב-Firebase אם יש למשתמש הזמנה בסטטוס "active_container"
-        setTimeout(() => {
-            const hasContainer = true; // נניח שיש לו
-            if (hasContainer) {
-                document.getElementById('activeContainer').classList.remove('hidden');
+        // --- צלצול והרשאות (החידוש) ---
+        const alertSound = new Audio("https://notificationsounds.com/storage/sounds-file-sounds-1233-elegant.mp3");
+
+        function requestSystemPermissions() {
+            if (Notification.permission !== "granted") {
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") {
+                        console.log("התראות אושרו ✅");
+                        new Notification("SabanOS", { body: "ברוך הבא! המערכת מוכנה.", icon: "icons/icon-192.png" });
+                        playAlert();
+                    }
+                });
             }
-        }, 1000);
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => console.log("מיקום אושר ✅"),
+                    (err) => console.log("מיקום לא אושר ❌")
+                );
+            }
+        }
 
-        // --- LOGISTICS LOGIC ---
+        function playAlert() {
+            alertSound.play().catch(e => console.log("Sound blocked until interaction"));
+        }
+
+        // הפעלה בלחיצה הראשונה (כדי לעקוף חסימות דפדפן)
+        document.addEventListener('click', function initAudio() {
+            playAlert();
+            requestSystemPermissions();
+            document.removeEventListener('click', initAudio);
+        }, { once: true });
+        
+        // --- LOGISTICS BRAIN (FULL) ---
+        class LogisticsBrain {
+            constructor() {
+                this.branches = [
+                    { id: 'harash', name: 'סניף החרש (ראשי)', lat: 32.1462, lng: 34.8951 },
+                    { id: 'talmid', name: 'סניף התלמיד', lat: 32.1554, lng: 34.8872 }
+                ];
+            }
+            async locateAddress(query) {
+                try {
+                    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=il&limit=1`;
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    
+                    if (data.length > 0) {
+                        const lat = parseFloat(data[0].lat);
+                        const lng = parseFloat(data[0].lon);
+                        const bbox = `${lng-0.01},${lat-0.01},${lng+0.01},${lat+0.01}`;
+                        const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lng}`;
+                        
+                        return { found: true, lat: lat, lng: lng, name: data[0].display_name, mapUrl: mapUrl };
+                    }
+                    return { found: false };
+                } catch (e) { return { found: false }; }
+            }
+            calculateDistance(lat1, lon1, lat2, lon2) {
+                const R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLon = (lon2-lon1)*Math.PI/180;
+                const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+                return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            }
+            getBestBranch(lat, lng) {
+                let best = null, min = Infinity;
+                this.branches.forEach(b => {
+                    const d = this.calculateDistance(b.lat, b.lng, lat, lng);
+                    if(d < min) { min = d; best = {...b, dist: d.toFixed(1)}; }
+                });
+                return best;
+            }
+            calculateETA(distKm) {
+                const driveTime = (distKm / 35) * 60 * 1.2; 
+                const total = Math.round(driveTime + 30); 
+                const time = new Date(Date.now() + total*60000).toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'});
+                return { minutes: total, time: time };
+            }
+        }
+        const brain = new LogisticsBrain();
+
+        // --- APP LOGIC ---
+        let cart = [];
+        let products = [];
+        let activeUserId = null;
+
+        onAuthStateChanged(auth, async (user) => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const linkUid = urlParams.get('uid');
+            const impersonateId = localStorage.getItem('impersonateId');
+
+            if (user) {
+                activeUserId = user.uid;
+            } else if (linkUid) {
+                activeUserId = linkUid;
+            } else if (impersonateId) {
+                activeUserId = impersonateId;
+            } else {
+                window.location.href = "index.html";
+                return;
+            }
+
+            const pSnap = await getDocs(collection(db, "products"));
+            products = pSnap.docs.map(d => ({id: d.id, ...d.data()}));
+            renderProducts(products);
+        });
+
+        function renderProducts(list) {
+            const grid = document.getElementById('productsGrid');
+            grid.innerHTML = list.map(p => `
+                <div class="bg-white p-3 rounded-xl border shadow-sm flex flex-col items-center text-center active:scale-95 transition" onclick="addToCart('${p.id}')">
+                    <img src="${p.rich?.image || 'https://via.placeholder.com/50'}" class="w-16 h-16 object-contain mb-2 mix-blend-multiply">
+                    <h3 class="font-bold text-sm h-10 flex items-center justify-center">${p.core?.name || 'מוצר'}</h3>
+                    <div class="text-green-600 font-bold text-xs mt-1">₪${p.core?.price}</div>
+                </div>
+            `).join('');
+        }
+
+        window.addToCart = (id) => {
+            const p = products.find(x => x.id === id);
+            cart.push(p);
+            document.getElementById('cartCount').innerText = cart.length;
+            const btn = document.getElementById('cartCount');
+            btn.classList.add('scale-125');
+            setTimeout(()=>btn.classList.remove('scale-125'), 200);
+            playAlert(); // צפצוף בהוספה לסל
+        };
+
         window.openLogisticsModal = () => document.getElementById('logisticsModal').classList.remove('hidden');
         window.closeLogisticsModal = () => document.getElementById('logisticsModal').classList.add('hidden');
-        window.calculateTime = () => { alert("מחובר למוח הלוגיסטי..."); closeLogisticsModal(); };
 
-        // --- PRODUCTS ---
-        const products = [
-            { id: "cont8", name: "מכולה 8 קוב", price: 850, image: "https://cdn-icons-png.flaticon.com/512/2666/2666523.png" },
-            { id: "cem", name: "מלט נשר", price: 28, image: "https://cdn-icons-png.flaticon.com/512/7563/7563493.png" }
-        ];
-        
-        document.getElementById('productsGrid').innerHTML = products.map(p => `
-            <div class="bg-white p-3 rounded-xl border shadow-sm flex flex-col items-center text-center">
-                <img src="${p.image}" class="w-16 h-16 mb-2">
-                <h3 class="font-bold text-sm">${p.name}</h3>
-                <div class="text-green-600 font-bold text-xs">₪${p.price}</div>
-                <button class="mt-2 bg-slate-100 text-slate-700 px-3 py-1 rounded text-xs" onclick="alert('הוסף')">+</button>
-            </div>
-        `).join('');
+        window.calculateTime = async () => {
+            const query = document.getElementById('destInput').value;
+            if(!query) return alert("הכנס כתובת");
+            
+            const btn = document.querySelector('#logisticsModal button.bg-blue-600');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            
+            const loc = await brain.locateAddress(query);
+            
+            if(loc.found) {
+                const branch = brain.getBestBranch(loc.lat, loc.lng);
+                const eta = brain.calculateETA(branch.dist);
+                
+                document.getElementById('resBranch').innerText = branch.name;
+                document.getElementById('resDist').innerText = branch.dist + ' ק"מ';
+                document.getElementById('resTime').innerText = eta.time;
+                document.getElementById('resDetails').innerText = `זמן משוער: ${eta.minutes} דקות`;
+                document.getElementById('mapContainer').innerHTML = `<iframe width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="${loc.mapUrl}"></iframe>`;
+                
+                document.getElementById('logisticsResult').classList.remove('hidden');
+                playAlert(); // צפצוף כשיש תשובה
+            } else {
+                alert("כתובת לא נמצאה.");
+            }
+            btn.innerHTML = '<i class="fas fa-search"></i>';
+        };
+
+        document.getElementById('sendBtn').addEventListener('click', async () => {
+            if(cart.length === 0) return alert("הסל ריק");
+            const project = prompt("לאיזה פרויקט/אתר?");
+            await addDoc(collection(db, "orders"), { clientId: activeUserId, project: project || "כללי", items: cart, status: "new", createdAt: serverTimestamp() });
+            alert("ההזמנה נשלחה!"); cart = []; document.getElementById('cartCount').innerText = 0;
+            playAlert();
+        });
+
+        window.handleLogout = () => {
+            localStorage.removeItem('impersonateId');
+            signOut(auth).then(() => window.location.href="index.html");
+        };
     </script>
 </body>
 </html>
