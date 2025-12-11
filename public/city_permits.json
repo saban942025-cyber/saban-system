@@ -1,0 +1,17 @@
+{
+  "herzliya": {
+    "name": "הרצליה",
+    "url": "https://www.herzliya.muni.il/tofas-hazmana-mchola/",
+    "warning": "בהרצליה פקחים עם מסופונים - קנס תוך שעה! חובה היתר."
+  },
+  "tel_aviv": {
+    "name": "תל אביב",
+    "url": "https://www.tel-aviv.gov.il/Residents/Environment/Pages/WasteContainers.aspx",
+    "warning": "בתל אביב חובה לסמן מכולה במחזירי אור."
+  },
+  "raanana": {
+    "name": "רעננה",
+    "url": "https://www.raanana.muni.il/mchola",
+    "warning": "ברעננה אין להציב על מדרכות."
+  }
+}
