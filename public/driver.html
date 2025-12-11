@@ -2,39 +2,100 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>SabanOS | נהג</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SabanOS | דרייבר</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-slate-800 text-white p-4 font-sans">
-    <div id="gpsStatus" class="bg-red-500 text-white text-xs text-center p-1 mb-4 rounded">GPS מנותק</div>
-    <h1 class="text-xl font-bold mb-4">משלוחים על המשאית</h1>
-    <div id="deliveries" class="space-y-4 text-center text-gray-500">טוען...</div>
+<body class="bg-slate-900 text-white flex flex-col h-screen items-center justify-center p-6">
+
+    <div class="mb-8 relative">
+        <div class="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center text-4xl shadow-xl shadow-blue-500/50 z-10 relative">
+            <i class="fas fa-truck-moving"></i>
+        </div>
+        <div id="pulse" class="absolute inset-0 bg-blue-500 rounded-full opacity-50 hidden"></div>
+    </div>
+
+    <h1 class="text-2xl font-bold mb-2">שלום, חכמת</h1>
+    <div id="status" class="text-gray-400 mb-8">לא משדר מיקום 🔴</div>
+
+    <button id="toggleBtn" onclick="toggleShift()" class="w-full max-w-xs bg-green-600 hover:bg-green-500 py-4 rounded-xl font-bold text-xl shadow-lg transition transform active:scale-95">
+        התחל משמרת
+    </button>
+
+    <div class="mt-8 p-4 bg-slate-800 rounded-lg w-full max-w-xs text-xs font-mono text-gray-400">
+        <div>Lat: <span id="lat">---</span></div>
+        <div>Lng: <span id="lng">---</span></div>
+        <div>Upd: <span id="lastUpd">---</span></div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, updateDoc, doc, serverTimestamp, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
-        const app = initializeApp(firebaseConfig); const db = getFirestore(app); const auth = getAuth(app);
-        
-        onAuthStateChanged(auth, (user) => {
-            if (!user) window.location.href = "index.html";
-            if (navigator.geolocation) {
-                navigator.geolocation.watchPosition((pos) => {
-                    document.getElementById('gpsStatus').className = 'bg-green-600 text-white text-xs text-center p-1 mb-4 rounded';
-                    document.getElementById('gpsStatus').innerText = 'GPS משדר';
-                    updateDoc(doc(db, "users", user.uid), { location: { lat: pos.coords.latitude, lng: pos.coords.longitude }, lastLocationUpdate: serverTimestamp() });
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // הגדרת ID קבוע לנהג (בפועל יגיע מלוגין)
+        const driverId = "driver_hikmat"; 
+        let watchId = null;
+
+        window.toggleShift = () => {
+            const btn = document.getElementById('toggleBtn');
+            const pulse = document.getElementById('pulse');
+            
+            if (!watchId) {
+                // START
+                if (!navigator.geolocation) return alert("אין GPS במכשיר זה");
+                
+                watchId = navigator.geolocation.watchPosition(updateLocation, handleError, {
+                    enableHighAccuracy: true,
+                    maximumAge: 10000,
+                    timeout: 5000
                 });
+
+                btn.innerText = "סיים משמרת";
+                btn.className = "w-full max-w-xs bg-red-600 hover:bg-red-500 py-4 rounded-xl font-bold text-xl shadow-lg transition";
+                document.getElementById('status').innerText = "משדר מיקום בזמן אמת 🟢";
+                document.getElementById('status').className = "text-green-400 mb-8 font-bold animate-pulse";
+                pulse.classList.remove('hidden');
+                pulse.classList.add('animate-ping');
+            } else {
+                // STOP
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+                btn.innerText = "התחל משמרת";
+                btn.className = "w-full max-w-xs bg-green-600 hover:bg-green-500 py-4 rounded-xl font-bold text-xl shadow-lg transition";
+                document.getElementById('status').innerText = "לא משדר מיקום 🔴";
+                document.getElementById('status').className = "text-gray-400 mb-8";
+                pulse.classList.add('hidden');
+                pulse.classList.remove('animate-ping');
             }
-            onSnapshot(query(collection(db, "orders"), where("status", "==", "shipping")), (snap) => {
-                const container = document.getElementById('deliveries');
-                if(snap.empty) { container.innerHTML = "אין משלוחים"; return; }
-                container.innerHTML = snap.docs.map(d => {
-                    const o = d.data();
-                    return `<div class="bg-white text-black p-5 rounded-xl shadow-lg border-r-4 border-purple-600"><h2 class="font-bold text-lg">${o.clientName}</h2><p class="text-gray-600 mb-4">${o.project}</p><a href="https://waze.com/ul?q=${o.project}" target="_blank" class="block w-full bg-blue-100 text-blue-600 py-3 rounded-lg text-center font-bold">נווט</a></div>`;
-                }).join('');
-            });
-        });
+        };
+
+        const updateLocation = async (position) => {
+            const { latitude, longitude } = position.coords;
+            
+            document.getElementById('lat').innerText = latitude.toFixed(6);
+            document.getElementById('lng').innerText = longitude.toFixed(6);
+            document.getElementById('lastUpd').innerText = new Date().toLocaleTimeString();
+
+            try {
+                // עדכון בסיס הנתונים בזמן אמת
+                await updateDoc(doc(db, "users", driverId), {
+                    location: { lat: latitude, lng: longitude },
+                    lastActive: serverTimestamp(),
+                    role: 'driver',
+                    name: 'חכמת (נהג)'
+                });
+            } catch (e) { console.error("Error updating location", e); }
+        };
+
+        const handleError = (err) => {
+            console.warn(`ERROR(${err.code}): ${err.message}`);
+            alert("שגיאת GPS: וודא שנתת הרשאת מיקום");
+        };
     </script>
 </body>
 </html>
