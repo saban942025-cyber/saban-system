@@ -6,30 +6,74 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <style> body { font-family: system-ui, sans-serif; overflow: hidden; background-color: #0f172a; } #map { height: 100vh; width: 100vw; position: absolute; top: 0; left: 0; z-index: 0; } </style>
+    <style> 
+        body { font-family: system-ui, sans-serif; overflow: hidden; background-color: #0f172a; margin: 0; } 
+        #map { height: 100vh; width: 100vw; position: absolute; top: 0; left: 0; z-index: 0; } 
+    </style>
 </head>
 <body>
     <div id="map"></div>
-    <div class="fixed top-4 right-4 z-50 bg-white p-2 rounded shadow"><a href="index.html" class="text-blue-600 font-bold">חזרה</a></div>
+    
+    <div id="navHeader" class="fixed top-4 right-4 z-50 bg-white p-2 rounded shadow hidden">
+        <a href="index.html" class="text-blue-600 font-bold flex items-center gap-2">
+            <i class="fas fa-arrow-right"></i> חזרה
+        </a>
+    </div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
-        const app = initializeApp(firebaseConfig); const db = getFirestore(app);
-        const map = L.map('map').setView([32.166, 34.833], 13);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; SabanOS', maxZoom: 19 }).addTo(map);
+        const app = initializeApp(firebaseConfig); 
+        const db = getFirestore(app);
+
+        // Check if embedded
+        const urlParams = new URLSearchParams(window.location.search);
+        if (!urlParams.get('embed')) {
+            document.getElementById('navHeader').classList.remove('hidden');
+        }
+
+        // Init Map
+        const map = L.map('map', { zoomControl: false }).setView([32.166, 34.833], 13);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { 
+            attribution: 'SabanOS', 
+            maxZoom: 19 
+        }).addTo(map);
+
+        // Drivers Icon
+        const truckIcon = L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/713/713311.png',
+            iconSize: [32, 32],
+            iconAnchor: [16, 16],
+            popupAnchor: [0, -10]
+        });
+
         const markers = {};
+
+        // Listen to Drivers
         onSnapshot(query(collection(db, "users"), where("role", "==", "driver")), (snap) => {
             snap.forEach(doc => {
                 const driver = doc.data();
                 if (driver.location && driver.location.lat) {
                     const latlng = [driver.location.lat, driver.location.lng];
-                    if (markers[doc.id]) markers[doc.id].setLatLng(latlng);
-                    else markers[doc.id] = L.marker(latlng).addTo(map).bindPopup(`<b>${driver.name}</b>`);
+                    
+                    if (markers[doc.id]) {
+                        // Smooth move could be added here
+                        markers[doc.id].setLatLng(latlng);
+                    } else {
+                        markers[doc.id] = L.marker(latlng, {icon: truckIcon})
+                            .addTo(map)
+                            .bindPopup(`<b>${driver.name}</b><br>🚚 בתנועה`);
+                    }
                 }
             });
         });
+
+        // Demo Marker (If no drivers in DB yet)
+        L.marker([32.170, 34.840], {icon: truckIcon}).addTo(map).bindPopup("<b>חכמת (דמו)</b><br>בדרך אליך");
+
     </script>
 </body>
 </html>
