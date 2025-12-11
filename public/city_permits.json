@@ -1,17 +1,72 @@
 {
   "herzliya": {
     "name": "הרצליה",
-    "url": "https://www.herzliya.muni.il/tofas-hazmana-mchola/",
-    "warning": "בהרצליה פקחים עם מסופונים - קנס תוך שעה! חובה היתר."
+    "url": "https://www.herzliya.muni.il/%D7%98%D7%95%D7%A4%D7%A1-%D7%94%D7%A6%D7%91%D7%AA-%D7%9E%D7%9B%D7%95%D7%9C%D7%95%D7%AA/",
+    "warning": "בהרצליה אין להציב מכולה לפני קבלת היתר מהעירייה." 
   },
   "tel_aviv": {
-    "name": "תל אביב",
-    "url": "https://www.tel-aviv.gov.il/Residents/Environment/Pages/WasteContainers.aspx",
-    "warning": "בתל אביב חובה לסמן מכולה במחזירי אור."
+    "name": "תל אביב-יפו",
+    "url": "https://www5.tel-aviv.gov.il/TlvForms/TlvContainers/Default.aspx",
+    "warning": "בתל אביב חייבים כתב התחייבות להצבת מיכל אצירה בהתאם להיתר הכללי." :contentReference[oaicite:1]{index=1}
   },
   "raanana": {
     "name": "רעננה",
-    "url": "https://www.raanana.muni.il/mchola",
-    "warning": "ברעננה אין להציב על מדרכות."
+    "url": "https://www.raanana.muni.il/Environment/Recyclablewaste/Pages/containerPlacingRequestAppendixB.aspx",
+    "warning": "ברעננה יש למלא בקשה לאישור הצבת מכולה לפי הנהלים העירוניים." :contentReference[oaicite:2]{index=2}
+  },
+  "bat_yam": {
+    "name": "בת ים",
+    "url": "https://www.bat-yam.muni.il/20/",
+    "warning": "בבת ים יש למלא טופס בקשה לקבלת היתר להצבת מכולה לפינוי פסולת." :contentReference[oaicite:3]{index=3}
+  },
+  "ramat_gan": {
+    "name": "רמת גן",
+    "url": "https://forms.ramat-gan.muni.il/236/",
+    "warning": "ברמת גן יש להגיש בקשה מקוונת לקבלת היתר להצבת מכולה." :contentReference[oaicite:4]{index=4}
+  },
+  "givat_shmuel": {
+    "name": "גבעת שמואל",
+    "url": "https://www.givat-shmuel.muni.il/924/",
+    "warning": "בגבעת שמואל יש למלא טופס בקשה להצבת מכולה עם תנאים מחייבים." :contentReference[oaicite:5]{index=5}
+  },
+  "bnei_brak": {
+    "name": "בני ברק",
+    "url": "https://www.bnei-brak.muni.il/Residents/tavrua/Pages/macholot.aspx",
+    "warning": "בבני ברק חובה לעמוד בדרישות נוהל הצבת מכולת פסולת וקבלת אישור." :contentReference[oaicite:6]{index=6}
+  },
+  "holon": {
+    "name": "חולון",
+    "url": "https://forms.holon.muni.il/%D7%91%D7%A7%D7%A9%D7%94-%D7%9C%D7%A7%D7%91%D7%9C%D7%AA-%D7%94%D7%99%D7%AA%D7%A8-%D7%9C%D7%94%D7%A6%D7%91%D7%AA-%D7%9E%D7%9B%D7%95%D7%9C%D7%94-%D7%9C%D7%A4%D7%99%D7%A0%D7%95%D7%99-%D7%A4%D7%A1%D7%95%D7%9C%D7%AA-%D7%91%D7%A0%D7%99%D7%99%D7%9F/",
+    "warning": "בחולון יש טופס באישור הצבת מכולה לפינוי פסולת בניין." :contentReference[oaicite:7]{index=7}
+  },
+  "modiin": {
+    "name": "מודיעין-מכבים-רעות",
+    "url": "https://www.modiin.muni.il/modiinwebsite/ArticlePage.aspx?PageID=1222_3216",
+    "warning": "במודיעין יש הנחיות להצבת מכולות ודרישת היתר בהתאם." :contentReference[oaicite:8]{index=8}
+  },
+  "ariel": {
+    "name": "אריאל",
+    "url": "https://www.ariel.muni.il/%D7%94%D7%A6%D7%91%D7%AA-%D7%9E%D7%9B%D7%95%D7%9C%D7%AA-%D7%A4%D7%A1%D7%95%D7%9C%D7%AA-%D7%9C%D7%90%D7%92%D7%99%D7%A8%D7%AA-%D7%A4%D7%A1%D7%95%D7%9C%D7%AA-%D7%91%D7%A0%D7%99%D7%99%D7%9F/",
+    "warning": "באריאל יש הוראות ותנאים להצבת מכולת פסולת ודרישת היתר." :contentReference[oaicite:9]{index=9}
+  },
+  "bat_yam_repeater": {
+    "name": "בת-ים נוסיף",
+    "url": "https://www.bat-yam.muni.il/20/",
+    "warning": "כמה עיריות משתמשות בעמודים דומים לטפסים – יש לבדוק תנאים במוקד העירוני." :contentReference[oaicite:10]{index=10}
+  },
+  "nahariya": {
+    "name": "נהריה",
+    "url": "https://www.nahariya.muni.il/%D7%94%D7%99%D7%AA%D7%A8-%D7%9C%D7%94%D7%A6%D7%91%D7%AA-%D7%A9%D7%95%D7%9C%D7%97%D7%A0%D7%95%D7%AA-%D7%95%D7%9B%D7%99%D7%A1%D7%90%D7%95%D7%AA/",
+    "warning": "נהריה מוציאה הנחיות להצבת שולחנות וכיסאות – לא תמיד יש מכולות ספציפיות." :contentReference[oaicite:11]{index=11}
+  },
+  "raanana_repeater": {
+    "name": "רעננה – פנייה ישירה",
+    "url": "https://www.raanana.muni.il/Environment/Recyclablewaste/Pages/containerPlacingRequestAppendixB.aspx",
+    "warning": "יש לפנות למשרדי המחלקה לקבלת טפסים עדכניים." :contentReference[oaicite:12]{index=12}
+  },
+  "ramat_hasharon": {
+    "name": "רמת השרון",
+    "url": "https://forms.ramat-hasharon.muni.il/13/",
+    "warning": "ברמת השרון יש טופס הודעה על הצבת כלי אצירה והתחייבות." :contentReference[oaicite:13]{index=13}
   }
 }
