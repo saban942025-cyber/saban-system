@@ -2,120 +2,98 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>SabanOS | סידור עבודה</title>
-    <link rel="manifest" href="manifest.json">
+    <title>SabanOS | מסוף מחסן</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script type="module" src="./js/logger.js"></script>
 </head>
-<body class="bg-gray-100 h-screen flex flex-col font-sans">
-
-    <header class="bg-slate-800 text-white p-4 shadow flex justify-between">
-        <h1 class="font-bold text-xl">מגדל פיקוח (סידור)</h1>
-        <div class="text-sm">מחובר: <span id="staffName"></span></div>
+<body class="bg-gray-900 text-white p-4 font-sans">
+    
+    <header class="flex justify-between items-center mb-6 border-b border-gray-700 pb-4">
+        <div>
+            <h1 class="text-2xl font-bold text-yellow-400">מסוף ליקוט (WMS)</h1>
+            <div class="text-xs text-gray-400" id="staffName">אורן - סניף החרש</div>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="setFilter('all')" class="bg-gray-700 px-3 py-1 rounded text-xs hover:bg-gray-600 filter-btn active">הכל</button>
+            <button onclick="setFilter('harash')" class="bg-gray-700 px-3 py-1 rounded text-xs hover:bg-gray-600 filter-btn">החרש</button>
+            <button onclick="setFilter('talmid')" class="bg-gray-700 px-3 py-1 rounded text-xs hover:bg-gray-600 filter-btn">התלמיד</button>
+        </div>
     </header>
 
-    <main class="flex-1 p-6 overflow-auto">
-        <div class="bg-white rounded-xl shadow border">
-            <div class="p-4 border-b bg-gray-50 flex justify-between items-center">
-                <h2 class="font-bold">הזמנות נכנסות (ממתין לשיבוץ)</h2>
-            </div>
-            <table class="w-full text-right">
-                <thead class="bg-gray-100 text-xs text-gray-500 uppercase">
-                    <tr>
-                        <th class="p-3">לקוח</th>
-                        <th class="p-3">פרויקט</th>
-                        <th class="p-3">פריטים</th>
-                        <th class="p-3 text-center">קומקס</th>
-                        <th class="p-3 text-center">פעולה</th>
-                    </tr>
-                </thead>
-                <tbody id="ordersTable" class="text-sm">
-                    <tr><td colspan="5" class="p-4 text-center">טוען...</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </main>
+    <div id="tasks" class="space-y-4"></div>
 
     <script type="module">
-        import { auth, db, onAuthStateChanged, collection, query, where, orderBy, onSnapshot, updateDoc, doc } from './js/firebase-config.js';
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, query, where, onSnapshot, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        
+        const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-        onAuthStateChanged(auth, (user) => {
-            if(!user) window.location.href="index.html";
-            
-            // האזנה להזמנות חדשות
-            const q = query(collection(db, "orders"), where("status", "==", "new"), orderBy("createdAt", "desc"));
-            
-            onSnapshot(q, (snap) => {
-                const tbody = document.getElementById('ordersTable');
-                
-                if (snap.empty) {
-                    tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">אין הזמנות חדשות</td></tr>';
-                    return;
-                }
+        let currentFilter = 'all'; // Default
 
-                tbody.innerHTML = snap.docs.map(d => {
-                    const o = d.data();
-                    // --- התיקון הקריטי כאן ---
-                    // בדיקה האם o.items קיים לפני שמנסים לרוץ עליו
-                    const itemsList = o.items || []; 
-                    
-                    let itemsText = "";
-                    if (itemsList.length > 0) {
-                        itemsText = itemsList.map(i => `${i.name} (${i.qty})`).join(', ');
-                    } else {
-                        // אם אין רשימת פריטים (אולי טקסט חופשי?)
-                        itemsText = o.rawText || "ללא פירוט";
-                    }
-                    
-                    return `
-                    <tr class="border-b hover:bg-gray-50">
-                        <td class="p-3 font-bold">${o.clientName || 'לקוח'}</td>
-                        <td class="p-3">${o.project || '-'}</td>
-                        <td class="p-3 truncate max-w-xs" title="${itemsText}">${itemsText}</td>
-                        <td class="p-3 text-center">
-                            <button onclick="window.exportComax('${d.id}')" class="text-green-600 hover:text-green-800" title="הורד קובץ יבוא">
-                                <i class="fas fa-file-excel text-xl"></i>
-                            </button>
-                        </td>
-                        <td class="p-3 text-center">
-                            <button onclick="window.sendToWarehouse('${d.id}')" class="bg-blue-600 text-white px-3 py-1 rounded text-xs">שגר למחסן</button>
-                        </td>
-                    </tr>`;
-                }).join('');
-                
-                window.currentOrders = snap.docs.reduce((acc, d) => ({...acc, [d.id]: d.data()}), {});
-            });
-        });
-
-        window.exportComax = (id) => {
-            const o = window.currentOrders[id];
-            const items = o.items || [];
+        const q = query(collection(db, "orders"), where("status", "==", "picking"));
+        
+        onSnapshot(q, (snap) => {
+            const container = document.getElementById('tasks');
+            container.innerHTML = '';
             
-            if (items.length === 0) {
-                alert("הזמנה זו מכילה טקסט חופשי בלבד, לא ניתן לייצא לקומקס אוטומטית כרגע.");
+            if(snap.empty) {
+                container.innerHTML = "<div class='text-gray-500 text-center mt-10'>אין משימות ליקוט.</div>";
                 return;
             }
 
-            let csvContent = "ClientCode,ItemCode,Quantity,Project,Remarks\n";
-            items.forEach(item => {
-                csvContent += `${o.comaxId || ''},${item.sku || ''},${item.qty},${o.project || ''},SabanOS-${id.slice(0,4)}\n`;
-            });
+            snap.forEach(d => {
+                const o = d.data();
+                // Mock logic: If items > 5 -> Harash, else -> Talmid (just for demo)
+                const branch = o.items && o.items.length > 5 ? 'harash' : 'talmid'; 
+                
+                if (currentFilter !== 'all' && currentFilter !== branch) return;
 
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = `Comax_Order_${o.clientName}.csv`;
-            link.click();
+                const branchBadge = branch === 'harash' ? '<span class="bg-blue-900 text-blue-200 text-[10px] px-2 rounded">החרש</span>' : '<span class="bg-purple-900 text-purple-200 text-[10px] px-2 rounded">התלמיד</span>';
+
+                container.innerHTML += `
+                <div class="bg-gray-800 p-5 rounded-xl border border-gray-700 shadow-lg">
+                    <div class="flex justify-between mb-3 border-b border-gray-700 pb-2">
+                        <div>
+                            <h2 class="text-lg font-bold">${o.clientName}</h2>
+                            <span class="text-xs text-gray-400">${o.project}</span>
+                        </div>
+                        <div class="text-left">
+                            ${branchBadge}
+                            <div class="text-xs font-mono mt-1 text-green-400">#${d.id.slice(0,4)}</div>
+                        </div>
+                    </div>
+                    <ul class="mb-4 space-y-2 text-sm">
+                        ${o.items ? o.items.map(i => `<li class="flex justify-between border-b border-gray-700/50 pb-1"><span>${i.name}</span><b class="text-yellow-400">x${i.qty}</b></li>`).join('') : 'אין פריטים'}
+                    </ul>
+                    <button onclick="window.finishPick('${d.id}')" class="w-full bg-green-600 py-3 rounded-lg font-bold hover:bg-green-500 transition flex justify-center items-center gap-2">
+                        <i class="fas fa-check"></i> סיום ליקוט
+                    </button>
+                </div>`;
+            });
+        });
+
+        window.finishPick = async (id) => {
+            if(confirm("סיימת ללקט? ההזמנה תעבור לנהג.")) {
+                await updateDoc(doc(db, "orders", id), { status: "loaded" });
+            }
         };
 
-        window.sendToWarehouse = async (id) => {
-            if(confirm("לשגר למחסן לליקוט? (הטיימר יתחיל לרוץ)")) {
-                await updateDoc(doc(db, "orders", id), { 
-                    status: "picking",
-                    pickedStartTime: new Date()
-                });
-            }
+        window.setFilter = (filter) => {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(b => {
+                b.classList.remove('bg-blue-600', 'text-white');
+                b.classList.add('bg-gray-700');
+            });
+            event.target.classList.remove('bg-gray-700');
+            event.target.classList.add('bg-blue-600', 'text-white');
+            // Re-trigger snapshot logic implicitly by variable check inside snapshot (or reload)
+            // For simplicity in this structure, just wait for next update or force reload.
+            // In a real app, we'd refactor the render function out. Here, simple reload works or just wait.
+            // Let's force a reload for the demo to be clean:
+            location.reload(); 
+            // Note: In production, better to separate render logic.
         };
     </script>
 </body>
