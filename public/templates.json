@@ -45,3 +45,8 @@
     "buttons": []
   }
 ]
+[
+  { "scenarioId": "intro", "keywords": ["היי", "שלום"], "answer": "היי {name}, ברוך הבא לסבן! איך אפשר לעזור?", "buttons": ["הזמנת מכולה", "חומרי בניין"] },
+  { "scenarioId": "crane_info", "keywords": ["מנוף"], "answer": "מנוף מגיע עד קומה 6. שים לב לחוטי חשמל.", "buttons": [] },
+  { "scenarioId": "permit_herzliya", "keywords": ["הרצליה"], "answer": "בהרצליה חובה היתר עירייה! <a href='#'>לחץ כאן</a>", "buttons": ["יש לי היתר"] }
+]
