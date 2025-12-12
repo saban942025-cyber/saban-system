@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SabanOS | Client App v27.0</title>
+    <title>SabanOS | Client App v27.5</title>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="icons/icon-192.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <style>
-        body { background-color: #e5e7eb; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; height: 100dvh; width: 100vw; overflow: hidden; display: flex; flex-direction: column; }
+        body { background-color: #e5e7eb; font-family: -apple-system, system-ui, sans-serif; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
         .app-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; padding-bottom: 75px; }
         .screen { display: none; flex-direction: column; height: 100%; width: 100%; overflow: hidden; }
         .screen.active { display: flex; animation: fadeIn 0.2s ease-out; }
@@ -18,45 +18,46 @@
 
         /* Chat */
         .chat-content { flex: 1; overflow-y: auto; background-color: #efeae2; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { max-width: 85%; padding: 10px; border-radius: 12px; font-size: 15px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        
+        /* הודעות מעוצבות */
+        .msg { max-width: 85%; padding: 10px; border-radius: 12px; font-size: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); word-wrap: break-word; }
         .msg-in { align-self: flex-start; background: #fff; border-top-right-radius: 0; }
         .msg-out { align-self: flex-end; background: #d9fdd3; border-top-left-radius: 0; }
         
+        /* תמונת פרופיל בהודעה */
+        .msg-with-avatar { display: flex; gap: 8px; align-items: flex-end; }
+        .msg-avatar { width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.1); }
+        .msg-out .msg-avatar { order: 2; } /* צד ימין שלי */
+        .msg-out .msg-body { order: 1; }
+
         /* Nav */
         .nav-bar { position: fixed; bottom: 0; width: 100%; height: 75px; background: rgba(255,255,255,0.98); border-top: 1px solid #e5e5eb; display: grid; grid-template-columns: 1fr 1fr 1fr; z-index: 50; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; }
-        .nav-item.active { color: #008069; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; cursor: pointer; }
+        .nav-item.active { color: #008069; transform: translateY(-2px); }
         .badge { background: #ef4444; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; position: absolute; margin-top: -30px; margin-right: -20px; }
 
-        /* Product Card (Grid) */
-        .product-card { background: white; border-radius: 16px; padding: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); position: relative; }
-        .compare-btn { position: absolute; top: 10px; left: 10px; background: #f3f4f6; color: #9ca3af; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.2s; z-index: 10; }
-        .compare-btn.active { background: #3b82f6; color: white; transform: scale(1.1); box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
+        /* Product Card */
+        .product-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.04); position: relative; transition: transform 0.1s; }
+        .product-card:active { transform: scale(0.98); }
+        .product-img { width: 100%; height: 100px; object-fit: contain; padding: 10px; }
 
-        /* Full Product Modal */
-        .modal-full { position: fixed; inset: 0; background: white; z-index: 100; display: flex; flex-direction: column; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        /* Order Frame Style (עיצוב ההזמנה) */
+        .order-frame { border-right: 4px solid #008069; background: #f0fdf4; padding: 10px; border-radius: 8px; font-size: 13px; }
+        .order-header { font-weight: bold; color: #064e3b; border-bottom: 1px solid #008069; padding-bottom: 5px; margin-bottom: 5px; }
+        .order-item { display: flex; justify-content: space-between; border-bottom: 1px dashed #cbd5e1; padding: 4px 0; }
+        .order-summary { margin-top: 8px; font-weight: bold; color: #0f172a; display: flex; justify-content: space-between; }
+        .driver-badge { background: #1e293b; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-top: 5px; display: inline-block; }
+
+        /* Modal */
+        .modal-full { position: fixed; inset: 0; background: white; z-index: 100; transform: translateY(100%); transition: 0.3s; display: flex; flex-direction: column; }
         .modal-full.open { transform: translateY(0); }
-        
-        .media-gallery { height: 250px; background: #f8fafc; display: flex; align-items: center; justify-content: center; position: relative; }
-        .media-controls { position: absolute; bottom: 10px; display: flex; gap: 8px; }
-        .media-dot { width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; transition: 0.2s; }
-        .media-dot.active { background: #008069; width: 20px; border-radius: 4px; }
-        
-        .spec-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
-        .spec-label { color: #64748b; }
-        .spec-val { font-weight: bold; color: #1e293b; }
-        
-        /* Floating Compare Bar */
-        #compareBar { position: fixed; bottom: 85px; left: 20px; right: 20px; background: #1e293b; color: white; padding: 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; z-index: 40; transform: translateY(200%); transition: 0.3s; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-        #compareBar.show { transform: translateY(0); }
     </style>
 </head>
 <body>
 
     <div class="app-container">
-        
         <header class="bg-[#008069] text-white p-4 shadow-md sticky top-0 z-20 flex justify-between items-center h-16 flex-shrink-0">
-            <div class="flex items-center gap-3" onclick="showMyProfile()">
+            <div class="flex items-center gap-3">
                 <img id="userAvatar" src="" class="w-9 h-9 rounded-full border-2 border-white/30 bg-white/10">
                 <div>
                     <h1 class="font-bold text-lg leading-tight">ח.סבן</h1>
@@ -68,17 +69,10 @@
 
         <div id="screen-shop" class="screen active bg-gray-50">
             <div class="p-4 flex-1 overflow-y-auto pb-24">
-                
-                <button onclick="startContainerFlow()" class="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white p-4 rounded-xl shadow-lg mb-4 flex items-center justify-between">
-                    <span class="font-bold text-lg"><i class="fas fa-trash-alt"></i> הזמנת מכולה</span>
-                    <i class="fas fa-chevron-left"></i>
-                </button>
-
                 <div class="relative mb-4">
-                    <input type="text" id="searchInput" oninput="filterProducts()" placeholder="חיפוש מוצר..." class="w-full p-3.5 pl-10 bg-white rounded-xl text-sm outline-none shadow-sm border border-gray-100 focus:border-green-500 transition">
+                    <input type="text" id="searchInput" oninput="filterProducts()" placeholder="חיפוש מוצר..." class="w-full p-3.5 pl-10 bg-white rounded-xl text-sm outline-none shadow-sm border border-gray-100 focus:border-green-500">
                     <i class="fas fa-search absolute left-3 top-4 text-gray-400"></i>
                 </div>
-
                 <div id="productsGrid" class="grid grid-cols-2 gap-3"></div>
             </div>
         </div>
@@ -86,12 +80,40 @@
         <div id="screen-cart" class="screen bg-white">
             <header class="p-4 border-b flex justify-between items-center sticky top-0 bg-white z-20">
                 <h2 class="font-bold text-xl text-gray-800">🛒 עגלה</h2>
-                <button onclick="clearCart()" class="text-red-500 text-xs font-bold bg-red-50 px-3 py-1.5 rounded-full">נקה</button>
+                <button onclick="clearCart()" class="text-red-500 text-xs font-bold bg-red-50 px-3 py-1.5 rounded-full">נקה הכל</button>
             </header>
-            <div class="flex-1 p-4 overflow-y-auto">
+            
+            <div class="flex-1 p-4 overflow-y-auto pb-24">
                 <div id="cartItemsList" class="space-y-3 mb-6"></div>
-                <button onclick="analyzeAndMoveToChat()" class="w-full bg-[#008069] text-white py-3.5 rounded-xl font-bold shadow-lg flex justify-center items-center gap-2">
-                    <span>אשר ושלח לסידור</span> <i class="fas fa-paper-plane"></i>
+
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 shadow-sm space-y-3">
+                    <h3 class="font-bold text-xs text-gray-500 uppercase flex items-center gap-2"><i class="fas fa-map-marker-alt"></i> פרטי פרויקט</h3>
+                    
+                    <input type="text" id="projName" placeholder="שם הפרויקט (למשל: וילה הרצליה)" class="w-full p-3 rounded-lg border text-sm outline-none focus:border-green-500">
+                    <input type="text" id="projAddr" placeholder="כתובת מדויקת (רחוב, עיר)" class="w-full p-3 rounded-lg border text-sm outline-none focus:border-green-500">
+                    
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" id="contactName" placeholder="איש קשר באתר" class="w-full p-3 rounded-lg border text-sm outline-none focus:border-green-500">
+                        <input type="tel" id="contactPhone" placeholder="נייד איש קשר" class="w-full p-3 rounded-lg border text-sm outline-none focus:border-green-500">
+                    </div>
+
+                    <div class="flex items-center justify-between bg-white p-3 rounded-lg border mt-2">
+                        <div class="text-sm font-bold text-gray-700">
+                            <div><i class="fas fa-truck-loading text-orange-500"></i> העדפת פריקה</div>
+                            <div class="text-[10px] text-gray-400 font-normal">ברירת מחדל: לפי משקל</div>
+                        </div>
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" id="forceCrane" class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500 relative"></div>
+                            <span class="mr-2 text-xs font-bold text-gray-500 peer-checked:text-orange-600">מנוף</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 border-t bg-white sticky bottom-0 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+                <button onclick="submitOrder()" class="w-full bg-[#008069] text-white py-3.5 rounded-xl font-bold shadow-lg flex justify-center items-center gap-2 active:scale-95 transition">
+                    <span>שלח הזמנה לביצוע</span> <i class="fas fa-check-circle"></i>
                 </button>
             </div>
         </div>
@@ -100,290 +122,284 @@
             <div class="chat-content" id="chatBox"></div>
             <div class="bg-white p-3 border-t flex gap-2">
                 <input id="chatInput" class="flex-1 bg-gray-100 rounded-full px-4 py-2 text-sm outline-none" placeholder="הקלד הודעה..." onkeydown="if(event.key === 'Enter') sendChat()">
-                <button onclick="sendChat()" class="bg-[#008069] text-white w-10 h-10 rounded-full shadow-sm flex items-center justify-center"><i class="fas fa-paper-plane"></i></button>
+                <button onclick="sendChat()" class="bg-[#008069] text-white w-10 h-10 rounded-full flex items-center justify-center shadow-sm"><i class="fas fa-paper-plane"></i></button>
             </div>
         </div>
 
-    </div>
-
-    <nav class="nav-bar">
-        <div onclick="switchScreen('shop')" class="nav-item nav-shop active" id="nav-shop"><i class="fas fa-store-alt text-xl mb-1"></i><span class="text-[10px] font-bold">חנות</span></div>
-        <div onclick="switchScreen('cart')" class="nav-item nav-cart" id="nav-cart"><div class="relative"><i class="fas fa-shopping-bag text-xl mb-1"></i><span id="cartBadge" class="badge hidden">0</span></div><span class="text-[10px] font-bold">עגלה</span></div>
-        <div onclick="switchScreen('chat')" class="nav-item nav-chat" id="nav-chat"><i class="fas fa-comments text-xl mb-1"></i><span class="text-[10px] font-bold">צ'אט</span></div>
-    </nav>
-
-    <div id="compareBar">
-        <div class="flex items-center gap-3">
-            <div class="bg-blue-500 w-8 h-8 rounded-full flex items-center justify-center"><i class="fas fa-balance-scale"></i></div>
-            <div class="text-sm"><span id="compareCount">0</span> מוצרים להשוואה</div>
-        </div>
-        <button onclick="executeCompare()" class="bg-white text-blue-900 px-4 py-1.5 rounded-lg text-xs font-bold shadow-sm">השווה עכשיו</button>
     </div>
 
     <div id="productModal" class="modal-full">
-        <div class="h-14 flex items-center justify-between px-4 border-b bg-white sticky top-0 z-20">
-            <button onclick="closeProductModal()" class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-600"><i class="fas fa-arrow-right"></i></button>
-            <span class="font-bold text-sm truncate w-48 text-center" id="modalTitle">שם מוצר</span>
-            <button onclick="shareProduct()" class="text-gray-500"><i class="fas fa-share-alt"></i></button>
+        <div class="h-14 flex items-center justify-between px-4 border-b bg-white">
+            <button onclick="closeProductModal()" class="w-8 h-8 bg-gray-100 rounded-full text-gray-600"><i class="fas fa-arrow-right"></i></button>
+            <span class="font-bold text-sm" id="modalTitle"></span>
+            <div class="w-8"></div>
         </div>
-
-        <div class="flex-1 overflow-y-auto pb-24 bg-white">
+        <div class="flex-1 overflow-y-auto p-5 pb-24 bg-white">
+            <img id="modalImg" src="" class="w-full h-64 object-contain mb-4">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800" id="modalName"></h1>
+                    <div class="text-xs text-gray-400">מק"ט: <span id="modalSku"></span></div>
+                </div>
+                <div class="text-2xl font-bold text-[#008069]">₪<span id="modalPrice"></span></div>
+            </div>
             
-            <div class="media-gallery">
-                <img id="modalImg" src="" class="w-full h-full object-contain p-4 transition duration-300">
-                <div id="modalVideo" class="hidden w-full h-full"><iframe id="videoFrame" class="w-full h-full" frameborder="0" allowfullscreen></iframe></div>
-                
-                <div class="media-controls">
-                    <div onclick="setMedia(0)" id="dot0" class="media-dot active"></div>
-                    <div onclick="setMedia(1)" id="dot1" class="media-dot"></div>
-                    <div onclick="setMedia(2)" id="dot2" class="media-dot hidden"></div> </div>
+            <div id="modalDesc" class="text-sm text-gray-600 leading-relaxed bg-gray-50 p-4 rounded-xl border mb-4"></div>
+            
+            <div class="bg-orange-50 p-4 rounded-xl border border-orange-100 mb-4">
+                <h3 class="text-xs font-bold text-orange-800 uppercase mb-2">לוגיסטיקה</h3>
+                <div class="flex justify-between text-sm border-b border-orange-200 pb-1"><span>משקל:</span> <span class="font-bold" id="modalWeight">-</span></div>
+                <div class="flex justify-between text-sm pt-1"><span>מנוף:</span> <span class="font-bold" id="modalCrane">-</span></div>
             </div>
 
-            <div class="p-5">
-                <div class="flex justify-between items-start mb-2">
-                    <div>
-                        <h1 class="text-2xl font-bold text-gray-800 leading-tight" id="modalName"></h1>
-                        <div class="text-xs text-gray-400 font-mono mt-1">מק"ט: <span id="modalSku"></span></div>
-                    </div>
-                    <div class="text-2xl font-bold text-[#008069]">₪<span id="modalPrice"></span></div>
-                </div>
-
-                <div class="mt-4 space-y-4">
-                    
-                    <div id="descBox" class="bg-gray-50 p-4 rounded-xl border border-gray-100 text-sm text-gray-600 leading-relaxed"></div>
-                    
-                    <div class="bg-orange-50 p-4 rounded-xl border border-orange-100">
-                        <h3 class="text-xs font-bold text-orange-800 uppercase mb-2 flex items-center gap-2"><i class="fas fa-truck-loading"></i> לוגיסטיקה</h3>
-                        <div class="spec-row"><span class="spec-label">משקל יחידה</span><span class="spec-val" id="modalWeight">-</span></div>
-                        <div class="spec-row"><span class="spec-label">יחידות במשטח</span><span class="spec-val" id="modalPallet">-</span></div>
-                        <div class="spec-row border-none"><span class="spec-label">דורש מנוף?</span><span class="spec-val" id="modalCrane">-</span></div>
-                    </div>
-
-                    <div id="featuresBox" class="bg-blue-50 p-4 rounded-xl border border-blue-100 hidden">
-                        <h3 class="text-xs font-bold text-blue-800 uppercase mb-2"><i class="fas fa-list-check"></i> תכונות ויישום</h3>
-                        <div id="featuresContent" class="text-sm text-gray-700 whitespace-pre-line"></div>
-                    </div>
-                </div>
-            </div>
+            <button onclick="consultBot()" class="w-full bg-blue-50 text-blue-600 py-3 rounded-xl font-bold mb-3 border border-blue-200 flex items-center justify-center gap-2">
+                <i class="fas fa-robot"></i> התייעץ עם הבוט על מוצר זה
+            </button>
         </div>
-
-        <div class="p-4 bg-white border-t flex gap-3 sticky bottom-0 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
-            <button onclick="askBotAboutProduct()" class="bg-gray-100 text-gray-700 w-12 h-12 rounded-xl flex flex-col items-center justify-center text-[10px] font-bold gap-1 shadow-sm">
-                <i class="fas fa-robot text-lg text-blue-500"></i> התייעץ
-            </button>
-            <button onclick="addToCartFromModal()" class="flex-1 bg-[#008069] text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition">
-                <span>הוסף להזמנה</span>
-                <span class="bg-white/20 px-2 py-0.5 rounded text-xs" id="modalPriceBtn"></span>
-            </button>
+        <div class="p-4 bg-white border-t sticky bottom-0">
+            <button onclick="addToCartFromModal()" class="w-full bg-[#008069] text-white py-3.5 rounded-xl font-bold shadow-lg">הוסף לעגלה</button>
         </div>
     </div>
+
+    <nav class="nav-bar">
+        <div onclick="switchScreen('shop')" class="nav-item nav-shop active" id="nav-shop"><i class="fas fa-store text-xl mb-1"></i><span class="text-[10px] font-bold">חנות</span></div>
+        <div onclick="switchScreen('cart')" class="nav-item nav-cart" id="nav-cart"><div class="relative"><i class="fas fa-shopping-bag text-xl mb-1"></i><span id="cartBadge" class="badge hidden">0</span></div><span class="text-[10px] font-bold">עגלה</span></div>
+        <div onclick="switchScreen('chat')" class="nav-item nav-chat" id="nav-chat"><i class="fas fa-comments text-xl mb-1"></i><span class="text-[10px] font-bold">צ'אט</span></div>
+    </nav>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, doc, setDoc, onSnapshot, query, orderBy, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        
-        import { SabanLogic } from './js/saban-brain.js';
         import { SabanPush } from './js/notifications.js';
-        import { SmartContacts } from './js/smart-contacts.js';
 
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        let currentUser = { id: 'guest', name: 'אורח' };
+        let currentUser = { id: 'guest', name: 'אורח', avatar: '' };
         let cart = [];
         let allProducts = [];
         let currentProduct = null;
-        let compareList = [];
 
-        // --- INIT ---
+        // INIT
         window.onload = () => {
             const uid = new URLSearchParams(window.location.search).get('uid') || localStorage.getItem('impersonateId');
-            if (uid) { 
-                currentUser.id = uid; 
-                currentUser.name = uid.replace('_',' '); 
-                document.getElementById('userName').innerText = currentUser.name; 
-                SabanPush.init('client', currentUser.id);
-                subscribeToChat(uid); 
+            if (uid) {
+                let hebrewName = uid.includes('shahar') ? "שחר שאול" : (uid.includes('bar') ? "בר אורן" : uid);
+                currentUser = { id: uid, name: hebrewName, avatar: `https://ui-avatars.com/api/?name=${hebrewName}&background=008069&color=fff` };
+                document.getElementById('userName').innerText = currentUser.name;
+                document.getElementById('userAvatar').src = currentUser.avatar;
+                SabanPush.init('client', uid);
+                subscribeToChat(uid);
             }
             loadRealProducts();
         };
 
-        // --- PRODUCTS & RENDER ---
+        // --- PRODUCTS & MODAL ---
         async function loadRealProducts() {
-            try {
-                const snap = await getDocs(collection(db, "products"));
-                allProducts = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                renderProducts(allProducts);
-            } catch(e) {}
+            const snap = await getDocs(collection(db, "products"));
+            allProducts = snap.docs.map(d => ({id: d.id, ...d.data()}));
+            renderProducts(allProducts);
         }
 
         function renderProducts(list) {
             const grid = document.getElementById('productsGrid');
-            if(list.length===0) { grid.innerHTML='<div class="col-span-2 text-center text-gray-400 mt-10">טוען...</div>'; return; }
-            
+            if(!list.length) { grid.innerHTML='<div class="col-span-2 text-center mt-10">טוען...</div>'; return; }
             grid.innerHTML = list.map(p => {
-                const name = p.core?.name || p.title;
+                // בולען חכם למידע
+                const name = p.core?.name || p.title || p.name;
                 const price = p.core?.price || p.price;
                 const img = p.rich?.image || p.image || "https://via.placeholder.com/150";
                 const pStr = encodeURIComponent(JSON.stringify(p));
 
                 return `
-                <div class="product-card">
-                    <button onclick="toggleCompare('${p.id}')" class="compare-btn" id="comp-${p.id}"><i class="fas fa-balance-scale"></i></button>
-                    <div onclick="openProductModal('${pStr}')">
-                        <img src="${img}" class="product-img" onerror="this.src='https://via.placeholder.com/150'">
-                        <div class="text-right mt-2">
-                            <h3 class="font-bold text-xs text-gray-800 line-clamp-2 h-8 leading-tight mb-1">${name}</h3>
-                            <div class="flex justify-between items-end">
-                                <div class="text-[#008069] font-bold text-sm">₪${price}</div>
-                                <div class="bg-gray-100 rounded-full w-6 h-6 flex items-center justify-center text-gray-600"><i class="fas fa-plus text-[10px]"></i></div>
-                            </div>
+                <div class="product-card" onclick="openProduct('${pStr}')">
+                    <img src="${img}" class="product-img" onerror="this.src='https://via.placeholder.com/150'">
+                    <div class="p-3">
+                        <div class="font-bold text-xs h-8 overflow-hidden mb-1">${name}</div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-[#008069] font-bold text-sm">₪${price}</span>
+                            <button onclick="event.stopPropagation(); quickAdd('${pStr}')" class="bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center hover:bg-green-100 text-green-700 font-bold">+</button>
                         </div>
                     </div>
                 </div>`;
             }).join('');
         }
 
-        // --- PRODUCT MODAL ---
-        window.openProductModal = (pStr) => {
+        window.openProduct = (pStr) => {
             const p = JSON.parse(decodeURIComponent(pStr));
             currentProduct = p;
-
-            // Basic Info
-            const name = p.core?.name || p.title;
-            const price = p.core?.price || p.price;
-            document.getElementById('modalTitle').innerText = name;
-            document.getElementById('modalName').innerText = name;
+            document.getElementById('modalTitle').innerText = p.core?.name || p.title;
+            document.getElementById('modalName').innerText = p.core?.name || p.title;
             document.getElementById('modalSku').innerText = p.id;
-            document.getElementById('modalPrice').innerText = price;
-            document.getElementById('modalPriceBtn').innerText = `₪${price}`;
-
-            // Logistics
-            document.getElementById('modalWeight').innerText = p.logistics?.weight ? `${p.logistics.weight} ק"ג` : '-';
-            document.getElementById('modalPallet').innerText = p.logistics?.pallet_qty || '-';
-            document.getElementById('modalCrane').innerHTML = p.logistics?.requires_crane ? '<span class="text-red-500 font-bold">כן (חובה)</span>' : 'לא';
-
-            // Description & Rich
-            document.getElementById('descBox').innerText = p.rich?.description || p.description || 'אין תיאור זמין.';
-            
-            if(p.rich?.features || p.rich?.application) {
-                document.getElementById('featuresBox').classList.remove('hidden');
-                document.getElementById('featuresContent').innerText = `${p.rich?.features || ''}\n\n${p.rich?.application || ''}`;
-            } else {
-                document.getElementById('featuresBox').classList.add('hidden');
-            }
-
-            // Media Logic
-            const img1 = p.rich?.image || p.image || "https://via.placeholder.com/300";
-            const img2 = p.rich?.image2;
-            const video = p.rich?.video;
-            
-            // Set initial image
-            document.getElementById('modalImg').src = img1;
-            document.getElementById('modalVideo').classList.add('hidden');
-            document.getElementById('modalImg').classList.remove('hidden');
-            
-            // Handle dots
-            document.getElementById('dot0').classList.add('active');
-            document.getElementById('dot1').className = img2 ? 'media-dot' : 'hidden';
-            document.getElementById('dot2').className = video ? 'media-dot' : 'hidden';
-
-            // Store Media for toggling
-            currentProduct._media = [img1, img2, video].filter(Boolean);
-
+            document.getElementById('modalPrice').innerText = p.core?.price || p.price;
+            document.getElementById('modalImg').src = p.rich?.image || p.image || "https://via.placeholder.com/300";
+            document.getElementById('modalDesc').innerText = p.rich?.description || "אין תיאור זמין";
+            document.getElementById('modalWeight').innerText = p.logistics?.weight || "0";
+            document.getElementById('modalCrane').innerText = p.logistics?.requires_crane ? "כן" : "לא";
             document.getElementById('productModal').classList.add('open');
         };
-
-        window.setMedia = (idx) => {
-            const media = currentProduct._media[idx];
-            if (!media) return;
-
-            document.querySelectorAll('.media-dot').forEach(d => d.classList.remove('active'));
-            document.getElementById(`dot${idx}`).classList.add('active');
-
-            if (media.includes('youtube')) {
-                const vidId = media.split('v=')[1]?.split('&')[0];
-                document.getElementById('videoFrame').src = `https://www.youtube.com/embed/${vidId}?autoplay=1`;
-                document.getElementById('modalImg').classList.add('hidden');
-                document.getElementById('modalVideo').classList.remove('hidden');
-            } else {
-                document.getElementById('modalImg').src = media;
-                document.getElementById('modalImg').classList.remove('hidden');
-                document.getElementById('modalVideo').classList.add('hidden');
-                document.getElementById('videoFrame').src = ""; // Stop video
-            }
-        };
-
+        
         window.closeProductModal = () => document.getElementById('productModal').classList.remove('open');
-
-        // --- ACTIONS ---
-        window.addToCartFromModal = () => {
-            if(!currentProduct) return;
-            const p = currentProduct;
-            const exist = cart.find(i => i.id === p.id);
-            if (exist) exist.qty++; 
-            else cart.push({ id: p.id, name: p.core?.name || p.title, price: p.core?.price || p.price, qty: 1, logistics: p.logistics || {} });
-            updateCartUI();
+        
+        window.addToCartFromModal = () => { quickAdd(encodeURIComponent(JSON.stringify(currentProduct))); closeProductModal(); };
+        
+        window.consultBot = () => {
             closeProductModal();
-        };
-
-        window.askBotAboutProduct = () => {
             switchScreen('chat');
-            closeProductModal();
-            const msg = `אני מתעניין לגבי: ${currentProduct.core?.name || currentProduct.title}. האם מתאים ל...`;
+            const msg = `אני רוצה להתייעץ לגבי המוצר: ${currentProduct.core?.name || currentProduct.title} (מק"ט ${currentProduct.id})`;
             document.getElementById('chatInput').value = msg;
+            // אפשר לשלוח אוטומטית או לתת ללקוח לשלוח
         };
 
-        // --- COMPARE LOGIC ---
-        window.toggleCompare = (id) => {
-            const btn = document.getElementById(`comp-${id}`);
-            if (compareList.includes(id)) {
-                compareList = compareList.filter(i => i !== id);
-                btn.classList.remove('active');
-            } else {
-                if (compareList.length >= 2) return alert("אפשר להשוות רק 2 מוצרים");
-                compareList.push(id);
-                btn.classList.add('active');
+        // --- CART LOGIC ---
+        window.quickAdd = (pStr) => {
+            const p = JSON.parse(decodeURIComponent(pStr));
+            const exist = cart.find(i => i.id === p.id);
+            if (exist) exist.qty++;
+            else cart.push({ 
+                id: p.id, 
+                name: p.core?.name || p.title, 
+                price: p.core?.price || p.price, 
+                qty: 1, 
+                weight: p.logistics?.weight || 0,
+                crane: p.logistics?.requires_crane || false 
+            });
+            updateCartUI();
+        };
+
+        function updateCartUI() {
+            document.getElementById('cartBadge').innerText = cart.reduce((a,c)=>a+c.qty,0);
+            document.getElementById('cartBadge').classList.toggle('hidden', cart.length === 0);
+            
+            const list = document.getElementById('cartItemsList');
+            if (cart.length === 0) { list.innerHTML = '<div class="text-center py-10 text-gray-400">העגלה ריקה</div>'; return; }
+            
+            list.innerHTML = cart.map((item, i) => `
+                <div class="bg-white p-3 rounded-xl border flex justify-between items-center shadow-sm">
+                    <div>
+                        <div class="font-bold text-sm">${item.name}</div>
+                        <div class="text-xs text-gray-500">₪${item.price} | ${item.weight} ק"ג</div>
+                    </div>
+                    <div class="flex items-center gap-3 bg-gray-50 p-1 rounded-lg">
+                        <button onclick="updateQty(${i}, -1)" class="w-6 h-6 flex items-center justify-center font-bold text-gray-500">-</button>
+                        <span class="text-sm font-bold w-4 text-center">${item.qty}</span>
+                        <button onclick="updateQty(${i}, 1)" class="w-6 h-6 flex items-center justify-center font-bold text-green-600">+</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        window.updateQty = (i, d) => { cart[i].qty += d; if(cart[i].qty<=0) cart.splice(i,1); updateCartUI(); };
+        window.clearCart = () => { cart=[]; updateCartUI(); };
+
+        // --- SUBMIT ORDER (LOGIC + FORMATTING) ---
+        window.submitOrder = async () => {
+            if(cart.length === 0) return alert("העגלה ריקה");
+
+            // 1. איסוף נתונים
+            const project = document.getElementById('projName').value || 'ללא שם';
+            const address = document.getElementById('projAddr').value || 'לא צוינה';
+            const contact = document.getElementById('contactName').value || currentUser.name;
+            const phone = document.getElementById('contactPhone').value || '-';
+            const forceCrane = document.getElementById('forceCrane').checked;
+
+            // 2. לוגיקה (מנוף או ידני)
+            const totalWeight = cart.reduce((sum, item) => sum + (item.weight * item.qty), 0);
+            const hasHeavyItems = cart.some(item => item.crane);
+            
+            let driverType = "ידני";
+            let driverName = "עלי";
+            let reason = "משקל קל";
+
+            if (totalWeight > 500 || hasHeavyItems || forceCrane) {
+                driverType = "מנוף";
+                driverName = "חכמת";
+                reason = forceCrane ? "העדפת לקוח" : (hasHeavyItems ? "פריט כבד" : "משקל כולל");
             }
-            
-            document.getElementById('compareCount').innerText = compareList.length;
-            document.getElementById('compareBar').classList.toggle('show', compareList.length > 0);
-        };
 
-        window.executeCompare = async () => {
-            if (compareList.length < 2) return alert("בחר עוד מוצר");
-            
-            const p1 = allProducts.find(p => p.id === compareList[0]);
-            const p2 = allProducts.find(p => p.id === compareList[1]);
-            
+            // 3. בניית הודעה מעוצבת (HTML לחמ"ל)
+            const itemsHtml = cart.map((item, idx) => 
+                `<li class="order-item"><span>${idx+1}. ${item.name}</span><span>x${item.qty}</span></li>`
+            ).join('');
+
+            const orderHtml = `
+            <div class="order-frame">
+                <div class="order-header">📥 הזמנה חדשה: ${currentUser.name}</div>
+                <div class="text-xs mb-2">
+                    <div><b>פרויקט:</b> ${project}</div>
+                    <div><b>כתובת:</b> ${address}</div>
+                    <div><b>איש קשר:</b> ${contact} (${phone})</div>
+                </div>
+                <ol class="list-none pl-0 mb-2">${itemsHtml}</ol>
+                <div class="order-summary">
+                    <span>סה"כ פריטים: ${cart.reduce((a,c)=>a+c.qty,0)}</span>
+                    <span>משקל: ${totalWeight} ק"ג</span>
+                </div>
+                <div class="driver-badge">
+                    🚚 שובץ: <b>${driverName}</b> (${driverType}) - ${reason}
+                </div>
+            </div>`;
+
+            // 4. שליחה
             switchScreen('chat');
-            const txt = `היי, תעזור לי להשוות בין <b>${p1.core?.name}</b> לבין <b>${p2.core?.name}</b>. מה עדיף?`;
+            await addDoc(collection(db, `chat_sessions/${currentUser.id}/messages`), { text: orderHtml, role: 'user', createdAt: serverTimestamp() });
             
-            await addDoc(collection(db, `chat_sessions/${currentUser.id}/messages`), { text: txt, role: 'user', createdAt: serverTimestamp() });
-            compareList = [];
-            document.querySelectorAll('.compare-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('compareBar').classList.remove('show');
+            // שליחת הודעה מערכתית (לצורך הקפצת החמ"ל)
+            await setDoc(doc(db, "chat_sessions", currentUser.id), { 
+                userName: currentUser.name, 
+                lastMessage: "📥 הזמנה חדשה התקבלה", 
+                lastActivity: serverTimestamp(), 
+                isBotActive: true 
+            }, { merge: true });
+
+            // התראה לOneSignal של החמ"ל
+            SabanPush.send('admin_rami', 'הזמנה חדשה!', `${currentUser.name} שלח הזמנה (${driverName})`);
+
+            cart = []; updateCartUI();
         };
 
-        // --- STANDARD APP LOGIC ---
-        function updateCartUI() { document.getElementById('cartBadge').innerText = cart.reduce((a,c)=>a+c.qty,0); document.getElementById('cartBadge').classList.toggle('hidden', cart.length === 0); renderCartItems(); }
-        function renderCartItems() { const list = document.getElementById('cartItemsList'); if(list) list.innerHTML = cart.length ? cart.map((item, i) => `<div class="bg-white p-3 rounded-xl border border-gray-100 flex justify-between items-center shadow-sm"><div><div class="font-bold text-sm text-gray-800">${item.name}</div><div class="text-xs text-gray-500">₪${item.price} ליח'</div></div><div class="flex items-center gap-3 bg-gray-50 p-1 rounded-lg"><div class="w-7 h-7 bg-white shadow-sm rounded-md flex items-center justify-center cursor-pointer text-gray-600 hover:text-red-500" onclick="updateQty(${i}, -1)">-</div><span class="font-bold text-sm w-4 text-center">${item.qty}</span><div class="w-7 h-7 bg-white shadow-sm rounded-md flex items-center justify-center cursor-pointer text-green-600" onclick="updateQty(${i}, 1)">+</div></div></div>`).join('') : '<div class="text-center text-gray-400 py-10">העגלה ריקה</div>'; }
-        window.updateQty = (i, d) => { cart[i].qty += d; if (cart[i].qty <= 0) cart.splice(i, 1); updateCartUI(); };
-        window.clearCart = () => { cart = []; updateCartUI(); };
-        window.analyzeAndMoveToChat = async () => { if (cart.length === 0) return alert("עגלה ריקה"); const analysis = SabanLogic.analyzeCart(cart); if (!analysis.isValid) return alert(analysis.missingServices[0].msg); const txt = `<b>הזמנה חדשה:</b><br>${cart.map(i=>`▫️ ${i.name} x${i.qty}`).join('<br>')}<br>סה"כ: ₪${analysis.totalPrice}`; switchScreen('chat'); await addDoc(collection(db, `chat_sessions/${currentUser.id}/messages`), { text: txt, role: 'user', createdAt: serverTimestamp() }); await setDoc(doc(db, "chat_sessions", currentUser.id), { userName: currentUser.name, lastMessage: "הזמנה חדשה", lastActivity: serverTimestamp(), isBotActive: true }, { merge: true }); cart = []; updateCartUI(); };
-        
-        // Chat Logic
-        function subscribeToChat(uid) { onSnapshot(query(collection(db, `chat_sessions/${uid}/messages`), orderBy("createdAt", "asc")), (snap) => { const box = document.getElementById('chatBox'); box.innerHTML = snap.docs.map(d => { const m = d.data(); return `<div class="msg ${m.role==='user'?'msg-out':'msg-in'}">${m.text}</div>`; }).join(''); box.scrollTop = box.scrollHeight; }); }
-        window.sendChat = async () => { const txt = document.getElementById('chatInput').value; if(!txt) return; document.getElementById('chatInput').value = ''; await addDoc(collection(db, `chat_sessions/${currentUser.id}/messages`), { text: txt, role: 'user', createdAt: serverTimestamp() }); };
-        
-        // Nav & Utils
-        window.switchScreen = (n) => { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(`screen-${n}`).classList.add('active'); document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active')); document.getElementById(`nav-${n}`).classList.add('active'); }
-        window.startContainerFlow = () => { switchScreen('chat'); document.getElementById('chatInput').value='מכולה'; sendChat(); };
-        window.showMyProfile = () => { if(currentUser.id !== 'guest') SmartContacts.show({ target: document.getElementById('userAvatar') }, { ...currentUser, role: 'לקוח', type: 'client' }); };
-        window.handleLogout = () => { localStorage.removeItem('impersonateId'); signOut(auth).then(() => window.location.href="index.html"); };
+        // --- CHAT ---
+        function subscribeToChat(uid) {
+            onSnapshot(query(collection(db, `chat_sessions/${uid}/messages`), orderBy("createdAt", "asc")), (snap) => {
+                const box = document.getElementById('chatBox');
+                box.innerHTML = snap.docs.map(d => {
+                    const m = d.data();
+                    const isMe = m.role === 'user';
+                    // תצוגת אווטאר בהודעה
+                    const avatar = isMe ? currentUser.avatar : 'https://ui-avatars.com/api/?name=Saban&background=008069&color=fff';
+                    const msgClass = isMe ? 'msg-out' : 'msg-in';
+                    const content = m.text; // HTML is trusted here
+
+                    return `
+                    <div class="msg-with-avatar ${msgClass}">
+                        <img src="${avatar}" class="msg-avatar">
+                        <div class="msg-body msg ${msgClass}">${content}</div>
+                    </div>`;
+                }).join('');
+                box.scrollTop = box.scrollHeight;
+            });
+        }
+
+        window.sendChat = async () => {
+            const txt = document.getElementById('chatInput').value;
+            if(!txt) return;
+            document.getElementById('chatInput').value = '';
+            await addDoc(collection(db, `chat_sessions/${currentUser.id}/messages`), { text: txt, role: 'user', createdAt: serverTimestamp() });
+        };
+
+        window.switchScreen = (n) => {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(`screen-${n}`).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.querySelector(`.nav-${n}`).classList.add('active');
+        };
+
+        window.filterProducts = () => { renderProducts(allProducts.filter(p => (p.core?.name || p.title || "").toLowerCase().includes(document.getElementById('searchInput').value.toLowerCase()))); };
+        window.handleLogout = () => { localStorage.removeItem('impersonateId'); location.href="index.html"; };
+        window.showMyProfile = () => alert("פרופיל לקוח: " + currentUser.name);
 
     </script>
 </body>
