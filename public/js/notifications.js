@@ -1,30 +1,31 @@
 // public/js/notifications.js
 
+// --- מפתחות OneSignal (הוזנו לפי בקשתך) ---
 const ONE_SIGNAL_APP_ID = "acc8a2bc-d54e-4261-b3d2-cc5c5f7b39d3";
-// שים לב: כאן צריך את ה-REST API KEY מלוח הבקרה של OneSignal (תחת Settings > Keys & IDs)
-// ה-Key ID ששלחת נראה כמו מזהה פנימי, אבל לצורך השליחה צריך את המחרוזת הארוכה (REST API Key).
-// אני שם כאן פלייסהולדר - תחליף אותו במפתח האמיתי שלך.
-const REST_API_KEY = "OS_v1_..."; 
+const REST_API_KEY = "syyhlq4pzu7reurjs7lqgtb3g"; 
 
 export const SabanPush = {
     
-    // 1. אתחול המערכת (לשים בכל דף)
+    // 1. אתחול המערכת (לשים בכל דף: לקוח, נהג, מנהל)
     init: async (userRole, userId) => {
         window.OneSignalDeferred = window.OneSignalDeferred || [];
         
         await OneSignalDeferred.push(async function(OneSignal) {
             await OneSignal.init({
                 appId: ONE_SIGNAL_APP_ID,
-                safari_web_id: "web.onesignal.auto.5f4f9ed9-fb2e-4d6a-935d-81aa46fccce0",
-                notifyButton: { enable: true }, // כפתור "פעמון" למטה
+                safari_web_id: "web.onesignal.auto.5f4f9ed9-fb2e-4d6a-935d-81aa46fccce0", // אופציונלי לאפל
+                notifyButton: { enable: true }, // הפעמון הקטן בצד
                 allowLocalhostAsSecureOrigin: true,
             });
 
-            // זיהוי המשתמש והצמדת תגיות
+            // זיהוי המשתמש והצמדת תגיות (Tags)
             if (userId) {
-                OneSignal.login(userId); // חיבור ה-ID של המשתמש ל-OneSignal
+                // המזהה החיצוני הוא ה-UID של המשתמש שלנו
+                OneSignal.login(userId); 
+                
+                // תיוג לפי תפקיד (כדי שנוכל לשלוח "לכל הנהגים")
                 OneSignal.User.addTags({
-                    role: userRole, // client, driver, admin
+                    role: userRole, // client / driver / admin
                     app_version: "v25.0"
                 });
                 console.log(`🔔 SabanPush: מחובר כ-${userRole} (${userId})`);
@@ -39,18 +40,19 @@ export const SabanPush = {
             headers: {
                 accept: 'application/json',
                 'Content-Type': 'application/json',
+                // השימוש ב-Basic Auth עם ה-REST API Key מאפשר שליחה
                 Authorization: `Basic ${REST_API_KEY}`
             },
             body: JSON.stringify({
                 app_id: ONE_SIGNAL_APP_ID,
-                include_external_user_ids: [targetUid], // שליחה לפי ה-UID שלנו
+                include_aliases: { "external_id": [targetUid] }, // שליחה ספציפית ליוזר שלנו
+                target_channel: "push",
                 contents: { en: message, he: message },
                 headings: { en: title, he: title },
-                data: data, // מידע נוסף (כמו מספר הזמנה)
-                // כפתורים לפעולה מהירה
+                data: data, 
+                // כפתורים לפעולה מהירה בהתראה
                 buttons: [
-                    {id: "open_app", text: "פתח אפליקציה", icon: "ic_menu_send"},
-                    {id: "call_office", text: "חייג למשרד", icon: "ic_menu_call"}
+                    {id: "open_app", text: "פתח את האפליקציה", icon: "ic_menu_send"},
                 ]
             })
         };
@@ -62,6 +64,7 @@ export const SabanPush = {
             return json;
         } catch (err) {
             console.error("שגיאה בשליחת התראה:", err);
+            alert("שגיאה בשליחת ההתראה. בדוק בקונסול.");
         }
     }
 };
