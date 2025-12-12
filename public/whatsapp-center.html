@@ -2,94 +2,178 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>SabanOS | חמ"ל v35.1 (Fixed)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SabanOS | חמ"ל פיקוד (Ultimate)</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
     <style>
-        body { background-color: #d1d7db; font-family: -apple-system, system-ui, sans-serif; height: 100vh; display: flex; overflow: hidden; }
-        .sidebar { width: 30%; min-width: 360px; background: white; border-left: 1px solid #e9edef; display: flex; flex-direction: column; z-index: 20; }
-        .main-chat { flex: 1; display: flex; flex-direction: column; background-color: #efeae2; position: relative; }
+        /* Base Setup */
+        body { background-color: #d1d7db; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; height: 100dvh; display: flex; overflow: hidden; }
         
-        .chat-item { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #f0f2f5; cursor: pointer; transition: 0.2s; }
+        /* Sidebar (Right) */
+        .sidebar { width: 30%; min-width: 350px; max-width: 450px; background: white; border-left: 1px solid #e9edef; display: flex; flex-direction: column; z-index: 20; transition: transform 0.3s ease; }
+        .sidebar-header { height: 60px; background: #f0f2f5; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #d1d7db; flex-shrink: 0; }
+        
+        /* Tabs */
+        .sidebar-tabs { display: flex; border-bottom: 1px solid #e9edef; background: #fff; flex-shrink: 0; }
+        .tab-btn { flex: 1; text-align: center; padding: 12px; cursor: pointer; color: #54656f; font-weight: 500; border-bottom: 3px solid transparent; transition: 0.2s; font-size: 14px; }
+        .tab-btn.active { color: #008069; border-bottom-color: #008069; background: #f0f2f5; font-weight: bold; }
+
+        /* Lists */
+        .chat-list { flex: 1; overflow-y: auto; }
+        .chat-item { display: flex; align-items: center; padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #f0f2f5; transition: 0.2s; position: relative; }
         .chat-item:hover { background: #f5f6f6; }
         .chat-item.active { background: #f0f2f5; border-right: 4px solid #00a884; }
         
-        .msg { max-width: 65%; padding: 8px 12px; border-radius: 8px; font-size: 14px; margin-bottom: 8px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); word-wrap: break-word; }
-        .msg.staff { background: #d9fdd3; align-self: flex-end; }
-        .msg.user { background: white; align-self: flex-start; }
-        .msg.internal { background: #fff9c4; align-self: center; font-size: 12px; border: 1px dashed orange; }
+        /* Main Chat Area (Left) */
+        .main-chat { flex: 1; display: flex; flex-direction: column; background-color: #efeae2; background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); position: relative; transition: transform 0.3s ease; }
+        .chat-header { height: 60px; background: #f0f2f5; padding: 0 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #d1d7db; z-index: 10; flex-shrink: 0; }
+        
+        /* Messages */
+        .messages-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 4px; }
+        .msg { max-width: 75%; padding: 6px 10px; border-radius: 7.5px; font-size: 14.2px; position: relative; box-shadow: 0 1px 0.5px rgba(0,0,0,0.13); word-wrap: break-word; line-height: 19px; }
+        .msg.staff { background: #d9fdd3; align-self: flex-end; border-top-left-radius: 0; }
+        .msg.user { background: #ffffff; align-self: flex-start; border-top-right-radius: 0; }
+        .msg.internal { background: #fff9c4; align-self: center; font-size: 12px; border: 1px dashed #d97706; text-align: center; width: 90%; border-radius: 6px; padding: 4px; margin: 5px 0; }
+        
+        .msg-time { font-size: 11px; color: rgba(0,0,0,0.45); float: left; margin-top: 2px; margin-right: 5px; }
+        
+        /* Tools */
+        .msg:hover .msg-tools { opacity: 1; }
+        .msg-tools { position: absolute; top: 0; left: -28px; opacity: 0; transition: 0.2s; }
+        .btn-forward { width: 24px; height: 24px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; shadow: 0 1px 2px rgba(0,0,0,0.15); cursor: pointer; color: #54656f; font-size: 12px; }
 
-        .tab-btn { flex: 1; text-align: center; padding: 15px; cursor: pointer; color: #54656f; border-bottom: 3px solid transparent; }
-        .tab-btn.active { color: #008069; border-bottom-color: #008069; background: #f0f2f5; }
-        
-        /* Modal & Popups */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 50; display: none; justify-content: center; align-items: center; }
+        /* Input Bar */
+        .chat-footer { background: #f0f2f5; padding: 10px 16px; display: flex; align-items: center; gap: 10px; border-top: 1px solid #d1d7db; flex-shrink: 0; }
+        .tool-btn { color: #54656f; font-size: 20px; cursor: pointer; padding: 8px; border-radius: 50%; transition: 0.2s; }
+        .tool-btn:hover { background: rgba(0,0,0,0.1); color: #008069; }
+
+        /* Smart Popups */
+        .smart-popup { position: absolute; bottom: 70px; left: 20px; width: 280px; background: white; border-radius: 8px; box-shadow: 0 -4px 20px rgba(0,0,0,0.15); display: none; z-index: 50; overflow: hidden; max-height: 250px; overflow-y: auto; border: 1px solid #e2e8f0; }
+        .smart-header { background: #f0f2f5; padding: 8px 12px; font-size: 11px; font-weight: bold; color: #54656f; border-bottom: 1px solid #e2e8f0; }
+        .smart-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #f0f2f5; transition: 0.1s; }
+        .smart-item:hover { background: #f5f6f6; }
+
+        /* Mobile Logic (Responsive Wrapper) */
+        @media (max-width: 768px) {
+            .sidebar { width: 100%; min-width: 100%; position: absolute; height: 100%; }
+            .sidebar.hidden-mobile { transform: translateX(100%); }
+            .main-chat { width: 100%; position: absolute; height: 100%; transform: translateX(-100%); }
+            .main-chat.active-mobile { transform: translateX(0); }
+            
+            /* Back Button for Mobile */
+            .back-btn { display: flex; margin-left: 10px; color: #54656f; cursor: pointer; }
+        }
+        @media (min-width: 769px) { .back-btn { display: none; } }
+
+        /* Modals */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.8); backdrop-filter: blur(4px); z-index: 100; display: none; justify-content: center; align-items: center; animation: fadeIn 0.2s; }
         .modal-overlay.open { display: flex; }
-        .modal-box { background: white; width: 600px; border-radius: 12px; padding: 20px; max-height: 85vh; overflow-y: auto; }
-        
+        .modal-box { background: white; width: 500px; max-width: 95%; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); border: 1px solid #e0e0e0; display: flex; flex-direction: column; max-height: 90vh; }
+        .modal-header { padding: 16px 20px; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; background: #f9fafb; border-radius: 12px 12px 0 0; }
+        .modal-body { padding: 20px; overflow-y: auto; }
+        .modal-footer { padding: 16px 20px; border-top: 1px solid #e0e0e0; background: #f9fafb; display: flex; justify-content: flex-end; gap: 10px; border-radius: 0 0 12px 12px; }
+
         /* Task Card */
-        .task-card { background: white; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-right: 4px solid #ccc; shadow: 0 1px 2px rgba(0,0,0,0.1); cursor: pointer; }
-        .task-card:hover { transform: translateX(-2px); }
-        .prio-high { border-right-color: #ef4444; } .prio-medium { border-right-color: #f59e0b; } .prio-low { border-right-color: #10b981; }
+        .task-card { background: white; padding: 12px; border-radius: 8px; border-left: 4px solid #ccc; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); cursor: pointer; }
+        .prio-high { border-left-color: #ef4444; } .prio-low { border-left-color: #10b981; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
     </style>
 </head>
 <body>
 
-    <div class="sidebar">
-        <div class="h-16 bg-[#f0f2f5] border-b flex justify-between items-center px-4">
-            <div class="flex items-center gap-2 cursor-pointer" onclick="handleLogout()">
-                <img src="https://ui-avatars.com/api/?name=Admin&background=00a884&color=fff" class="w-10 h-10 rounded-full">
-                <div><span class="font-bold text-gray-700 block text-sm">חמ"ל ראשי</span><span class="text-[10px] text-green-600 font-bold">● אונליין</span></div>
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="handleLogout()">
+                <img src="https://ui-avatars.com/api/?name=Admin&background=00a884&color=fff" class="w-10 h-10 rounded-full border-2 border-white">
+                <div>
+                    <div class="font-bold text-gray-800 text-sm">הראל - מנכ"ל</div>
+                    <div class="text-[10px] text-green-600 font-bold">● אונליין</div>
+                </div>
             </div>
-            <button onclick="openTaskModal()" class="bg-blue-50 text-blue-600 p-2 rounded-full hover:bg-blue-100"><i class="fas fa-plus"></i></button>
+            <div class="flex gap-2 text-gray-500">
+                <button onclick="openGroupModal()" title="קבוצה חדשה" class="p-2 hover:bg-gray-100 rounded-full"><i class="fas fa-users"></i></button>
+                <button onclick="switchTab('tasks')" title="משימות" class="p-2 hover:bg-gray-100 rounded-full"><i class="fas fa-tasks"></i></button>
+            </div>
         </div>
 
-        <div class="flex border-b bg-gray-50 text-sm">
-            <div onclick="switchTab('chats')" class="tab-btn active" id="tab-chats">💬 צ'אטים</div>
-            <div onclick="switchTab('tasks')" class="tab-btn" id="tab-tasks">📋 משימות</div>
+        <div class="sidebar-tabs">
+            <div onclick="switchTab('chats')" class="tab-btn active" id="tab-chats">צ'אטים</div>
+            <div onclick="switchTab('tasks')" class="tab-btn" id="tab-tasks">משימות</div>
+            <div onclick="switchTab('groups')" class="tab-btn" id="tab-groups">קבוצות</div>
         </div>
 
-        <div id="chatsList" class="flex-1 overflow-y-auto bg-white"></div>
-        <div id="tasksList" class="flex-1 overflow-y-auto bg-gray-100 hidden p-2"></div>
+        <div class="p-2 bg-white border-b border-gray-100">
+            <div class="bg-[#f0f2f5] rounded-lg flex items-center px-3 py-1.5">
+                <i class="fas fa-search text-gray-500 text-xs"></i>
+                <input type="text" placeholder="חיפוש..." class="bg-transparent border-none outline-none text-sm w-full px-2">
+            </div>
+        </div>
+
+        <div id="chatsList" class="chat-list custom-scroll"></div>
+        <div id="tasksList" class="chat-list hidden custom-scroll bg-[#f0f2f5] p-2"></div>
+        <div id="groupsList" class="chat-list hidden custom-scroll"></div>
     </div>
 
     <div id="chatArea" class="main-chat hidden">
-        <div class="h-16 bg-[#f0f2f5] border-b flex justify-between items-center px-4 shadow-sm z-10">
-            <div class="flex items-center gap-3 cursor-pointer" onclick="openCRM()">
-                <img id="activeAvatar" src="" class="w-10 h-10 rounded-full border">
-                <div><div id="activeName" class="font-bold text-gray-800"></div><div class="text-xs text-gray-500">לחץ לתיק לקוח</div></div>
+        <div class="chat-header">
+            <div class="flex items-center gap-2">
+                <div class="back-btn" onclick="closeChatMobile()"><i class="fas fa-arrow-right"></i></div>
+                <div class="flex items-center gap-3 cursor-pointer" onclick="openCRM()">
+                    <img id="activeAvatar" src="" class="w-10 h-10 rounded-full object-cover">
+                    <div>
+                        <div id="activeName" class="font-bold text-gray-800"></div>
+                        <div id="activeDesc" class="text-xs text-gray-500">לחץ לפרטים</div>
+                    </div>
+                </div>
             </div>
-            <div class="flex gap-2">
-                <button onclick="toggleBot()" id="botBtn" class="bg-white px-3 py-1 rounded text-xs font-bold shadow-sm">🤖 בוט פעיל</button>
-                <button onclick="openTaskModal(true)" class="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold shadow-sm">📋 משימה</button>
+            <div class="flex gap-3 text-gray-500">
+                <button onclick="toggleBot()" id="botBtn" class="text-xs font-bold bg-white border px-3 py-1 rounded-full shadow-sm text-green-600">בוט פעיל</button>
+                <i class="fas fa-search hover:text-gray-700 cursor-pointer"></i>
+                <i class="fas fa-ellipsis-v hover:text-gray-700 cursor-pointer"></i>
             </div>
         </div>
 
-        <div id="messagesBox" class="flex-1 overflow-y-auto flex flex-col p-4 gap-2"></div>
+        <div id="messagesBox" class="messages-container custom-scroll"></div>
 
-        <div class="bg-[#f0f2f5] p-3 flex items-center gap-2 border-t">
-            <i onclick="toggleInternalMode()" id="internalBtn" class="fas fa-eye-slash text-xl text-gray-400 cursor-pointer p-2" title="הערה פנימית"></i>
-            <div class="flex-1"><input type="text" id="msgInput" class="w-full p-3 rounded-xl border-none outline-none shadow-sm text-sm" placeholder="הקלד הודעה..." onkeydown="if(event.key === 'Enter') sendMessage()"></div>
-            <button onclick="sendMessage()" class="w-10 h-10 bg-[#00a884] text-white rounded-full shadow flex items-center justify-center"><i class="fas fa-paper-plane"></i></button>
+        <div id="mentionPopup" class="smart-popup"><div class="smart-header">בחר לתיוג (@):</div><div id="mentionList"></div></div>
+        <div id="productPopup" class="smart-popup"><div class="smart-header">בחר מוצר (#):</div><div id="productList"></div></div>
+
+        <div class="chat-footer">
+            <div class="flex gap-2 text-xl text-gray-500">
+                <i onclick="openTaskModal(false)" class="far fa-check-square hover:text-blue-500 cursor-pointer" title="צור משימה"></i>
+                <i onclick="toggleInternalMode()" id="internalBtn" class="far fa-eye-slash hover:text-orange-500 cursor-pointer" title="הערה פנימית"></i>
+            </div>
+            <div class="flex-1 mx-2">
+                <input type="text" id="msgInput" class="w-full py-2 px-4 rounded-lg border-none outline-none text-sm shadow-sm" placeholder="הקלד הודעה... (@ לתיוג, # למוצר)" oninput="handleInput(this)" onkeydown="if(event.key === 'Enter') sendMessage()">
+            </div>
+            <button onclick="sendMessage()" class="text-[#008069] text-2xl hover:scale-110 transition"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
 
-    <div id="crmModal" class="modal-overlay"><div class="modal-box"><h2 class="text-lg font-bold mb-4">תיק לקוח</h2><div class="space-y-4"><div class="flex gap-4"><img id="crmAvatar" class="w-16 h-16 rounded-full"><div class="flex-1"><input id="crmName" class="w-full border p-1 rounded font-bold mb-1"><input id="crmPhone" class="w-full border p-1 rounded text-sm"></div></div><div class="bg-gray-50 p-3 rounded border"><h3 class="font-bold text-xs mb-2">פרויקטים</h3><div id="crmProjects"></div><button onclick="addProjectRow()" class="text-xs text-blue-600 mt-2">+ הוסף</button></div><button onclick="saveCRM()" class="w-full bg-green-600 text-white py-2 rounded font-bold">שמור</button><button onclick="closeModal('crmModal')" class="w-full text-gray-500 mt-2">סגור</button></div></div></div>
+    <div id="crmModal" class="modal-overlay"><div class="modal-box w-[600px]"><div class="modal-header"><h2 class="text-lg font-bold">תיק לקוח</h2><button onclick="closeModal('crmModal')">x</button></div><div class="modal-body bg-gray-50"><div class="flex gap-4 mb-4"><img id="crmAvatar" class="w-16 h-16 rounded-full"><div class="flex-1"><input id="crmName" class="w-full border p-1 rounded font-bold mb-1"><input id="crmPhone" class="w-full border p-1 rounded text-sm mb-1"><input id="crmEmail" class="w-full border p-1 rounded text-sm"></div></div><div class="bg-white p-3 rounded border"><h3 class="font-bold text-xs mb-2">פרויקטים</h3><div id="crmProjects"></div><button onclick="addProjectRow()" class="text-xs text-blue-600 mt-2">+ הוסף</button></div></div><div class="modal-footer"><button onclick="saveCRM()" class="bg-green-600 text-white px-4 py-2 rounded text-sm">שמור</button></div></div></div>
 
-    <div id="taskModal" class="modal-overlay"><div class="modal-box"><h2 class="text-lg font-bold mb-4">משימה חדשה</h2><div class="space-y-3"><input id="tTitle" class="w-full border p-2 rounded" placeholder="כותרת"><select id="tAssign" class="w-full border p-2 rounded"><option value="rami">רמי</option><option value="nat">נתנאל</option><option value="driver">נהג</option></select><select id="tPrio" class="w-full border p-2 rounded"><option value="low">רגיל</option><option value="high">דחוף</option></select><input id="tDate" class="w-full border p-2 rounded" placeholder="תאריך"><textarea id="tDesc" class="w-full border p-2 rounded h-20" placeholder="תיאור..."></textarea></div><div class="flex justify-end gap-2 mt-4"><button onclick="closeModal('taskModal')" class="text-gray-500">ביטול</button><button onclick="createTask()" class="bg-blue-600 text-white px-4 py-2 rounded">צור</button></div></div></div>
+    <div id="taskModal" class="modal-overlay"><div class="modal-box"><div class="modal-header"><h2 class="text-lg font-bold">משימה חדשה</h2><button onclick="closeModal('taskModal')">x</button></div><div class="modal-body space-y-3"><input id="tTitle" class="w-full border p-2 rounded text-sm" placeholder="כותרת"><div class="flex gap-2"><select id="tAssign" class="w-full border p-2 rounded text-sm"><option value="rami">רמי</option><option value="nat">נתנאל</option></select><select id="tPrio" class="w-full border p-2 rounded text-sm"><option value="low">רגיל</option><option value="high">דחוף</option></select></div><input id="tDate" class="w-full border p-2 rounded text-sm" placeholder="תאריך"><textarea id="tDesc" class="w-full border p-2 rounded text-sm h-20" placeholder="תיאור..."></textarea></div><div class="modal-footer"><button onclick="createTask()" class="bg-blue-600 text-white px-4 py-2 rounded text-sm">צור</button></div></div></div>
+
+    <div id="forwardModal" class="modal-overlay"><div class="modal-box h-[500px]"><div class="modal-header"><h2 class="font-bold">העברה</h2><button onclick="closeModal('forwardModal')">x</button></div><div class="p-3 bg-gray-100 text-sm text-gray-600 italic truncate mb-2 mx-4 mt-4 rounded border" id="previewMsg"></div><div class="px-4 pb-2"><input type="text" placeholder="חפש יעד..." oninput="filterForwardList(this.value)" class="w-full border p-2 rounded text-sm"></div><div id="forwardList" class="flex-1 overflow-y-auto px-4 pb-4 space-y-1"></div></div></div>
+
+    <div id="groupModal" class="modal-overlay"><div class="modal-box"><div class="modal-header"><h2 class="font-bold">קבוצה חדשה</h2><button onclick="closeModal('groupModal')">x</button></div><div class="modal-body space-y-3"><input type="hidden" id="editGroupId"><input type="text" id="gName" class="w-full border p-2 rounded text-sm" placeholder="שם הקבוצה"><input type="text" id="gImg" class="w-full border p-2 rounded text-sm" placeholder="תמונה URL"><input type="text" id="gDesc" class="w-full border p-2 rounded text-sm" placeholder="תיאור"><div class="border rounded p-2 max-h-32 overflow-y-auto bg-gray-50"><div class="text-xs font-bold mb-2">משתתפים:</div><div id="usersForGroup"></div></div></div><div class="modal-footer"><button onclick="handleGroupSubmit()" class="bg-green-600 text-white px-4 py-2 rounded text-sm">שמור</button></div></div></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, doc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { SabanPush } from './js/notifications.js';
         import { SabanChatbot } from './js/chatbot-engine.js'; 
         import { TaskEngine } from './js/task-engine.js'; 
+        import { SmartContacts } from './js/smart-contacts.js'; 
 
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
         const app = initializeApp(firebaseConfig);
@@ -97,107 +181,201 @@
         const auth = getAuth(app);
 
         let activeChatId = null;
-        let activeUser = null;
+        let activeType = 'private';
         let internalMode = false;
         let botEnabled = true;
+        let activeUser = null;
+        let msgToForward = null;
         let bot = null;
+        
+        let allUsers = [];
+        let allProducts = [];
+        let allChats = [];
 
         SabanPush.init('admin', 'admin_rami');
         flatpickr("#tDate", { enableTime: true, dateFormat: "Y-m-d H:i", minDate: "today" });
+        loadData();
 
-        // --- CHATS ---
+        async function loadData() {
+            const uSnap = await getDocs(collection(db, "users"));
+            allUsers = uSnap.docs.map(d => ({id: d.id, ...d.data()}));
+            const pSnap = await getDocs(collection(db, "products"));
+            allProducts = pSnap.docs.map(d => ({id: d.id, ...d.data()}));
+            renderUserSelection();
+        }
+
+        // --- TABS ---
+        window.switchTab = (tab) => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            document.getElementById('chatsList').classList.add('hidden');
+            document.getElementById('tasksList').classList.add('hidden');
+            document.getElementById('groupsList').classList.add('hidden');
+            document.getElementById(`${tab}List`).classList.remove('hidden');
+        };
+
+        // --- LISTS ---
         onSnapshot(query(collection(db, "chat_sessions"), orderBy("lastActivity", "desc")), (snap) => {
             const list = document.getElementById('chatsList'); list.innerHTML = "";
+            allChats = [];
             snap.forEach(d => {
                 const c = d.data();
+                allChats.push({id: d.id, name: c.userName, type: 'private', img: `https://ui-avatars.com/api/?name=${c.userName}`});
                 const active = activeChatId === d.id ? 'active' : '';
-                list.innerHTML += `<div onclick="openChat('${d.id}', '${c.userName}')" class="chat-item ${active}"><img src="https://ui-avatars.com/api/?name=${c.userName}&background=random&color=fff" class="w-10 h-10 rounded-full ml-3"><div class="flex-1 min-w-0"><div class="font-bold text-sm">${c.userName}</div><div class="text-xs text-gray-500 truncate">${c.lastMessage}</div></div></div>`;
+                const time = c.lastActivity ? new Date(c.lastActivity.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '';
+                list.innerHTML += `<div onclick="openChat('${d.id}', '${c.userName}', 'private')" class="chat-item ${active}"><img src="https://ui-avatars.com/api/?name=${c.userName}&background=random&color=fff" class="w-12 h-12 rounded-full ml-3 border"><div class="flex-1 min-w-0"><div class="flex justify-between"><span class="font-bold text-sm text-gray-800">${c.userName}</span><span class="text-[10px] text-gray-400">${time}</span></div><div class="text-xs text-gray-500 truncate">${c.lastMessage}</div></div></div>`;
             });
         });
 
-        // --- TASKS ---
+        onSnapshot(collection(db, "groups"), (snap) => {
+            const list = document.getElementById('groupsList'); list.innerHTML = "";
+            snap.forEach(d => {
+                const g = d.data();
+                allChats.push({id: d.id, name: g.name, type: 'group', img: g.image});
+                const active = activeChatId === d.id ? 'active' : '';
+                const gData = encodeURIComponent(JSON.stringify({id: d.id, ...g}));
+                list.innerHTML += `<div onclick="openChat('${d.id}', '${g.name}', 'group', '${g.image}')" class="chat-item ${active} group"><img src="${g.image||'https://via.placeholder.com/40'}" class="w-10 h-10 rounded-full ml-3 object-cover"><div class="flex-1 min-w-0"><div class="font-bold text-sm">${g.name}</div><div class="text-xs text-gray-500 truncate">${g.desc||''}</div></div><div class="group-actions bg-white shadow rounded p-1" onclick="event.stopPropagation()"><button onclick="editGroup('${gData}')" class="text-blue-500 p-1"><i class="fas fa-pen"></i></button><button onclick="deleteGroup('${d.id}')" class="text-red-500 p-1"><i class="fas fa-trash"></i></button></div></div>`;
+            });
+        });
+
         onSnapshot(query(collection(db, "tasks"), orderBy("createdAt", "desc")), (snap) => {
             const list = document.getElementById('tasksList'); list.innerHTML = "";
             snap.forEach(d => {
                 const t = d.data();
                 const prio = t.priority === 'high' ? 'prio-high' : 'prio-low';
-                list.innerHTML += `<div class="task-card ${prio}"><div class="font-bold text-xs">${t.title}</div><div class="text-[10px] text-gray-500 flex justify-between mt-1"><span>עבור: ${t.toUid}</span><span>${t.status}</span></div></div>`;
+                list.innerHTML += `<div class="task-card ${prio}"><div class="font-bold text-xs text-gray-800">${t.title}</div><div class="text-[10px] text-gray-500 flex justify-between mt-1"><span>עבור: ${t.toUid}</span><span>${t.status}</span></div></div>`;
             });
         });
 
-        window.openChat = async (id, name) => {
-            activeChatId = id;
-            document.getElementById('chatArea').classList.remove('hidden');
-            document.getElementById('activeName').innerText = name;
+        // --- OPEN CHAT ---
+        window.openChat = async (id, name, type, img) => {
+            activeChatId = id; activeType = type;
             
-            try {
-                const uSnap = await getDoc(doc(db, "users", id));
-                if(uSnap.exists()) activeUser = { id: id, ...uSnap.data() };
-                else activeUser = { id: id, name, role: 'לקוח', projects: [] };
-                document.getElementById('activeAvatar').src = activeUser.avatar || `https://ui-avatars.com/api/?name=${name}`;
-                
-                // אתחול בוט
-                bot = new SabanChatbot(db, activeUser);
-            } catch(e) {}
+            // Mobile: Show Chat Area
+            document.getElementById('chatArea').classList.remove('hidden');
+            document.getElementById('chatArea').classList.add('active-mobile');
+            document.getElementById('sidebar').classList.add('hidden-mobile');
 
-            onSnapshot(query(collection(db, `chat_sessions/${id}/messages`), orderBy("createdAt", "asc")), (snap) => {
+            document.getElementById('activeName').innerText = name;
+            document.getElementById('activeDesc').innerText = type==='group'?'קבוצה':'לקוח';
+            document.getElementById('activeAvatar').src = img || `https://ui-avatars.com/api/?name=${name}&background=random&color=fff`;
+
+            if(type === 'private') {
+                try {
+                    const uSnap = await getDoc(doc(db, "users", id));
+                    if(uSnap.exists()) activeUser = { id: id, ...uSnap.data() };
+                    else activeUser = { id: id, name, role: 'לקוח', projects: [] };
+                    // הפעלת בוט
+                    bot = new SabanChatbot(db, activeUser);
+                } catch(e) {}
+            } else activeUser = null;
+
+            const coll = type==='group' ? `groups/${id}/messages` : `chat_sessions/${id}/messages`;
+            onSnapshot(query(collection(db, coll), orderBy("createdAt", "asc")), (snap) => {
                 const box = document.getElementById('messagesBox');
                 box.innerHTML = snap.docs.map(d => {
                     const m = d.data();
-                    const style = m.role === 'internal' ? 'msg internal' : (m.role === 'staff' ? 'msg staff' : 'msg user');
-                    return `<div class="${style}">${m.role==='internal'?'🔒 ':''}${m.text}</div>`;
+                    let txt = m.text.replace(/@([\u0590-\u05FF\w\s]+)/g, '<span class="tag-mention">@$1</span>').replace(/\[(.*?)\]/g, '<span class="tag-product">$1</span>');
+                    const side = m.role==='staff'?'bg-[#d9fdd3] self-end':'bg-white self-start';
+                    const tools = `<div class="msg-tools"><div onclick="initForward('${encodeURIComponent(m.text)}')" class="btn-forward"><i class="fas fa-share"></i></div></div>`;
+                    if(m.role==='internal') return `<div class="msg internal">🔒 ${txt}</div>`;
+                    return `<div class="msg ${side}"><div class="text-xs font-bold text-gray-500 mb-1 flex justify-between"><span>${m.sender}</span>${m.forwarded?'<span class="text-[9px] italic">↪️ הועבר</span>':''}</div><div>${txt}</div><div class="msg-time">${formatTime(m.createdAt)}</div>${tools}</div>`;
                 }).join('');
                 box.scrollTop = box.scrollHeight;
             });
         };
 
+        window.closeChatMobile = () => {
+            document.getElementById('chatArea').classList.remove('active-mobile');
+            document.getElementById('sidebar').classList.remove('hidden-mobile');
+            setTimeout(() => document.getElementById('chatArea').classList.add('hidden'), 300); // Wait for anim
+        };
+
         window.sendMessage = async () => {
-            const txt = document.getElementById('msgInput').value; if(!txt) return;
+            const txt = document.getElementById('msgInput').value; if(!txt || !activeChatId) return;
             document.getElementById('msgInput').value = '';
-            
             const role = internalMode ? 'internal' : 'staff';
-            await addDoc(collection(db, `chat_sessions/${activeChatId}/messages`), { text: txt, role: role, sender: "רמי", createdAt: serverTimestamp() });
+            const coll = activeType==='group' ? `groups/${activeChatId}/messages` : `chat_sessions/${activeChatId}/messages`;
+            await addDoc(collection(db, coll), { text: txt, role: role, sender: "רמי", createdAt: serverTimestamp() });
             
-            if(!internalMode) {
+            if(activeType==='private' && !internalMode) {
                 updateDoc(doc(db, "chat_sessions", activeChatId), { lastMessage: `נציג: ${txt}`, lastActivity: serverTimestamp(), isBotActive: botEnabled });
-                // בוט מגיב אם צריך (למשל אם הנציג כתב פקודה)
-                // if(bot && botEnabled) ... 
             }
             if(internalMode) window.toggleInternalMode();
         };
 
-        // --- CRM & TASKS ---
+        // --- FEATURES ---
         window.openCRM = () => {
             if(!activeUser) return;
             document.getElementById('crmName').value = activeUser.name;
             document.getElementById('crmPhone').value = activeUser.phone||'';
+            document.getElementById('crmEmail').value = activeUser.email||'';
             document.getElementById('crmAvatar').src = activeUser.avatar||'';
             const pBox = document.getElementById('crmProjects');
-            pBox.innerHTML = (activeUser.projects||[]).map((p,i)=>`<div class="flex gap-2 mb-1"><input class="border text-xs w-full p-1" value="${p.name}" onchange="updProj(${i},'name',this.value)"></div>`).join('');
+            pBox.innerHTML = (activeUser.projects||[]).map((p,i)=>`<div class="flex gap-2 items-center bg-white p-2 border rounded mb-1"><input class="text-xs font-bold flex-1 border-none outline-none" value="${p.name}" onchange="updateProject(${i},'name',this.value)"><input class="text-xs text-gray-500 w-1/3 border-none outline-none" value="${p.address}" onchange="updateProject(${i},'address',this.value)"><i class="fas fa-trash text-gray-300 hover:text-red-500 cursor-pointer" onclick="removeProject(${i})"></i></div>`).join('');
             document.getElementById('crmModal').classList.add('open');
         };
-        window.updProj = (i,f,v) => activeUser.projects[i][f]=v;
         window.addProjectRow = () => { if(!activeUser.projects) activeUser.projects=[]; activeUser.projects.push({name:'חדש',address:''}); window.openCRM(); };
+        window.updateProject = (i,f,v) => activeUser.projects[i][f]=v;
+        window.removeProject = (i) => { activeUser.projects.splice(i,1); window.openCRM(); };
         window.saveCRM = async () => { await updateDoc(doc(db,"users",activeUser.id), {name:document.getElementById('crmName').value, phone:document.getElementById('crmPhone').value, projects:activeUser.projects}); closeModal('crmModal'); };
 
         window.openTaskModal = (fromCRM=false) => { if(fromCRM) closeModal('crmModal'); if(!activeUser) return alert("בחר לקוח"); document.getElementById('tTitle').value=`עבור: ${activeUser.name}`; document.getElementById('taskModal').classList.add('open'); };
         window.createTask = async () => {
-            await TaskEngine.createTask(db, {
-                title: document.getElementById('tTitle').value, desc: document.getElementById('tDesc').value, toUid: document.getElementById('tAssign').value, priority: document.getElementById('tPrio').value, dueDate: document.getElementById('tDate').value, status:'open'
-            });
-            await addDoc(collection(db, `chat_sessions/${activeUser.id}/messages`), { text: `📋 נוצרה משימה: ${document.getElementById('tTitle').value}`, role: 'internal', createdAt: serverTimestamp() });
+            await TaskEngine.createTask(db, { title: document.getElementById('tTitle').value, desc: document.getElementById('tDesc').value, toUid: document.getElementById('tAssign').value, priority: document.getElementById('tPrio').value, dueDate: document.getElementById('tDate').value, status:'open' });
+            await addDoc(collection(db, `chat_sessions/${activeUser.id}/messages`), { text: `📋 משימה נוצרה: ${document.getElementById('tTitle').value}`, role: 'internal', createdAt: serverTimestamp() });
             closeModal('taskModal');
         };
 
-        window.switchTab = (t) => {
-            document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active')); document.getElementById(`tab-${t}`).classList.add('active');
-            document.getElementById('chatsList').classList.add('hidden'); document.getElementById('tasksList').classList.add('hidden');
-            document.getElementById(`${t}List`).classList.remove('hidden');
+        // --- SMART INPUT & FORWARD ---
+        window.handleInput = (el) => {
+            const val = el.value;
+            if(val.includes('@')) {
+                const term = val.split('@').pop().toLowerCase();
+                const matches = allUsers.filter(u => u.name.toLowerCase().includes(term));
+                showPopup('mention', matches, u => { el.value = val.replace(/@\w*$/, `@${u.name} `); closePopups(); });
+            } else if(val.includes('#')) {
+                const term = val.split('#').pop().toLowerCase();
+                const matches = allProducts.filter(p => (p.core?.name||p.title||"").toLowerCase().includes(term));
+                showPopup('product', matches, p => { el.value = val.replace(/#\w*$/, `[${p.core?.name||p.title}] `); closePopups(); });
+            } else closePopups();
         };
-        window.toggleInternalMode = () => { internalMode=!internalMode; document.getElementById('msgInput').placeholder = internalMode?"הערה פנימית...":"הקלד..."; document.getElementById('internalBtn').className = internalMode?"fas fa-eye-slash text-xl text-orange-500 p-2":"fas fa-eye text-xl text-gray-400 p-2"; };
-        window.toggleBot = () => { botEnabled=!botEnabled; document.getElementById('botBtn').innerHTML = botEnabled ? '🤖 בוט פעיל' : '🤖 בוט כבוי'; };
+        function showPopup(type, items, cb) {
+            const pop = document.getElementById(type+'Popup'); const list = document.getElementById(type+'List');
+            if(!items.length) { pop.style.display='none'; return; }
+            pop.style.display='block';
+            list.innerHTML = items.map((i, idx) => `<div class="smart-item" data-idx="${idx}"><img src="${i.avatar||i.rich?.image||'https://via.placeholder.com/30'}" class="w-8 h-8 rounded"><div class="text-sm font-bold">${i.name||i.core?.name||i.title}</div></div>`).join('');
+            list.querySelectorAll('.smart-item').forEach(el => el.onclick = () => cb(items[el.dataset.idx]));
+        }
+        function closePopups() { document.querySelectorAll('.smart-popup').forEach(p=>p.style.display='none'); document.getElementById('msgInput').focus(); }
+
+        window.initForward = (txt) => { msgToForward = decodeURIComponent(txt); document.getElementById('previewMsg').innerText=msgToForward; renderForwardList(allChats); document.getElementById('forwardModal').classList.add('open'); };
+        function renderForwardList(l) { document.getElementById('forwardList').innerHTML = l.map(c=>`<div onclick="execForward('${c.id}','${c.type}')" class="target-item"><img src="${c.img}" class="w-8 h-8 rounded ml-2"><div><div class="font-bold text-sm">${c.name}</div><div class="text-xs text-gray-400">${c.type}</div></div></div>`).join(''); }
+        window.filterForwardList = (v) => renderForwardList(allChats.filter(c=>c.name.toLowerCase().includes(v.toLowerCase())));
+        window.execForward = async (id, type) => {
+            const coll = type==='group' ? `groups/${id}/messages` : `chat_sessions/${id}/messages`;
+            await addDoc(collection(db, coll), { text: msgToForward, role: 'staff', sender: "רמי (הועבר)", forwarded: true, createdAt: serverTimestamp() });
+            closeModal('forwardModal');
+        };
+
+        // Group Logic (Minimal)
+        window.openGroupModal = () => { document.getElementById('groupModal').classList.add('open'); renderUserSelection([]); };
+        window.handleGroupSubmit = async () => {
+            const data = { name: document.getElementById('gName').value, image: document.getElementById('gImg').value, desc: document.getElementById('gDesc').value, lastUpdated: serverTimestamp() };
+            const id = document.getElementById('editGroupId').value;
+            if(id) await updateDoc(doc(db,"groups",id), data); else await addDoc(collection(db,"groups"), {...data, createdAt: serverTimestamp()});
+            closeModal('groupModal');
+        };
+        window.editGroup = (s) => { const g=JSON.parse(decodeURIComponent(s)); document.getElementById('editGroupId').value=g.id; document.getElementById('gName').value=g.name; document.getElementById('gImg').value=g.image; document.getElementById('gDesc').value=g.desc; document.getElementById('groupModal').classList.add('open'); };
+        window.deleteGroup = async (id) => { if(confirm("למחוק?")) await deleteDoc(doc(db, "groups", id)); };
+        function renderUserSelection(ids) { document.getElementById('usersForGroup').innerHTML = allUsers.map(u=>`<label class="flex justify-between p-2 hover:bg-gray-50 border-b"><div class="flex gap-2"><img src="${u.avatar}" class="w-6 h-6 rounded"><span>${u.name}</span></div><input type="checkbox" class="accent-green-600"></label>`).join(''); }
+
+        // Utils
         window.closeModal = (id) => document.getElementById(id).classList.remove('open');
+        function formatTime(ts) { return ts ? new Date(ts.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : ''; }
+        window.toggleInternalMode = () => { internalMode=!internalMode; document.getElementById('msgInput').placeholder = internalMode?"הערה פנימית...":"הקלד..."; document.getElementById('internalBtn').className = internalMode?"fas fa-eye-slash text-xl text-orange-500 p-2":"fas fa-eye text-xl text-gray-400 p-2"; };
         window.handleLogout = async () => { if(confirm("לצאת?")) { localStorage.clear(); await signOut(auth); location.href="index.html"; } };
+        window.toggleBot = () => { botEnabled=!botEnabled; document.getElementById('botBtn').innerHTML = botEnabled ? '🤖 פעיל' : '🤖 כבוי'; document.getElementById('botBtn').className = botEnabled ? 'text-xs font-bold bg-white border px-3 py-1 rounded-full shadow-sm text-green-600' : 'text-xs font-bold bg-white border px-3 py-1 rounded-full shadow-sm text-red-500'; };
 
     </script>
 </body>
