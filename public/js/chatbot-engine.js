@@ -1,106 +1,55 @@
 // public/js/chatbot-engine.js
 import { SabanPush } from './notifications.js';
-import { TaskEngine } from './task-engine.js';
 
 export class SabanChatbot {
     constructor(db, userContext) {
         this.db = db;
         this.user = userContext; 
-        this.state = null; // זיכרון לשיחה (מחכה לתשובה)
-        this.tempData = {}; // שמירת נתונים זמניים (כמו סוג משאית)
+        this.knowledgeBase = [];
+    }
+
+    async loadTemplates() {
+        try {
+            const response = await fetch('templates.json');
+            this.knowledgeBase = await response.json();
+        } catch (e) {
+            console.warn("Using fallback templates");
+            this.knowledgeBase = [
+                { keywords: ["היי", "שלום"], answer: "אהלן {name}! אני הבוט של סבן. איך אפשר לעזור?", buttons: [] }
+            ];
+        }
     }
 
     async ask(question) {
-        const cleanQ = question.trim();
-
-        // --- 1. מנהל סניף (איציק/נתנאל) - תהליכים פנימיים ---
-        if (this.user.role === 'manager' || this.user.role === 'branch_manager' || this.user.role === 'admin') {
-            
-            // תהליך: העברה בין סניפים
-            if (cleanQ.includes("העברה") || cleanQ === "transfer_flow") {
-                this.state = "waiting_transfer_num";
-                return { 
-                    text: `היי ${this.user.name}, לפתיחת משימת העברה לסידור – <b>חובה להקליד מספר תעודת העברה</b> (מהמערכת).`,
-                    type: "system"
-                };
-            }
-
-            // שלב ב': בדיקת מספר העברה (מחסום)
-            if (this.state === "waiting_transfer_num") {
-                if (/^\d+$/.test(cleanQ)) { // בדיקה שזה רק מספרים
-                    this.state = null;
-                    // יצירת המשימה ביומן
-                    await TaskEngine.createTask(this.db, {
-                        title: `🚛 העברה מס' ${cleanQ}`,
-                        desc: `בקשה מ${this.user.name} (${this.user.branch})`,
-                        toUid: "ops_team", // לצוות סידור
-                        fromUid: this.user.id,
-                        priority: "medium",
-                        status: "open",
-                        type: "transfer"
-                    });
-                    
-                    return { 
-                        text: `✅ משימה נקלטה והועברה לסידור!<br>מספר העברה: <b>${cleanQ}</b>.<br>תקבל עדכון ברגע שישובץ נהג.`,
-                        action: "success_anim"
-                    };
-                } else {
-                    return { text: "⚠️ שגיאה: נא להקליד ספרות בלבד (מספר תעודה). נסה שוב." };
-                }
-            }
-
-            // תהליך: הזמנת נהג לפי שעות
-            if (cleanQ.includes("נהג") || cleanQ === "driver_flow") {
-                this.state = "waiting_driver_hours";
-                return {
-                    text: "הזמנת עבודת נהג (פריקה ידנית/הובלה).<br>כמה שעות נדרשות?",
-                    buttons: [
-                        { label: "1 שעה", action: "reply", payload: "1" },
-                        { label: "שעתיים", action: "reply", payload: "2" },
-                        { label: "חצי יום (4)", action: "reply", payload: "4" }
-                    ]
-                };
-            }
-
-            if (this.state === "waiting_driver_hours") {
-                this.state = null;
-                const hours = cleanQ;
-                await TaskEngine.createTask(this.db, {
-                    title: `👷‍♂️ דרישת נהג - ${hours} שעות`,
-                    desc: `עבור סניף ${this.user.branch || 'החרש'}. דורש פריקה ידנית.`,
-                    toUid: "ops_team",
-                    fromUid: this.user.id,
-                    priority: "high",
-                    status: "open"
-                });
-                return { text: `קיבלתי. ביקשת נהג ל-<b>${hours} שעות</b>.<br>הבקשה נשלחה לראמי לשיבוץ בסידור. ✔️` };
-            }
-        }
-
-        // --- 2. לקוח - תהליכים חיצוניים ---
+        if (this.knowledgeBase.length === 0) await this.loadTemplates();
         
-        // שליחת מיקום
-        if (cleanQ.startsWith("LOCATION:")) {
-            const coords = cleanQ.split(":")[1];
-            return { 
-                text: `📍 המיקום נקלט בהצלחה!<br><a href='https://waze.com/ul?ll=${coords}&navigate=yes' target='_blank' class='text-blue-600 font-bold underline'>פתח ב-Waze לבדיקה</a><br>הנהג יקבל את הלינק הזה ישירות.`,
-                type: "location_received"
-            };
+        const cleanQ = question.toLowerCase();
+
+        // 1. חירום והתראות
+        if (cleanQ.includes("דחוף") || cleanQ.includes("תקלה")) {
+            await SabanPush.send('admin_rami', '🚨 התראה מהבוט', `הלקוח ${this.user.name}: "${question}"`);
+            return { text: "הבנתי, זה דחוף. שלחתי התראה לרמי והצוות. נחזור מיד.", action: "urgent" };
         }
 
-        // זיהוי מסמך
-        if (cleanQ.startsWith("FILE:")) {
-            const fileName = cleanQ.split("|")[1];
-            return {
-                text: `📄 המסמך <b>"${fileName}"</b> צורף לתיק ההזמנה.<br>מתועד בתאריך: ${new Date().toLocaleDateString()}`,
-                type: "file_received"
-            };
+        // 2. לוגיקה תפעולית (מנוף/ידני)
+        if (cleanQ.includes("מנוף")) return { text: "מנוף? אין בעיה. משימה ל-<b>חכמת</b>. 🏗️<br>רק תוודא שאין חוטי חשמל.", buttons: [{ label: "מאשר", action: "next_node", payload: "crane_ok" }] };
+        if (cleanQ.includes("ידני")) return { text: "פריקה ידנית? זה <b>עלי</b>. 💪<br>יש תוספת תשלום על סבלות.", buttons: [{ label: "מאשר תוספת", action: "next_node", payload: "manual_ok" }] };
+        
+        // 3. היתרים
+        if (cleanQ.includes("הרצליה")) return { text: "🛑 בהרצליה חייבים היתר עירייה! יש לך?", buttons: [{ label: "יש לי", action: "permit_ok" }, { label: "אין לי", action: "permit_info" }] };
+
+        // 4. חיפוש בתבניות
+        let bestMatch = null, maxScore = 0;
+        this.knowledgeBase.forEach(item => {
+            let score = 0;
+            if (item.keywords) item.keywords.forEach(kw => { if (cleanQ.includes(kw)) score++; });
+            if (score > maxScore) { maxScore = score; bestMatch = item; }
+        });
+
+        if (bestMatch && maxScore > 0) {
+            return { text: bestMatch.answer.replace("{name}", this.user.name || "לקוח"), buttons: bestMatch.buttons || [] };
         }
 
-        // --- ברירת מחדל ---
-        return { 
-            text: "ממתין לפקודה...", 
-            action: "menu" 
-        };
+        return { text: "לא הבנתי בדיוק. נסה לשאול על מכולות, חומרים או לכתוב 'דחוף'.", action: "fallback" };
     }
 }
