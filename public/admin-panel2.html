@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SabanOS Admin | Catalog Cleaner v26.5</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap');
+        
+        body { background-color: #f1f5f9; color: #334155; font-family: 'Rubik', sans-serif; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        .workspace-grid { display: flex; height: calc(100vh - 60px); overflow: hidden; }
+        .sidebar { width: 300px; background: white; border-left: 1px solid #e2e8f0; display: flex; flex-direction: column; z-index: 20; }
+        .center-stage { flex: 1; background: #f8fafc; padding: 20px; overflow-y: auto; }
+        .preview-pane { width: 360px; background: #e2e8f0; border-right: 1px solid #e2e8f0; display: flex; justify-content: center; padding-top: 20px; overflow-y: auto; }
+        
+        input, textarea, select { transition: 0.2s; border: 1px solid #cbd5e1; }
+        input:focus, textarea:focus, select:focus { border-color: #3b82f6; outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        
+        .prod-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: 0.2s; position: relative; }
+        .prod-item:hover { background: #f1f5f9; }
+        .prod-item.active { background: #eff6ff; border-right: 3px solid #3b82f6; }
+        .prod-thumb { width: 32px; height: 32px; object-fit: contain; border-radius: 4px; background: white; border: 1px solid #e2e8f0; }
+        
+        /* Delete Button in List */
+        .delete-btn { 
+            position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+            background: #fee2e2; color: #dc2626; width: 24px; height: 24px; 
+            border-radius: 4px; display: flex; align-items: center; justify-content: center;
+            font-size: 12px; opacity: 0; transition: 0.2s;
+        }
+        .prod-item:hover .delete-btn { opacity: 1; }
+        .delete-btn:hover { background: #ef4444; color: white; }
+
+        .ai-pulse { animation: pulse-purple 2s infinite; }
+        @keyframes pulse-purple { 0% { box-shadow: 0 0 0 0 rgba(147, 51, 234, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(147, 51, 234, 0); } 100% { box-shadow: 0 0 0 0 rgba(147, 51, 234, 0); } }
+
+        .bubble-bot { background: white; padding: 10px; border-radius: 12px; border-top-right-radius: 0; margin: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); max-width: 90%; }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        
+        /* Modal for Media */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 50; display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: 0.3s; }
+        .modal-overlay.open { opacity: 1; pointer-events: all; }
+    </style>
+</head>
+<body>
+
+    <div class="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6 shadow-sm z-50">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-gradient-to-br from-red-500 to-orange-600 rounded-xl flex items-center justify-center text-white shadow-lg">
+                <i class="fas fa-trash-alt"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg leading-tight">SabanOS Catalog</h1>
+                <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Cleaner Edition v26.5</span>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <div id="statusIndicator" class="text-xs font-bold text-gray-400 flex items-center gap-2 px-3 py-1 rounded bg-slate-50 border">
+                <span class="w-2 h-2 rounded-full bg-gray-300"></span> טוען...
+            </div>
+            <button onclick="saveProduct()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg text-sm font-bold shadow-md transition flex items-center gap-2 cursor-pointer">
+                <i class="fas fa-save"></i> שמור מוצר
+            </button>
+        </div>
+    </div>
+
+    <div class="workspace-grid">
+        
+        <div class="sidebar">
+            <div class="p-4 border-b border-gray-200 bg-slate-50">
+                <div class="relative">
+                    <input type="text" id="listSearch" oninput="renderList()" placeholder="חפש במלאי..." class="w-full bg-white rounded-lg p-2 pl-8 text-sm shadow-sm border-gray-200">
+                    <i class="fas fa-search absolute left-2.5 top-2.5 text-gray-400 text-xs"></i>
+                </div>
+                <div class="flex justify-between items-center mt-3">
+                    <span class="text-[10px] text-gray-500 font-bold" id="totalCount">0 פריטים</span>
+                    <button onclick="addNew()" class="text-purple-600 text-xs font-bold hover:bg-purple-50 px-2 py-1 rounded transition">+ חדש</button>
+                </div>
+            </div>
+            <div class="flex-1 overflow-y-auto" id="listContainer"></div>
+        </div>
+
+        <div class="center-stage custom-scroll">
+            
+            <div class="bg-white p-4 rounded-xl border border-purple-100 shadow-sm mb-6 flex gap-3 items-end">
+                <div class="flex-1">
+                    <label class="text-[10px] font-bold text-purple-600 uppercase mb-1 block">✨ שם המוצר (AI חיפוש ישראל)</label>
+                    <input type="text" id="magicInput" placeholder="למשל: דבק קרמיקה 114" class="w-full text-lg font-bold text-slate-800 border-b-2 border-purple-100 pb-1 px-1 focus:border-purple-500 bg-transparent" onkeydown="if(event.key === 'Enter') runAI()">
+                </div>
+                <button onclick="runAI()" id="aiBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-md shadow-purple-200 transition flex items-center gap-2 cursor-pointer">
+                    <i class="fas fa-sparkles"></i> שלוף נתונים
+                </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-6">
+                <div class="space-y-4">
+                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                        <h3 class="text-xs font-bold text-gray-400 uppercase mb-4"><i class="fas fa-tag"></i> פרטים</h3>
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div><label class="text-[10px] text-gray-500 font-bold">מק"ט (קומקס)</label><input type="text" id="sku" class="w-full rounded p-2 text-sm font-mono bg-slate-50" placeholder="10050"></div>
+                            <div><label class="text-[10px] text-gray-500 font-bold">מחיר</label><input type="number" id="price" class="w-full rounded p-2 text-sm font-bold text-green-600" placeholder="0.00" oninput="updatePreview()"></div>
+                        </div>
+                        <div><label class="text-[10px] text-gray-500 font-bold">שם מלא</label><input type="text" id="name" class="w-full rounded p-2 text-sm font-bold" oninput="updatePreview()"></div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                        <h3 class="text-xs font-bold text-gray-400 uppercase mb-4"><i class="fas fa-images"></i> מדיה</h3>
+                        <div class="mb-3">
+                            <label class="text-[10px] text-blue-500 font-bold block mb-1">תמונה ראשית</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="image1" class="flex-1 rounded p-2 text-xs border-blue-200" placeholder="URL..." oninput="updatePreview()">
+                                <button onclick="searchImage(1)" class="bg-blue-50 text-blue-600 p-2 rounded border border-blue-200 hover:bg-blue-100"><i class="fas fa-search"></i></button>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="text-[10px] text-purple-500 font-bold block mb-1">תמונה משנית</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="image2" class="flex-1 rounded p-2 text-xs border-purple-200" placeholder="URL..." oninput="updatePreview()">
+                                <button onclick="searchImage(2)" class="bg-purple-50 text-purple-600 p-2 rounded border border-purple-200 hover:bg-purple-100"><i class="fas fa-search"></i></button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-red-500 font-bold block mb-1">וידאו (YouTube)</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="video" class="flex-1 rounded p-2 text-xs border-red-200" placeholder="הדבק קישור..." oninput="updatePreview()">
+                                <button onclick="searchVideo()" class="bg-red-50 text-red-600 p-2 rounded border border-red-200 hover:bg-red-100"><i class="fab fa-youtube"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="bg-white p-5 rounded-xl border border-orange-200 shadow-sm relative overflow-hidden">
+                        <div class="absolute top-0 left-0 bg-orange-100 text-orange-800 text-[10px] font-bold px-2 py-1 rounded-br">לוגיסטיקה</div>
+                        <h3 class="text-xs font-bold text-gray-400 uppercase mb-4 mt-2"><i class="fas fa-truck-loading"></i> נתונים</h3>
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div><label class="text-[10px] text-gray-500 font-bold">משקל (ק"ג)</label><input type="number" id="weight" class="w-full rounded p-2 text-sm bg-orange-50 border-orange-200" placeholder="25" oninput="updatePreview()"></div>
+                            <div><label class="text-[10px] text-gray-500 font-bold">יח' במשטח</label><input type="number" id="palletQty" class="w-full rounded p-2 text-sm bg-orange-50 border-orange-200" placeholder="64" oninput="updatePreview()"></div>
+                        </div>
+                        <div class="flex items-center gap-3 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                            <input type="checkbox" id="reqCrane" class="w-4 h-4 text-orange-600 rounded" onchange="updatePreview()">
+                            <label for="reqCrane" class="text-sm font-bold text-gray-700 cursor-pointer">חייב מנוף? (כבד)</label>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm h-[320px] flex flex-col">
+                        <h3 class="text-xs font-bold text-gray-400 uppercase mb-2"><i class="fas fa-file-alt"></i> תוכן עשיר</h3>
+                        <div class="flex-1 overflow-y-auto pr-1 space-y-3">
+                            <div><label class="text-[10px] font-bold text-gray-500">תיאור</label><textarea id="description" rows="3" class="w-full rounded p-2 text-xs" oninput="updatePreview()"></textarea></div>
+                            <div><label class="text-[10px] font-bold text-gray-500">יישום</label><textarea id="application" rows="3" class="w-full rounded p-2 text-xs" oninput="updatePreview()"></textarea></div>
+                            <div><label class="text-[10px] font-bold text-gray-500">תכונות</label><textarea id="features" rows="3" class="w-full rounded p-2 text-xs" oninput="updatePreview()"></textarea></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="preview-pane">
+            <div class="w-[320px] bg-white border-8 border-slate-800 rounded-[30px] h-[650px] flex flex-col shadow-2xl overflow-hidden">
+                <div class="bg-[#008069] h-14 flex items-center px-4 text-white shadow-md flex-shrink-0">
+                    <div class="font-bold text-sm">SabanAI</div>
+                </div>
+                <div class="flex-1 bg-[#efeae2] p-3 overflow-y-auto" id="chatArea"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="mediaModal" class="modal-overlay hidden fixed inset-0 bg-black/80 z-[100] flex justify-center items-center">
+        <div class="bg-white w-[800px] h-[600px] rounded-xl flex flex-col overflow-hidden">
+            <div class="p-4 border-b flex justify-between items-center bg-gray-50">
+                <h3 class="font-bold">בחר תמונה</h3>
+                <button onclick="document.getElementById('mediaModal').classList.add('hidden')" class="text-gray-500"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="mediaGrid" class="flex-1 overflow-y-auto p-4 grid grid-cols-3 gap-4 bg-gray-100"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // Firebase Init
+        const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Keys embedded securely for client-side usage
+        const API_KEYS = {
+            googleSearch: "AIzaSyDLkShn6lBBew-PJJWtzvAe_14UF9Kv-QI",
+            gemini: "AIzaSyAdfGVrmr90Mp9ZhNMItD81iaE8OipKwz0"
+        };
+        
+        // Search Engine ID
+        const SEARCH_CX = "1340c66f5e73a4076";
+
+        const NO_IMG = "https://via.placeholder.com/150?text=No+Image";
+        let products = [];
+        let currentMediaType = null;
+
+        // --- AI ENGINE (Optimized for Hebrew) ---
+        window.runAI = async () => {
+            const term = document.getElementById('magicInput').value;
+            if(!term) return alert("הכנס שם מוצר");
+            
+            const btn = document.getElementById('aiBtn');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> מחפש...';
+            
+            // פרומפט מחוזק לעברית
+            const prompt = `You are an Israeli construction logistics expert. Product: "${term}". 
+            Return JSON in HEBREW: 
+            {"name": "Professional Hebrew Name", "description": "Short marketing desc in Hebrew", "features": ["feature1", "feature2"], "application": "Usage instructions in Hebrew", "weight_kg": 25, "pallet_qty": 64, "requires_crane": true} 
+            ONLY JSON. No Markdown.`;
+
+            const models = ["gemini-1.5-flash", "gemini-1.5-pro"];
+            let success = false;
+            
+            for (const model of models) {
+                if(success) break;
+                try {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_KEYS.gemini}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
+                    
+                    const data = await response.json();
+                    if (!data.candidates || !data.candidates[0]) throw new Error("No data");
+
+                    const text = data.candidates[0].content.parts[0].text;
+                    const result = JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim());
+
+                    document.getElementById('name').value = result.name || term;
+                    document.getElementById('description').value = result.description || '';
+                    document.getElementById('features').value = Array.isArray(result.features) ? result.features.join('\n') : (result.features || '');
+                    document.getElementById('application').value = result.application || '';
+                    document.getElementById('weight').value = result.weight_kg || 0;
+                    document.getElementById('palletQty').value = result.pallet_qty || 0;
+                    document.getElementById('reqCrane').checked = result.requires_crane || false;
+
+                    updatePreview();
+                    alert("🤖 הנתונים מולאו! עכשיו חפש תמונה.");
+                    success = true;
+                } catch (e) { console.warn(`AI Model ${model} failed`, e); }
+            }
+            
+            if(!success) alert("ה-AI לא זמין כרגע. אנא מלא ידנית.");
+            btn.innerHTML = '<i class="fas fa-sparkles"></i> שלוף נתונים';
+        };
+
+        // --- MEDIA SEARCH (Israel Focused) ---
+        window.searchImage = async (slot) => {
+            currentMediaType = slot === 1 ? 'image1' : 'image2';
+            const query = document.getElementById('magicInput').value;
+            if(!query) return alert("הכנס שם לחיפוש");
+
+            try {
+                // הוספת &gl=il&hl=he למיקוד בישראל
+                const url = `https://www.googleapis.com/customsearch/v1?q=${encodeURIComponent(query)}&cx=${SEARCH_CX}&key=${API_KEYS.googleSearch}&searchType=image&num=9&gl=il&hl=he`;
+                
+                const res = await fetch(url);
+                const data = await res.json();
+                
+                if(data.items && data.items.length > 0) {
+                    showMediaModal(data.items.map(i => ({ thumb: i.image.thumbnailLink || i.link, url: i.link })));
+                } else {
+                    alert("לא נמצאו תמונות בגוגל.");
+                }
+            } catch(e) { 
+                console.error(e); 
+                alert("שגיאת חיפוש: " + e.message); 
+            }
+        };
+
+        window.searchVideo = async () => {
+            const query = document.getElementById('magicInput').value + " application tutorial";
+            window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, '_blank');
+            const url = prompt("הדבק כאן את הלינק לסרטון:");
+            if(url) { document.getElementById('video').value = url; updatePreview(); }
+        };
+
+        function showMediaModal(items) {
+            const grid = document.getElementById('mediaGrid');
+            grid.innerHTML = items.map(item => `<div class="cursor-pointer border-2 border-transparent hover:border-blue-500 rounded overflow-hidden" onclick="selectMedia('${item.url}')"><img src="${item.thumb}" class="w-full h-32 object-cover"></div>`).join('');
+            document.getElementById('mediaModal').classList.remove('hidden');
+        }
+
+        window.selectMedia = (url) => {
+            if(currentMediaType === 'image1') document.getElementById('image1').value = url;
+            if(currentMediaType === 'image2') document.getElementById('image2').value = url;
+            document.getElementById('mediaModal').classList.add('hidden');
+            updatePreview();
+        };
+
+        // --- PREVIEW ---
+        window.updatePreview = () => {
+            const p = {
+                name: document.getElementById('name').value || 'שם המוצר',
+                price: document.getElementById('price').value,
+                desc: document.getElementById('description').value,
+                img: document.getElementById('image1').value || NO_IMG,
+                video: document.getElementById('video').value,
+                weight: document.getElementById('weight').value,
+                crane: document.getElementById('reqCrane').checked
+            };
+
+            let vidHTML = '';
+            if(p.video && p.video.includes('youtube')) {
+                const vidId = p.video.split('v=')[1]?.split('&')[0];
+                if(vidId) vidHTML = `<iframe src="https://www.youtube.com/embed/${vidId}" class="w-full h-32 rounded mt-2"></iframe>`;
+            }
+
+            document.getElementById('chatArea').innerHTML = `
+                <div class="bubble-bot">
+                    <img src="${p.img}" class="w-full h-40 object-cover rounded mb-2 bg-white border" onerror="this.src='${NO_IMG}'">
+                    <div class="font-bold text-base text-gray-800">${p.name}</div>
+                    <div class="text-sm text-gray-600 mt-1">${p.desc}</div>
+                    <div class="mt-2 flex gap-2 text-[10px]">
+                        ${p.weight ? `<span class="bg-orange-100 text-orange-800 px-2 py-1 rounded">⚖️ ${p.weight} ק"ג</span>` : ''}
+                        ${p.crane ? `<span class="bg-red-100 text-red-800 px-2 py-1 rounded">🏗️ מנוף</span>` : ''}
+                    </div>
+                    ${vidHTML}
+                    <div class="mt-3 font-bold text-green-600 text-lg">₪${p.price || '0.00'}</div>
+                    <button class="w-full bg-[#008069] text-white py-2 rounded mt-2 font-bold text-xs">הוסף להזמנה</button>
+                </div>`;
+        };
+
+        // --- DATABASE CRUD ---
+        async function loadProducts() {
+            updateStatus('loading', 'טוען...');
+            try {
+                const snap = await getDocs(collection(db, "products"));
+                products = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                renderList();
+                updateStatus('online', 'מוכן');
+            } catch(e) { console.error(e); updateStatus('error', 'שגיאת רשת'); }
+        }
+
+        window.renderList = () => {
+            const term = document.getElementById('listSearch').value.toLowerCase();
+            const list = document.getElementById('listContainer');
+            const filtered = products.filter(p => (p.core?.name || "").toLowerCase().includes(term));
+            
+            list.innerHTML = filtered.map(p => `
+                <div class="prod-item" onclick="loadProduct('${p.id}')">
+                    <div class="delete-btn" onclick="deleteProduct('${p.id}', event)"><i class="fas fa-trash"></i></div>
+                    <img src="${p.rich?.image || NO_IMG}" class="prod-thumb" onerror="this.src='${NO_IMG}'">
+                    <div class="flex-1 min-w-0 ml-2">
+                        <div class="font-bold text-xs truncate">${p.core?.name || 'ללא שם'}</div>
+                        <div class="text-[10px] text-gray-400">${p.id}</div>
+                    </div>
+                    <div class="font-bold text-xs text-green-600">₪${p.core?.price || 0}</div>
+                </div>
+            `).join('');
+            document.getElementById('totalCount').innerText = `${filtered.length} פריטים`;
+        };
+
+        window.loadProduct = (id) => {
+            const p = products.find(x => x.id === id);
+            if(!p) return;
+            document.getElementById('sku').value = p.id;
+            document.getElementById('name').value = p.core?.name || '';
+            document.getElementById('price').value = p.core?.price || '';
+            document.getElementById('image1').value = p.rich?.image || '';
+            document.getElementById('image2').value = p.rich?.image2 || '';
+            document.getElementById('video').value = p.rich?.video || '';
+            document.getElementById('description').value = p.rich?.description || '';
+            document.getElementById('application').value = p.rich?.application || '';
+            document.getElementById('features').value = p.rich?.features || '';
+            document.getElementById('weight').value = p.logistics?.weight || '';
+            document.getElementById('palletQty').value = p.logistics?.pallet_qty || '';
+            document.getElementById('reqCrane').checked = p.logistics?.requires_crane || false;
+            updatePreview();
+        };
+
+        // --- NEW DELETE FUNCTION ---
+        window.deleteProduct = async (id, event) => {
+            event.stopPropagation(); // מונע טעינה של המוצר בזמן מחיקה
+            if(!confirm("האם למחוק את המוצר לצמיתות?")) return;
+            
+            try {
+                await deleteDoc(doc(db, "products", id));
+                products = products.filter(p => p.id !== id); // עדכון לוקאלי מהיר
+                renderList();
+                
+                // אם מחקנו את המוצר הפעיל, ננקה את הטופס
+                if(document.getElementById('sku').value === id) addNew();
+                
+            } catch(e) {
+                console.error(e);
+                alert("שגיאה במחיקה");
+            }
+        };
+
+        window.saveProduct = async () => {
+            const sku = document.getElementById('sku').value;
+            if(!sku) return alert("חובה להזין מק\"ט");
+            updateStatus('saving', 'שומר...');
+            
+            const data = {
+                id: sku,
+                core: { name: document.getElementById('name').value, price: Number(document.getElementById('price').value) },
+                rich: {
+                    image: document.getElementById('image1').value,
+                    image2: document.getElementById('image2').value,
+                    video: document.getElementById('video').value,
+                    description: document.getElementById('description').value,
+                    application: document.getElementById('application').value,
+                    features: document.getElementById('features').value
+                },
+                logistics: {
+                    weight: Number(document.getElementById('weight').value),
+                    pallet_qty: Number(document.getElementById('palletQty').value),
+                    requires_crane: document.getElementById('reqCrane').checked
+                },
+                updatedAt: serverTimestamp()
+            };
+
+            await setDoc(doc(db, "products", sku), data);
+            
+            // עדכון המערך הלוקאלי (חוסך קריאה לשרת)
+            const idx = products.findIndex(p => p.id === sku);
+            if(idx > -1) products[idx] = data; else products.push(data);
+            
+            renderList();
+            updateStatus('online', 'נשמר!');
+        };
+
+        window.addNew = () => {
+            document.querySelectorAll('input, textarea').forEach(i => i.value = '');
+            document.getElementById('reqCrane').checked = false;
+            document.getElementById('magicInput').focus();
+            updatePreview();
+        };
+
+        function updateStatus(state, text) {
+            const el = document.getElementById('statusIndicator');
+            const color = state === 'online' ? 'bg-green-500' : 'bg-yellow-500';
+            el.innerHTML = `<span class="w-2 h-2 rounded-full ${color}"></span> ${text}`;
+        }
+
+        window.onload = loadProducts;
+    </script>
+</body>
+</html>
