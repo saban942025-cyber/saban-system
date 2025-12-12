@@ -1,31 +1,33 @@
-<!DOCTYPE html>
-<html lang="he" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>SabanOS | מסופון מחסן</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-900 text-white p-4">
-    <h1 class="text-2xl font-bold text-yellow-400 mb-4">משימות ליקוט</h1>
-    <div id="tasks" class="space-y-4"></div>
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, query, where, onSnapshot, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
+// בתוך public/staff.html
+import { increment, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"; // להוסיף לייבוא למעלה
 
-        onSnapshot(query(collection(db, "orders"), where("status", "==", "picking")), (snap) => {
-            const div = document.getElementById('tasks');
-            if(snap.empty) { div.innerHTML = "אין עבודה כרגע 👍"; return; }
-            div.innerHTML = snap.docs.map(d => {
-                const o = d.data();
-                return `<div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
-                    <h2 class="font-bold">${o.clientName}</h2>
-                    <ul class="text-sm my-2 space-y-1">${o.items ? o.items.map(i=>`<li>⬜ ${i.name} x${i.qty}</li>`).join('') : ''}</ul>
-                    <button onclick="finish('${d.id}')" class="w-full bg-green-600 py-2 rounded font-bold">סיום ליקוט (לנהג)</button>
-                </div>`;
-            }).join('');
+window.finishPick = async (orderId) => {
+    if(!confirm("סיימת ללקט? המלאי יעודכן והנהג יקבל הודעה.")) return;
+    
+    try {
+        // 1. קבלת פרטי ההזמנה
+        const orderRef = doc(db, "orders", orderId);
+        const orderSnap = await getDoc(orderRef);
+        const orderData = orderSnap.data();
+
+        // 2. עדכון מלאי (לולאה על כל הפריטים)
+        const updates = orderData.items.map(item => {
+            if (!item.id) return null; // הגנה
+            const productRef = doc(db, "products", item.id);
+            return updateDoc(productRef, {
+                "core.stock": increment(-item.qty)
+            });
         });
-        window.finish = (id) => updateDoc(doc(db, "orders", id), { status: "shipping" });
-    </script>
-</body>
-</html>
+
+        await Promise.all(updates); // מחכה שכולם יתעדכנו
+
+        // 3. קידום סטטוס לנהג
+        await updateDoc(orderRef, { status: "shipping" });
+        
+        alert("✅ המלאי עודכן והמשימה עברה לנהג!");
+        
+    } catch (e) {
+        console.error(e);
+        alert("שגיאה בעדכון מלאי: " + e.message);
+    }
+};
