@@ -1,152 +1,86 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-        <title>SabanOS | חמ"ל מבצעי</title>
-    
+    <meta charset="UTF-8">
+    <title>SabanConnect | חמ"ל משולב v34.0</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#ffffff">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="icons/icon-192.png">
-
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
     <style>
-                @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap');
+        body { background-color: #d1d7db; font-family: -apple-system, system-ui, sans-serif; height: 100vh; display: flex; overflow: hidden; }
+        
+        /* Sidebar */
+        .sidebar { width: 30%; min-width: 360px; background: white; border-left: 1px solid #e9edef; display: flex; flex-direction: column; z-index: 20; }
+        .sidebar-header { height: 60px; background: #f0f2f5; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #d1d7db; }
+        
+        .sidebar-tabs { display: flex; border-bottom: 1px solid #e9edef; background: #fff; }
+        .tab-btn { flex: 1; text-align: center; padding: 15px; cursor: pointer; color: #54656f; font-weight: 500; border-bottom: 3px solid transparent; transition: 0.2s; }
+        .tab-btn.active { color: #008069; border-bottom-color: #008069; background: #f0f2f5; }
 
-                /* iOS Base Styles */
-                body { 
-                                background-color: #f2f2f7; /* iOS Gray */
-                                font-family: 'Heebo', sans-serif; 
-                                height: 100dvh; 
-                                display: flex; 
-                                flex-direction: column; 
-                                overflow: hidden; 
-                                -webkit-tap-highlight-color: transparent;
-                }
+        /* Items */
+        .chat-item { display: flex; align-items: center; padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #f0f2f5; transition: 0.2s; position: relative; }
+        .chat-item:hover { background: #f5f6f6; }
+        .chat-item.active { background: #f0f2f5; border-right: 4px solid #00a884; }
+        .group-actions { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); display: none; }
+        .chat-item:hover .group-actions { display: flex; gap: 5px; }
 
-                /* Layout */
-                .app-shell { display: flex; flex: 1; height: 100%; overflow: hidden; position: relative; }
-                .sidebar { width: 350px; background: white; border-left: 1px solid #e5e5ea; display: flex; flex-direction: column; z-index: 20; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-                .main-chat { flex: 1; display: flex; flex-direction: column; background: #e5ddd5; position: relative; z-index: 10; }
+        /* Main Chat */
+        .main-chat { flex: 1; display: flex; flex-direction: column; background-color: #efeae2; background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); position: relative; }
+        
+        /* Header */
+        .chat-header { height: 60px; background: #f0f2f5; padding: 0 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #d1d7db; z-index: 10; }
 
-                /* Mobile Logic */
-                @media (max-width: 768px) {
-                                .sidebar { width: 100%; position: absolute; inset: 0; }
-                                .sidebar.hidden-mobile { transform: translateX(100%); }
-                                .main-chat { position: absolute; inset: 0; transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-                                .main-chat.active-mobile { transform: translateX(0); }
-                }
+        /* Messages */
+        .msg { max-width: 65%; padding: 8px 12px; border-radius: 8px; font-size: 14px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); margin-bottom: 8px; word-wrap: break-word; background: white; align-self: flex-start; }
+        .msg.staff { background: #d9fdd3; align-self: flex-end; }
+        .msg.internal { background: #fff9c4; align-self: center; font-size: 12px; border: 1px dashed orange; text-align: center; }
+        
+        /* Forward Button (Hidden until hover) */
+        .msg:hover .msg-tools { opacity: 1; }
+        .msg-tools { position: absolute; top: 0; left: -30px; opacity: 0; transition: 0.2s; }
+        .btn-forward { width: 24px; height: 24px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer; color: #54656f; }
 
-                /* Header (Glassmorphism) */
-                .app-header {
-                                height: 60px;
-                                background: rgba(255, 255, 255, 0.95);
-                                backdrop-filter: blur(10px);
-                                border-bottom: 1px solid #e5e5ea;
-                                display: flex;
-                                justify-content: space-between;
-                                align-items: center;
-                                padding: 0 16px;
-                                z-index: 50;
-                                flex-shrink: 0;
-                }
+        /* Smart Popups (@ / #) */
+        .smart-popup { position: absolute; bottom: 70px; left: 20px; width: 250px; background: white; border-radius: 10px; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; display: none; z-index: 50; overflow: hidden; max-height: 200px; overflow-y: auto; }
+        .smart-item { display: flex; align-items: center; gap: 10px; padding: 10px; cursor: pointer; border-bottom: 1px solid #f0f2f5; }
+        .smart-item:hover { background: #f0f2f5; }
+        .tag-mention { background-color: #e6fffa; color: #008069; padding: 0 4px; border-radius: 4px; font-weight: bold; }
+        .tag-product { background-color: #fff7ed; color: #c2410c; padding: 0 4px; border-radius: 4px; font-weight: bold; }
 
-                /* User & Logo */
-                .user-pill {
-                                display: flex;
-                                align-items: center;
-                                gap: 10px;
-                                background: #f2f2f7;
-                                padding: 4px 12px 4px 4px;
-                                border-radius: 99px;
-                                transition: 0.2s;
-                                cursor: pointer;
-                }
-                .user-pill:active { transform: scale(0.98); background: #e5e5ea; }
-                .user-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-                .live-indicator { width: 8px; height: 8px; background: #34c759; border-radius: 50%; box-shadow: 0 0 0 2px white; position: absolute; bottom: 0; right: 0; }
+        /* Modals (Standard) */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; display: none; justify-content: center; align-items: center; }
+        .modal-overlay.open { display: flex; }
+        .modal-box { background: white; width: 500px; border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); max-height: 85vh; overflow-y: auto; display: flex; flex-direction: column; }
+        
+        /* Forward List */
+        .target-item { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #f0f2f5; cursor: pointer; }
+        .target-item:hover { background: #f5f6f6; }
 
-                /* Tools */
-                .tool-btn { 
-                                width: 36px; height: 36px; 
-                                border-radius: 10px; 
-                                display: flex; align-items: center; justify-content: center; 
-                                color: #1c1c1e; 
-                                transition: 0.2s;
-                }
-                .tool-btn:hover { background: #f2f2f7; }
-                .tool-btn:active { transform: scale(0.95); }
+        /* CRM Styles */
+        .profile-img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .editable-field { border: 1px solid transparent; padding: 4px; border-radius: 4px; width: 100%; transition: 0.2s; }
+        .editable-field:hover { background: #f0f2f5; border-color: #d1d5db; }
+        .editable-field:focus { background: white; border-color: #008069; outline: none; }
+    </style>
+</head>
+<body>
 
-                .mobile-menu {
-                                position: absolute; top: 65px; left: 16px;
-                                background: white; border-radius: 16px;
-                                box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-                                width: 220px; padding: 8px;
-                                transform: scale(0.9) opacity(0);
-                                pointer-events: none;
-                                transition: 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-                                transform-origin: top left;
-                }
-                .mobile-menu.open { transform: scale(1) opacity(1); pointer-events: auto; }
-                .menu-item { padding: 12px; display: flex; items-center; gap: 12px; border-radius: 10px; color: #1c1c1e; font-size: 14px; font-weight: 500; transition: 0.2s; }
-                .menu-item:active { background: #f2f2f7; }
-
-                /* Chat List */
-                .chat-list-item { 
-                                padding: 12px 16px; 
-                                display: flex; align-items: center; gap: 12px; 
-                                border-bottom: 1px solid #f2f2f7; 
-                                background: white;
-                                transition: 0.2s;
-                }
-                .chat-list-item:active { background: #f2f2f7; }
-                .chat-list-item.active { border-right: 4px solid #007aff; background: #f9f9fa; }
-
-                /* Messages */
-                .msg-container { padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-                .msg { max-width: 75%; padding: 8px 12px; border-radius: 16px; font-size: 15px; line-height: 1.4; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-                .msg-in { align-self: flex-start; background: white; border-bottom-right-radius: 4px; color: #1c1c1e; }
-                .msg-out { align-self: flex-end; background: #dcf8c6; border-bottom-left-radius: 4px; color: #1c1c1e; }
-                .msg-internal { align-self: center; background: #fff9c4; border: 1px dashed #f59e0b; font-size: 13px; text-align: center; border-radius: 8px; width: 90%; }
-
-                /* Input Area */
-                .input-bar {
-                                background: #f0f2f5;
-                                padding: 8px 12px;
-                       coik :dp x1p  oa u* b /ldr:d 0t;c:0 l;en  d: 2p 2 .0 itnc  e r" <dv ls=aphed>  le ibowcl d n  rsidca de     vi ia c"< l i< u-0o u sls </div>
-                     v hAi a" a tnoeCa=mru-met"i   dep-nC
-                    iA d2   d"=fae <iae>ח טי/      i a otaat ldi=l0"s> ds 
-                      ctds vo"<y- -0e 2sh co-v> lsb ot0a<ie"ucikeEe k"0u s-dsan l-"<< ddvnso-ono-neg" o0ba dvio /v<>mdl   "odd n"
-                     las=tx otb4t pumevn)p i =x n-o0mשla>   x l 0> "s3x ehedo-  s laxueawe/  v
-                       m
-                       /i> citp"l>   imp itaep f "t:/wtcmrs/8
-                      io{tiec, emtpoi/0sr.s; gsis  iotc r'Cc
-                    sstaeedr "6p2e8  u  tc=laelsn;iedod.a ] inss" c dlM ( ( id0 't} ds s"tp/-& or-o> <1 f imetr 8
-        s0e0fat)  =4"ltsa/ ;
-          cdmIH>(  ur list.n olt$ghcr<p}c  ttmsld r'  at  tn dedr)dolmte-e eyI'cme r    tnmBdT=u''ק'maimght/pm={&
-                                                                                                                ti     o, ,i)  e  pl  
-                                                                                                                  aa.I(rtr e} vn}  / s yr}/`/i utoyr"   xnnsg M=    t d
-          x[u) alb   (onesn t;    t = to -n  cl
-          po `di ao:' i [xetga-c  bl ol   
-        wnsg nml(tC gEm ' ar'{etnsos ta :'
-                              ai et  t=r tDce lnMדה' i s)  ol   rrrn 
-                              nl v@ .wemefnn; c dgEIm' a = eoM} <v 6 an vt(oi  le(PLd;  in{ u ep{` et} -os .s'r gmcavaI a eA'(sc)n-a'theI   o)dgI''tdnenowtgnrM e aתל
-                              -la)
-                              c n"fl -t ne'-;
-                               g b cD eHl "s/cs0; L(b'dlb.nafק"So;w)=
-                              c()lo( o=  une enudi e
-
-                                    cS e')nUr
-                              <t- 0r fcn-"=wpx>  eu a iat;   sm=dlmd'N)ao(a 
-                               erdb c es `tm{ed,cetm) p os w.e.L('e 
-                                              /gnwL,.ir;><
-    </style></title>
-</head></div>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="flex items-center gap-2 cursor-pointer" onclick="handleLogout()">
+                <img src="https://ui-avatars.com/api/?name=Admin&background=00a884&color=fff" class="w-10 h-10 rounded-full border-2 border-white">
+                <div><span class="font-bold text-gray-700 block text-sm">חמ"ל ראשי</span><span class="text-[10px] text-green-600 font-bold">● אונליין</span></div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="openGroupModal()" class="w-8 h-8 rounded-full bg-white hover:bg-gray-200 flex items-center justify-center text-gray-600 shadow-sm" title="צור קבוצה"><i class="fas fa-users"></i></button>
+                <button onclick="switchTab('tasks')" class="w-8 h-8 rounded-full bg-white hover:bg-gray-200 flex items-center justify-center text-gray-600 shadow-sm" title="משימות"><i class="fas fa-tasks"></i></button>
+            </div>
+        </div>
 
         <div class="sidebar-tabs">
             <div onclick="switchTab('chats')" class="tab-btn active" id="tab-chats">💬 צ'אטים</div>
@@ -465,4 +399,3 @@
     </script>
 </body>
 </html>
-
