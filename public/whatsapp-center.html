@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SabanConnect | חמ"ל הזמנות v22.1</title>
+    <title>SabanConnect | חמ"ל הזמנות v25.0</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -11,70 +11,46 @@
         body { background-color: #d1d7db; font-family: -apple-system, system-ui, sans-serif; height: 100vh; display: flex; overflow: hidden; }
         .sidebar { width: 30%; max-width: 400px; background: white; border-left: 1px solid #e9edef; display: flex; flex-direction: column; }
         .main-chat { flex: 1; display: flex; flex-direction: column; background-color: #efeae2; background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); }
-        
         .chat-item { display: flex; align-items: center; padding: 12px; cursor: pointer; border-bottom: 1px solid #f0f2f5; transition: 0.2s; }
         .chat-item:hover { background: #f5f6f6; }
         .chat-item.active { background: #f0f2f5; border-right: 4px solid #00a884; }
-        
-        .msg { max-width: 65%; padding: 8px 12px; border-radius: 8px; font-size: 14px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); line-height: 1.4; margin-bottom: 8px; }
+        .msg { max-width: 65%; padding: 8px 12px; border-radius: 8px; font-size: 14px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); line-height: 1.4; margin-bottom: 8px; word-wrap: break-word; }
         .msg-user { align-self: flex-start; background: #fff; border-top-right-radius: 0; }
         .msg-staff { align-self: flex-end; background: #d9fdd3; border-top-left-radius: 0; }
         .msg-internal { align-self: center; background: #fff9c4; border: 1px dashed #d97706; font-size: 12px; }
         .msg-time { font-size: 10px; color: #999; text-align: left; margin-top: 3px; }
-
-        /* אינדיקטור בוט */
-        .bot-status-on { background-color: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
-        .bot-status-off { background-color: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
+        
+        /* Smart Tag Styling */
+        .tag-mention { background-color: #ffedd5; color: #c2410c; padding: 0 4px; border-radius: 4px; font-weight: bold; border: 1px solid #fdba74; display: inline-block; }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
         <div class="h-16 bg-[#f0f2f5] border-b flex justify-between items-center px-4">
-            <div class="flex items-center gap-2">
-                <img src="https://ui-avatars.com/api/?name=Admin&background=00a884&color=fff" class="w-10 h-10 rounded-full">
-                <span class="font-bold text-gray-700">חמ"ל הזמנות</span>
-            </div>
-            <div class="text-xs text-gray-400">v22.1</div>
+            <div class="flex items-center gap-2"><img src="https://ui-avatars.com/api/?name=Admin&background=00a884&color=fff" class="w-10 h-10 rounded-full"><span class="font-bold text-gray-700">חמ"ל הזמנות</span></div>
         </div>
-        <div id="chatList" class="flex-1 overflow-y-auto bg-white custom-scroll"></div>
+        <div id="chatList" class="flex-1 overflow-y-auto bg-white"></div>
     </div>
 
     <div id="chatArea" class="main-chat hidden">
         <div class="h-16 bg-[#f0f2f5] border-b flex justify-between items-center px-4 shadow-sm z-10">
             <div class="flex items-center gap-3">
-                <img id="activeAvatar" src="" class="w-10 h-10 rounded-full border border-gray-300">
-                <div class="cursor-pointer">
-                    <div id="activeName" class="font-bold text-gray-800 leading-tight"></div>
-                    <div class="text-xs text-gray-500">מחובר</div>
-                </div>
-            </div>
-
-            <div class="flex items-center gap-3">
-                <div id="botStatusBadge" class="hidden md:flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold transition-colors bot-status-off">
-                    <span id="botStatusDot" class="w-2 h-2 rounded-full bg-gray-400"></span>
-                    <span id="botStatusText">בוט כבוי</span>
-                </div>
-                <button onclick="toggleBot()" class="bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm transition active:scale-95 flex items-center gap-2">
-                    <i class="fas fa-robot"></i> <span class="hidden sm:inline">הפעל/כבה</span>
-                </button>
+                <img id="activeAvatar" src="" class="w-10 h-10 rounded-full">
+                <div><div id="activeName" class="font-bold text-gray-800"></div><div class="text-xs text-gray-500">מחובר</div></div>
             </div>
         </div>
-
-        <div id="messagesBox" class="flex-1 overflow-y-auto flex flex-col p-4"></div>
-
+        <div id="messagesBox" class="flex-1 padding-20 overflow-y-auto flex flex-col p-4"></div>
         <div class="bg-[#f0f2f5] p-3 flex items-center gap-3 border-t">
-            <i onclick="toggleInternalMode()" id="internalBtn" class="fas fa-eye-slash text-xl text-gray-400 cursor-pointer hover:scale-110 transition" title="הערה פנימית (לא תישלח ללקוח)"></i>
-            <div class="flex-1 relative">
-                <input type="text" id="msgInput" class="w-full p-3 rounded-xl border-none outline-none shadow-sm text-sm" placeholder="הקלד הודעה..." onkeydown="if(event.key === 'Enter') sendMessage()">
-            </div>
-            <button onclick="sendMessage()" class="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-[#00a884] transition"><i class="fas fa-paper-plane text-xl"></i></button>
+            <i onclick="toggleInternalMode()" id="internalBtn" class="fas fa-eye-slash text-xl text-gray-400 cursor-pointer hover:text-orange-500" title="הערה פנימית"></i>
+            <input type="text" id="msgInput" class="flex-1 p-2 rounded-lg border-none outline-none" placeholder="הקלד הודעה..." onkeydown="if(event.key === 'Enter') sendMessage()">
+            <button onclick="sendMessage()"><i class="fas fa-paper-plane text-xl text-gray-500 hover:text-[#00a884]"></i></button>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, doc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, doc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
         const app = initializeApp(firebaseConfig);
@@ -82,10 +58,8 @@
 
         let activeChatId = null;
         let internalMode = false;
-        let currentBotState = false;
-        let activeChatListener = null; // לשמירת ההאזנה לסטטוס הבוט
 
-        // --- 1. טעינת רשימת צ'אטים ---
+        // --- 1. SMART LIST ---
         const q = query(collection(db, "chat_sessions"), orderBy("lastActivity", "desc"));
         onSnapshot(q, (snapshot) => {
             const list = document.getElementById('chatList');
@@ -94,42 +68,27 @@
                 const chat = { id: docSnap.id, ...docSnap.data() };
                 const time = chat.lastActivity ? new Date(chat.lastActivity.seconds * 1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
                 const active = activeChatId === chat.id ? 'active' : '';
-                const botIcon = chat.isBotActive ? '<i class="fas fa-robot text-green-500 text-xs ml-1" title="בוט פעיל"></i>' : '';
+                // Clean tags for preview
+                const cleanMsg = (chat.lastMessage || '').replace(/<[^>]*>?/gm, ''); 
                 
                 list.innerHTML += `
                 <div onclick="openChat('${chat.id}', '${chat.userName}')" class="chat-item ${active}">
-                    <div class="relative">
-                        <img src="https://ui-avatars.com/api/?name=${chat.userName}&background=random&color=fff" class="w-12 h-12 rounded-full ml-3 shadow-sm">
-                        ${chat.isBotActive ? '<div class="absolute bottom-0 right-3 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>' : ''}
-                    </div>
+                    <img src="https://ui-avatars.com/api/?name=${chat.userName}&background=random&color=fff" class="w-12 h-12 rounded-full ml-3">
                     <div class="flex-1 min-w-0">
-                        <div class="flex justify-between mb-1"><span class="font-bold text-gray-800 text-sm flex items-center">${chat.userName} ${botIcon}</span><span class="text-xs text-gray-400">${time}</span></div>
-                        <div class="text-sm text-gray-500 truncate dir-rtl">${chat.lastMessage || ''}</div>
+                        <div class="flex justify-between mb-1"><span class="font-bold text-gray-800 text-sm">${chat.userName}</span><span class="text-xs text-gray-400">${time}</span></div>
+                        <div class="text-sm text-gray-500 truncate">${cleanMsg}</div>
                     </div>
                 </div>`;
             });
         });
 
-        // --- 2. פתיחת צ'אט והאזנה ---
+        // --- 2. RENDER CHAT (WITH TAGS) ---
         window.openChat = (chatId, name) => {
             activeChatId = chatId;
             document.getElementById('chatArea').classList.remove('hidden');
             document.getElementById('activeName').innerText = name;
             document.getElementById('activeAvatar').src = `https://ui-avatars.com/api/?name=${name}&background=random&color=fff`;
             
-            // ניקוי האזנה קודמת לסטטוס הבוט אם קיימת
-            if(activeChatListener) activeChatListener();
-
-            // האזנה לסטטוס הבוט של הצ'אט הספציפי הזה
-            activeChatListener = onSnapshot(doc(db, "chat_sessions", chatId), (docSnap) => {
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    currentBotState = data.isBotActive || false;
-                    updateBotUI(currentBotState);
-                }
-            });
-
-            // האזנה להודעות
             const msgQ = query(collection(db, `chat_sessions/${chatId}/messages`), orderBy("createdAt", "asc"));
             onSnapshot(msgQ, (snapshot) => {
                 const box = document.getElementById('messagesBox');
@@ -138,90 +97,33 @@
                     const m = doc.data();
                     const time = m.createdAt ? new Date(m.createdAt.seconds * 1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '...';
                     
+                    // SMART TAGGING LOGIC
+                    let content = m.text;
+                    content = content.replace(/@([\u0590-\u05FF\w]+)/g, '<span class="tag-mention">@$1</span>');
+
                     if (m.role === 'internal') {
-                        box.innerHTML += `<div class="msg msg-internal flex flex-col items-center"><div class="flex items-center gap-2 font-bold text-orange-700 mb-1"><i class="fas fa-lock"></i> הערה פנימית</div>${m.text}<div class="msg-time self-end">${time}</div></div>`;
+                        box.innerHTML += `<div class="msg msg-internal"><i class="fas fa-lock"></i> <b>פנימי:</b> ${content}<div class="msg-time">${time}</div></div>`;
                     } else {
                         const type = m.role === 'user' ? 'msg-user' : 'msg-staff';
-                        // זיהוי אם זה הבוט שענה
-                        const isBotMsg = m.sender === 'bot' || m.text.includes("SabanAI");
-                        const badge = isBotMsg ? '<span class="text-[10px] text-green-600 font-bold block mb-1"><i class="fas fa-robot"></i> SabanAI</span>' : '';
-                        
-                        box.innerHTML += `<div class="msg ${type}">${badge}${m.text}<div class="msg-time">${time}</div></div>`;
+                        box.innerHTML += `<div class="msg ${type}">${m.role !== 'user' && m.text.includes('SabanAI') ? '' : ''}${content}<div class="msg-time">${time}</div></div>`;
                     }
                 });
                 box.scrollTop = box.scrollHeight;
             });
         };
 
-        // --- 3. עדכון ממשק בוט (ויזואלי בלבד) ---
-        function updateBotUI(isActive) {
-            const badge = document.getElementById('botStatusBadge');
-            const dot = document.getElementById('botStatusDot');
-            const text = document.getElementById('botStatusText');
-            
-            if (isActive) {
-                badge.className = "hidden md:flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold transition-colors bot-status-on";
-                dot.className = "w-2 h-2 rounded-full bg-green-500 animate-pulse";
-                text.innerText = "בוט פעיל";
-            } else {
-                badge.className = "hidden md:flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold transition-colors bot-status-off";
-                dot.className = "w-2 h-2 rounded-full bg-gray-400";
-                text.innerText = "בוט כבוי (ידני)";
-            }
-        }
-
-        // --- 4. כפתור החלפת מצב בוט ---
-        window.toggleBot = async () => {
-            if (!activeChatId) return;
-            const newState = !currentBotState;
-            // מעדכן ב-Firebase - הממשק יתעדכן אוטומטית דרך ה-onSnapshot
-            await updateDoc(doc(db, "chat_sessions", activeChatId), { 
-                isBotActive: newState,
-                lastActivity: serverTimestamp() // מקפיץ את השיחה למעלה כדי שתראה שטיפלת בה
-            });
-            // הודעת מערכת קטנה בצ'אט (אופציונלי, עוזר למעקב)
-            const statusMsg = newState ? "🤖 הבוט הופעל מחדש" : "🛑 הבוט הושהה - שליטה ידנית";
-            await addDoc(collection(db, `chat_sessions/${activeChatId}/messages`), {
-                text: statusMsg,
-                role: 'internal',
-                sender: 'system',
-                createdAt: serverTimestamp()
-            });
-        };
-
-        // --- 5. שליחת הודעה ---
+        // --- 3. SEND ---
         window.sendMessage = async () => {
             const input = document.getElementById('msgInput');
             const txt = input.value;
             if (!txt || !activeChatId) return;
-            
             const role = internalMode ? 'internal' : 'staff';
             input.value = '';
 
-            // שליחת ההודעה
-            await addDoc(collection(db, `chat_sessions/${activeChatId}/messages`), { 
-                text: txt, 
-                role: role, 
-                sender: role === 'internal' ? "System" : "נציג", 
-                createdAt: serverTimestamp() 
-            });
-
-            // עדכון השיחה - אם ענית כנציג (לא פנימי), הבוט משתתק אוטומטית!
-            const updateData = {
-                lastMessage: role === 'internal' ? '🔒 הערה פנימית' : `נציג: ${txt}`,
-                lastActivity: serverTimestamp()
-            };
+            await addDoc(collection(db, `chat_sessions/${activeChatId}/messages`), { text: txt, role: role, sender: "מוקד", createdAt: serverTimestamp() });
+            await updateDoc(doc(db, "chat_sessions", activeChatId), { lastMessage: role === 'internal' ? '🔒 הערה פנימית' : `נציג: ${txt}`, lastActivity: serverTimestamp(), isBotActive: false });
             
-            // אם זו תשובה ללקוח (לא פנימית), אנחנו מכבים את הבוט כדי שלא יתערב
-            if (role !== 'internal') {
-                updateData.isBotActive = false;
-            }
-
-            await updateDoc(doc(db, "chat_sessions", activeChatId), updateData);
-            
-            // יציאה ממצב פנימי
             if(internalMode) toggleInternalMode();
-            document.getElementById('msgInput').focus();
         };
 
         window.toggleInternalMode = () => {
@@ -230,14 +132,13 @@
             const input = document.getElementById('msgInput');
             if (internalMode) {
                 btn.classList.replace('text-gray-400', 'text-orange-500');
-                input.classList.add('bg-orange-50', 'text-orange-900', 'placeholder-orange-400');
-                input.placeholder = "🔒 כתיבת הערה פנימית לצוות...";
+                input.style.backgroundColor = '#fff7ed';
+                input.placeholder = "הערה פנימית (לצוות בלבד)...";
             } else {
                 btn.classList.replace('text-orange-500', 'text-gray-400');
-                input.classList.remove('bg-orange-50', 'text-orange-900', 'placeholder-orange-400');
-                input.placeholder = "הקלד הודעה ללקוח...";
+                input.style.backgroundColor = 'white';
+                input.placeholder = "הקלד הודעה...";
             }
-            input.focus();
         };
     </script>
 </body>
