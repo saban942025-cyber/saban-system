@@ -2,121 +2,339 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>SabanOS | הקמת משתמשים</title>
+    <title>SabanOS | ניהול משתמשים v2.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-  <script type="module" src="./js/logger.js"></script>
-</head>
-<body class="bg-gray-900 text-gray-200 flex items-center justify-center h-screen font-sans">
-
-    <div class="bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-md border border-gray-700 relative overflow-hidden">
-        <div class="absolute top-0 right-0 w-20 h-20 bg-green-600 rounded-bl-full opacity-20"></div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap');
+        body { background-color: #f1f5f9; font-family: 'Rubik', sans-serif; }
         
-        <div class="flex items-center gap-3 mb-6 border-b border-gray-700 pb-4">
-            <i class="fas fa-user-plus text-green-500 text-2xl"></i>
-            <div>
-                <h1 class="text-xl font-bold text-white">הקמת משתמשים (+טלפון)</h1>
-                <p class="text-xs text-gray-400">SabanOS System Tool</p>
+        .tab-btn { @apply px-6 py-3 font-bold text-gray-500 border-b-2 border-transparent cursor-pointer transition; }
+        .tab-btn.active { @apply text-blue-600 border-blue-600; }
+        
+        .avatar-preview { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0; background: #fff; }
+        
+        /* Form Inputs */
+        .input-box { @apply w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm outline-none focus:border-blue-500 transition; }
+        .label-text { @apply block text-xs font-bold text-gray-500 mb-1; }
+        
+        /* Table */
+        .user-row:hover { background-color: #f8fafc; }
+        .role-badge { @apply text-[10px] px-2 py-0.5 rounded font-bold uppercase; }
+    </style>
+</head>
+<body class="p-6">
+
+    <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <div class="lg:col-span-1 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            
+            <div class="flex border-b border-gray-100">
+                <div onclick="switchTab('staff')" class="tab-btn active w-1/2 text-center" id="tab-staff"><i class="fas fa-user-tie"></i> צוות</div>
+                <div onclick="switchTab('client')" class="tab-btn w-1/2 text-center" id="tab-client"><i class="fas fa-hard-hat"></i> לקוח</div>
+            </div>
+
+            <form id="createForm" class="p-6 space-y-4">
+                
+                <div class="text-center mb-4">
+                    <img id="avatarPreview" src="https://ui-avatars.com/api/?name=User&background=random" class="avatar-preview mx-auto mb-2">
+                    <input type="text" id="avatar" placeholder="לינק לתמונה (URL)" class="text-xs text-center bg-transparent border-b border-gray-200 w-2/3 mx-auto outline-none" oninput="updateAvatar()">
+                </div>
+
+                <div>
+                    <label class="label-text">שם מלא</label>
+                    <input type="text" id="name" class="input-box" required placeholder="למשל: נתנאל כהן">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="label-text">טלפון (ללא מקף)</label>
+                        <input type="tel" id="phone" class="input-box" required placeholder="050...">
+                    </div>
+                    <div>
+                        <label class="label-text">אימייל (לכניסה)</label>
+                        <input type="email" id="email" class="input-box" required placeholder="@saban...">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="label-text">סיסמה ראשונית</label>
+                    <input type="text" id="password" class="input-box" required value="Saban2025">
+                </div>
+
+                <div id="staffFields" class="space-y-4">
+                    <div>
+                        <label class="label-text">סניף / מחלקה</label>
+                        <input type="text" id="branch" class="input-box" placeholder="סניף התלמיד - חדר רכש">
+                    </div>
+                    <div>
+                        <label class="label-text">תפקיד</label>
+                        <select id="roleSelect" class="input-box" onchange="updateRoleDesc()">
+                            <option value="admin">👑 מנכ"ל / מנהל על</option>
+                            <option value="ops">🕹️ מנהל תפעול</option>
+                            <option value="purchasing">🛒 רכש וספקים</option>
+                            <option value="warehouse">📦 מחסנאי</option>
+                            <option value="driver_crane">🏗️ נהג מנוף</option>
+                            <option value="driver">🚛 נהג משאית</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label-text">תיאור תפקיד (יוצג בכרטיס)</label>
+                        <textarea id="description" class="input-box h-20 text-xs"></textarea>
+                    </div>
+                </div>
+
+                <div id="clientFields" class="hidden space-y-4">
+                    <div>
+                        <label class="label-text">מספר לקוח (קומקס)</label>
+                        <input type="text" id="clientNumber" class="input-box" placeholder="12345">
+                    </div>
+                    
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs font-bold text-slate-600">פרויקטים</span>
+                            <button type="button" onclick="addProjectField()" class="text-xs text-blue-600 hover:underline">+ הוסף</button>
+                        </div>
+                        <div id="projectsContainer" class="space-y-2 max-h-32 overflow-y-auto">
+                            </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold shadow-lg transition flex justify-center gap-2">
+                    <i class="fas fa-save"></i> צור משתמש
+                </button>
+                <div id="msg" class="text-center text-xs font-bold mt-2"></div>
+            </form>
+        </div>
+
+        <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[600px]">
+            <div class="p-4 border-b border-gray-100 flex justify-between items-center">
+                <h2 class="font-bold text-gray-800">מאגר משתמשים</h2>
+                <input type="text" id="searchUser" oninput="filterUsers()" placeholder="חפש..." class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1 text-sm outline-none">
+            </div>
+            <div class="flex-1 overflow-y-auto">
+                <table class="w-full text-sm text-right">
+                    <thead class="bg-gray-50 text-gray-500 text-xs uppercase sticky top-0">
+                        <tr>
+                            <th class="p-3">משתמש</th>
+                            <th class="p-3">תפקיד</th>
+                            <th class="p-3">פרטים</th>
+                            <th class="p-3 text-center">פעולות</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTable"></tbody>
+                </table>
             </div>
         </div>
-        
-        <form id="createForm" class="space-y-4">
-            <div>
-                <label class="text-xs text-gray-400 mb-1 block">שם מלא</label>
-                <input type="text" id="name" placeholder="לדוגמה: יוסי הנהג" class="w-full p-3 bg-gray-900 rounded border border-gray-600 focus:border-green-500 outline-none" required>
-            </div>
-            
-            <div>
-                <label class="text-xs text-gray-400 mb-1 block">טלפון (ללא מקף)</label>
-                <input type="tel" id="phone" placeholder="0501234567" class="w-full p-3 bg-gray-900 rounded border border-gray-600 focus:border-green-500 outline-none" required>
-            </div>
 
-            <div>
-                <label class="text-xs text-gray-400 mb-1 block">אימייל</label>
-                <input type="email" id="email" placeholder="email@saban.co.il" class="w-full p-3 bg-gray-900 rounded border border-gray-600 focus:border-green-500 outline-none" required>
-            </div>
-
-            <div>
-                <label class="text-xs text-gray-400 mb-1 block">סיסמה</label>
-                <input type="password" id="password" placeholder="******" class="w-full p-3 bg-gray-900 rounded border border-gray-600 focus:border-green-500 outline-none" required>
-            </div>
-            
-            <div>
-                <label class="text-xs text-gray-400 mb-1 block">תפקיד</label>
-                <select id="role" class="w-full p-3 bg-gray-900 rounded border border-gray-600 focus:border-green-500 outline-none text-white">
-                    <option value="client">🏗️ לקוח (Client)</option>
-                    <option value="driver">🚛 נהג (Driver)</option>
-                    <option value="admin">👨‍💼 מנהל (Admin)</option>
-                </select>
-            </div>
-
-            <button type="submit" class="w-full bg-green-600 hover:bg-green-500 text-white p-3 rounded-lg font-bold shadow-lg mt-4 transition flex justify-center items-center gap-2">
-                <i class="fas fa-save"></i> צור משתמש
-            </button>
-        </form>
-
-        <div id="msg" class="mt-4 p-3 rounded text-center text-sm hidden font-mono"></div>
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Config
-        const firebaseConfig = {
-          apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc",
-          authDomain: "saban94-eb5f0.firebaseapp.com",
-          projectId: "saban94-eb5f0",
-          storageBucket: "saban94-eb5f0.firebasestorage.app",
-          messagingSenderId: "656829273946",
-          appId: "1:656829273946:web:8ebcb440ed280aff014563",
-          measurementId: "G-PQGYJ2YQRK"
-        };
-
+        // CONFIG (Embedded for setup page)
+        const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        let currentTab = 'staff';
+        let usersList = [];
+        let clientProjects = [];
+
+        // --- 1. TAB LOGIC ---
+        window.switchTab = (tab) => {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            
+            if(tab === 'staff') {
+                document.getElementById('staffFields').classList.remove('hidden');
+                document.getElementById('clientFields').classList.add('hidden');
+            } else {
+                document.getElementById('staffFields').classList.add('hidden');
+                document.getElementById('clientFields').classList.remove('hidden');
+                if(clientProjects.length === 0) addProjectField(); // Init one project
+            }
+        };
+
+        // --- 2. DYNAMIC ROLES ---
+        const roleDescriptions = {
+            'admin': 'צפייה בדוחות כספיים, אישור חריגים, ניהול משתמשים ומבט על.',
+            'ops': 'ניהול שרשרת אספקה, בוט, קטלוג, חמ"ל הזמנות ושליטה בנהגים.',
+            'purchasing': 'ניהול מחלקת רכש, הזמנות מיוחדות, דרופ-שיפינג וספקים.',
+            'warehouse': 'ליקוט והכנת הזמנות, קבלת סחורה, ניהול מלאי וסדר במחסן.',
+            'driver_crane': 'שינוע והנפות גובה (עד קומה 6). אחראי על משאית מנוף.',
+            'driver': 'משלוחים דחופים, פריקות ידניות וקווי חלוקה.'
+        };
+
+        window.updateRoleDesc = () => {
+            const role = document.getElementById('roleSelect').value;
+            document.getElementById('description').value = roleDescriptions[role] || '';
+        };
+        // Init
+        updateRoleDesc();
+
+        // --- 3. AVATAR ---
+        window.updateAvatar = () => {
+            const url = document.getElementById('avatar').value;
+            if(url) document.getElementById('avatarPreview').src = url;
+        };
+
+        // --- 4. PROJECTS LOGIC ---
+        window.addProjectField = () => {
+            const id = Date.now();
+            const div = document.createElement('div');
+            div.className = 'bg-white p-2 rounded border mb-2 text-xs relative';
+            div.innerHTML = `
+                <div class="grid grid-cols-2 gap-1 mb-1">
+                    <input type="text" class="border rounded p-1 w-full proj-name" placeholder="שם אתר (הרצליה ב')">
+                    <input type="text" class="border rounded p-1 w-full proj-addr" placeholder="כתובת מדויקת">
+                </div>
+                <div class="grid grid-cols-2 gap-1">
+                    <input type="text" class="border rounded p-1 w-full proj-contact" placeholder="איש קשר">
+                    <input type="tel" class="border rounded p-1 w-full proj-phone" placeholder="טלפון">
+                </div>
+                <i onclick="this.parentElement.remove()" class="fas fa-times absolute top-1 left-1 text-gray-300 hover:text-red-500 cursor-pointer"></i>
+            `;
+            document.getElementById('projectsContainer').appendChild(div);
+        };
+
+        function collectProjects() {
+            const projs = [];
+            document.querySelectorAll('#projectsContainer > div').forEach(div => {
+                const name = div.querySelector('.proj-name').value;
+                if(name) {
+                    projs.push({
+                        name: name,
+                        address: div.querySelector('.proj-addr').value,
+                        contact: div.querySelector('.proj-contact').value,
+                        phone: div.querySelector('.proj-phone').value
+                    });
+                }
+            });
+            return projs;
+        }
+
+        // --- 5. SUBMIT ---
         document.getElementById('createForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const msg = document.getElementById('msg');
             const btn = e.target.querySelector('button');
-            
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const name = document.getElementById('name').value;
-            const phone = document.getElementById('phone').value;
-            const role = document.getElementById('role').value;
-
-            btn.disabled = true;
-            btn.innerHTML = '...';
+            const msg = document.getElementById('msg');
+            btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> יוצר...';
 
             try {
-                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                const user = userCredential.user;
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                
+                // 1. Create Auth
+                const userCred = await createUserWithEmailAndPassword(auth, email, password);
+                const uid = userCred.user.uid;
 
-                await setDoc(doc(db, "users", user.uid), {
-                    name: name,
+                // 2. Prepare Data
+                const baseData = {
+                    name: document.getElementById('name').value,
                     email: email,
-                    phone: phone, // שומרים את הטלפון!
-                    role: role,
+                    phone: document.getElementById('phone').value,
+                    avatar: document.getElementById('avatar').value || `https://ui-avatars.com/api/?name=${document.getElementById('name').value}`,
                     createdAt: new Date(),
-                    uid: user.uid
-                });
+                    uid: uid
+                };
 
-                msg.innerText = `✅ משתמש נוצר בהצלחה!`;
-                msg.className = "mt-4 p-3 rounded text-center text-sm bg-green-900 text-green-200 block";
+                let finalData = {};
+
+                if (currentTab === 'staff') {
+                    finalData = {
+                        ...baseData,
+                        type: 'staff',
+                        role: document.getElementById('roleSelect').value,
+                        branch: document.getElementById('branch').value,
+                        description: document.getElementById('description').value
+                    };
+                } else {
+                    finalData = {
+                        ...baseData,
+                        type: 'client',
+                        role: 'client',
+                        clientNumber: document.getElementById('clientNumber').value,
+                        projects: collectProjects()
+                    };
+                }
+
+                // 3. Save to Firestore
+                await setDoc(doc(db, "users", uid), finalData);
+
+                msg.innerText = "✅ נוצר בהצלחה!"; msg.className = "text-green-600";
                 e.target.reset();
+                if(currentTab === 'client') addProjectField();
+                loadUsers();
 
             } catch (error) {
-                msg.innerText = "❌ שגיאה: " + error.message;
-                msg.className = "mt-4 p-3 rounded text-center text-sm bg-red-900 text-red-200 block";
+                console.error(error);
+                msg.innerText = "❌ שגיאה: " + error.message; msg.className = "text-red-600";
             } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-save"></i> צור משתמש';
+                btn.disabled = false; btn.innerHTML = 'צור משתמש';
             }
         });
+
+        // --- 6. TABLE & LIST ---
+        async function loadUsers() {
+            const snap = await getDocs(collection(db, "users"));
+            usersList = snap.docs.map(d => d.data());
+            renderTable(usersList);
+        }
+
+        function renderTable(list) {
+            const tbody = document.getElementById('usersTable');
+            tbody.innerHTML = list.map(u => {
+                const roleBadge = getRoleBadge(u.role);
+                const info = u.type === 'staff' ? u.branch : `${(u.projects||[]).length} פרויקטים`;
+                const whatsappLink = `https://wa.me/972${u.phone.substring(1)}?text=${encodeURIComponent(`שלום ${u.name}, ברוך הבא לאפליקציית סבן! להורדה: https://saban-app.com/?uid=${u.uid}`)}`;
+                
+                return `
+                <tr class="user-row border-b border-gray-50">
+                    <td class="p-3 flex items-center gap-3">
+                        <img src="${u.avatar}" class="w-8 h-8 rounded-full border">
+                        <div>
+                            <div class="font-bold">${u.name}</div>
+                            <div class="text-xs text-gray-400">${u.email}</div>
+                        </div>
+                    </td>
+                    <td class="p-3">${roleBadge}</td>
+                    <td class="p-3 text-xs text-gray-500">${info}</td>
+                    <td class="p-3 text-center">
+                        <div class="flex justify-center gap-2">
+                            <a href="${whatsappLink}" target="_blank" class="text-green-500 hover:bg-green-50 p-2 rounded-full" title="שלח לינק בוואטסאפ"><i class="fab fa-whatsapp"></i></a>
+                            <button class="text-blue-500 hover:bg-blue-50 p-2 rounded-full"><i class="fas fa-edit"></i></button>
+                            <button class="text-red-500 hover:bg-red-50 p-2 rounded-full"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function getRoleBadge(role) {
+            const map = {
+                'admin': '<span class="role-badge bg-yellow-100 text-yellow-800">מנכ"ל</span>',
+                'ops': '<span class="role-badge bg-blue-100 text-blue-800">תפעול</span>',
+                'purchasing': '<span class="role-badge bg-purple-100 text-purple-800">רכש</span>',
+                'warehouse': '<span class="role-badge bg-orange-100 text-orange-800">מחסן</span>',
+                'driver': '<span class="role-badge bg-slate-100 text-slate-800">נהג</span>',
+                'client': '<span class="role-badge bg-green-100 text-green-800">לקוח</span>'
+            };
+            return map[role] || role;
+        }
+
+        window.filterUsers = () => {
+            const q = document.getElementById('searchUser').value.toLowerCase();
+            renderTable(usersList.filter(u => u.name.toLowerCase().includes(q) || u.email.includes(q)));
+        };
+
+        // Init
+        loadUsers();
+
     </script>
 </body>
 </html>
