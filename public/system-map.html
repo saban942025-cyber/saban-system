@@ -2,87 +2,114 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>SabanOS | מפת מערכת (הספר הדיגיטלי)</title>
+    <title>SabanOS | ספר המערכת (System Map)</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>body { background: #f8fafc; font-family: system-ui; }</style>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: #f0f4f8; font-family: system-ui, -apple-system, sans-serif; color: #1e293b; }
+        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; transition: transform 0.2s; }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        .badge { font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 99px; text-transform: uppercase; }
+        .badge-core { background: #dbeafe; color: #1e40af; }
+        .badge-logic { background: #f3e8ff; color: #6b21a8; }
+        .badge-data { background: #fef9c3; color: #854d0e; }
+    </style>
 </head>
-<body class="p-10">
-    <div class="max-w-5xl mx-auto">
-        <header class="mb-8 border-b pb-4">
-            <h1 class="text-3xl font-bold text-slate-800"><i class="fas fa-book"></i> SabanOS - ספר המערכת</h1>
-            <p class="text-slate-500">תיעוד טכני ומבצעי - גרסה 30.0 (Launch Ready)</p>
+<body class="p-8">
+
+    <div class="max-w-6xl mx-auto">
+        
+        <header class="flex justify-between items-end mb-8 border-b border-slate-200 pb-6">
+            <div>
+                <h1 class="text-4xl font-black text-slate-800 tracking-tight">SabanOS <span class="text-blue-600">Documentation</span></h1>
+                <p class="text-slate-500 mt-2 text-lg">מפת התמצאות טכנית ומבצעית | גרסה 30.0</p>
+            </div>
+            <div class="text-left">
+                <div class="text-sm font-bold text-slate-400 uppercase">תאריך עדכון</div>
+                <div class="font-mono text-slate-700">12.12.2025</div>
+            </div>
         </header>
 
-        <div class="grid gap-6">
-            
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                <h2 class="text-xl font-bold text-blue-600 mb-4"><i class="fas fa-layer-group"></i> ליבת המערכת (ממשקים)</h2>
-                <table class="w-full text-sm text-right">
-                    <tr class="bg-slate-50 border-b"><th class="p-3">שם הקובץ</th><th class="p-3">קהל יעד</th><th class="p-3">תפקיד ומהות</th></tr>
-                    <tr class="border-b">
-                        <td class="p-3 font-mono font-bold">index.html</td>
-                        <td class="p-3">כולם</td>
-                        <td class="p-3">שער הכניסה (Gateway). מזהה משתמשים, מבצע Login מאובטח ומנתב ליעד המתאים.</td>
-                    </tr>
-                    <tr class="border-b">
-                        <td class="p-3 font-mono font-bold">client.html</td>
-                        <td class="p-3">לקוחות</td>
-                        <td class="p-3">אפליקציית הלקוח. קטלוג, עגלת קניות, מוח לוגיסטי (התראות משקל/מנוף) וצ'אט מול המשרד.</td>
-                    </tr>
-                    <tr class="border-b">
-                        <td class="p-3 font-mono font-bold">whatsapp-center.html</td>
-                        <td class="p-3">מנהלים/חמ"ל</td>
-                        <td class="p-3">מערכת השליטה (C&C). ניהול צ'אטים, בוט, כרטיסי קשר, וניהול קבוצות והפצות.</td>
-                    </tr>
-                    <tr class="border-b">
-                        <td class="p-3 font-mono font-bold">driver.html</td>
-                        <td class="p-3">נהגים</td>
-                        <td class="p-3">מסופון נהג. קבלת משימות, ניווט (Waze), ואישור מסירה.</td>
-                    </tr>
-                    <tr class="border-b">
-                        <td class="p-3 font-mono font-bold">setup.html</td>
-                        <td class="p-3">מנהל מערכת</td>
-                        <td class="p-3">הקמת משתמשים, עריכת הרשאות, ויצירת "לינק קסם" לכניסה מהירה.</td>
-                    </tr>
-                </table>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+            <div class="space-y-4">
+                <h2 class="text-xl font-bold text-slate-700 flex items-center gap-2"><i class="fas fa-desktop text-blue-500"></i> ממשקים (Frontend)</h2>
+                
+                <div class="card border-l-4 border-blue-500">
+                    <div class="flex justify-between mb-2"><span class="font-mono font-bold text-lg">index.html</span> <span class="badge badge-core">שער כניסה</span></div>
+                    <p class="text-sm text-slate-600">דף ה-Login. מזהה משתמשים (לקוח/עובד), שומר ב-LocalStorage ומנתב ליעד המתאים.</p>
+                </div>
+
+                <div class="card border-l-4 border-green-500">
+                    <div class="flex justify-between mb-2"><span class="font-mono font-bold text-lg">client.html</span> <span class="badge badge-core">אפליקציה</span></div>
+                    <p class="text-sm text-slate-600">אפליקציית הלקוח. כוללת קטלוג, עגלה חכמה, כרטיסי מוצר, וצ'אט מול המשרד.</p>
+                </div>
+
+                <div class="card border-l-4 border-purple-500">
+                    <div class="flex justify-between mb-2"><span class="font-mono font-bold text-lg">whatsapp-center.html</span> <span class="badge badge-core">חמ"ל</span></div>
+                    <p class="text-sm text-slate-600">מרכז השליטה למנהלים. ניהול צ'אטים, קבוצות, בוט, וכרטיסי קשר (CRM).</p>
+                </div>
+
+                <div class="card border-l-4 border-orange-500">
+                    <div class="flex justify-between mb-2"><span class="font-mono font-bold text-lg">setup.html</span> <span class="badge badge-core">ניהול</span></div>
+                    <p class="text-sm text-slate-600">מערכת הקמת משתמשים. יצירת עובדים/לקוחות, ניהול הרשאות ולינקים מהירים.</p>
+                </div>
             </div>
 
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                <h2 class="text-xl font-bold text-purple-600 mb-4"><i class="fas fa-brain"></i> המוח (תיקיית JS)</h2>
-                <table class="w-full text-sm text-right">
-                    <tr class="bg-slate-50 border-b"><th class="p-3">שם הקובץ</th><th class="p-3">תפקיד</th></tr>
-                    <tr class="border-b">
-                        <td class="p-3 font-mono font-bold">smart-contacts.js</td>
-                        <td class="p-3">מייצר את כרטיסי הביקור הקופצים (Popup) עם תמונה, טלפון ותפקיד.</td>
-                    </tr>
-                    <tr class="border-b">
-                        <td class="p-3 font-mono font-bold">saban-brain.js</td>
-                        <td class="p-3">הלוגיקה העסקית. מחשב משקלים, מחליט אם צריך מנוף, ומונע הזמנות הפסד.</td>
-                    </tr>
-                    <tr class="border-b">
-                        <td class="p-3 font-mono font-bold">chatbot-engine.js</td>
-                        <td class="p-3">מנוע הבוט. מפענח שאלות ("מתי מגיע", "צריך היתר") ומשיב אוטומטית.</td>
-                    </tr>
-                    <tr class="border-b">
-                        <td class="p-3 font-mono font-bold">notifications.js</td>
-                        <td class="p-3">אחראי על OneSignal. שולח התראות Push לטלפונים.</td>
-                    </tr>
-                </table>
+            <div class="space-y-4">
+                <h2 class="text-xl font-bold text-slate-700 flex items-center gap-2"><i class="fas fa-brain text-purple-500"></i> מוח (Logic)</h2>
+
+                <div class="card">
+                    <div class="font-mono font-bold text-blue-700 mb-1">chatbot-engine.js</div>
+                    <p class="text-xs text-slate-500 mb-2">מנוע הבוט</p>
+                    <p class="text-sm">מפענח שאלות ("מנוף", "היתר"), שולח התראות דחופות, ומנהל את השיחה האוטומטית.</p>
+                </div>
+
+                <div class="card">
+                    <div class="font-mono font-bold text-blue-700 mb-1">smart-contacts.js</div>
+                    <p class="text-xs text-slate-500 mb-2">כרטיסי קשר</p>
+                    <p class="text-sm">יוצר את ה-Popup המעוצב עם פרטי המשתמש, תמונה וכפתורי חיוג/ווצאף.</p>
+                </div>
+
+                <div class="card">
+                    <div class="font-mono font-bold text-blue-700 mb-1">notifications.js</div>
+                    <p class="text-xs text-slate-500 mb-2">התראות</p>
+                    <p class="text-sm">מנהל את החיבור ל-OneSignal (Push Notifications) לטלפונים.</p>
+                </div>
+
+                <div class="card">
+                    <div class="font-mono font-bold text-blue-700 mb-1">presence.js</div>
+                    <p class="text-xs text-slate-500 mb-2">סטטוס אונליין</p>
+                    <p class="text-sm">משדר "דופק" לשרת כדי להראות מי מחובר בזמן אמת (נקודה ירוקה).</p>
+                </div>
             </div>
 
-            <div class="bg-red-50 p-6 rounded-xl border border-red-200 text-red-800">
-                <h2 class="text-lg font-bold mb-2"><i class="fas fa-trash-alt"></i> הוראות ניקיון (קבצים למחיקה)</h2>
-                <p class="text-sm mb-2">הקבצים הבאים הם גרסאות ישנות או כפולות ומומלץ למחוק אותם כדי למנוע בלבול:</p>
-                <ul class="list-disc list-inside text-sm">
-                    <li>admin-panel2.html (השתמש ב-admin.html או admin-panel.html העדכני)</li>
-                    <li>chat-studio.html (השתמש ב-chat-studio-final.html)</li>
-                    <li>setup2.html (השתמש ב-setup.html החדש)</li>
-                    <li>staff-single.html (אוחד לתוך whatsapp-center)</li>
-                </ul>
+            <div class="space-y-4">
+                <h2 class="text-xl font-bold text-slate-700 flex items-center gap-2"><i class="fas fa-database text-yellow-500"></i> נתונים (Data)</h2>
+
+                <div class="card bg-yellow-50 border-yellow-200">
+                    <div class="font-mono font-bold text-yellow-800 mb-1">templates.json</div>
+                    <p class="text-sm">מאגר התשובות והתסריטים של הבוט. מכיל מילות מפתח ותשובות מוכנות.</p>
+                </div>
+
+                <div class="card bg-yellow-50 border-yellow-200">
+                    <div class="font-mono font-bold text-yellow-800 mb-1">manifest.json</div>
+                    <p class="text-sm">הגדרות האפליקציה (PWA) - אייקון, צבעים ומסך פתיחה לטלפון.</p>
+                </div>
+
+                <div class="bg-red-50 p-4 rounded-xl border border-red-200 mt-8">
+                    <h3 class="font-bold text-red-700 mb-2"><i class="fas fa-broom"></i> קבצים למחיקה (Cleanup)</h3>
+                    <ul class="text-sm text-red-600 list-disc list-inside space-y-1">
+                        <li>setup2.html (השתמש ב-setup.html החדש)</li>
+                        <li>admin-panel2.html (מיותר)</li>
+                        <li>chat-studio.html (גרסה ישנה)</li>
+                        <li>staff-single.html (אוחד)</li>
+                    </ul>
+                </div>
             </div>
 
         </div>
     </div>
+
 </body>
 </html>
