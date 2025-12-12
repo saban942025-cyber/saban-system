@@ -2,23 +2,54 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>SabanConnect | חמ"ל פיקוד v30.5</title>
+    <title>SabanConnect | ווצאף ח.סבן</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <style>
         body { background-color: #d1d7db; font-family: -apple-system, system-ui, sans-serif; height: 100vh; display: flex; overflow: hidden; }
+        
+        /* Sidebar */
         .sidebar { width: 30%; min-width: 360px; background: white; border-left: 1px solid #e9edef; display: flex; flex-direction: column; z-index: 20; }
-        .main-chat { flex: 1; display: flex; flex-direction: column; background-color: #efeae2; background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); position: relative; }
+        .sidebar-tabs { display: flex; border-bottom: 1px solid #e9edef; background: #f0f2f5; }
+        .tab-btn { flex: 1; text-align: center; padding: 15px; cursor: pointer; color: #54656f; font-weight: 500; border-bottom: 3px solid transparent; transition: 0.2s; }
+        .tab-btn.active { color: #008069; border-bottom-color: #008069; background: white; }
+        
+        /* List Items */
         .chat-item { display: flex; align-items: center; padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #f0f2f5; transition: 0.2s; position: relative; }
         .chat-item:hover { background: #f5f6f6; }
         .chat-item.active { background: #f0f2f5; border-right: 4px solid #00a884; }
+        .group-actions { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); display: none; }
+        .chat-item:hover .group-actions { display: flex; gap: 5px; }
+
+        /* Main Chat */
+        .main-chat { flex: 1; display: flex; flex-direction: column; background-color: #efeae2; background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); position: relative; }
+        
+        /* Messages */
         .msg { max-width: 65%; padding: 8px 12px; border-radius: 8px; font-size: 14px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); margin-bottom: 8px; word-wrap: break-word; background: white; align-self: flex-start; }
         .msg.staff { background: #d9fdd3; align-self: flex-end; }
         .msg.internal { background: #fff9c4; align-self: center; font-size: 12px; border: 1px dashed orange; text-align: center; }
-        .tab-btn { flex: 1; text-align: center; padding: 15px; cursor: pointer; color: #54656f; font-weight: 500; border-bottom: 3px solid transparent; }
-        .tab-btn.active { color: #008069; border-bottom-color: #008069; background: white; }
+        .msg:hover .msg-tools { opacity: 1; }
+        
+        /* Tools inside message (Forward) */
+        .msg-tools { position: absolute; top: 0; left: -30px; opacity: 0; transition: 0.2s; }
+        .btn-forward { width: 24px; height: 24px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer; color: #54656f; }
+        .btn-forward:hover { color: #00a884; }
+
+        /* Smart Popups (@ / #) */
+        .smart-popup { position: absolute; bottom: 70px; left: 20px; width: 250px; background: white; border-radius: 10px; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; display: none; z-index: 50; overflow: hidden; max-height: 200px; overflow-y: auto; }
+        .smart-item { display: flex; align-items: center; gap: 10px; padding: 10px; cursor: pointer; border-bottom: 1px solid #f0f2f5; }
+        .smart-item:hover { background: #f0f2f5; }
+        .tag-mention { background-color: #e6fffa; color: #008069; padding: 0 4px; border-radius: 4px; font-weight: bold; }
+        .tag-product { background-color: #fff7ed; color: #c2410c; padding: 0 4px; border-radius: 4px; font-weight: bold; }
+
+        /* Modals */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; display: none; justify-content: center; align-items: center; }
+        .modal-overlay.open { display: flex; }
+        .modal-box { background: white; width: 400px; border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); max-height: 80vh; overflow-y: auto; }
+        .target-item { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #f0f2f5; cursor: pointer; }
+        .target-item:hover { background: #f5f6f6; }
     </style>
 </head>
 <body>
@@ -29,40 +60,43 @@
                 <img src="https://ui-avatars.com/api/?name=Admin&background=00a884&color=fff" class="w-10 h-10 rounded-full border-2 border-white">
                 <div><span class="font-bold text-gray-700 block text-sm">חמ"ל ראשי</span><span class="text-[10px] text-green-600 font-bold">● אונליין</span></div>
             </div>
-            <div class="flex gap-2">
-                <button onclick="openGroupModal()" class="w-8 h-8 rounded-full bg-white hover:bg-gray-200 flex items-center justify-center text-gray-600 shadow-sm"><i class="fas fa-plus"></i></button>
-            </div>
+            <button onclick="openGroupModal()" class="w-8 h-8 rounded-full bg-white hover:bg-gray-200 flex items-center justify-center text-gray-600 shadow-sm" title="צור קבוצה"><i class="fas fa-users"></i></button>
         </div>
 
-        <div class="flex border-b bg-gray-50">
+        <div class="sidebar-tabs">
             <div onclick="switchTab('chats')" class="tab-btn active" id="tab-chats">💬 לקוחות</div>
             <div onclick="switchTab('groups')" class="tab-btn" id="tab-groups">📢 קבוצות</div>
         </div>
 
-        <div id="chatsList" class="flex-1 overflow-y-auto bg-white"></div>
-        <div id="groupsList" class="flex-1 overflow-y-auto bg-white hidden"></div>
+        <div id="chatsList" class="flex-1 overflow-y-auto bg-white custom-scroll"></div>
+        <div id="groupsList" class="flex-1 overflow-y-auto bg-white hidden custom-scroll"></div>
     </div>
 
     <div id="chatArea" class="main-chat hidden">
         <div class="h-16 bg-[#f0f2f5] border-b flex justify-between items-center px-4 shadow-sm z-10 shrink-0">
             <div class="flex items-center gap-3 cursor-pointer" onclick="openContactCard(event)">
                 <img id="activeAvatar" src="" class="w-10 h-10 rounded-full border border-gray-300 object-cover">
-                <div>
-                    <div id="activeName" class="font-bold text-gray-800"></div>
-                    <div id="activeDesc" class="text-xs text-gray-500">לחץ לפרטי קשר</div>
-                </div>
+                <div><div id="activeName" class="font-bold text-gray-800"></div><div id="activeDesc" class="text-xs text-gray-500"></div></div>
             </div>
-            <button onclick="toggleBot()" id="botBtn" class="bg-white px-3 py-1 rounded text-xs font-bold shadow-sm hover:bg-gray-50"><i class="fas fa-robot text-green-600"></i> בוט פעיל</button>
+            <button onclick="toggleBot()" id="botBtn" class="bg-white px-3 py-1 rounded text-xs font-bold shadow-sm hover:bg-gray-50 transition"><i class="fas fa-robot text-green-600"></i> בוט פעיל</button>
         </div>
 
         <div id="messagesBox" class="flex-1 overflow-y-auto flex flex-col p-4 gap-2"></div>
 
+        <div id="mentionPopup" class="smart-popup"><div class="bg-gray-50 p-2 text-xs font-bold border-b">בחר לתיוג (@):</div><div id="mentionList"></div></div>
+        <div id="productPopup" class="smart-popup"><div class="bg-gray-50 p-2 text-xs font-bold border-b">בחר מוצר (#):</div><div id="productList"></div></div>
+
         <div class="bg-[#f0f2f5] p-3 flex items-center gap-2 border-t relative shrink-0">
             <i onclick="toggleInternalMode()" id="internalBtn" class="fas fa-eye-slash text-xl text-gray-400 cursor-pointer p-2" title="הערה פנימית"></i>
-            <div class="flex-1 relative"><input type="text" id="msgInput" class="w-full p-3 rounded-xl border-none outline-none shadow-sm text-sm" placeholder="הקלד הודעה..." onkeydown="if(event.key === 'Enter') sendMessage()"></div>
+            <i onclick="sendUrgentPush()" class="fas fa-bell text-xl text-red-500 cursor-pointer p-2" title="התראה דחופה"></i>
+            <div class="flex-1 relative"><input type="text" id="msgInput" class="w-full p-3 rounded-xl border-none outline-none shadow-sm text-sm" placeholder="הקלד הודעה... (@ לתיוג, # למוצר)" oninput="handleInput(this)" onkeydown="if(event.key === 'Enter') sendMessage()"></div>
             <button onclick="sendMessage()" class="w-10 h-10 flex items-center justify-center bg-[#00a884] text-white rounded-full shadow hover:bg-[#008f6f]"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
+
+    <div id="groupModal" class="modal-overlay"><div class="modal-box"><h2 class="text-lg font-bold mb-4" id="groupModalTitle">קבוצה חדשה</h2><form onsubmit="handleGroupSubmit(event)" class="space-y-3"><input type="hidden" id="editGroupId"><input type="text" id="gName" class="w-full p-2 border rounded text-sm" placeholder="שם הקבוצה" required><input type="text" id="gImg" class="w-full p-2 border rounded text-sm" placeholder="תמונה (URL)"><input type="text" id="gDesc" class="w-full p-2 border rounded text-sm" placeholder="תיאור"><div class="border p-2 rounded max-h-40 overflow-y-auto bg-gray-50"><div class="text-xs font-bold mb-2">משתתפים:</div><div id="usersForGroup" class="space-y-1"></div></div><div class="flex justify-end gap-2 mt-4"><button type="button" onclick="closeModal('groupModal')" class="text-gray-500 text-sm font-bold">ביטול</button><button type="submit" class="bg-[#00a884] text-white px-4 py-2 rounded text-sm font-bold">שמור</button></div></form></div></div>
+    
+    <div id="forwardModal" class="modal-overlay"><div class="modal-box h-[500px] flex flex-col"><div class="flex justify-between items-center mb-4 border-b pb-2"><h2 class="text-lg font-bold">העברת הודעה</h2><button onclick="closeModal('forwardModal')"><i class="fas fa-times"></i></button></div><div class="bg-gray-100 p-3 rounded-lg text-sm text-gray-600 mb-4 italic truncate" id="previewMsg"></div><input type="text" placeholder="חפש יעד..." oninput="filterForwardList(this.value)" class="w-full p-2 border rounded mb-2 text-sm"><div id="forwardList" class="flex-1 overflow-y-auto space-y-1"></div></div></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -70,65 +104,102 @@
         import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { SabanPush } from './js/notifications.js';
         import { SmartContacts } from './js/smart-contacts.js';
-        import { SabanChatbot } from './js/chatbot-engine.js'; // הבוט המאוחד
 
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
-        
+
         let activeChatId = null;
-        let activeType = 'private';
+        let activeType = 'private'; 
         let internalMode = false;
-        let activeUser = null; // ישמור את האובייקט המלא לכרטיס הקשר
         let botEnabled = true;
+        let activeUserData = null;
+        
+        let allUsers = [];
+        let allProducts = [];
+        let allChats = [];
+        let msgToForward = null;
 
         SabanPush.init('admin', 'admin_rami');
+        loadData();
 
-        // --- Lists ---
+        async function loadData() {
+            const uSnap = await getDocs(collection(db, "users"));
+            allUsers = uSnap.docs.map(d => ({id: d.id, ...d.data()}));
+            const pSnap = await getDocs(collection(db, "products"));
+            allProducts = pSnap.docs.map(d => ({id: d.id, ...d.data()}));
+            renderUserSelection([]);
+        }
+
+        // --- LISTS ---
+        window.switchTab = (tab) => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            document.getElementById('chatsList').classList.toggle('hidden', tab !== 'chats');
+            document.getElementById('groupsList').classList.toggle('hidden', tab !== 'groups');
+        };
+
+        // Chats
         onSnapshot(query(collection(db, "chat_sessions"), orderBy("lastActivity", "desc")), (snap) => {
             const list = document.getElementById('chatsList'); list.innerHTML = "";
+            allChats = [];
             snap.forEach(d => {
                 const c = d.data();
+                allChats.push({id: d.id, name: c.userName, type: 'private', img: `https://ui-avatars.com/api/?name=${c.userName}`});
                 const active = activeChatId === d.id ? 'active' : '';
-                list.innerHTML += `<div onclick="openChat('${d.id}', '${c.userName}', 'private')" class="chat-item ${active}"><img src="https://ui-avatars.com/api/?name=${c.userName}&background=random&color=fff" class="w-10 h-10 rounded-full ml-3"><div class="flex-1 min-w-0"><div class="flex justify-between"><span class="font-bold text-sm">${c.userName}</span><span class="text-[10px] text-gray-400">היום</span></div><div class="text-xs text-gray-500 truncate">${c.lastMessage}</div></div></div>`;
+                list.innerHTML += `<div onclick="openChat('${d.id}', '${c.userName}', 'private')" class="chat-item ${active}"><img src="https://ui-avatars.com/api/?name=${c.userName}&background=random&color=fff" class="w-10 h-10 rounded-full ml-3"><div class="flex-1 min-w-0"><div class="flex justify-between"><span class="font-bold text-sm">${c.userName}</span><span class="text-[10px] text-gray-400">${formatTime(c.lastActivity)}</span></div><div class="text-xs text-gray-500 truncate">${c.lastMessage}</div></div></div>`;
             });
         });
 
-        // --- Open Chat & Fetch User Data ---
-        window.openChat = async (id, name, type) => {
+        // Groups
+        onSnapshot(collection(db, "groups"), (snap) => {
+            const list = document.getElementById('groupsList'); list.innerHTML = "";
+            snap.forEach(d => {
+                const g = d.data();
+                allChats.push({id: d.id, name: g.name, type: 'group', img: g.image});
+                const active = activeChatId === d.id ? 'active' : '';
+                const gData = encodeURIComponent(JSON.stringify({id: d.id, ...g}));
+                list.innerHTML += `<div onclick="openChat('${d.id}', '${g.name}', 'group', '${g.image}')" class="chat-item ${active} group"><img src="${g.image||'https://via.placeholder.com/40'}" class="w-10 h-10 rounded-full ml-3 object-cover"><div class="flex-1 min-w-0"><div class="font-bold text-sm">${g.name}</div><div class="text-xs text-gray-500 truncate">${g.desc||''}</div></div><div class="group-actions bg-white shadow rounded p-1" onclick="event.stopPropagation()"><button onclick="editGroup('${gData}')" class="text-blue-500 p-1"><i class="fas fa-pen"></i></button><button onclick="deleteGroup('${d.id}')" class="text-red-500 p-1"><i class="fas fa-trash"></i></button></div></div>`;
+            });
+        });
+
+        // --- CHAT ENGINE ---
+        window.openChat = async (id, name, type, img) => {
             activeChatId = id; activeType = type;
             document.getElementById('chatArea').classList.remove('hidden');
             document.getElementById('activeName').innerText = name;
-            
-            // 1. ניקוי ראשוני
-            activeUser = null;
-            document.getElementById('activeAvatar').src = `https://ui-avatars.com/api/?name=${name}`;
-            
-            // 2. שליפת נתונים אמיתיים מה-DB לכרטיס קשר
-            if (type === 'private') {
+            document.getElementById('activeDesc').innerText = type==='group'?'קבוצה':'לקוח';
+            document.getElementById('activeAvatar').src = img || `https://ui-avatars.com/api/?name=${name}&background=random&color=fff`;
+
+            // שליפת פרטי כרטיס קשר
+            if(type === 'private') {
                 try {
                     const uSnap = await getDoc(doc(db, "users", id));
-                    if (uSnap.exists()) {
-                        activeUser = uSnap.data();
-                        document.getElementById('activeAvatar').src = activeUser.avatar || document.getElementById('activeAvatar').src;
-                        document.getElementById('activeDesc').innerText = activeUser.role === 'client' ? 'לקוח רשום' : activeUser.role;
-                    } else {
-                        // Fallback
-                        activeUser = { name: name, role: 'לקוח מזדמן', phone: '', type: 'client', avatar: document.getElementById('activeAvatar').src };
-                    }
-                } catch(e) { console.error(e); }
+                    if(uSnap.exists()) activeUserData = uSnap.data();
+                    else activeUserData = { name, role: 'לקוח', phone: '', uid: id, type: 'client' };
+                } catch(e) {}
+            } else {
+                activeUserData = { name, role: 'קבוצה', phone: '', type: 'group' };
             }
 
-            // 3. טעינת הודעות
-            const coll = `chat_sessions/${id}/messages`;
+            const coll = type==='group' ? `groups/${id}/messages` : `chat_sessions/${id}/messages`;
             onSnapshot(query(collection(db, coll), orderBy("createdAt", "asc")), (snap) => {
                 const box = document.getElementById('messagesBox');
                 box.innerHTML = snap.docs.map(d => {
                     const m = d.data();
-                    const style = m.role === 'internal' ? 'msg internal' : (m.role === 'staff' ? 'msg staff' : 'msg');
-                    const lock = m.role === 'internal' ? '🔒 ' : '';
-                    return `<div class="${style}">${lock}${m.text}<div class="text-[9px] text-gray-400 mt-1 text-left">${new Date(m.createdAt?.seconds*1000).toLocaleTimeString()}</div></div>`;
+                    let txt = m.text.replace(/@([\u0590-\u05FF\w\s]+)/g, '<span class="tag-mention">@$1</span>').replace(/\[(.*?)\]/g, '<span class="tag-product">$1</span>');
+                    const side = m.role==='staff'?'bg-[#d9fdd3] self-end':'bg-white self-start';
+                    const tools = `<div class="msg-tools"><div onclick="initForward('${encodeURIComponent(m.text)}')" class="btn-forward"><i class="fas fa-share"></i></div></div>`;
+                    
+                    if(m.role==='internal') return `<div class="msg internal">🔒 ${txt}</div>`;
+                    
+                    return `<div class="msg ${side}">
+                        <div class="text-xs font-bold text-gray-500 mb-1 flex justify-between"><span>${m.sender}</span>${m.forwarded?'<span class="text-[9px] italic">↪️ הועבר</span>':''}</div>
+                        <div>${txt}</div>
+                        <div class="text-[9px] text-gray-400 text-left mt-1">${formatTime(m.createdAt)}</div>
+                        ${tools}
+                    </div>`;
                 }).join('');
                 box.scrollTop = box.scrollHeight;
             });
@@ -138,43 +209,75 @@
             const txt = document.getElementById('msgInput').value; if(!txt || !activeChatId) return;
             document.getElementById('msgInput').value = '';
             
-            const role = internalMode ? 'internal' : 'staff';
-            await addDoc(collection(db, `chat_sessions/${activeChatId}/messages`), { text: txt, role: role, sender: "רמי", createdAt: serverTimestamp() });
+            const coll = activeType==='group' ? `groups/${activeChatId}/messages` : `chat_sessions/${activeChatId}/messages`;
+            await addDoc(collection(db, coll), { text: txt, role: internalMode?'internal':'staff', sender: "רמי", createdAt: serverTimestamp() });
             
-            if (activeType === 'private' && !internalMode) {
-                await updateDoc(doc(db, "chat_sessions", activeChatId), { lastMessage: `נציג: ${txt}`, lastActivity: serverTimestamp(), isBotActive: false });
+            if(activeType==='private') updateDoc(doc(db, "chat_sessions", activeChatId), { lastMessage: txt, lastActivity: serverTimestamp(), isBotActive: botEnabled });
+        };
+
+        // --- SMART INPUT ---
+        window.handleInput = (el) => {
+            const val = el.value;
+            if(val.includes('@')) {
+                const term = val.split('@').pop().toLowerCase();
+                const matches = allUsers.filter(u => u.name.toLowerCase().includes(term));
+                showPopup('mention', matches, u => { el.value = val.replace(/@\w*$/, `@${u.name} `); closePopups(); });
+            } else if(val.includes('#')) {
+                const term = val.split('#').pop().toLowerCase();
+                const matches = allProducts.filter(p => (p.core?.name||p.title||"").toLowerCase().includes(term));
+                showPopup('product', matches, p => { el.value = val.replace(/#\w*$/, `[${p.core?.name||p.title}] `); closePopups(); });
+            } else closePopups();
+        };
+
+        function showPopup(type, items, cb) {
+            const pop = document.getElementById(type+'Popup');
+            const list = document.getElementById(type+'List');
+            if(!items.length) { pop.style.display='none'; return; }
+            pop.style.display='block';
+            list.innerHTML = items.map((i, idx) => `<div class="smart-item" data-idx="${idx}"><img src="${i.avatar||i.rich?.image||'https://via.placeholder.com/30'}" class="w-8 h-8 rounded"><div class="text-sm font-bold">${i.name||i.core?.name||i.title}</div></div>`).join('');
+            list.querySelectorAll('.smart-item').forEach(el => el.onclick = () => cb(items[el.dataset.idx]));
+        }
+        function closePopups() { document.querySelectorAll('.smart-popup').forEach(p=>p.style.display='none'); document.getElementById('msgInput').focus(); }
+
+        // --- ACTIONS ---
+        window.openContactCard = (e) => { if(activeUserData) SmartContacts.show(e, activeUserData); };
+        window.toggleBot = () => { botEnabled=!botEnabled; document.getElementById('botBtn').innerHTML = botEnabled ? '<i class="fas fa-robot text-green-600"></i> בוט פעיל' : '<i class="fas fa-robot text-red-500"></i> בוט כבוי'; };
+        window.toggleInternalMode = () => { internalMode=!internalMode; document.getElementById('msgInput').placeholder = internalMode?"הערה פנימית...":"הקלד..."; document.getElementById('internalBtn').className = internalMode?"fas fa-eye-slash text-xl text-orange-500 p-2":"fas fa-eye text-xl text-gray-400 p-2"; };
+        window.sendUrgentPush = async () => {
+            const msg = prompt("תוכן התראה דחופה:"); if(msg) {
+                await SabanPush.send(activeChatId, "⚠️ הודעה דחופה", msg);
+                await addDoc(collection(db, `chat_sessions/${activeChatId}/messages`), { text: `🔔 נשלחה התראה: ${msg}`, role: 'internal', sender: 'System', createdAt: serverTimestamp() });
             }
-            if(internalMode) window.toggleInternalMode();
         };
 
-        // --- Features ---
-        window.openContactCard = (e) => {
-            if (activeUser) SmartContacts.show(e, activeUser);
-        };
-        
-        window.toggleBot = () => {
-            botEnabled = !botEnabled;
-            const btn = document.getElementById('botBtn');
-            btn.innerHTML = botEnabled ? '<i class="fas fa-robot text-green-600"></i> בוט פעיל' : '<i class="fas fa-robot text-red-500"></i> בוט כבוי';
-            // כאן אפשר לעדכן ב-DB אם רוצים פרסיסטנטיות
-        };
-
-        window.toggleInternalMode = () => { 
-            internalMode = !internalMode; 
-            document.getElementById('msgInput').placeholder = internalMode ? "הערה פנימית..." : "הקלד..."; 
-            document.getElementById('internalBtn').className = internalMode ? "fas fa-eye-slash text-xl text-orange-500 p-2" : "fas fa-eye text-xl text-gray-400 p-2"; 
+        // --- GROUPS ---
+        window.openGroupModal = () => { document.getElementById('groupModalTitle').innerText="קבוצה חדשה"; document.getElementById('editGroupId').value=""; document.querySelector('form').reset(); document.getElementById('groupModal').classList.add('open'); };
+        window.editGroup = (s) => { const g=JSON.parse(decodeURIComponent(s)); document.getElementById('groupModalTitle').innerText="עריכה"; document.getElementById('editGroupId').value=g.id; document.getElementById('gName').value=g.name; document.getElementById('gImg').value=g.image; document.getElementById('gDesc').value=g.desc; document.getElementById('groupModal').classList.add('open'); };
+        window.deleteGroup = async (id) => { if(confirm("למחוק?")) await deleteDoc(doc(db, "groups", id)); };
+        window.handleGroupSubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('editGroupId').value;
+            const data = { name: document.getElementById('gName').value, image: document.getElementById('gImg').value, desc: document.getElementById('gDesc').value, lastUpdated: serverTimestamp() };
+            if(id) await updateDoc(doc(db,"groups",id), data); else await addDoc(collection(db,"groups"), {...data, createdAt: serverTimestamp()});
+            closeModal('groupModal');
         };
 
-        window.switchTab = (tab) => {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(`tab-${tab}`).classList.add('active');
-            document.getElementById('chatsList').classList.toggle('hidden', tab !== 'chats');
-            document.getElementById('groupsList').classList.toggle('hidden', tab !== 'groups');
+        // --- FORWARD ---
+        window.initForward = (txt) => { msgToForward = decodeURIComponent(txt); document.getElementById('previewMsg').innerText=msgToForward; renderForwardList(allChats); document.getElementById('forwardModal').classList.add('open'); };
+        function renderForwardList(l) { document.getElementById('forwardList').innerHTML = l.map(c=>`<div onclick="execForward('${c.id}','${c.type}')" class="target-item"><img src="${c.img}" class="w-8 h-8 rounded ml-2"><div><div class="font-bold text-sm">${c.name}</div><div class="text-xs text-gray-400">${c.type}</div></div></div>`).join(''); }
+        window.filterForwardList = (v) => renderForwardList(allChats.filter(c=>c.name.toLowerCase().includes(v.toLowerCase())));
+        window.execForward = async (id, type) => {
+            if(!confirm("להעביר?")) return;
+            const coll = type==='group' ? `groups/${id}/messages` : `chat_sessions/${id}/messages`;
+            await addDoc(collection(db, coll), { text: msgToForward, role: 'staff', sender: "רמי (הועבר)", forwarded: true, createdAt: serverTimestamp() });
+            closeModal('forwardModal');
         };
 
-        window.handleLogout = async () => {
-            if(confirm("להתנתק?")) { localStorage.clear(); await signOut(auth); location.href="index.html"; }
-        };
+        // Utils
+        window.closeModal = (id) => document.getElementById(id).classList.remove('open');
+        function formatTime(ts) { return ts ? new Date(ts.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : ''; }
+        window.handleLogout = async () => { if(confirm("לצאת?")) { localStorage.clear(); await signOut(auth); location.href="index.html"; } };
+        function renderUserSelection(ids) { document.getElementById('usersForGroup').innerHTML = allUsers.map(u=>`<label class="flex justify-between p-2 hover:bg-gray-50 border-b"><div class="flex gap-2"><img src="${u.avatar}" class="w-6 h-6 rounded"><span>${u.name}</span></div><input type="checkbox" class="accent-green-600"></label>`).join(''); }
 
     </script>
 </body>
