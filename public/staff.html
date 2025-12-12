@@ -2,99 +2,30 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>SabanOS | מסוף מחסן</title>
+    <title>SabanOS | מסופון מחסן</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-gray-900 text-white p-4 font-sans">
-    
-    <header class="flex justify-between items-center mb-6 border-b border-gray-700 pb-4">
-        <div>
-            <h1 class="text-2xl font-bold text-yellow-400">מסוף ליקוט (WMS)</h1>
-            <div class="text-xs text-gray-400" id="staffName">אורן - סניף החרש</div>
-        </div>
-        <div class="flex gap-2">
-            <button onclick="setFilter('all')" class="bg-gray-700 px-3 py-1 rounded text-xs hover:bg-gray-600 filter-btn active">הכל</button>
-            <button onclick="setFilter('harash')" class="bg-gray-700 px-3 py-1 rounded text-xs hover:bg-gray-600 filter-btn">החרש</button>
-            <button onclick="setFilter('talmid')" class="bg-gray-700 px-3 py-1 rounded text-xs hover:bg-gray-600 filter-btn">התלמיד</button>
-        </div>
-    </header>
-
+<body class="bg-gray-900 text-white p-4">
+    <h1 class="text-2xl font-bold text-yellow-400 mb-4">משימות ליקוט</h1>
     <div id="tasks" class="space-y-4"></div>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, query, where, onSnapshot, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        
-        const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
-        let currentFilter = 'all'; // Default
-
-        const q = query(collection(db, "orders"), where("status", "==", "picking"));
-        
-        onSnapshot(q, (snap) => {
-            const container = document.getElementById('tasks');
-            container.innerHTML = '';
-            
-            if(snap.empty) {
-                container.innerHTML = "<div class='text-gray-500 text-center mt-10'>אין משימות ליקוט.</div>";
-                return;
-            }
-
-            snap.forEach(d => {
+        onSnapshot(query(collection(db, "orders"), where("status", "==", "picking")), (snap) => {
+            const div = document.getElementById('tasks');
+            if(snap.empty) { div.innerHTML = "אין עבודה כרגע 👍"; return; }
+            div.innerHTML = snap.docs.map(d => {
                 const o = d.data();
-                // Mock logic: If items > 5 -> Harash, else -> Talmid (just for demo)
-                const branch = o.items && o.items.length > 5 ? 'harash' : 'talmid'; 
-                
-                if (currentFilter !== 'all' && currentFilter !== branch) return;
-
-                const branchBadge = branch === 'harash' ? '<span class="bg-blue-900 text-blue-200 text-[10px] px-2 rounded">החרש</span>' : '<span class="bg-purple-900 text-purple-200 text-[10px] px-2 rounded">התלמיד</span>';
-
-                container.innerHTML += `
-                <div class="bg-gray-800 p-5 rounded-xl border border-gray-700 shadow-lg">
-                    <div class="flex justify-between mb-3 border-b border-gray-700 pb-2">
-                        <div>
-                            <h2 class="text-lg font-bold">${o.clientName}</h2>
-                            <span class="text-xs text-gray-400">${o.project}</span>
-                        </div>
-                        <div class="text-left">
-                            ${branchBadge}
-                            <div class="text-xs font-mono mt-1 text-green-400">#${d.id.slice(0,4)}</div>
-                        </div>
-                    </div>
-                    <ul class="mb-4 space-y-2 text-sm">
-                        ${o.items ? o.items.map(i => `<li class="flex justify-between border-b border-gray-700/50 pb-1"><span>${i.name}</span><b class="text-yellow-400">x${i.qty}</b></li>`).join('') : 'אין פריטים'}
-                    </ul>
-                    <button onclick="window.finishPick('${d.id}')" class="w-full bg-green-600 py-3 rounded-lg font-bold hover:bg-green-500 transition flex justify-center items-center gap-2">
-                        <i class="fas fa-check"></i> סיום ליקוט
-                    </button>
+                return `<div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                    <h2 class="font-bold">${o.clientName}</h2>
+                    <ul class="text-sm my-2 space-y-1">${o.items ? o.items.map(i=>`<li>⬜ ${i.name} x${i.qty}</li>`).join('') : ''}</ul>
+                    <button onclick="finish('${d.id}')" class="w-full bg-green-600 py-2 rounded font-bold">סיום ליקוט (לנהג)</button>
                 </div>`;
-            });
+            }).join('');
         });
-
-        window.finishPick = async (id) => {
-            if(confirm("סיימת ללקט? ההזמנה תעבור לנהג.")) {
-                await updateDoc(doc(db, "orders", id), { status: "loaded" });
-            }
-        };
-
-        window.setFilter = (filter) => {
-            currentFilter = filter;
-            document.querySelectorAll('.filter-btn').forEach(b => {
-                b.classList.remove('bg-blue-600', 'text-white');
-                b.classList.add('bg-gray-700');
-            });
-            event.target.classList.remove('bg-gray-700');
-            event.target.classList.add('bg-blue-600', 'text-white');
-            // Re-trigger snapshot logic implicitly by variable check inside snapshot (or reload)
-            // For simplicity in this structure, just wait for next update or force reload.
-            // In a real app, we'd refactor the render function out. Here, simple reload works or just wait.
-            // Let's force a reload for the demo to be clean:
-            location.reload(); 
-            // Note: In production, better to separate render logic.
-        };
+        window.finish = (id) => updateDoc(doc(db, "orders", id), { status: "shipping" });
     </script>
 </body>
 </html>
