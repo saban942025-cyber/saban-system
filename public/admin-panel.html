@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SabanOS Admin | Stable v26.1</title>
+    <title>SabanOS Admin | AI Catalog v26.3 (Keys Updated)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -45,7 +45,7 @@
             </div>
             <div>
                 <h1 class="font-bold text-lg leading-tight">SabanOS Catalog</h1>
-                <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">AI Stable v26.1</span>
+                <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">AI Stable v26.3</span>
             </div>
         </div>
         <div class="flex gap-2">
@@ -99,9 +99,27 @@
 
                     <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
                         <h3 class="text-xs font-bold text-gray-400 uppercase mb-4"><i class="fas fa-images"></i> מדיה</h3>
-                        <div class="mb-3"><label class="text-[10px] text-blue-500 font-bold block mb-1">תמונה ראשית (URL)</label><input type="text" id="image1" class="w-full rounded p-2 text-xs border-blue-200" placeholder="הדבק קישור תמונה..." oninput="updatePreview()"></div>
-                        <div class="mb-3"><label class="text-[10px] text-purple-500 font-bold block mb-1">תמונה משנית</label><input type="text" id="image2" class="w-full rounded p-2 text-xs border-purple-200" placeholder="הדבק קישור תמונה..." oninput="updatePreview()"></div>
-                        <div><label class="text-[10px] text-red-500 font-bold block mb-1">וידאו (YouTube)</label><input type="text" id="video" class="w-full rounded p-2 text-xs border-red-200" placeholder="הדבק קישור..." oninput="updatePreview()"></div>
+                        <div class="mb-3">
+                            <label class="text-[10px] text-blue-500 font-bold block mb-1">תמונה ראשית (Google)</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="image1" class="flex-1 rounded p-2 text-xs border-blue-200" placeholder="URL..." oninput="updatePreview()">
+                                <button onclick="searchImage(1)" class="bg-blue-50 text-blue-600 p-2 rounded border border-blue-200 hover:bg-blue-100"><i class="fas fa-search"></i></button>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="text-[10px] text-purple-500 font-bold block mb-1">תמונה משנית</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="image2" class="flex-1 rounded p-2 text-xs border-purple-200" placeholder="URL..." oninput="updatePreview()">
+                                <button onclick="searchImage(2)" class="bg-purple-50 text-purple-600 p-2 rounded border border-purple-200 hover:bg-purple-100"><i class="fas fa-search"></i></button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-red-500 font-bold block mb-1">וידאו (YouTube)</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="video" class="flex-1 rounded p-2 text-xs border-red-200" placeholder="URL..." oninput="updatePreview()">
+                                <button onclick="searchVideo()" class="bg-red-50 text-red-600 p-2 rounded border border-red-200 hover:bg-red-100"><i class="fab fa-youtube"></i></button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -122,9 +140,9 @@
                     <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm h-[320px] flex flex-col">
                         <h3 class="text-xs font-bold text-gray-400 uppercase mb-2"><i class="fas fa-file-alt"></i> תוכן עשיר</h3>
                         <div class="flex-1 overflow-y-auto pr-1 space-y-3">
-                            <div><label class="text-[10px] text-gray-500 font-bold">תיאור</label><textarea id="description" rows="3" class="w-full rounded p-2 text-xs" oninput="updatePreview()"></textarea></div>
-                            <div><label class="text-[10px] text-gray-500 font-bold">יישום</label><textarea id="application" rows="3" class="w-full rounded p-2 text-xs" oninput="updatePreview()"></textarea></div>
-                            <div><label class="text-[10px] text-gray-500 font-bold">תכונות</label><textarea id="features" rows="3" class="w-full rounded p-2 text-xs" oninput="updatePreview()"></textarea></div>
+                            <div><label class="text-[10px] font-bold text-gray-500">תיאור</label><textarea id="description" rows="3" class="w-full rounded p-2 text-xs" oninput="updatePreview()"></textarea></div>
+                            <div><label class="text-[10px] font-bold text-gray-500">יישום</label><textarea id="application" rows="3" class="w-full rounded p-2 text-xs" oninput="updatePreview()"></textarea></div>
+                            <div><label class="text-[10px] font-bold text-gray-500">תכונות</label><textarea id="features" rows="3" class="w-full rounded p-2 text-xs" oninput="updatePreview()"></textarea></div>
                         </div>
                     </div>
                 </div>
@@ -141,6 +159,16 @@
         </div>
     </div>
 
+    <div id="mediaModal" class="modal-overlay hidden fixed inset-0 bg-black/80 z-[100] flex justify-center items-center">
+        <div class="bg-white w-[800px] h-[600px] rounded-xl flex flex-col overflow-hidden">
+            <div class="p-4 border-b flex justify-between items-center bg-gray-50">
+                <h3 class="font-bold">בחר תמונה</h3>
+                <button onclick="document.getElementById('mediaModal').classList.add('hidden')" class="text-gray-500"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="mediaGrid" class="flex-1 overflow-y-auto p-4 grid grid-cols-3 gap-4 bg-gray-100"></div>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, getDocs, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -150,13 +178,19 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Keys embedded securely for client-side usage
-        const GEMINI_KEY = "AIzaSyAdfGVrmr90Mp9ZhNMItD81iaE8OipKwz0"; 
+        // --- מפתחות הזהב (מעודכנים) ---
+        const API_KEYS = {
+            googleSearch: "AIzaSyDLkShn6lBBew-PJJWtzvAe_14UF9Kv-QI", // המפתח החדש ששלחת לחיפוש
+            gemini: "AIzaSyAdfGVrmr90Mp9ZhNMItD81iaE8OipKwz0"
+        };
         
-        // Placeholder Safe Image (1x1 gray pixel)
-        const NO_IMG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+        // מזהה מנוע החיפוש (אם זה יכשל, נצטרך גם את ה-CX שמתאים למפתח החדש)
+        // בינתיים משתמש בקיים
+        const SEARCH_CX = "1340c66f5e73a4076";
 
+        const NO_IMG = "https://via.placeholder.com/150?text=No+Image";
         let products = [];
+        let currentMediaType = null;
 
         // --- AI ENGINE ---
         window.runAI = async () => {
@@ -168,39 +202,90 @@
             
             const prompt = `You are a logistics expert. Product: "${term}". Return JSON (Hebrew): {"name": "Professional Name", "description": "Short marketing desc", "features": ["feat1"], "application": "Usage", "weight_kg": 25, "pallet_qty": 64, "requires_crane": true} ONLY JSON.`;
 
-            try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-                
-                const data = await response.json();
-                
-                // Safe parsing
-                if (data.error) throw new Error(data.error.message);
-                if (!data.candidates || !data.candidates[0]) throw new Error("No data returned");
+            // נסיון עם מודלים מעודכנים
+            const models = ["gemini-1.5-flash-latest", "gemini-pro"];
+            let success = false;
+            
+            for (const model of models) {
+                if(success) break;
+                try {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_KEYS.gemini}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.candidates && data.candidates[0]) {
+                        const text = data.candidates[0].content.parts[0].text;
+                        const result = JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim());
 
-                const text = data.candidates[0].content.parts[0].text;
-                const result = JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim());
+                        document.getElementById('name').value = result.name || term;
+                        document.getElementById('description').value = result.description || '';
+                        document.getElementById('features').value = Array.isArray(result.features) ? result.features.join('\n') : (result.features || '');
+                        document.getElementById('application').value = result.application || '';
+                        document.getElementById('weight').value = result.weight_kg || 0;
+                        document.getElementById('palletQty').value = result.pallet_qty || 0;
+                        document.getElementById('reqCrane').checked = result.requires_crane || false;
 
-                document.getElementById('name').value = result.name || term;
-                document.getElementById('description').value = result.description || '';
-                document.getElementById('features').value = Array.isArray(result.features) ? result.features.join('\n') : (result.features || '');
-                document.getElementById('application').value = result.application || '';
-                document.getElementById('weight').value = result.weight_kg || 0;
-                document.getElementById('palletQty').value = result.pallet_qty || 0;
-                document.getElementById('reqCrane').checked = result.requires_crane || false;
-
-                updatePreview();
-                alert("🤖 הנתונים מולאו! עכשיו בחר תמונה ידנית.");
-
-            } catch (e) {
-                console.error(e);
-                alert("תקלה ב-AI: " + e.message);
-            } finally {
-                btn.innerHTML = '<i class="fas fa-sparkles"></i> שלוף נתונים';
+                        updatePreview();
+                        alert("🤖 הנתונים מולאו! עכשיו חפש תמונה.");
+                        success = true;
+                    }
+                } catch (e) { console.warn(`AI Model ${model} failed`, e); }
             }
+            
+            if(!success) alert("ה-AI לא זמין כרגע. אנא מלא ידנית.");
+            btn.innerHTML = '<i class="fas fa-sparkles"></i> שלוף נתונים';
+        };
+
+        // --- MEDIA SEARCH (Google Custom Search API) ---
+        window.searchImage = async (slot) => {
+            currentMediaType = slot === 1 ? 'image1' : 'image2';
+            const query = document.getElementById('magicInput').value;
+            if(!query) return alert("הכנס שם לחיפוש");
+
+            try {
+                // שימוש במפתח החדש מול גוגל ישירות
+                const url = `https://www.googleapis.com/customsearch/v1?q=${encodeURIComponent(query)}&cx=${SEARCH_CX}&key=${API_KEYS.googleSearch}&searchType=image&num=9`;
+                
+                const res = await fetch(url);
+                const data = await res.json();
+                
+                if (data.error) {
+                    throw new Error(data.error.message);
+                }
+
+                if(data.items && data.items.length > 0) {
+                    showMediaModal(data.items.map(i => ({ thumb: i.image.thumbnailLink || i.link, url: i.link })));
+                } else {
+                    alert("לא נמצאו תמונות בגוגל.");
+                }
+            } catch(e) { 
+                console.error(e); 
+                alert("שגיאת חיפוש: " + e.message); 
+            }
+        };
+
+        window.searchVideo = async () => {
+            const query = document.getElementById('magicInput').value + " application tutorial";
+            window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, '_blank');
+            const url = prompt("הדבק כאן את הלינק לסרטון:");
+            if(url) { document.getElementById('video').value = url; updatePreview(); }
+        };
+
+        function showMediaModal(items) {
+            const grid = document.getElementById('mediaGrid');
+            grid.innerHTML = items.map(item => `<div class="cursor-pointer border-2 border-transparent hover:border-blue-500 rounded overflow-hidden" onclick="selectMedia('${item.url}')"><img src="${item.thumb}" class="w-full h-32 object-cover"></div>`).join('');
+            document.getElementById('mediaModal').classList.remove('hidden');
+        }
+
+        window.selectMedia = (url) => {
+            if(currentMediaType === 'image1') document.getElementById('image1').value = url;
+            if(currentMediaType === 'image2') document.getElementById('image2').value = url;
+            document.getElementById('mediaModal').classList.add('hidden');
+            updatePreview();
         };
 
         // --- PREVIEW ---
@@ -250,7 +335,6 @@
         window.renderList = () => {
             const term = document.getElementById('listSearch').value.toLowerCase();
             const list = document.getElementById('listContainer');
-            // Safe filter
             const filtered = products.filter(p => (p.core?.name || "").toLowerCase().includes(term));
             
             list.innerHTML = filtered.map(p => `
@@ -315,13 +399,14 @@
 
         window.addNew = () => {
             document.querySelectorAll('input, textarea').forEach(i => i.value = '');
+            document.getElementById('reqCrane').checked = false;
             document.getElementById('magicInput').focus();
             updatePreview();
         };
 
         function updateStatus(state, text) {
             const el = document.getElementById('statusIndicator');
-            const color = state === 'online' ? 'bg-green-500' : (state === 'saving' ? 'bg-yellow-500' : 'bg-gray-300');
+            const color = state === 'online' ? 'bg-green-500' : 'bg-yellow-500';
             el.innerHTML = `<span class="w-2 h-2 rounded-full ${color}"></span> ${text}`;
         }
 
