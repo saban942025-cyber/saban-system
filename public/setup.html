@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>SabanOS | ניהול משתמשים (Stable)</title>
+    <title>SabanOS | ניהול משתמשים (Magic Link)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -43,7 +43,7 @@
         .win-card {
             background: var(--win-card);
             border: 1px solid var(--win-border);
-            border-radius: 12px; /* More rounded */
+            border-radius: 12px;
             box-shadow: var(--shadow-soft);
             display: flex;
             flex-direction: column;
@@ -64,7 +64,7 @@
 
         .win-title { font-size: 15px; font-weight: 700; color: #333; }
 
-        /* Inputs - Sharp & Clean */
+        /* Inputs */
         .win-input {
             width: 100%;
             padding: 9px 12px;
@@ -110,18 +110,18 @@
         .win-tab { flex: 1; text-align: center; padding: 8px; font-size: 13px; cursor: pointer; border-radius: 6px; color: #64748b; font-weight: 600; transition: 0.2s; }
         .win-tab.active { background: white; color: var(--win-blue); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 
-        /* STABLE TABLE (התיקון לרעידות) */
+        /* STABLE TABLE */
         .table-container { 
             flex: 1; 
             overflow-y: auto; 
-            scrollbar-gutter: stable; /* מונע קפיצות כשיש סקגול */
+            scrollbar-gutter: stable;
         }
         
         .win-table { 
             width: 100%; 
             border-collapse: separate; 
             border-spacing: 0; 
-            table-layout: fixed; /* מקבע את רוחב העמודות! */
+            table-layout: fixed;
         }
         
         .win-table th { 
@@ -142,14 +142,13 @@
             border-bottom: 1px solid #f1f5f9; 
             vertical-align: middle; 
             font-size: 13px;
-            white-space: nowrap; /* מונע שבירת שורות */
+            white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
         
         .win-table tr:hover td { background-color: #f8fafc; }
 
-        /* Avatar */
         .avatar-circle { width: 36px; height: 36px; border-radius: 10px; object-fit: cover; border: 1px solid var(--win-border); }
 
         /* Custom Scrollbar */
@@ -160,6 +159,10 @@
         /* Status Bar */
         .status-bar { height: 32px; background: white; border-top: 1px solid var(--win-border); display: flex; align-items: center; padding: 0 24px; font-size: 11px; justify-content: space-between; color: #64748b; font-weight: 500; }
         .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-left: 6px; }
+        
+        /* Magic Link Buttons */
+        .magic-btn { width: 30px; height: 30px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; transition: 0.2s; border: 1px solid transparent; }
+        .magic-btn:hover { background: #f1f5f9; border-color: #cbd5e1; }
     </style>
 </head>
 <body>
@@ -270,18 +273,18 @@
             <div class="table-container">
                 <table class="win-table">
                     <colgroup>
-                        <col style="width: 60px;"> <col style="width: 20%;"> <col style="width: 15%;"> <col style="width: auto;"> <col style="width: 100px;"> </colgroup>
+                        <col style="width: 50px;"> <col style="width: 20%;"> <col style="width: 15%;"> <col style="width: auto;"> <col style="width: 140px;"> <col style="width: 90px;"> </colgroup>
                     <thead>
                         <tr>
                             <th></th>
                             <th>שם מלא</th>
                             <th>תפקיד</th>
                             <th>פרטים נוספים</th>
-                            <th class="text-center">פעולות</th>
+                            <th>שיתוף מהיר</th> <th class="text-center">פעולות</th>
                         </tr>
                     </thead>
                     <tbody id="usersTable">
-                        <tr><td colspan="5" class="text-center p-8 text-gray-400">טוען נתונים...</td></tr>
+                        <tr><td colspan="6" class="text-center p-8 text-gray-400">טוען נתונים...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -291,7 +294,7 @@
 
     <div class="status-bar">
         <div class="flex items-center" id="systemStatus"><span class="status-dot bg-green-500"></span>&nbsp; מחובר לשרת</div>
-        <div class="text-[10px] opacity-50">SabanOS Admin Station v2.6.5</div>
+        <div class="text-[10px] opacity-50">SabanOS Admin Station v2.7</div>
     </div>
 
     <script type="module">
@@ -318,6 +321,7 @@
         window.addProjectField = addProjectField;
         window.updateAvatar = updateAvatar;
         window.updateRoleDesc = updateRoleDesc;
+        window.copyMagicLink = copyMagicLink; // חשיפת פונקציית העתקת הלינק
 
         // Status Helper
         function setStatus(msg, type = 'success') {
@@ -337,14 +341,13 @@
             } catch (e) {
                 console.error(e);
                 setStatus("שגיאת טעינה", 'error');
-                document.getElementById('usersTable').innerHTML = `<tr><td colspan="5" class="text-center p-5 text-red-500">תקלה: ${e.message}</td></tr>`;
             }
         }
 
         function renderTable(list) {
             const tbody = document.getElementById('usersTable');
             if(list.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center p-8 text-gray-400">המאגר ריק.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center p-8 text-gray-400">המאגר ריק.</td></tr>';
                 return;
             }
             
@@ -354,10 +357,15 @@
                 
                 let badgeClass = 'bg-gray-100 text-gray-600';
                 let roleLabel = u.role;
-                
                 if(u.role === 'admin') { badgeClass = 'bg-purple-100 text-purple-700'; roleLabel = 'מנכ"ל'; }
                 if(u.role === 'client') { badgeClass = 'bg-green-100 text-green-700'; roleLabel = 'לקוח'; }
                 if(u.role === 'driver') { badgeClass = 'bg-orange-100 text-orange-700'; roleLabel = 'נהג'; }
+
+                // יצירת לינק הקסם
+                const magicLink = `${window.location.origin}/index.html?uid=${u.id}`;
+                const waMsg = encodeURIComponent(`היי ${u.name}, הנה הלינק הישיר שלך למערכת סבן (ללא סיסמה): ${magicLink}`);
+                const cleanPhone = u.phone ? u.phone.replace(/^0/, '') : ''; 
+                const waUrl = `https://wa.me/972${cleanPhone}?text=${waMsg}`;
 
                 return `
                 <tr class="transition duration-150 border-b border-slate-50 hover:bg-slate-50">
@@ -365,12 +373,28 @@
                     <td class="font-bold text-gray-800 truncate" title="${u.name}">${u.name}</td>
                     <td><span class="text-[10px] px-2 py-1 rounded-full font-bold uppercase ${badgeClass}">${roleLabel}</span></td>
                     <td class="text-gray-500 truncate" title="${info}">${info}</td>
+                    
+                    <td>
+                        <div class="flex items-center gap-1">
+                            <button onclick="copyMagicLink('${magicLink}')" class="magic-btn text-gray-500 hover:text-blue-600" title="העתק לינק"><i class="fas fa-link"></i></button>
+                            <a href="${waUrl}" target="_blank" class="magic-btn text-green-500 hover:text-green-600 hover:bg-green-50" title="שלח בווצאפ"><i class="fab fa-whatsapp"></i></a>
+                        </div>
+                    </td>
+
                     <td class="text-center">
                         <button onclick="editUser('${u.id}')" class="win-btn px-2 py-1 text-blue-600 hover:bg-blue-50 border-transparent shadow-none" title="ערוך"><i class="fas fa-pen"></i></button>
                         <button onclick="deleteUser('${u.id}')" class="win-btn px-2 py-1 text-red-500 hover:bg-red-50 border-transparent shadow-none" title="מחק"><i class="fas fa-trash-alt"></i></button>
                     </td>
                 </tr>`;
             }).join('');
+        }
+
+        // --- פונקציית העתקה ---
+        function copyMagicLink(link) {
+            navigator.clipboard.writeText(link).then(() => {
+                setStatus("הלינק הועתק ללוח!");
+                setTimeout(() => setStatus(`נטענו ${usersList.length} משתמשים`), 3000);
+            }).catch(err => alert("שגיאה בהעתקה"));
         }
 
         // --- 2. Edit User ---
