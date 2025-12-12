@@ -2,23 +2,29 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>SabanConnect | חמ"ל v25.1</title>
+    <title>SabanConnect | חמ"ל v25.2</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <style>
-        /* (אותו CSS כמו קודם) */
         body { background-color: #d1d7db; font-family: -apple-system, system-ui, sans-serif; height: 100vh; display: flex; overflow: hidden; }
         .sidebar { width: 30%; max-width: 400px; background: white; border-left: 1px solid #e9edef; display: flex; flex-direction: column; z-index: 20; }
         .main-chat { flex: 1; display: flex; flex-direction: column; background-color: #efeae2; background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); position: relative; }
+        
         .chat-item { display: flex; align-items: center; padding: 12px; cursor: pointer; border-bottom: 1px solid #f0f2f5; transition: 0.2s; position: relative; }
         .chat-item:hover { background: #f5f6f6; }
         .chat-item.active { background: #f0f2f5; border-right: 4px solid #00a884; }
+        
         .msg { max-width: 65%; padding: 8px 12px; border-radius: 8px; font-size: 14px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); line-height: 1.4; margin-bottom: 8px; word-wrap: break-word; background: white; align-self: flex-start; }
         .msg.staff { background: #d9fdd3; align-self: flex-end; }
         .msg.internal { background: #fff9c4; align-self: center; font-size: 12px; border: 1px dashed orange; }
-        .tag-mention { background-color: #ffedd5; color: #c2410c; padding: 0 4px; border-radius: 4px; font-weight: bold; border: 1px solid #fdba74; display: inline-block; font-size: 0.9em; }
+        
+        /* אנימציה לכרטיס */
+        .fade-in { animation: fadeIn 0.2s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .cursor-zoom { cursor: zoom-in; }
     </style>
 </head>
 <body>
@@ -29,16 +35,19 @@
                 <img src="https://ui-avatars.com/api/?name=Admin&background=00a884&color=fff" class="w-10 h-10 rounded-full">
                 <span class="font-bold text-gray-700">חמ"ל הזמנות</span>
             </div>
-            <div class="text-xs text-gray-400">v25.1</div>
+            <div class="text-xs text-gray-400">v25.2</div>
         </div>
-        <div id="chatList" class="flex-1 overflow-y-auto bg-white"></div>
+        <div id="chatList" class="flex-1 overflow-y-auto bg-white custom-scroll"></div>
     </div>
 
     <div id="chatArea" class="main-chat hidden">
         <div class="h-16 bg-[#f0f2f5] border-b flex justify-between items-center px-4 shadow-sm z-10">
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-3 cursor-pointer hover:bg-black/5 p-2 rounded transition" onclick="showUserCard(event)">
                 <img id="activeAvatar" src="" class="w-10 h-10 rounded-full border border-gray-300">
-                <div><div id="activeName" class="font-bold text-gray-800"></div><div class="text-xs text-gray-500">מחובר</div></div>
+                <div>
+                    <div id="activeName" class="font-bold text-gray-800 leading-tight"></div>
+                    <div class="text-xs text-gray-500">לחץ לפרטים</div>
+                </div>
             </div>
             <button onclick="toggleBot()" id="botToggleBtn" class="bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm transition flex items-center gap-2">
                 <i class="fas fa-robot"></i> <span id="botStatusText">בוט פעיל</span>
@@ -49,20 +58,17 @@
 
         <div class="bg-[#f0f2f5] p-3 flex items-center gap-3 border-t relative">
             <i onclick="toggleInternalMode()" id="internalBtn" class="fas fa-eye-slash text-xl text-gray-400 cursor-pointer hover:scale-110 transition" title="הערה פנימית"></i>
-            
-            <i onclick="sendUrgentPush()" class="fas fa-bell text-xl text-red-500 cursor-pointer hover:scale-110 transition" title="שלח התראה דחופה ללקוח"></i>
-            
-            <div class="flex-1 relative">
-                <input type="text" id="msgInput" class="w-full p-3 rounded-xl border-none outline-none shadow-sm text-sm" placeholder="הקלד הודעה..." onkeydown="if(event.key === 'Enter') sendMessage()">
-            </div>
+            <i onclick="sendUrgentPush()" class="fas fa-bell text-xl text-red-500 cursor-pointer hover:scale-110 transition" title="שלח התראה דחופה"></i>
+            <div class="flex-1 relative"><input type="text" id="msgInput" class="w-full p-3 rounded-xl border-none outline-none shadow-sm text-sm" placeholder="הקלד הודעה..." onkeydown="if(event.key === 'Enter') sendMessage()"></div>
             <button onclick="sendMessage()" class="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-[#00a884] transition"><i class="fas fa-paper-plane text-xl"></i></button>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, doc, updateDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { SabanPush } from './js/notifications.js'; // ייבוא מנוע ההתראות
+        import { getFirestore, collection, addDoc, doc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { SabanPush } from './js/notifications.js';
+        import { SmartContacts } from './js/smart-contacts.js'; // ייבוא המוח החברתי
 
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
         const app = initializeApp(firebaseConfig);
@@ -71,13 +77,12 @@
         let activeChatId = null;
         let internalMode = false;
         let currentBotState = true;
+        let activeUserData = null; // שמירת נתוני המשתמש הפעיל
 
-        // אתחול התראות למנהל (כדי שגם אתה תוכל לקבל)
         SabanPush.init('admin', 'admin_rami');
 
-        // ... (קוד הרשימה והצ'אט הרגיל) ...
-        const q = query(collection(db, "chat_sessions"), orderBy("lastActivity", "desc"));
-        onSnapshot(q, (snapshot) => {
+        // רשימת צ'אטים
+        onSnapshot(query(collection(db, "chat_sessions"), orderBy("lastActivity", "desc")), (snapshot) => {
             const list = document.getElementById('chatList'); list.innerHTML = "";
             snapshot.forEach(docSnap => {
                 const chat = { id: docSnap.id, ...docSnap.data() };
@@ -88,9 +93,25 @@
             });
         });
 
-        window.openChat = (chatId, name) => {
-            activeChatId = chatId; document.getElementById('chatArea').classList.remove('hidden'); document.getElementById('activeName').innerText = name; document.getElementById('activeAvatar').src = `https://ui-avatars.com/api/?name=${name}&background=random&color=fff`;
-            onSnapshot(query(collection(db, `chat_sessions/${chatId}/messages`), orderBy("createdAt", "asc")), (snap) => {
+        // פתיחת צ'אט
+        window.openChat = async (id, name) => {
+            activeChatId = id; 
+            document.getElementById('chatArea').classList.remove('hidden'); 
+            document.getElementById('activeName').innerText = name; 
+            document.getElementById('activeAvatar').src = `https://ui-avatars.com/api/?name=${name}&background=random&color=fff`;
+            
+            // שליפת פרטי המשתמש המלאים מה-DB לטובת הכרטיס
+            try {
+                const userSnap = await getDoc(doc(db, "users", id));
+                if(userSnap.exists()) {
+                    activeUserData = userSnap.data();
+                } else {
+                    // Fallback אם אין יוזר שמור
+                    activeUserData = { name: name, role: 'client', branch: 'אורח', phone: '', email: '', type: 'client', avatar: `https://ui-avatars.com/api/?name=${name}` };
+                }
+            } catch(e) { console.error(e); }
+
+            onSnapshot(query(collection(db, `chat_sessions/${id}/messages`), orderBy("createdAt", "asc")), (snap) => {
                 document.getElementById('messagesBox').innerHTML = snap.docs.map(d => {
                     const m = d.data();
                     let content = m.text.replace(/@([\u0590-\u05FF\w]+)/g, '<span class="tag-mention">@$1</span>');
@@ -98,6 +119,13 @@
                 }).join('');
                 document.getElementById('messagesBox').scrollTop = document.getElementById('messagesBox').scrollHeight;
             });
+        };
+
+        // הצגת כרטיס המשתמש החדש!
+        window.showUserCard = (event) => {
+            if(activeUserData) {
+                SmartContacts.show(event, activeUserData);
+            }
         };
 
         window.sendMessage = async () => {
@@ -111,25 +139,15 @@
             if(internalMode) toggleInternalMode();
         };
 
-        // 🚨 פונקציית שליחת ההתראה הדחופה
         window.sendUrgentPush = async () => {
             if (!activeChatId) return alert("בחר לקוח");
-            const msg = prompt("מה תוכן ההתראה הדחופה ללקוח? (יישלח כ-Push לטלפון)");
+            const msg = prompt("התראה דחופה:");
             if (!msg) return;
-
-            // שימוש במוח ההתראות לשליחה
-            await SabanPush.send(activeChatId, "⚠️ הודעה דחופה מח.סבן", msg);
-            
-            // תיעוד בצ'אט הפנימי
-            await addDoc(collection(db, `chat_sessions/${activeChatId}/messages`), { 
-                text: `🔔 נשלחה התראה לנייד: "${msg}"`, 
-                role: 'internal', 
-                sender: 'System', 
-                createdAt: serverTimestamp() 
-            });
+            await SabanPush.send(activeChatId, "⚠️ הודעה דחופה", msg);
+            await addDoc(collection(db, `chat_sessions/${activeChatId}/messages`), { text: `🔔 נשלחה התראה: "${msg}"`, role: 'internal', sender: 'System', createdAt: serverTimestamp() });
         };
 
-        window.toggleBot = () => {}; // לוגיקה מקוצרת
+        window.toggleBot = () => {}; 
         window.toggleInternalMode = () => { internalMode = !internalMode; document.getElementById('msgInput').placeholder = internalMode ? "הערה פנימית..." : "הקלד..."; };
     </script>
 </body>
