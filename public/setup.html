@@ -73,10 +73,14 @@
             background: white;
             transition: 0.2s;
             outline: none;
-            border-bottom-width: 2px; /* Microsoft style focus */
+            border-bottom-width: 2px;
         }
         .win-input:focus {
             border-color: var(--win-blue);
+        }
+        .win-input:disabled {
+            background-color: #f0f0f0;
+            color: #999;
         }
         .win-label {
             font-size: 12px;
@@ -112,6 +116,12 @@
         }
         .win-btn-primary:hover { background-color: var(--win-blue-hover); }
         
+        .win-btn-danger {
+            color: #dc2626;
+            border-color: #fca5a5;
+        }
+        .win-btn-danger:hover { background-color: #fef2f2; }
+
         /* Tabs */
         .win-tabs { display: flex; padding: 4px; background: #f0f0f0; border-radius: 6px; margin-bottom: 15px; }
         .win-tab { flex: 1; text-align: center; padding: 6px; font-size: 13px; cursor: pointer; border-radius: 4px; color: var(--win-text-sec); font-weight: 500; transition: 0.2s; }
@@ -141,7 +151,8 @@
         
         <div class="win-card">
             <div class="win-header">
-                <span class="win-title"><i class="fas fa-user-plus text-blue-600"></i> יצירת משתמש</span>
+                <span class="win-title" id="formTitle"><i class="fas fa-user-plus text-blue-600"></i> יצירת משתמש</span>
+                <button onclick="resetForm()" id="cancelBtn" class="text-xs text-red-500 hidden hover:underline">ביטול עריכה</button>
             </div>
             
             <div class="p-5 flex-1 overflow-y-auto">
@@ -152,7 +163,7 @@
                 </div>
 
                 <form id="createForm" class="space-y-4">
-                    <div class="flex items-center gap-4">
+                    <input type="hidden" id="editUserId"> <div class="flex items-center gap-4">
                         <img id="avatarPreview" src="https://ui-avatars.com/api/?name=New+User" class="w-14 h-14 rounded-full border shadow-sm">
                         <div class="flex-1">
                             <label class="win-label">תמונת פרופיל (URL)</label>
@@ -220,7 +231,7 @@
                     </div>
 
                     <div class="pt-2">
-                        <button type="submit" class="win-btn win-btn-primary w-full py-2.5">
+                        <button type="submit" id="submitBtn" class="win-btn win-btn-primary w-full py-2.5">
                             <i class="fas fa-save"></i> שמור במערכת
                         </button>
                     </div>
@@ -261,13 +272,13 @@
 
     <div class="status-bar">
         <div id="systemStatus">🟢 מערכת מוכנה</div>
-        <div>SabanOS Admin Station v2.5</div>
+        <div>SabanOS Admin Station v2.6</div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, updateDoc, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // --- Firebase Config ---
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
@@ -278,6 +289,17 @@
         let currentTab = 'staff';
         let usersList = [];
 
+        // --- EXPORT FUNCTIONS TO WINDOW (For HTML onclick) ---
+        window.switchTab = switchTab;
+        window.loadUsers = loadUsers;
+        window.filterUsers = filterUsers;
+        window.deleteUser = deleteUser;
+        window.editUser = editUser;
+        window.resetForm = resetForm;
+        window.addProjectField = addProjectField;
+        window.updateAvatar = updateAvatar;
+        window.updateRoleDesc = updateRoleDesc;
+
         // --- Status Logic ---
         function setStatus(msg, isError = false) {
             const el = document.getElementById('systemStatus');
@@ -285,8 +307,8 @@
             el.parentElement.style.backgroundColor = isError ? '#d32f2f' : '#0067c0';
         }
 
-        // --- 1. Load Users (With Error Handling) ---
-        window.loadUsers = async () => {
+        // --- 1. Load Users ---
+        async function loadUsers() {
             setStatus("טוען משתמשים...");
             try {
                 const snap = await getDocs(collection(db, "users"));
@@ -296,7 +318,7 @@
                     setStatus("המאגר ריק");
                     return;
                 }
-                usersList = snap.docs.map(d => ({...d.data(), id: d.id})); // Keep document ID
+                usersList = snap.docs.map(d => ({...d.data(), id: d.id})); 
                 renderTable(usersList);
                 setStatus(`נטענו ${usersList.length} משתמשים`);
             } catch (e) {
@@ -315,51 +337,102 @@
                 const roleClass = isStaff ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800';
                 const roleName = u.role === 'admin' ? 'מנכ"ל' : (u.role === 'client' ? 'לקוח' : u.role);
                 
-                // כפתור מחיקה עם הגנה
-                const deleteBtn = `<button onclick="deleteUser('${u.id}')" class="text-gray-400 hover:text-red-500 transition px-2" title="מחק"><i class="fas fa-trash"></i></button>`;
-                
                 return `
                 <tr class="border-b hover:bg-slate-50">
-                    <td class="text-center"><img src="${u.avatar || 'https://via.placeholder.com/32'}" class="avatar-circle"></td>
+                    <td class="text-center"><img src="${u.avatar || 'https://via.placeholder.com/32'}" class="avatar-circle" onerror="this.src='https://via.placeholder.com/32'"></td>
                     <td class="font-bold">${u.name}</td>
                     <td><span class="text-[10px] px-2 py-1 rounded font-bold ${roleClass}">${roleName}</span></td>
                     <td class="text-gray-500">${info}</td>
                     <td class="text-center">
-                        ${deleteBtn}
-                        <button class="text-gray-400 hover:text-blue-500 px-2" title="ערוך"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteUser('${u.id}')" class="win-btn win-btn-danger px-2" title="מחק"><i class="fas fa-trash"></i></button>
+                        <button onclick="editUser('${u.id}')" class="win-btn px-2 text-blue-600" title="ערוך"><i class="fas fa-edit"></i></button>
                     </td>
                 </tr>`;
             }).join('');
         }
 
-        // --- 3. Create User ---
+        // --- 3. Edit Logic ---
+        function editUser(id) {
+            const user = usersList.find(u => u.id === id);
+            if (!user) return;
+
+            // שינוי מצב לעריכה
+            document.getElementById('formTitle').innerHTML = `<i class="fas fa-edit text-orange-500"></i> עריכת ${user.name}`;
+            document.getElementById('editUserId').value = id;
+            document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save"></i> עדכן שינויים';
+            document.getElementById('submitBtn').className = "win-btn win-btn-primary w-full py-2.5 bg-orange-600 border-orange-600 hover:bg-orange-700";
+            document.getElementById('cancelBtn').classList.remove('hidden');
+
+            // מילוי שדות
+            document.getElementById('name').value = user.name;
+            document.getElementById('email').value = user.email;
+            document.getElementById('email').disabled = true; // אי אפשר לשנות אימייל קיים בקלות בגלל Auth
+            document.getElementById('password').disabled = true; // סיסמה רק ביצירה
+            document.getElementById('phone').value = user.phone;
+            document.getElementById('avatar').value = user.avatar;
+            updateAvatar();
+
+            // החלפת טאב ומילוי שדות ספציפיים
+            if (user.type === 'client') {
+                switchTab('client');
+                document.getElementById('clientNumber').value = user.clientNumber || '';
+                // Projects
+                const container = document.getElementById('projectsContainer');
+                container.innerHTML = '';
+                if (user.projects) {
+                    user.projects.forEach(p => {
+                        const div = document.createElement('div');
+                        div.className = 'bg-white p-2 rounded border border-green-200 mb-2 relative';
+                        div.innerHTML = `
+                            <input type="text" class="w-full border-b mb-1 text-xs outline-none proj-name" placeholder="שם אתר" value="${p.name}">
+                            <input type="text" class="w-full text-xs outline-none proj-addr" placeholder="כתובת" value="${p.address}">
+                            <i onclick="this.parentElement.remove()" class="fas fa-times absolute top-1 left-1 text-gray-300 hover:text-red-500 cursor-pointer"></i>
+                        `;
+                        container.appendChild(div);
+                    });
+                }
+            } else {
+                switchTab('staff');
+                document.getElementById('roleSelect').value = user.role;
+                document.getElementById('branch').value = user.branch || '';
+                document.getElementById('description').value = user.description || '';
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('createForm').reset();
+            document.getElementById('editUserId').value = '';
+            document.getElementById('formTitle').innerHTML = `<i class="fas fa-user-plus text-blue-600"></i> יצירת משתמש`;
+            document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save"></i> שמור במערכת';
+            document.getElementById('submitBtn').className = "win-btn win-btn-primary w-full py-2.5";
+            document.getElementById('email').disabled = false;
+            document.getElementById('password').disabled = false;
+            document.getElementById('cancelBtn').classList.add('hidden');
+            document.getElementById('avatarPreview').src = "https://ui-avatars.com/api/?name=New+User";
+            document.getElementById('projectsContainer').innerHTML = '';
+            updateRoleDesc();
+        }
+
+        // --- 4. Submit (Create / Update) ---
         document.getElementById('createForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const btn = e.target.querySelector('button[type="submit"]');
+            const btn = document.getElementById('submitBtn');
             const originalText = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> מעבד...';
             btn.disabled = true;
 
-            try {
-                const email = document.getElementById('email').value;
-                const password = document.getElementById('password').value;
-                
-                // 1. Create Auth User
-                // הערה: בפרויקט אמיתי עדיף להשתמש ב-Cloud Functions כדי לא לנתק את המנהל הנוכחי
-                // כאן אנחנו משתמשים ביצירה ישירה
-                const userCred = await createUserWithEmailAndPassword(auth, email, password);
-                const uid = userCred.user.uid;
+            const editId = document.getElementById('editUserId').value;
+            const isEdit = !!editId;
 
-                // 2. Data Object
+            try {
+                // איסוף נתונים בסיסיים
                 const baseData = {
                     name: document.getElementById('name').value,
-                    email: email,
                     phone: document.getElementById('phone').value,
                     avatar: document.getElementById('avatar').value || `https://ui-avatars.com/api/?name=${document.getElementById('name').value}`,
-                    createdAt: new Date(),
-                    uid: uid
                 };
 
+                // איסוף נתונים לפי טאב
                 let finalData = {};
                 if (currentTab === 'staff') {
                     finalData = {
@@ -379,17 +452,30 @@
                     };
                 }
 
-                // 3. Save to Firestore
-                await setDoc(doc(db, "users", uid), finalData);
-                
-                setStatus(`משתמש ${baseData.name} נוצר בהצלחה!`);
-                e.target.reset();
-                if(currentTab==='client') addProjectField();
-                loadUsers(); // Refresh list
+                if (isEdit) {
+                    // --- עדכון משתמש קיים ---
+                    await updateDoc(doc(db, "users", editId), finalData);
+                    setStatus(`משתמש ${baseData.name} עודכן!`);
+                } else {
+                    // --- יצירת משתמש חדש ---
+                    const email = document.getElementById('email').value;
+                    const password = document.getElementById('password').value;
+                    
+                    const userCred = await createUserWithEmailAndPassword(auth, email, password);
+                    finalData.email = email;
+                    finalData.uid = userCred.user.uid;
+                    finalData.createdAt = new Date();
+
+                    await setDoc(doc(db, "users", finalData.uid), finalData);
+                    setStatus(`משתמש ${baseData.name} נוצר בהצלחה!`);
+                }
+
+                resetForm();
+                loadUsers();
 
             } catch (error) {
                 console.error(error);
-                setStatus("שגיאה ביצירה: " + error.message, true);
+                setStatus("שגיאה: " + error.message, true);
                 alert("שגיאה: " + error.message);
             } finally {
                 btn.innerHTML = originalText;
@@ -397,18 +483,17 @@
             }
         });
 
-        window.deleteUser = async (id) => {
-            if(confirm("האם אתה בטוח שברצונך למחוק משתמש זה מהמאגר?")) {
-                try {
-                    await deleteDoc(doc(db, "users", id));
+        // --- Helpers ---
+        function deleteUser(id) {
+            if(confirm("למחוק את המשתמש? (פעולה זו לא מוחקת את הכניסה ב-Auth, רק מהרשימה)")) {
+                deleteDoc(doc(db, "users", id)).then(() => {
                     loadUsers();
                     setStatus("משתמש נמחק");
-                } catch(e) { alert("שגיאה במחיקה: " + e.message); }
+                }).catch(e => alert(e.message));
             }
-        };
+        }
 
-        // --- Helpers ---
-        window.switchTab = (tab) => {
+        function switchTab(tab) {
             currentTab = tab;
             document.querySelectorAll('.win-tab').forEach(b => b.classList.remove('active'));
             document.getElementById(`tab-${tab}`).classList.add('active');
@@ -421,9 +506,9 @@
                 document.getElementById('clientFields').classList.remove('hidden');
                 if(document.getElementById('projectsContainer').children.length === 0) addProjectField();
             }
-        };
+        }
 
-        window.updateRoleDesc = () => {
+        function updateRoleDesc() {
             const role = document.getElementById('roleSelect').value;
             const map = {
                 'admin': 'מנכ"ל - הרשאה מלאה לכל המודולים.',
@@ -433,15 +518,14 @@
                 'driver': 'נהג - גישה לאפליקציית הנהג וניווט.'
             };
             document.getElementById('description').value = map[role] || '';
-        };
-        updateRoleDesc();
+        }
 
-        window.updateAvatar = () => {
+        function updateAvatar() {
             const url = document.getElementById('avatar').value;
             if(url) document.getElementById('avatarPreview').src = url;
-        };
+        }
 
-        window.addProjectField = () => {
+        function addProjectField() {
             const div = document.createElement('div');
             div.className = 'bg-white p-2 rounded border border-green-200 mb-2 relative';
             div.innerHTML = `
@@ -450,7 +534,7 @@
                 <i onclick="this.parentElement.remove()" class="fas fa-times absolute top-1 left-1 text-gray-300 hover:text-red-500 cursor-pointer"></i>
             `;
             document.getElementById('projectsContainer').appendChild(div);
-        };
+        }
 
         function collectProjects() {
             const projs = [];
@@ -461,10 +545,10 @@
             return projs;
         }
 
-        window.filterUsers = () => {
+        function filterUsers() {
             const q = document.getElementById('searchUser').value.toLowerCase();
             renderTable(usersList.filter(u => u.name.toLowerCase().includes(q) || u.email.includes(q)));
-        };
+        }
 
         // Start
         loadUsers();
