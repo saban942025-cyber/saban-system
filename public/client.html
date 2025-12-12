@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SabanOS | Client App v25.0</title>
+    <title>SabanOS | Client App v25.0 (Final)</title>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="icons/icon-192.png">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -11,65 +11,24 @@
     <style>
         /* --- CORE LAYOUT --- */
         body { background-color: #e5e7eb; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; height: 100dvh; width: 100vw; overflow: hidden; display: flex; flex-direction: column; }
-        
-        .app-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; padding-bottom: 75px; /* Space for Bottom Nav */ }
-        
+        .app-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; padding-bottom: 75px; }
         .screen { display: none; flex-direction: column; height: 100%; width: 100%; overflow: hidden; }
         .screen.active { display: flex; animation: fadeIn 0.2s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.99); } to { opacity: 1; transform: scale(1); } }
 
-        /* --- CHAT ENGINE (THE FIX) --- */
+        /* --- CHAT --- */
         .chat-layout { display: flex; flex-direction: column; height: 100%; width: 100%; }
-        
-        .chat-content { 
-            flex: 1; 
-            overflow-y: auto; 
-            overflow-x: hidden;
-            background-color: #efeae2; 
-            background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); 
-            padding: 15px; 
-            padding-bottom: 20px;
-            display: flex; 
-            flex-direction: column; 
-            gap: 10px; 
-            scroll-behavior: smooth; /* גלילה חלקה */
-        }
-
-        .chat-input-area { 
-            flex-shrink: 0; 
-            background: #f0f2f5; 
-            padding: 10px; 
-            display: flex; 
-            align-items: center; 
-            gap: 10px; 
-            border-top: 1px solid #e5e7eb; 
-            z-index: 20; 
-        }
-
-        /* Messages */
-        .msg { 
-            max-width: 85%; 
-            padding: 10px 14px; 
-            border-radius: 12px; 
-            font-size: 15px; 
-            position: relative; 
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1); 
-            line-height: 1.4; 
-            word-wrap: break-word;      /* מונע זליגה */
-            overflow-wrap: break-word;  /* מונע זליגה */
-        }
-        
+        .chat-content { flex: 1; overflow-y: auto; overflow-x: hidden; background-color: #efeae2; background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); padding: 15px; padding-bottom: 20px; display: flex; flex-direction: column; gap: 10px; scroll-behavior: smooth; }
+        .chat-input-area { flex-shrink: 0; background: #f0f2f5; padding: 10px; display: flex; align-items: center; gap: 10px; border-top: 1px solid #e5e7eb; z-index: 20; }
+        .msg { max-width: 85%; padding: 10px 14px; border-radius: 12px; font-size: 15px; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.1); line-height: 1.4; word-wrap: break-word; }
         .msg-in { align-self: flex-start; background: #fff; border-top-right-radius: 0; }
         .msg-out { align-self: flex-end; background: #d9fdd3; border-top-left-radius: 0; }
-        
         .msg-time { font-size: 10px; color: #999; text-align: left; margin-top: 4px; display: flex; justify-content: flex-end; gap: 4px; }
         .bot-badge { font-size: 10px; color: #008069; font-weight: bold; display: block; margin-bottom: 4px; }
-        
-        /* Buttons in Chat */
         .chat-btn { display: block; width: 100%; text-align: center; padding: 12px; margin-top: 8px; background: white; color: #008069; font-weight: bold; border-radius: 8px; font-size: 14px; border: 1px solid #e5e7eb; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: 0.1s; }
         .chat-btn:active { background: #f0fdf4; transform: scale(0.98); }
 
-        /* Navigation */
+        /* --- NAV --- */
         .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 75px; background: rgba(255,255,255,0.98); border-top: 1px solid #e5e5eb; display: grid; grid-template-columns: 1fr 1fr 1fr; z-index: 50; padding-bottom: 5px; box-shadow: 0 -4px 20px rgba(0,0,0,0.03); }
         .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; cursor: pointer; transition: 0.2s; }
         .nav-item.active { color: #008069; transform: translateY(-2px); }
@@ -77,14 +36,13 @@
         .nav-item span { font-size: 11px; font-weight: 700; }
         .badge { background: #ef4444; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; position: absolute; margin-top: -30px; margin-right: -20px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
 
-        /* Widgets */
+        /* --- WIDGETS --- */
         .container-btn { background: linear-gradient(135deg, #f97316, #ea580c); color: white; padding: 15px; border-radius: 16px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; box-shadow: 0 8px 20px -5px rgba(234, 88, 12, 0.4); cursor: pointer; transition: transform 0.1s; }
         .container-btn:active { transform: scale(0.98); }
-        
         .product-card { background: white; border-radius: 16px; padding: 10px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: space-between; height: 190px; }
         .product-img { width: 100%; height: 85px; object-fit: contain; margin-bottom: 10px; mix-blend-multiply; }
 
-        /* Modal */
+        /* --- MODAL --- */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 100; display: flex; justify-content: center; align-items: flex-end; opacity: 0; pointer-events: none; transition: 0.3s; }
         .modal-overlay.open { opacity: 1; pointer-events: all; }
         .modal-box { background: white; width: 100%; max-width: 600px; border-radius: 24px 24px 0 0; padding: 25px; transform: translateY(100%); transition: 0.3s cubic-bezier(0.32, 0.72, 0, 1); max-height: 85vh; overflow-y: auto; }
@@ -108,7 +66,6 @@
 
         <div id="screen-shop" class="screen active bg-gray-50">
             <div class="p-4 flex-1 overflow-y-auto">
-                
                 <div class="grid grid-cols-1 gap-3 mb-4">
                     <div onclick="startContainerFlow()" class="container-btn">
                         <div class="flex items-center gap-4">
@@ -121,12 +78,10 @@
                         <i class="fas fa-chevron-left bg-white/20 rounded-full p-1.5 text-xs"></i>
                     </div>
                 </div>
-
                 <div class="relative mb-6">
                     <input type="text" id="searchInput" oninput="filterProducts()" placeholder="חיפוש מוצר..." class="w-full p-3.5 pl-10 bg-white rounded-xl text-sm outline-none shadow-sm border border-gray-100 focus:border-green-500 transition">
                     <i class="fas fa-search absolute left-3 top-4 text-gray-400"></i>
                 </div>
-
                 <div id="productsGrid" class="grid grid-cols-2 gap-3 pb-4"></div>
             </div>
         </div>
@@ -156,7 +111,6 @@
         <div id="screen-chat" class="screen">
             <div class="chat-layout">
                 <div class="chat-content" id="chatBox"></div>
-
                 <div class="chat-input-area">
                     <div class="flex-shrink-0 cursor-pointer text-gray-500 p-2 rounded-full hover:bg-gray-200" onclick="startContainerFlow()"><i class="fas fa-plus text-xl"></i></div>
                     <input type="text" id="chatInput" placeholder="הקלד הודעה..." class="flex-1 bg-white rounded-full py-2.5 px-4 text-sm outline-none border border-gray-200 focus:border-green-500 transition" onkeydown="if(event.key === 'Enter') sendChat()">
@@ -190,6 +144,9 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, getDocs, doc, setDoc, onSnapshot, query, orderBy, serverTimestamp, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        
+        // --- 🧠 SABAN BRAIN INTEGRATION (המוח הלוגיסטי) ---
+        import { SabanLogic } from './js/saban-brain.js';
 
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
         const app = initializeApp(firebaseConfig);
@@ -226,7 +183,7 @@
             loadRealProducts();
         };
 
-        // --- CHAT ENGINE (AUTO-SCROLL FIX) ---
+        // --- CHAT ENGINE ---
         function subscribeToChat(uid) {
             const q = query(collection(db, `chat_sessions/${uid}/messages`), orderBy("createdAt", "asc"));
             onSnapshot(q, (snap) => {
@@ -246,9 +203,7 @@
 
         function scrollToBottom() {
             const box = document.getElementById('chatBox');
-            if(box) {
-                setTimeout(() => box.scrollTop = box.scrollHeight, 100);
-            }
+            if(box) setTimeout(() => box.scrollTop = box.scrollHeight, 100);
         }
 
         window.sendChat = async () => {
@@ -263,7 +218,7 @@
             triggerBotResponse(txt);
         };
 
-        // --- BOT BRAIN (CONTAINER LOGIC) ---
+        // --- BOT BRAIN ---
         async function triggerBotResponse(userText) {
             let reply = "";
             const clean = userText.toLowerCase();
@@ -332,9 +287,21 @@
             }, 1000);
         }
 
-        // --- ORDER TO CHAT ---
+        // --- ORDER TO CHAT (WITH BRAIN CHECK) ---
         window.analyzeAndMoveToChat = async () => {
             if (cart.length === 0) return alert("העגלה ריקה");
+
+            // 🧠 הפעלת המוח הלוגיסטי לפני השליחה!
+            const analysis = SabanLogic.analyzeCart(cart);
+            
+            if (!analysis.isValid) {
+                // המוח מצא בעיה!
+                alert(analysis.missingServices[0].msg);
+                // אופציונלי: להציע כפתור תיקון
+                return; // עצור הכל
+            }
+
+            // אם הכל תקין, ממשיכים
             const itemsList = cart.map(i => `▫️ ${i.name} (x${i.qty})`).join('<br>');
             const total = cart.reduce((a,c)=>a+c.price*c.qty,0);
             
@@ -364,12 +331,42 @@
             const grid = document.getElementById('productsGrid');
             if(list.length===0){grid.innerHTML='<div class="col-span-2 text-center text-gray-400 mt-10">טוען...</div>';return;}
             grid.innerHTML = list.map(p => {
-                const name = p.core?.name || p.title; const price = p.core?.price || p.price; const img = p.rich?.image || "https://via.placeholder.com/150";
-                return `<div class="product-card" onclick="addToCart('${name}', ${price})"><img src="${img}" class="product-img"><div><h3 class="font-bold text-xs text-gray-800 line-clamp-2 h-8 leading-tight mb-1">${name}</h3><div class="text-[#008069] font-bold text-sm mt-1">₪${price}</div></div><button class="w-full bg-gray-50 hover:bg-green-50 text-green-700 text-xs py-2 rounded-lg font-bold mt-2 transition border border-gray-100">הוסף +</button></div>`;
+                const name = p.core?.name || p.title; 
+                const price = p.core?.price || p.price; 
+                const img = p.rich?.image || "https://via.placeholder.com/150";
+                
+                // הוספנו את האובייקט המלא של המוצר לפונקציה כדי שהמוח יוכל לקרוא לוגיסטיקה
+                // אנחנו שומרים את האובייקט כ-JSON בתוך ה-attribute כדי לשלוף אותו אחר כך
+                const pString = encodeURIComponent(JSON.stringify(p));
+                
+                return `<div class="product-card" onclick="addToCart('${pString}')"><img src="${img}" class="product-img"><div><h3 class="font-bold text-xs text-gray-800 line-clamp-2 h-8 leading-tight mb-1">${name}</h3><div class="text-[#008069] font-bold text-sm mt-1">₪${price}</div></div><button class="w-full bg-gray-50 hover:bg-green-50 text-green-700 text-xs py-2 rounded-lg font-bold mt-2 transition border border-gray-100">הוסף +</button></div>`;
             }).join('');
         }
+        
         window.filterProducts = () => { renderProducts(allProducts.filter(p => (p.core?.name || p.title || "").toLowerCase().includes(document.getElementById('searchInput').value.toLowerCase()))); };
-        window.addToCart = (name, price) => { const e = cart.find(i => i.name === name); if (e) e.qty++; else cart.push({ name, price, qty: 1 }); updateCartUI(); };
+        
+        // Updated addToCart to handle full object
+        window.addToCart = (productStr) => { 
+            const p = JSON.parse(decodeURIComponent(productStr));
+            const name = p.core?.name || p.title;
+            const price = p.core?.price || p.price;
+            
+            const e = cart.find(i => i.id === p.id); 
+            if (e) {
+                e.qty++; 
+            } else {
+                // שומרים גם את נתוני הלוגיסטיקה עבור המוח
+                cart.push({ 
+                    id: p.id, 
+                    name, 
+                    price, 
+                    qty: 1, 
+                    logistics: p.logistics || {} 
+                }); 
+            }
+            updateCartUI(); 
+        };
+
         function updateCartUI() { document.getElementById('cartBadge').innerText = cart.reduce((acc, i) => acc + i.qty, 0); document.getElementById('cartBadge').classList.toggle('hidden', cart.length === 0); renderCartItems(); }
         function renderCartItems() { const list = document.getElementById('cartItemsList'); if(list) list.innerHTML = cart.length ? cart.map((item, i) => `<div class="bg-white p-3 rounded-xl border border-gray-100 flex justify-between items-center shadow-sm"><div><div class="font-bold text-sm text-gray-800">${item.name}</div><div class="text-xs text-gray-500">₪${item.price} ליח'</div></div><div class="flex items-center gap-3 bg-gray-50 p-1 rounded-lg"><div class="w-7 h-7 bg-white shadow-sm rounded-md flex items-center justify-center cursor-pointer text-gray-600 hover:text-red-500" onclick="updateQty(${i}, -1)">-</div><span class="font-bold text-sm w-4 text-center">${item.qty}</span><div class="w-7 h-7 bg-white shadow-sm rounded-md flex items-center justify-center cursor-pointer text-green-600" onclick="updateQty(${i}, 1)">+</div></div></div>`).join('') : '<div class="text-center text-gray-400 py-10">העגלה ריקה</div>'; }
         window.updateQty = (i, d) => { cart[i].qty += d; if (cart[i].qty <= 0) cart.splice(i, 1); updateCartUI(); };
