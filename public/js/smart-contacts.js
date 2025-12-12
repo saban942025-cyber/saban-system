@@ -15,8 +15,15 @@ export const SmartContacts = {
         
         // מיקום (ליד העכבר)
         const rect = event.target.getBoundingClientRect();
-        card.style.top = `${rect.bottom + 10}px`;
-        card.style.left = `${rect.left}px`;
+        let top = rect.bottom + 10;
+        let left = rect.left;
+        
+        // תיקון מיקום אם יוצא מהמסך
+        if (left + 288 > window.innerWidth) left = window.innerWidth - 300; 
+        if (top + 300 > window.innerHeight) top = rect.top - 300;
+
+        card.style.top = `${top}px`;
+        card.style.left = `${left}px`;
 
         // זיהוי תפקיד וצבעים
         const isStaff = user.type === 'staff';
@@ -48,7 +55,7 @@ export const SmartContacts = {
                         <div class="w-9 h-9 rounded-full bg-green-50 flex items-center justify-center group-hover:bg-green-100 transition"><i class="fas fa-phone"></i></div>
                         <span class="text-[10px] font-bold">חייג</span>
                     </a>
-                    <a href="https://wa.me/972${user.phone.substring(1)}" target="_blank" class="flex flex-col items-center gap-1 text-gray-500 hover:text-green-500 transition group">
+                    <a href="https://wa.me/972${user.phone.replace(/^0/, '')}" target="_blank" class="flex flex-col items-center gap-1 text-gray-500 hover:text-green-500 transition group">
                         <div class="w-9 h-9 rounded-full bg-green-50 flex items-center justify-center group-hover:bg-green-100 transition"><i class="fab fa-whatsapp"></i></div>
                         <span class="text-[10px] font-bold">ווצאף</span>
                     </a>
@@ -56,7 +63,7 @@ export const SmartContacts = {
                         <div class="w-9 h-9 rounded-full bg-orange-50 flex items-center justify-center group-hover:bg-orange-100 transition"><i class="fas fa-envelope"></i></div>
                         <span class="text-[10px] font-bold">מייל</span>
                     </a>
-                    <button onclick="alert('פונקציית צאט פרטי בפיתוח')" class="flex flex-col items-center gap-1 text-gray-500 hover:text-blue-600 transition group">
+                    <button id="btn-open-private-chat" class="flex flex-col items-center gap-1 text-gray-500 hover:text-blue-600 transition group">
                         <div class="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition"><i class="fas fa-comment-dots"></i></div>
                         <span class="text-[10px] font-bold">צ'אט</span>
                     </button>
@@ -65,6 +72,18 @@ export const SmartContacts = {
         `;
 
         document.body.appendChild(card);
+
+        // חיבור אירוע לחיצה לכפתור הצ'אט
+        document.getElementById('btn-open-private-chat').onclick = () => {
+            if (typeof window.openChat === 'function') {
+                // אם אנחנו בחמ"ל - פתח את הצ'אט
+                window.openChat(user.uid || user.id, user.name, 'private', user.avatar);
+                card.remove();
+            } else {
+                // אם אנחנו באפליקציה או מקום אחר - התראה (או ניתוב אחר)
+                alert("מעבר לצ'אט פרטי זמין רק בחמ\"ל.");
+            }
+        };
         
         // סגירה בלחיצה בחוץ
         setTimeout(() => {
