@@ -4,109 +4,84 @@
     <meta charset="UTF-8">
     <title>SabanOS | מרכז שליטה</title>
     <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/png" href="icons/icon-192.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script type="module" src="./js/logger.js"></script>
 </head>
-<body class="bg-slate-900 min-h-screen font-sans text-white flex flex-col">
+<body class="bg-slate-900 min-h-screen font-sans text-white">
 
-    <nav class="bg-slate-800 p-4 shadow-lg border-b border-slate-700 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-4">
-                <i class="fas fa-crown text-yellow-400 text-2xl"></i>
-                <h1 class="text-xl font-bold">SabanOS Master</h1>
-            </div>
-            <button onclick="logout()" class="text-red-400 hover:text-red-300"><i class="fas fa-sign-out-alt"></i> יציאה</button>
+    <nav class="bg-slate-800 p-4 shadow-lg border-b border-slate-700 flex justify-between items-center">
+        <div class="flex items-center gap-4">
+            <i class="fas fa-crown text-yellow-400 text-2xl"></i>
+            <h1 class="text-xl font-bold">SabanOS Master</h1>
         </div>
+        <button onclick="window.location.href='index.html'" class="text-gray-400 hover:text-white">יציאה</button>
     </nav>
 
-    <main class="flex-1 p-8 max-w-7xl mx-auto w-full">
+    <main class="p-8 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         
-        <h2 class="text-gray-400 text-sm font-bold uppercase mb-6 tracking-wider border-b border-gray-700 pb-2">מערכות תפעוליות</h2>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            
-            <a href="dispatch.html" class="bg-gray-800 p-6 rounded-xl border-l-4 border-blue-600 hover:bg-gray-700 transition group relative overflow-hidden">
-                <div class="absolute top-2 left-2 text-blue-900/20 text-6xl group-hover:text-blue-900/40 transition"><i class="fas fa-tower-observation"></i></div>
-                <div class="relative z-10">
-                    <h2 class="text-xl font-bold text-blue-400 mb-1">מגדל פיקוח (סידור)</h2>
-                    <p class="text-sm font-bold text-white mb-2">אחראים: ראמי / יואב</p>
-                    <p class="text-xs text-gray-400">ניתוב הזמנות, הפקת תעודות משלוח, שיבוץ משאיות וניהול שרשרת אספקה.</p>
-                </div>
-            </a>
+        <a href="dispatch.html" class="bg-gray-800 p-6 rounded-xl border-l-4 border-blue-600 hover:bg-gray-700 transition">
+            <h2 class="text-xl font-bold text-blue-400 mb-2"><i class="fas fa-tower-observation"></i> מגדל פיקוח</h2>
+            <p class="text-xs text-gray-400">ניהול סידור עבודה</p>
+        </a>
 
-            <a href="warehouse.html" class="bg-gray-800 p-6 rounded-xl border-l-4 border-orange-500 hover:bg-gray-700 transition group relative overflow-hidden">
-                <div class="absolute top-2 left-2 text-orange-900/20 text-6xl group-hover:text-orange-900/40 transition"><i class="fas fa-dolly"></i></div>
-                <div class="relative z-10">
-                    <h2 class="text-xl font-bold text-orange-400 mb-1">מסוף מחסן / ליקוט</h2>
-                    <p class="text-sm font-bold text-white mb-2">אחראים: אורן / תמיר</p>
-                    <p class="text-xs text-gray-400">קבלת משימות ליקוט, ניהול זמני ביצוע (סטופר), ואישור מוכנות להעמסה.</p>
-                </div>
-            </a>
+        <a href="admin.html" class="bg-gray-800 p-6 rounded-xl border-l-4 border-purple-600 hover:bg-gray-700 transition">
+            <h2 class="text-xl font-bold text-purple-400 mb-2"><i class="fas fa-database"></i> ניהול קטלוג</h2>
+            <p class="text-xs text-gray-400">עריכת מוצרים ומלאי</p>
+        </a>
 
-            <a href="driver.html" class="bg-gray-800 p-6 rounded-xl border-l-4 border-purple-600 hover:bg-gray-700 transition group relative overflow-hidden">
-                <div class="absolute top-2 left-2 text-purple-900/20 text-6xl group-hover:text-purple-900/40 transition"><i class="fas fa-truck-moving"></i></div>
-                <div class="relative z-10">
-                    <h2 class="text-xl font-bold text-purple-400 mb-1">אפליקציית נהג</h2>
-                    <p class="text-sm font-bold text-white mb-2">משתמשים: חכמת / עלי</p>
-                    <p class="text-xs text-gray-400">קבלת יעדים לשינוע, כפתורי ניווט (Waze), ואישור מסירה ללקוח (חתימה).</p>
-                </div>
-            </a>
-
-            <a href="dashboard.html" class="bg-gray-800 p-6 rounded-xl border-l-4 border-cyan-500 hover:bg-gray-700 transition group relative overflow-hidden">
-                <div class="absolute top-2 left-2 text-cyan-900/20 text-6xl group-hover:text-cyan-900/40 transition"><i class="fas fa-map-location-dot"></i></div>
-                <div class="relative z-10">
-                    <h2 class="text-xl font-bold text-cyan-400 mb-1">מבט על (Live GPS)</h2>
-                    <p class="text-sm font-bold text-white mb-2">צופים: הראל / הנהלה</p>
-                    <p class="text-xs text-gray-400">תמונת מצב בזמן אמת: איפה כל משאית, כמה הזמנות פתוחות וזיהוי חריגות.</p>
-                </div>
-            </a>
-        </div>
-
-        <h2 class="text-gray-400 text-sm font-bold uppercase mb-6 tracking-wider border-b border-gray-700 pb-2">כלי בדיקה ושירות</h2>
-        <div class="bg-gray-800 p-4 rounded-xl border border-green-900/50 flex items-center gap-4 max-w-2xl">
-            <div class="w-10 h-10 bg-green-900/50 text-green-400 rounded-full flex items-center justify-center text-lg"><i class="fas fa-mask"></i></div>
-            <div class="flex-1">
-                <h3 class="font-bold text-green-400">התחזות ללקוח (Client View)</h3>
-                <p class="text-xs text-gray-400">לראות את האפליקציה כמו ששחר שאול רואה אותה</p>
+        <div class="bg-gray-800 p-6 rounded-xl border-l-4 border-green-500 col-span-1 md:col-span-2">
+            <h2 class="text-xl font-bold text-green-400 mb-4"><i class="fas fa-user-secret"></i> התחזות ללקוח (Client View)</h2>
+            <div class="flex gap-2">
+                <select id="clientSelect" class="bg-gray-900 border border-gray-600 text-white p-3 rounded w-full">
+                    <option value="">טוען לקוחות...</option>
+                </select>
+                <button onclick="impersonateClient()" class="bg-green-600 hover:bg-green-500 px-6 py-2 rounded font-bold whitespace-nowrap">כנס</button>
             </div>
-            <select id="clientSelect" class="bg-gray-900 border border-gray-600 text-white p-2 rounded text-sm"><option>טוען...</option></select>
-            <button onclick="impersonateClient()" class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded text-sm font-bold">כנס</button>
         </div>
 
     </main>
 
     <script type="module">
-        import { auth, db, signOut, onAuthStateChanged, collection, getDocs, query, where } from './js/firebase-config.js';
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        onAuthStateChanged(auth, (user) => {
-            if (!user) window.location.href = "index.html";
-            loadClients();
-        });
+        const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-        async function loadClients() {
+        // טעינת רשימת לקוחות להתחזות
+        (async () => {
             const select = document.getElementById('clientSelect');
-            const q = query(collection(db, "users"), where("role", "==", "client"));
+            // מביא את כל המשתמשים שיש להם role=client או סתם את כולם
+            const q = query(collection(db, "users")); 
             const snapshot = await getDocs(q);
-            select.innerHTML = '<option value="">בחר לקוח...</option>';
+            
+            select.innerHTML = '<option value="">בחר לקוח להתחזות...</option>';
             snapshot.forEach(doc => {
-                const opt = document.createElement('option');
-                opt.value = doc.id;
-                opt.innerText = doc.data().name;
-                select.appendChild(opt);
+                const u = doc.data();
+                if(u.role !== 'admin') { // לא נתחזה לאדמין
+                    const opt = document.createElement('option');
+                    opt.value = doc.id; // UID
+                    opt.innerText = `${u.name} (${u.email || u.phone})`;
+                    select.appendChild(opt);
+                }
             });
-        }
+            
+            // הוספת משתמש דמו למקרה שאין
+            const demo = document.createElement('option');
+            demo.value = "shahar_shaul";
+            demo.innerText = "שחר שאול (Demo)";
+            select.appendChild(demo);
+        })();
 
         window.impersonateClient = () => {
-            const id = document.getElementById('clientSelect').value;
-            if (!id) return alert("בחר לקוח");
-            localStorage.setItem('impersonateId', id);
+            const uid = document.getElementById('clientSelect').value;
+            if (!uid) return alert("בחר לקוח");
+            
+            // שמירת המזהה והעברה
+            localStorage.setItem('impersonateId', uid);
             window.location.href = "client.html";
         };
-
-        window.logout = () => signOut(auth).then(() => window.location.href = "index.html");
     </script>
 </body>
-
 </html>
