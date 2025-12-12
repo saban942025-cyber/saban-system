@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SabanOS Admin | AI Catalog v26.3 (Keys Updated)</title>
+    <title>SabanOS Admin | AI Catalog v26.4 (Fixed)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -45,7 +45,7 @@
             </div>
             <div>
                 <h1 class="font-bold text-lg leading-tight">SabanOS Catalog</h1>
-                <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">AI Stable v26.3</span>
+                <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">AI Stable v26.4</span>
             </div>
         </div>
         <div class="flex gap-2">
@@ -181,11 +181,10 @@
         // --- מפתחות הזהב (מעודכנים) ---
         const API_KEYS = {
             googleSearch: "AIzaSyDLkShn6lBBew-PJJWtzvAe_14UF9Kv-QI", // המפתח החדש ששלחת לחיפוש
-            gemini: "AIzaSyAdfGVrmr90Mp9ZhNMItD81iaE8OipKwz0"
+            gemini: "AIzaSyAdfGVrmr90Mp9ZhNMItD81iaE8OipKwz0" // מפתח הבינה המלאכותית
         };
         
-        // מזהה מנוע החיפוש (אם זה יכשל, נצטרך גם את ה-CX שמתאים למפתח החדש)
-        // בינתיים משתמש בקיים
+        // מזהה מנוע החיפוש - ברירת מחדל
         const SEARCH_CX = "1340c66f5e73a4076";
 
         const NO_IMG = "https://via.placeholder.com/150?text=No+Image";
@@ -202,8 +201,8 @@
             
             const prompt = `You are a logistics expert. Product: "${term}". Return JSON (Hebrew): {"name": "Professional Name", "description": "Short marketing desc", "features": ["feat1"], "application": "Usage", "weight_kg": 25, "pallet_qty": 64, "requires_crane": true} ONLY JSON.`;
 
-            // נסיון עם מודלים מעודכנים
-            const models = ["gemini-1.5-flash-latest", "gemini-pro"];
+            // מודלים מעודכנים ופופולריים יותר
+            const models = ["gemini-1.5-flash", "gemini-1.5-pro"]; // הסרתי latest
             let success = false;
             
             for (const model of models) {
@@ -217,23 +216,26 @@
                     
                     const data = await response.json();
                     
-                    if (data.candidates && data.candidates[0]) {
-                        const text = data.candidates[0].content.parts[0].text;
-                        const result = JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim());
+                    if (data.error) throw new Error(data.error.message);
+                    if (!data.candidates || !data.candidates[0]) throw new Error("No data returned");
 
-                        document.getElementById('name').value = result.name || term;
-                        document.getElementById('description').value = result.description || '';
-                        document.getElementById('features').value = Array.isArray(result.features) ? result.features.join('\n') : (result.features || '');
-                        document.getElementById('application').value = result.application || '';
-                        document.getElementById('weight').value = result.weight_kg || 0;
-                        document.getElementById('palletQty').value = result.pallet_qty || 0;
-                        document.getElementById('reqCrane').checked = result.requires_crane || false;
+                    const text = data.candidates[0].content.parts[0].text;
+                    const result = JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim());
 
-                        updatePreview();
-                        alert("🤖 הנתונים מולאו! עכשיו חפש תמונה.");
-                        success = true;
-                    }
-                } catch (e) { console.warn(`AI Model ${model} failed`, e); }
+                    document.getElementById('name').value = result.name || term;
+                    document.getElementById('description').value = result.description || '';
+                    document.getElementById('features').value = Array.isArray(result.features) ? result.features.join('\n') : (result.features || '');
+                    document.getElementById('application').value = result.application || '';
+                    document.getElementById('weight').value = result.weight_kg || 0;
+                    document.getElementById('palletQty').value = result.pallet_qty || 0;
+                    document.getElementById('reqCrane').checked = result.requires_crane || false;
+
+                    updatePreview();
+                    alert("🤖 הנתונים מולאו! עכשיו חפש תמונה.");
+                    success = true;
+                } catch (e) { 
+                    console.warn(`AI Model ${model} failed`, e); 
+                }
             }
             
             if(!success) alert("ה-AI לא זמין כרגע. אנא מלא ידנית.");
@@ -414,4 +416,3 @@
     </script>
 </body>
 </html>
-
