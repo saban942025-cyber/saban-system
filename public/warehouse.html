@@ -2,45 +2,68 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>SabanOS | ליקוט</title>
-    <link rel="icon" type="image/png" href="icons/icon-192.png">
+    <title>SabanOS | מסוף ליקוט</title>
     <script src="https://cdn.tailwindcss.com"></script>
-  <script type="module" src="./js/logger.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-gray-900 text-white p-4 font-sans">
-    <h1 class="text-2xl font-bold mb-4 text-yellow-400">משימות ליקוט פעילות</h1>
-    <div id="tasks" class="space-y-4"></div>
+<body class="bg-slate-800 text-white p-4 font-sans">
+    
+    <header class="flex justify-between items-center mb-6 border-b border-gray-700 pb-4">
+        <h1 class="text-2xl font-bold text-yellow-400"><i class="fas fa-dolly"></i> משימות ליקוט</h1>
+        <div class="text-sm text-gray-400">מחובר: <span id="pickerName">אורן</span></div>
+    </header>
+
+    <div id="pickingTasks" class="space-y-4"></div>
 
     <script type="module">
-        import { db, collection, query, where, onSnapshot, updateDoc, doc } from './js/firebase-config.js';
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, query, where, onSnapshot, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        
+        const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-        // מאזין רק להזמנות בסטטוס "picking"
+        // מאזין להזמנות בסטטוס "picking" (בליקוט)
         const q = query(collection(db, "orders"), where("status", "==", "picking"));
         
         onSnapshot(q, (snap) => {
-            document.getElementById('tasks').innerHTML = snap.docs.map(d => {
+            const container = document.getElementById('pickingTasks');
+            container.innerHTML = '';
+            
+            if(snap.empty) {
+                container.innerHTML = "<div class='text-gray-500 text-center mt-20 text-lg'>הכל נקי. אין משימות. 👍</div>";
+                return;
+            }
+
+            snap.forEach(d => {
                 const o = d.data();
-                return `
-                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                container.innerHTML += `
+                <div class="bg-gray-700 p-5 rounded-xl border border-gray-600 shadow-xl">
                     <div class="flex justify-between mb-4">
-                        <h2 class="text-xl font-bold">${o.clientName}</h2>
-                        <span class="bg-blue-600 px-2 py-1 rounded text-sm">${o.project}</span>
+                        <h2 class="text-xl font-bold text-white">${o.clientName}</h2>
+                        <span class="bg-blue-600 px-3 py-1 rounded-full text-xs font-bold">${o.project || 'כללי'}</span>
                     </div>
-                    <ul class="mb-6 space-y-2 text-lg">
-                        ${o.items.map(i => `<li>⬜ ${i.name} - <b>${i.qty}</b></li>`).join('')}
-                    </ul>
-                    <button onclick="window.finishPick('${d.id}')" class="w-full bg-green-600 py-4 rounded-xl font-bold text-xl hover:bg-green-500">
-                        הסתיים - העבר לנהג
+                    
+                    <div class="bg-gray-800 p-4 rounded-lg mb-4">
+                        <ul class="space-y-2 text-lg">
+                            ${o.items ? o.items.map(i => `<li class="flex justify-between border-b border-gray-700 pb-1">
+                                <span>⬜ ${i.name}</span>
+                                <b class="text-yellow-400">x${i.qty}</b>
+                            </li>`).join('') : 'שגיאה בפריטים'}
+                        </ul>
+                    </div>
+
+                    <button onclick="window.finishPick('${d.id}')" class="w-full bg-green-600 hover:bg-green-500 text-white py-4 rounded-xl font-bold text-lg shadow-lg flex justify-center items-center gap-2">
+                        <i class="fas fa-box-check"></i> סיום ליקוט והעברה לנהג
                     </button>
                 </div>`;
-            }).join('');
-            if(snap.empty) document.getElementById('tasks').innerHTML = "<div class='text-gray-500 text-center mt-10'>אין משימות. קח אוויר.</div>";
+            });
         });
 
         window.finishPick = async (id) => {
-            await updateDoc(doc(db, "orders", id), { status: "loaded" }); // עובר לנהג
+            // מעביר לסטטוס 'shipping' (או 'loaded') כדי שיופיע אצל הנהג
+            await updateDoc(doc(db, "orders", id), { status: "shipping" });
         };
     </script>
 </body>
-
 </html>
