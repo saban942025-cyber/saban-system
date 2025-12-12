@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>SabanOS | ניהול משתמשים (Magic Link)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* --- WINDOWS 11 THEME --- */
+        :root {
+            --win-bg: #f0f3f9;
+            --win-card: #ffffff;
+            --win-border: #e0e0e0;
+            --win-blue: #0067c0;
+            --win-blue-hover: #005a9e;
+            --win-text: #202020;
+            --win-text-sec: #606060;
+            --shadow-soft: 0 4px 12px rgba(0,0,0,0.03);
+            --shadow-hover: 0 6px 16px rgba(0,0,0,0.06);
+        }
+
+        body { 
+            background-color: var(--win-bg); 
+            color: var(--win-text); 
+            font-family: 'Segoe UI', system-ui, sans-serif; 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+        }
+
+        /* Layout */
+        .window-container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 360px 1fr; /* Form width fixed */
+            gap: 24px;
+            padding: 24px;
+            overflow: hidden;
+        }
+
+        /* Card Style */
+        .win-card {
+            background: var(--win-card);
+            border: 1px solid var(--win-border);
+            border-radius: 12px;
+            box-shadow: var(--shadow-soft);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: box-shadow 0.2s;
+        }
+        .win-card:hover { box-shadow: var(--shadow-hover); }
+
+        .win-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--win-border);
+            background: #f9f9f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .win-title { font-size: 15px; font-weight: 700; color: #333; }
+
+        /* Inputs */
+        .win-input {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 13px;
+            background: white;
+            transition: all 0.2s;
+            outline: none;
+        }
+        .win-input:focus { border-color: var(--win-blue); box-shadow: 0 0 0 2px rgba(0, 103, 192, 0.1); }
+        .win-input:disabled { background-color: #f3f4f6; color: #9ca3af; cursor: not-allowed; }
+        
+        .win-label { font-size: 11px; font-weight: 600; color: var(--win-text-sec); margin-bottom: 5px; display: block; text-transform: uppercase; letter-spacing: 0.02em; }
+
+        /* Buttons */
+        .win-btn {
+            background-color: white;
+            border: 1px solid #d1d5db;
+            color: #374151;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+        }
+        .win-btn:hover { background-color: #f9fafb; border-color: #9ca3af; }
+        .win-btn:active { transform: translateY(1px); }
+
+        .win-btn-primary { background-color: var(--win-blue); color: white; border-color: var(--win-blue); }
+        .win-btn-primary:hover { background-color: var(--win-blue-hover); border-color: var(--win-blue-hover); }
+        
+        .win-btn-danger { color: #dc2626; border-color: #fecaca; background-color: #fef2f2; }
+        .win-btn-danger:hover { background-color: #fee2e2; border-color: #fca5a5; }
+
+        /* Tabs */
+        .win-tabs { display: flex; padding: 4px; background: #f1f5f9; border-radius: 8px; margin-bottom: 20px; }
+        .win-tab { flex: 1; text-align: center; padding: 8px; font-size: 13px; cursor: pointer; border-radius: 6px; color: #64748b; font-weight: 600; transition: 0.2s; }
+        .win-tab.active { background: white; color: var(--win-blue); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+        /* STABLE TABLE */
+        .table-container { 
+            flex: 1; 
+            overflow-y: auto; 
+            scrollbar-gutter: stable;
+        }
+        
+        .win-table { 
+            width: 100%; 
+            border-collapse: separate; 
+            border-spacing: 0; 
+            table-layout: fixed;
+        }
+        
+        .win-table th { 
+            text-align: right; 
+            padding: 12px 16px; 
+            border-bottom: 2px solid var(--win-border); 
+            color: #475569; 
+            font-size: 12px; 
+            font-weight: 700; 
+            background: #fafafa; 
+            position: sticky; 
+            top: 0; 
+            z-index: 10;
+        }
+        
+        .win-table td { 
+            padding: 12px 16px; 
+            border-bottom: 1px solid #f1f5f9; 
+            vertical-align: middle; 
+            font-size: 13px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .win-table tr:hover td { background-color: #f8fafc; }
+
+        .avatar-circle { width: 36px; height: 36px; border-radius: 10px; object-fit: cover; border: 1px solid var(--win-border); }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Status Bar */
+        .status-bar { height: 32px; background: white; border-top: 1px solid var(--win-border); display: flex; align-items: center; padding: 0 24px; font-size: 11px; justify-content: space-between; color: #64748b; font-weight: 500; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-left: 6px; }
+        
+        /* Magic Link Buttons */
+        .magic-btn { width: 30px; height: 30px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; transition: 0.2s; border: 1px solid transparent; }
+        .magic-btn:hover { background: #f1f5f9; border-color: #cbd5e1; }
+    </style>
+</head>
+<body>
+
+    <div class="window-container">
+        
+        <div class="win-card">
+            <div class="win-header">
+                <span class="win-title" id="formTitle"><i class="fas fa-user-plus text-blue-600 ml-2"></i> כרטיס משתמש</span>
+                <button onclick="resetForm()" id="cancelBtn" class="text-xs text-red-500 hidden font-bold hover:bg-red-50 px-2 py-1 rounded transition">ביטול עריכה</button>
+            </div>
+            
+            <div class="p-6 flex-1 overflow-y-auto">
+                <div class="win-tabs">
+                    <div onclick="switchTab('staff')" class="win-tab active" id="tab-staff"><i class="fas fa-user-tie"></i> צוות</div>
+                    <div onclick="switchTab('client')" class="win-tab" id="tab-client"><i class="fas fa-briefcase"></i> לקוח</div>
+                </div>
+
+                <form id="createForm" class="space-y-5">
+                    <input type="hidden" id="editUserId">
+
+                    <div class="flex items-center gap-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <img id="avatarPreview" src="https://ui-avatars.com/api/?name=New" class="w-16 h-16 rounded-xl border bg-white object-cover">
+                        <div class="flex-1">
+                            <label class="win-label">תמונת פרופיל</label>
+                            <input type="text" id="avatar" class="win-input text-xs" placeholder="הדבק קישור לתמונה..." oninput="updateAvatar()">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="win-label">שם מלא</label>
+                            <input type="text" id="name" class="win-input font-bold" required placeholder="שם...">
+                        </div>
+                        <div>
+                            <label class="win-label">טלפון נייד</label>
+                            <input type="tel" id="phone" class="win-input" required placeholder="050...">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="win-label">אימייל (שם משתמש)</label>
+                            <input type="email" id="email" class="win-input" required placeholder="@saban...">
+                        </div>
+                        <div>
+                            <label class="win-label">סיסמה</label>
+                            <input type="text" id="password" class="win-input" value="Saban2025" required>
+                        </div>
+                    </div>
+
+                    <div id="staffFields" class="space-y-4 pt-2 border-t border-dashed">
+                        <div>
+                            <label class="win-label">תפקיד וסמכויות</label>
+                            <select id="roleSelect" class="win-input cursor-pointer" onchange="updateRoleDesc()">
+                                <option value="admin">👑 מנכ"ל / אדמין</option>
+                                <option value="ops">🕹️ מנהל תפעול</option>
+                                <option value="purchasing">🛒 מנהל רכש</option>
+                                <option value="warehouse">📦 מחסנאי</option>
+                                <option value="driver">🚛 נהג משאית</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="win-label">סניף / מחלקה</label>
+                            <input type="text" id="branch" class="win-input" placeholder="למשל: סניף החרש">
+                        </div>
+                        <div>
+                            <label class="win-label">תיאור (נוצר אוטומטית)</label>
+                            <textarea id="description" class="win-input h-20 text-xs bg-slate-50"></textarea>
+                        </div>
+                    </div>
+
+                    <div id="clientFields" class="hidden space-y-4 pt-2 border-t border-dashed">
+                        <div>
+                            <label class="win-label">מספר לקוח (קומקס)</label>
+                            <input type="text" id="clientNumber" class="win-input font-mono" placeholder="12345">
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="win-label mb-0">פרויקטים / אתרים</label>
+                                <button type="button" onclick="addProjectField()" class="text-[10px] bg-blue-50 text-blue-600 px-2 py-1 rounded font-bold hover:bg-blue-100">+ הוסף</button>
+                            </div>
+                            <div id="projectsContainer" class="space-y-2 max-h-40 overflow-y-auto pr-1"></div>
+                        </div>
+                    </div>
+
+                    <div class="pt-4">
+                        <button type="submit" id="submitBtn" class="win-btn win-btn-primary w-full py-3 text-sm shadow-md">
+                            <i class="fas fa-save"></i> שמור במערכת
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="win-card">
+            <div class="win-header">
+                <span class="win-title">👥 המאגר המלא</span>
+                <div class="flex gap-3">
+                    <button onclick="loadUsers()" class="win-btn px-3" title="רענן"><i class="fas fa-sync-alt"></i></button>
+                    <div class="relative">
+                        <input type="text" id="searchUser" oninput="filterUsers()" placeholder="חיפוש מהיר..." class="win-input w-64 py-1.5 pl-8 rounded-full">
+                        <i class="fas fa-search absolute left-3 top-2 text-gray-400 text-xs"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table class="win-table">
+                    <colgroup>
+                        <col style="width: 50px;"> <col style="width: 20%;"> <col style="width: 15%;"> <col style="width: auto;"> <col style="width: 140px;"> <col style="width: 90px;"> </colgroup>
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>שם מלא</th>
+                            <th>תפקיד</th>
+                            <th>פרטים נוספים</th>
+                            <th>שיתוף מהיר</th> <th class="text-center">פעולות</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTable">
+                        <tr><td colspan="6" class="text-center p-8 text-gray-400">טוען נתונים...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="status-bar">
+        <div class="flex items-center" id="systemStatus"><span class="status-dot bg-green-500"></span>&nbsp; מחובר לשרת</div>
+        <div class="text-[10px] opacity-50">SabanOS Admin Station v2.7</div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, updateDoc, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // Config
+        const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentTab = 'staff';
+        let usersList = [];
+
+        // Expose functions globally
+        window.switchTab = switchTab;
+        window.loadUsers = loadUsers;
+        window.filterUsers = filterUsers;
+        window.deleteUser = deleteUser;
+        window.editUser = editUser;
+        window.resetForm = resetForm;
+        window.addProjectField = addProjectField;
+        window.updateAvatar = updateAvatar;
+        window.updateRoleDesc = updateRoleDesc;
+        window.copyMagicLink = copyMagicLink; // New function exposed
+
+        // Status Helper
+        function setStatus(msg, type = 'success') {
+            const el = document.getElementById('systemStatus');
+            const color = type === 'error' ? 'bg-red-500' : (type === 'loading' ? 'bg-yellow-500' : 'bg-green-500');
+            el.innerHTML = `<span class="status-dot ${color}"></span>&nbsp; ${msg}`;
+        }
+
+        // --- 1. Load Data ---
+        async function loadUsers() {
+            setStatus("טוען רשימה...", 'loading');
+            try {
+                const snap = await getDocs(collection(db, "users"));
+                usersList = snap.docs.map(d => ({...d.data(), id: d.id}));
+                renderTable(usersList);
+                setStatus(`נטענו ${usersList.length} משתמשים`);
+            } catch (e) {
+                console.error(e);
+                setStatus("שגיאת טעינה", 'error');
+            }
+        }
+
+        function renderTable(list) {
+            const tbody = document.getElementById('usersTable');
+            if(list.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center p-8 text-gray-400">המאגר ריק.</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = list.map(u => {
+                const isStaff = u.type !== 'client';
+                const info = isStaff ? (u.branch || '-') : `${(u.projects||[]).length} פרויקטים`;
+                
+                let badgeClass = 'bg-gray-100 text-gray-600';
+                let roleLabel = u.role;
+                if(u.role === 'admin') { badgeClass = 'bg-purple-100 text-purple-700'; roleLabel = 'מנכ"ל'; }
+                if(u.role === 'client') { badgeClass = 'bg-green-100 text-green-700'; roleLabel = 'לקוח'; }
+                if(u.role === 'driver') { badgeClass = 'bg-orange-100 text-orange-700'; roleLabel = 'נהג'; }
+
+                // Magic Link Generation
+                const magicLink = `${window.location.origin}/index.html?uid=${u.id}`;
+                const waMsg = encodeURIComponent(`היי ${u.name}, הנה הלינק הישיר שלך למערכת סבן (ללא סיסמה): ${magicLink}`);
+                const cleanPhone = u.phone.replace(/^0/, ''); // Remove leading 0
+                const waUrl = `https://wa.me/972${cleanPhone}?text=${waMsg}`;
+
+                return `
+                <tr class="transition duration-150 border-b border-slate-50 hover:bg-slate-50">
+                    <td class="text-center"><img src="${u.avatar || 'https://via.placeholder.com/32'}" class="avatar-circle shadow-sm" onerror="this.src='https://via.placeholder.com/32'"></td>
+                    <td class="font-bold text-gray-800 truncate" title="${u.name}">${u.name}</td>
+                    <td><span class="text-[10px] px-2 py-1 rounded-full font-bold uppercase ${badgeClass}">${roleLabel}</span></td>
+                    <td class="text-gray-500 truncate" title="${info}">${info}</td>
+                    
+                    <td>
+                        <div class="flex items-center gap-1">
+                            <button onclick="copyMagicLink('${magicLink}')" class="magic-btn text-gray-500 hover:text-blue-600" title="העתק לינק"><i class="fas fa-link"></i></button>
+                            <a href="${waUrl}" target="_blank" class="magic-btn text-green-500 hover:text-green-600 hover:bg-green-50" title="שלח בווצאפ"><i class="fab fa-whatsapp"></i></a>
+                        </div>
+                    </td>
+
+                    <td class="text-center">
+                        <button onclick="editUser('${u.id}')" class="win-btn px-2 py-1 text-blue-600 hover:bg-blue-50 border-transparent shadow-none" title="ערוך"><i class="fas fa-pen"></i></button>
+                        <button onclick="deleteUser('${u.id}')" class="win-btn px-2 py-1 text-red-500 hover:bg-red-50 border-transparent shadow-none" title="מחק"><i class="fas fa-trash-alt"></i></button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        // --- NEW: Copy Magic Link ---
+        function copyMagicLink(link) {
+            navigator.clipboard.writeText(link).then(() => {
+                setStatus("הלינק הועתק ללוח!");
+                setTimeout(() => setStatus(`נטענו ${usersList.length} משתמשים`), 3000);
+            }).catch(err => alert("שגיאה בהעתקה"));
+        }
+
+        // --- 2. Edit User ---
+        function editUser(id) {
+            const user = usersList.find(u => u.id === id);
+            if (!user) return;
+
+            document.getElementById('formTitle').innerHTML = `<i class="fas fa-edit text-orange-500 ml-2"></i> עריכת ${user.name}`;
+            document.getElementById('editUserId').value = id;
+            document.getElementById('submitBtn').innerHTML = '<i class="fas fa-check"></i> עדכן נתונים';
+            document.getElementById('submitBtn').className = "win-btn win-btn-primary w-full py-3 bg-orange-600 border-orange-600 hover:bg-orange-700 text-white shadow-md";
+            document.getElementById('cancelBtn').classList.remove('hidden');
+
+            document.getElementById('name').value = user.name;
+            document.getElementById('email').value = user.email;
+            document.getElementById('email').disabled = true; // Lock email
+            document.getElementById('password').disabled = true; // Lock password
+            document.getElementById('phone').value = user.phone;
+            document.getElementById('avatar').value = user.avatar;
+            updateAvatar();
+
+            if (user.type === 'client') {
+                switchTab('client');
+                document.getElementById('clientNumber').value = user.clientNumber || '';
+                const container = document.getElementById('projectsContainer');
+                container.innerHTML = '';
+                if (user.projects) {
+                    user.projects.forEach(p => {
+                        const div = document.createElement('div');
+                        div.className = 'bg-white p-2 rounded border border-slate-200 mb-2 relative shadow-sm';
+                        div.innerHTML = `
+                            <input type="text" class="w-full border-b mb-1 text-xs outline-none proj-name font-bold" placeholder="שם אתר" value="${p.name}">
+                            <input type="text" class="w-full text-xs outline-none proj-addr text-gray-500" placeholder="כתובת" value="${p.address}">
+                            <i onclick="this.parentElement.remove()" class="fas fa-times absolute top-1 left-1 text-gray-300 hover:text-red-500 cursor-pointer"></i>
+                        `;
+                        container.appendChild(div);
+                    });
+                }
+            } else {
+                switchTab('staff');
+                document.getElementById('roleSelect').value = user.role;
+                document.getElementById('branch').value = user.branch || '';
+                document.getElementById('description').value = user.description || '';
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('createForm').reset();
+            document.getElementById('editUserId').value = '';
+            document.getElementById('formTitle').innerHTML = `<i class="fas fa-user-plus text-blue-600 ml-2"></i> כרטיס משתמש`;
+            document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save"></i> שמור במערכת';
+            document.getElementById('submitBtn').className = "win-btn win-btn-primary w-full py-3 text-sm shadow-md";
+            document.getElementById('email').disabled = false;
+            document.getElementById('password').disabled = false;
+            document.getElementById('cancelBtn').classList.add('hidden');
+            document.getElementById('avatarPreview').src = "https://ui-avatars.com/api/?name=New";
+            document.getElementById('projectsContainer').innerHTML = '';
+            updateRoleDesc();
+        }
+
+        // --- 3. Save Logic ---
+        document.getElementById('createForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> שומר...';
+            btn.disabled = true;
+
+            const editId = document.getElementById('editUserId').value;
+            const isEdit = !!editId;
+
+            try {
+                const baseData = {
+                    name: document.getElementById('name').value,
+                    phone: document.getElementById('phone').value,
+                    avatar: document.getElementById('avatar').value || `https://ui-avatars.com/api/?name=${document.getElementById('name').value}`,
+                };
+
+                let finalData = {};
+                if (currentTab === 'staff') {
+                    finalData = {
+                        ...baseData,
+                        type: 'staff',
+                        role: document.getElementById('roleSelect').value,
+                        branch: document.getElementById('branch').value,
+                        description: document.getElementById('description').value
+                    };
+                } else {
+                    finalData = {
+                        ...baseData,
+                        type: 'client',
+                        role: 'client',
+                        clientNumber: document.getElementById('clientNumber').value,
+                        projects: collectProjects()
+                    };
+                }
+
+                if (isEdit) {
+                    await updateDoc(doc(db, "users", editId), finalData);
+                    setStatus("המשתמש עודכן בהצלחה!");
+                } else {
+                    const email = document.getElementById('email').value;
+                    const password = document.getElementById('password').value;
+                    const userCred = await createUserWithEmailAndPassword(auth, email, password);
+                    finalData.email = email;
+                    finalData.uid = userCred.user.uid;
+                    finalData.createdAt = new Date();
+                    await setDoc(doc(db, "users", finalData.uid), finalData);
+                    setStatus("משתמש חדש נוצר!");
+                }
+
+                resetForm();
+                loadUsers();
+
+            } catch (error) {
+                console.error(error);
+                setStatus("שגיאה: " + error.message, 'error');
+                alert("שגיאה: " + error.message);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        });
+
+        // --- Helpers ---
+        function deleteUser(id) {
+            if(confirm("למחוק לצמיתות?")) {
+                deleteDoc(doc(db, "users", id)).then(() => {
+                    loadUsers();
+                    setStatus("נמחק בהצלחה");
+                }).catch(e => alert(e.message));
+            }
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.win-tab').forEach(b => b.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            
+            if(tab === 'staff') {
+                document.getElementById('staffFields').classList.remove('hidden');
+                document.getElementById('clientFields').classList.add('hidden');
+            } else {
+                document.getElementById('staffFields').classList.add('hidden');
+                document.getElementById('clientFields').classList.remove('hidden');
+                if(document.getElementById('projectsContainer').children.length === 0) addProjectField();
+            }
+        }
+
+        function updateRoleDesc() {
+            const role = document.getElementById('roleSelect').value;
+            const map = { 'admin': 'גישה מלאה להכל', 'ops': 'ניהול שוטף', 'purchasing': 'רכש וספקים', 'warehouse': 'מסוף ליקוט', 'driver': 'מסופון נהג' };
+            document.getElementById('description').value = map[role] || '';
+        }
+
+        function updateAvatar() {
+            const url = document.getElementById('avatar').value;
+            if(url) document.getElementById('avatarPreview').src = url;
+        }
+
+        function addProjectField() {
+            const div = document.createElement('div');
+            div.className = 'bg-white p-2 rounded border border-slate-200 mb-2 relative shadow-sm';
+            div.innerHTML = `
+                <input type="text" class="w-full border-b mb-1 text-xs outline-none proj-name font-bold" placeholder="שם אתר (למשל: וילה הרצליה)">
+                <input type="text" class="w-full text-xs outline-none proj-addr text-gray-500" placeholder="כתובת מלאה">
+                <i onclick="this.parentElement.remove()" class="fas fa-times absolute top-1 left-1 text-gray-300 hover:text-red-500 cursor-pointer"></i>
+            `;
+            document.getElementById('projectsContainer').appendChild(div);
+        }
+
+        function collectProjects() {
+            const projs = [];
+            document.querySelectorAll('#projectsContainer > div').forEach(div => {
+                const name = div.querySelector('.proj-name').value;
+                if(name) projs.push({ name, address: div.querySelector('.proj-addr').value });
+            });
+            return projs;
+        }
+
+        function filterUsers() {
+            const q = document.getElementById('searchUser').value.toLowerCase();
+            renderTable(usersList.filter(u => u.name.toLowerCase().includes(q) || u.email.includes(q)));
+        }
+
+        // Init
+        loadUsers();
+        updateRoleDesc();
+
+    </script>
+</body>
+</html>
