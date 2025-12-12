@@ -1,5 +1,4 @@
 // public/js/saban-brain.js
-
 export const SabanLogic = {
     // --- חלק א': ניתוח עגלה ומלכודות ---
     analyzeCart: (cartItems) => {
@@ -38,7 +37,6 @@ export const SabanLogic = {
 
         // חוק 2: פריט כבד ללא מנוף
         else if (hasHeavyItems && !hasCraneService) {
-            // הערה: כאן זה יכול להיות אזהרה בלבד או חסימה, תלוי בקשיחות
             analysis.missingServices.push({
                 msg: "⚠️ שים לב: יש פריטים כבדים בהזמנה ללא חיוב מנוף. הנהג לא יפרוק ידנית.",
                 fixId: "service_crane"
@@ -48,38 +46,22 @@ export const SabanLogic = {
         return analysis;
     },
 
-    // --- חלק ב': המחשבון הלוגיסטי (היה חסר) ---
+    // --- חלק ב': המחשבון הלוגיסטי ---
     branches: [
         { id: 'harash', name: 'סניף החרש (ראשי)', lat: 32.1462, lng: 34.8951 },
         { id: 'talmid', name: 'סניף התלמיד', lat: 32.1554, lng: 34.8872 }
     ],
 
-    drivers: {
-        hachmat: { name: "חכמת", startShift: "06:30", base: "harash" },
-        ali: { name: "עלי", startShift: "06:00", base: "talmid" }
-    },
-
     // חישוב מרחק אווירי (Haversine Formula)
     calculateDistance: (lat1, lon1, lat2, lon2) => {
-        const R = 6371; // Radius of the earth in km
+        const R = 6371; 
         const dLat = (lat2 - lat1) * Math.PI / 180;
         const dLon = (lon2 - lon1) * Math.PI / 180;
         const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
             Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
             Math.sin(dLon / 2) * Math.sin(dLon / 2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return (R * c).toFixed(1); // מרחק בק"מ
-    },
-
-    // מציאת הסניף הקרוב ביותר
-    getBestBranch: (targetLat, targetLng) => {
-        let best = null;
-        let min = Infinity;
-        SabanLogic.branches.forEach(b => {
-            const d = SabanLogic.calculateDistance(b.lat, b.lng, targetLat, targetLng);
-            if (d < min) { min = d; best = { ...b, dist: d }; }
-        });
-        return best;
+        return (R * c).toFixed(1);
     },
 
     // חישוב זמנים (כולל פקקים ופריקה)
@@ -91,12 +73,6 @@ export const SabanLogic = {
         const driveTime = (distKm / speed) * 60 * trafficFactor;
         const totalMinutes = Math.round(driveTime + handlingTime);
         
-        const now = new Date();
-        const arrival = new Date(now.getTime() + totalMinutes * 60000);
-        
-        return {
-            minutes: totalMinutes,
-            time: arrival.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
-        };
+        return { minutes: totalMinutes };
     }
 };
