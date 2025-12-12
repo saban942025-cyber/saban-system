@@ -129,3 +129,274 @@
             <img id="modalImg" src="" class="w-full h-64 object-contain mb-4">
             <div class="flex justify-between items-start mb-4">
                 <div>
+                    <h1 class="text-2xl font-bold text-gray-800" id="modalName"></h1>
+                    <div class="text-xs text-gray-400">מק"ט: <span id="modalSku"></span></div>
+                </div>
+                <div class="text-2xl font-bold text-[#008069]">₪<span id="modalPrice"></span></div>
+            </div>
+            
+            <div id="modalDesc" class="text-sm text-gray-600 leading-relaxed bg-gray-50 p-4 rounded-xl border mb-4"></div>
+            
+            <div class="bg-orange-50 p-4 rounded-xl border border-orange-100 mb-4">
+                <h3 class="text-xs font-bold text-orange-800 uppercase mb-2">לוגיסטיקה</h3>
+                <div class="flex justify-between text-sm border-b border-orange-200 pb-1"><span>משקל:</span> <span class="font-bold" id="modalWeight">-</span></div>
+                <div class="flex justify-between text-sm pt-1"><span>מנוף:</span> <span class="font-bold" id="modalCrane">-</span></div>
+            </div>
+
+            <button onclick="consultBot()" class="w-full bg-blue-50 text-blue-600 py-3 rounded-xl font-bold mb-3 border border-blue-200 flex items-center justify-center gap-2">
+                <i class="fas fa-robot"></i> התייעץ עם הבוט על מוצר זה
+            </button>
+        </div>
+        <div class="p-4 bg-white border-t sticky bottom-0">
+            <button onclick="addToCartFromModal()" class="w-full bg-[#008069] text-white py-3.5 rounded-xl font-bold shadow-lg">הוסף לעגלה</button>
+        </div>
+    </div>
+
+    <nav class="nav-bar">
+        <div onclick="switchScreen('shop')" class="nav-item nav-shop active" id="nav-shop"><i class="fas fa-store text-xl mb-1"></i><span class="text-[10px] font-bold">חנות</span></div>
+        <div onclick="switchScreen('cart')" class="nav-item nav-cart" id="nav-cart"><div class="relative"><i class="fas fa-shopping-bag text-xl mb-1"></i><span id="cartBadge" class="badge hidden">0</span></div><span class="text-[10px] font-bold">עגלה</span></div>
+        <div onclick="switchScreen('chat')" class="nav-item nav-chat" id="nav-chat"><i class="fas fa-comments text-xl mb-1"></i><span class="text-[10px] font-bold">צ'אט</span></div>
+    </nav>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, doc, setDoc, onSnapshot, query, orderBy, serverTimestamp, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { SabanLogic } from './js/saban-brain.js';
+        import { SabanPush } from './js/notifications.js';
+        import { SmartContacts } from './js/smart-contacts.js';
+
+        const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let currentUser = { id: 'guest', name: 'אורח', avatar: '' };
+        let cart = [];
+        let allProducts = [];
+        let currentProduct = null;
+        let chatFlowState = null;
+
+        // City Permits Logic
+        const cityPermits = {
+            "הרצליה": { url: "https://www.herzliya.muni.il/tofas-hazmana-mchola/", warn: "⚠️ בהרצליה חובה היתר (קנס מידי)!" },
+            "תל אביב": { url: "https://www.tel-aviv.gov.il/", warn: "⚠️ בתל אביב חובה סימון זוהר למכולה." },
+            "רעננה": { url: "https://www.raanana.muni.il/", warn: "⚠️ ברעננה אסור להציב על מדרכה." }
+        };
+
+        // --- INIT ---
+        window.onload = async () => {
+            const uid = new URLSearchParams(window.location.search).get('uid') || localStorage.getItem('impersonateId');
+            
+            if (uid) {
+                try {
+                    const userSnap = await getDoc(doc(db, "users", uid));
+                    if (userSnap.exists()) {
+                        const data = userSnap.data();
+                        currentUser = { 
+                            id: uid, 
+                            name: data.name, 
+                            avatar: data.avatar || `https://ui-avatars.com/api/?name=${data.name}`,
+                            phone: data.phone,
+                            role: data.role
+                        };
+                    } else {
+                        let tempName = uid.includes('shahar') ? "שחר שאול" : "אורח";
+                        currentUser = { id: uid, name: tempName, avatar: `https://ui-avatars.com/api/?name=${tempName}` };
+                    }
+                } catch(e) {
+                    console.error("User load error:", e);
+                    let tempName = "אורח";
+                    currentUser = { id: uid, name: tempName, avatar: `https://ui-avatars.com/api/?name=${tempName}` };
+                }
+
+                document.getElementById('userName').innerText = currentUser.name;
+                document.getElementById('userAvatar').src = currentUser.avatar;
+                
+                SabanPush.init('client', uid);
+                subscribeToChat(uid);
+            }
+            loadRealProducts();
+        };
+
+        // --- AUTH & LOGOUT (SECURE) ---
+        window.handleLogout = async () => {
+            if (!confirm("האם להתנתק ולמחוק את פרטי הכניסה מהמכשיר?")) return;
+
+            try {
+                // 1. Deep Clean
+                localStorage.removeItem('saban_user');
+                localStorage.removeItem('impersonateId');
+                localStorage.removeItem('saban_chat_session');
+                localStorage.clear();
+                sessionStorage.clear();
+
+                // 2. Firebase Signout
+                await signOut(auth);
+                
+                // 3. Notification Signout
+                if (window.OneSignalDeferred) {
+                    window.OneSignalDeferred.push(async function(OneSignal) {
+                        await OneSignal.logout();
+                    });
+                }
+
+                window.location.href = "index.html";
+
+            } catch (error) {
+                console.error("Logout Error:", error);
+                alert("התנתקות נכשלה, נסה לרענן את הדף.");
+            }
+        };
+
+        // --- PRODUCTS & RENDER ---
+        async function loadRealProducts() {
+            try {
+                const snap = await getDocs(collection(db, "products"));
+                allProducts = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                renderProducts(allProducts);
+            } catch(e) {}
+        }
+
+        function renderProducts(list) {
+            const grid = document.getElementById('productsGrid');
+            if(!list.length) { grid.innerHTML='<div class="col-span-2 text-center mt-10 text-gray-400">טוען מוצרים...</div>'; return; }
+            grid.innerHTML = list.map(p => {
+                const name = p.core?.name || p.title || p.name;
+                const price = p.core?.price || p.price;
+                const img = p.rich?.image || p.image || "https://via.placeholder.com/150";
+                const pStr = encodeURIComponent(JSON.stringify(p));
+
+                return `
+                <div class="product-card" onclick="openProduct('${pStr}')">
+                    <img src="${img}" class="product-img" onerror="this.src='https://via.placeholder.com/150'">
+                    <div class="p-3">
+                        <div class="font-bold text-xs h-8 overflow-hidden mb-1">${name}</div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-[#008069] font-bold text-sm">₪${price}</span>
+                            <button onclick="event.stopPropagation(); quickAdd('${pStr}')" class="bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center hover:bg-green-100 text-green-700 font-bold">+</button>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        window.openProduct = (pStr) => {
+            const p = JSON.parse(decodeURIComponent(pStr));
+            currentProduct = p;
+            document.getElementById('modalTitle').innerText = p.core?.name || p.title;
+            document.getElementById('modalName').innerText = p.core?.name || p.title;
+            document.getElementById('modalSku').innerText = p.id;
+            document.getElementById('modalPrice').innerText = p.core?.price || p.price;
+            document.getElementById('modalImg').src = p.rich?.image || p.image || "https://via.placeholder.com/300";
+            document.getElementById('modalDesc').innerText = p.rich?.description || "אין תיאור זמין";
+            document.getElementById('modalWeight').innerText = p.logistics?.weight || "0";
+            document.getElementById('modalCrane').innerText = p.logistics?.requires_crane ? "כן" : "לא";
+            document.getElementById('productModal').classList.add('open');
+        };
+        
+        window.closeProductModal = () => document.getElementById('productModal').classList.remove('open');
+        window.addToCartFromModal = () => { quickAdd(encodeURIComponent(JSON.stringify(currentProduct))); closeProductModal(); };
+        
+        window.consultBot = () => {
+            closeProductModal();
+            switchScreen('chat');
+            const msg = `אני רוצה להתייעץ לגבי המוצר: ${currentProduct.core?.name || currentProduct.title} (מק"ט ${currentProduct.id})`;
+            document.getElementById('chatInput').value = msg;
+        };
+
+        window.quickAdd = (pStr) => {
+            const p = JSON.parse(decodeURIComponent(pStr));
+            const exist = cart.find(i => i.id === p.id);
+            if (exist) exist.qty++;
+            else cart.push({ id: p.id, name: p.core?.name || p.title, price: p.core?.price || p.price, qty: 1, weight: p.logistics?.weight || 0, crane: p.logistics?.requires_crane || false });
+            updateCartUI();
+        };
+
+        function updateCartUI() {
+            document.getElementById('cartBadge').innerText = cart.reduce((a,c)=>a+c.qty,0);
+            document.getElementById('cartBadge').classList.toggle('hidden', cart.length === 0);
+            const list = document.getElementById('cartItemsList');
+            if (cart.length === 0) { list.innerHTML = '<div class="text-center py-10 text-gray-400">העגלה ריקה</div>'; return; }
+            list.innerHTML = cart.map((item, i) => `
+                <div class="bg-white p-3 rounded-xl border flex justify-between items-center shadow-sm">
+                    <div>
+                        <div class="font-bold text-sm">${item.name}</div>
+                        <div class="text-xs text-gray-500">₪${item.price} | ${item.weight} ק"ג</div>
+                    </div>
+                    <div class="flex items-center gap-3 bg-gray-50 p-1 rounded-lg">
+                        <button onclick="updateQty(${i}, -1)" class="w-6 h-6 flex items-center justify-center font-bold text-gray-500">-</button>
+                        <span class="text-sm font-bold w-4 text-center">${item.qty}</span>
+                        <button onclick="updateQty(${i}, 1)" class="w-6 h-6 flex items-center justify-center font-bold text-green-600">+</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        window.updateQty = (i, d) => { cart[i].qty += d; if(cart[i].qty<=0) cart.splice(i,1); updateCartUI(); };
+        window.clearCart = () => { cart=[]; updateCartUI(); };
+
+        window.submitOrder = async () => {
+            if(cart.length === 0) return alert("העגלה ריקה");
+            const project = document.getElementById('projName').value || 'ללא שם';
+            const address = document.getElementById('projAddr').value || 'לא צוינה';
+            const contact = document.getElementById('contactName').value || currentUser.name;
+            const phone = document.getElementById('contactPhone').value || '-';
+            const forceCrane = document.getElementById('forceCrane').checked;
+
+            const totalWeight = cart.reduce((sum, item) => sum + (item.weight * item.qty), 0);
+            const hasHeavyItems = cart.some(item => item.crane);
+            let driverType = "ידני", driverName = "עלי", reason = "משקל קל";
+
+            if (totalWeight > 500 || hasHeavyItems || forceCrane) { driverType = "מנוף"; driverName = "חכמת"; reason = forceCrane ? "העדפת לקוח" : (hasHeavyItems ? "פריט כבד" : "משקל כולל"); }
+
+            const itemsHtml = cart.map((item, idx) => `<li class="order-item"><span>${idx+1}. ${item.name}</span><span>x${item.qty}</span></li>`).join('');
+            const orderHtml = `<div class="order-frame"><div class="order-header">📥 הזמנה חדשה: ${currentUser.name}</div><div class="text-xs mb-2"><div><b>פרויקט:</b> ${project}</div><div><b>כתובת:</b> ${address}</div><div><b>איש קשר:</b> ${contact} (${phone})</div></div><ol class="list-none pl-0 mb-2">${itemsHtml}</ol><div class="order-summary"><span>סה"כ פריטים: ${cart.reduce((a,c)=>a+c.qty,0)}</span><span>משקל: ${totalWeight} ק"ג</span></div><div class="driver-badge">🚚 שובץ: <b>${driverName}</b> (${driverType}) - ${reason}</div></div>`;
+
+            switchScreen('chat');
+            await addDoc(collection(db, `chat_sessions/${currentUser.id}/messages`), { text: orderHtml, role: 'user', createdAt: serverTimestamp() });
+            await setDoc(doc(db, "chat_sessions", currentUser.id), { userName: currentUser.name, lastMessage: "📥 הזמנה חדשה התקבלה", lastActivity: serverTimestamp(), isBotActive: true }, { merge: true });
+            SabanPush.send('admin_rami', 'הזמנה חדשה!', `${currentUser.name} שלח הזמנה (${driverName})`);
+            cart = []; updateCartUI();
+        };
+
+        // --- CHAT LOGIC ---
+        function subscribeToChat(uid) {
+            onSnapshot(query(collection(db, `chat_sessions/${uid}/messages`), orderBy("createdAt", "asc")), (snap) => {
+                const box = document.getElementById('chatBox');
+                box.innerHTML = snap.docs.map(d => {
+                    const m = d.data();
+                    const isMe = m.role === 'user';
+                    const avatar = isMe ? currentUser.avatar : 'https://ui-avatars.com/api/?name=Saban&background=008069&color=fff';
+                    const msgClass = isMe ? 'msg-out' : 'msg-in';
+                    return `<div class="msg-with-avatar ${msgClass}"><img src="${avatar}" class="msg-avatar"><div class="msg-body msg ${msgClass}">${m.text}</div></div>`;
+                }).join('');
+                box.scrollTop = box.scrollHeight;
+            });
+        }
+
+        window.sendChat = async () => { const txt = document.getElementById('chatInput').value; if(!txt) return; document.getElementById('chatInput').value = ''; await addDoc(collection(db, `chat_sessions/${currentUser.id}/messages`), { text: txt, role: 'user', createdAt: serverTimestamp() }); };
+        
+        window.switchScreen = (n) => {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(`screen-${n}`).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.querySelector(`.nav-${n}`).classList.add('active');
+        };
+
+        window.filterProducts = () => { renderProducts(allProducts.filter(p => (p.core?.name || p.title || "").toLowerCase().includes(document.getElementById('searchInput').value.toLowerCase()))); };
+        window.showMyProfile = () => { if(currentUser.id !== 'guest') SmartContacts.show({ target: document.getElementById('userAvatar') }, { ...currentUser, role: 'לקוח', type: 'client' }); };
+
+        // Bot Brain
+        window.startContainerFlow = () => { switchScreen('chat'); triggerBotResponse("מכולה"); };
+        async function triggerBotResponse(userText) {
+            let reply = "";
+            const clean = userText.toLowerCase();
+            if (clean.includes("מכולה")) reply = `היי ${currentUser.name}, אנחנו מספקים מכולות 8 קוב. <button onclick="botAction('placement')" class="chat-btn">הצבה</button>`;
+            if (reply) setTimeout(async () => await addDoc(collection(db, `chat_sessions/${currentUser.id}/messages`), { text: reply, role: 'staff', sender: 'bot', createdAt: serverTimestamp() }), 1000);
+        }
+        window.botAction = (a) => { document.getElementById('chatInput').value = a === 'placement' ? 'הצבה' : ''; sendChat(); };
+
+    </script>
+</body>
+</html>
