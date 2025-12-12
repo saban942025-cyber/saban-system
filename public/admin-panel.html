@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SabanOS Admin | AI Catalog v25.1 (Fixed)</title>
+    <title>SabanOS Admin | AI Catalog v25.2 (Fixed)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -48,7 +48,7 @@
             </div>
             <div>
                 <h1 class="font-bold text-lg leading-tight">SabanOS Catalog</h1>
-                <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">AI Powered v25.1</span>
+                <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">AI Powered v25.2</span>
             </div>
         </div>
         <div class="flex gap-2">
@@ -84,7 +84,7 @@
                     <label class="text-[10px] font-bold text-purple-600 uppercase mb-1 block">✨ שם המוצר לחיפוש חכם</label>
                     <input type="text" id="magicInput" placeholder="למשל: סיקה טופ 107 (שק 25 ק''ג)" class="w-full text-lg font-bold text-slate-800 border-b-2 border-purple-100 pb-1 px-1 focus:border-purple-500 bg-transparent" onkeydown="if(event.key === 'Enter') runAI()">
                 </div>
-                <button onclick="runAI()" id="aiBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-md shadow-purple-200 transition flex items-center gap-2">
+                <button onclick="runAI()" id="aiBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-md shadow-purple-200 transition flex items-center gap-2 cursor-pointer">
                     <i class="fas fa-sparkles"></i> שלוף נתונים
                 </button>
             </div>
@@ -194,11 +194,16 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, getDocs, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { API_KEYS } from './js/config.js';
 
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+
+        // --- KEYS EMBEDDED ---
+        const API_KEYS = {
+            serpApi: "0592368999282ef7ea7c5ef8bddc23fda18b9bf76856359df062eec32ceccf27",
+            gemini: "AIzaSyAdfGVrmr90Mp9ZhNMItD81iaE8OipKwz0"
+        };
 
         let products = [];
         let activeId = null;
@@ -246,4 +251,186 @@
 
                     document.getElementById('name').value = result.name || term;
                     document.getElementById('description').value = result.description || '';
-                    document.getElementById('features').value = Array.isArray(result.features) ? result.features.join
+                    document.getElementById('features').value = Array.isArray(result.features) ? result.features.join('\n') : (result.features || '');
+                    document.getElementById('application').value = result.application || '';
+                    document.getElementById('weight').value = result.weight_kg || 0;
+                    document.getElementById('palletQty').value = result.pallet_qty || 0;
+                    document.getElementById('reqCrane').checked = result.requires_crane || false;
+
+                    searchImage(1, term);
+                    updatePreview();
+                    alert("🤖 הנתונים מולאו!");
+                } else {
+                    alert("לא התקבל מידע. נסה שוב.");
+                }
+
+            } catch (e) {
+                console.error(e);
+                alert("שגיאת AI: " + e.message);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.classList.remove('ai-pulse');
+            }
+        };
+
+        // Media
+        window.searchImage = async (slot, queryOverride) => {
+            currentMediaType = slot === 1 ? 'image1' : 'image2';
+            const query = queryOverride || document.getElementById('magicInput').value;
+            if(!query) return alert("הכנס שם לחיפוש");
+
+            // הערה: נשתמש ב-Google CSE. אם ייחסם, נצטרך פרוקסי.
+            const CX = "1340c66f5e73a4076"; 
+            try {
+                const res = await fetch(`https://www.googleapis.com/customsearch/v1?q=${encodeURIComponent(query)}&cx=${CX}&key=${API_KEYS.serpApi}&searchType=image&num=9`);
+                const data = await res.json();
+                if(data.items) showMediaModal(data.items.map(i => ({ type: 'img', url: i.link, thumb: i.image.thumbnailLink })));
+                else alert("לא נמצאו תמונות");
+            } catch(e) { console.error(e); alert("שגיאת חיפוש תמונות (אולי נגמרה המכסה היומית?)"); }
+        };
+
+        window.searchVideo = async () => {
+            currentMediaType = 'video';
+            const query = document.getElementById('magicInput').value + " application tutorial";
+            window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, '_blank');
+            const url = prompt("הדבק כאן את הלינק לסרטון:");
+            if(url) { document.getElementById('video').value = url; updatePreview(); }
+        };
+
+        function showMediaModal(items) {
+            const grid = document.getElementById('mediaGrid');
+            grid.innerHTML = items.map(item => `<div class="cursor-pointer border-2 border-transparent hover:border-blue-500 rounded overflow-hidden" onclick="selectMedia('${item.url}')"><img src="${item.thumb || item.url}" class="w-full h-32 object-cover"></div>`).join('');
+            document.getElementById('mediaModal').classList.remove('hidden');
+        }
+
+        window.selectMedia = (url) => {
+            if(currentMediaType === 'image1') document.getElementById('image1').value = url;
+            if(currentMediaType === 'image2') document.getElementById('image2').value = url;
+            document.getElementById('mediaModal').classList.add('hidden');
+            updatePreview();
+        };
+
+        // Preview & CRUD
+        window.updatePreview = () => {
+            const p = {
+                name: document.getElementById('name').value,
+                price: document.getElementById('price').value,
+                desc: document.getElementById('description').value,
+                img: document.getElementById('image1').value,
+                video: document.getElementById('video').value,
+                weight: document.getElementById('weight').value,
+                crane: document.getElementById('reqCrane').checked
+            };
+
+            let vidHTML = '';
+            if(p.video && p.video.includes('youtube')) {
+                const vidId = p.video.split('v=')[1]?.split('&')[0];
+                if(vidId) vidHTML = `<iframe src="https://www.youtube.com/embed/${vidId}" class="w-full h-32 rounded mt-2"></iframe>`;
+            }
+
+            document.getElementById('chatArea').innerHTML = `
+                <div class="bubble-bot">
+                    <img src="${p.img || 'https://via.placeholder.com/300'}" class="w-full h-40 object-cover rounded mb-2 bg-white">
+                    <div class="font-bold text-base text-gray-800">${p.name || 'שם המוצר'}</div>
+                    <div class="text-sm text-gray-600 mt-1">${p.desc}</div>
+                    <div class="mt-2 flex gap-2 text-[10px]">
+                        ${p.weight ? `<span class="bg-orange-100 text-orange-800 px-2 py-1 rounded">⚖️ ${p.weight} ק"ג</span>` : ''}
+                        ${p.crane ? `<span class="bg-red-100 text-red-800 px-2 py-1 rounded">🏗️ דורש מנוף</span>` : ''}
+                    </div>
+                    ${vidHTML}
+                    <div class="mt-3 font-bold text-green-600 text-lg">₪${p.price || '0.00'}</div>
+                    <button class="w-full bg-[#008069] text-white py-2 rounded mt-2 font-bold text-xs">הוסף להזמנה</button>
+                </div>`;
+        };
+
+        window.saveProduct = async () => {
+            const sku = document.getElementById('sku').value;
+            if(!sku) return alert("חובה מק\"ט");
+            updateStatus('saving', 'שומר...');
+            
+            const data = {
+                id: sku,
+                core: { name: document.getElementById('name').value, price: Number(document.getElementById('price').value) },
+                rich: {
+                    image: document.getElementById('image1').value,
+                    image2: document.getElementById('image2').value,
+                    video: document.getElementById('video').value,
+                    description: document.getElementById('description').value,
+                    application: document.getElementById('application').value,
+                    features: document.getElementById('features').value
+                },
+                logistics: {
+                    weight: Number(document.getElementById('weight').value),
+                    pallet_qty: Number(document.getElementById('palletQty').value),
+                    requires_crane: document.getElementById('reqCrane').checked
+                },
+                updatedAt: serverTimestamp()
+            };
+
+            await setDoc(doc(db, "products", sku), data);
+            updateStatus('online', 'נשמר!');
+            loadProducts();
+        };
+
+        async function loadProducts() {
+            updateStatus('loading', 'טוען...');
+            try {
+                const snap = await getDocs(collection(db, "products"));
+                products = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                renderList();
+                updateStatus('online', 'מוכן');
+            } catch(e) { console.error(e); }
+        }
+
+        window.renderList = () => {
+            const term = document.getElementById('listSearch').value.toLowerCase();
+            const list = document.getElementById('listContainer');
+            // Safe navigation operator (?.) prevents crash if core is missing
+            list.innerHTML = products.filter(p => (p.core?.name || "").toLowerCase().includes(term)).map(p => `
+                <div class="prod-item" onclick="loadProduct('${p.id}')">
+                    <img src="${p.rich?.image || ''}" class="prod-thumb" onerror="this.src='https://via.placeholder.com/32'">
+                    <div class="flex-1 min-w-0">
+                        <div class="font-bold text-xs truncate">${p.core?.name || 'ללא שם'}</div>
+                        <div class="text-[10px] text-gray-400">${p.id}</div>
+                    </div>
+                    <div class="font-bold text-xs text-green-600">₪${p.core?.price || 0}</div>
+                </div>
+            `).join('');
+            document.getElementById('totalCount').innerText = `${products.length} פריטים`;
+        };
+
+        window.loadProduct = (id) => {
+            const p = products.find(x => x.id === id);
+            if(!p) return;
+            document.getElementById('sku').value = p.id;
+            document.getElementById('name').value = p.core?.name || '';
+            document.getElementById('price').value = p.core?.price || '';
+            document.getElementById('image1').value = p.rich?.image || '';
+            document.getElementById('image2').value = p.rich?.image2 || '';
+            document.getElementById('video').value = p.rich?.video || '';
+            document.getElementById('description').value = p.rich?.description || '';
+            document.getElementById('application').value = p.rich?.application || '';
+            document.getElementById('features').value = p.rich?.features || '';
+            document.getElementById('weight').value = p.logistics?.weight || '';
+            document.getElementById('palletQty').value = p.logistics?.pallet_qty || '';
+            document.getElementById('reqCrane').checked = p.logistics?.requires_crane || false;
+            updatePreview();
+        };
+
+        window.addNew = () => {
+            document.querySelectorAll('input, textarea').forEach(i => i.value = '');
+            document.getElementById('reqCrane').checked = false;
+            document.getElementById('magicInput').focus();
+            updatePreview();
+        };
+
+        function updateStatus(state, text) {
+            const el = document.getElementById('statusIndicator');
+            const color = state === 'online' ? 'bg-green-500' : 'bg-yellow-500';
+            el.innerHTML = `<span class="w-2 h-2 rounded-full ${color}"></span> ${text}`;
+        }
+
+        window.onload = loadProducts;
+    </script>
+</body>
+</html>
