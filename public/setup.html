@@ -2,131 +2,266 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>SabanOS | ניהול משתמשים v2.0</title>
+    <title>SabanOS | ניהול משתמשים (Windows Style)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap');
-        body { background-color: #f1f5f9; font-family: 'Rubik', sans-serif; }
+        /* --- WINDOWS 11 THEME --- */
+        :root {
+            --win-bg: #f3f3f3;
+            --win-card: #ffffff;
+            --win-border: #e5e5e5;
+            --win-blue: #0067c0;
+            --win-blue-hover: #005a9e;
+            --win-text: #202020;
+            --win-text-sec: #5d5d5d;
+            --shadow-card: 0 2px 4px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04);
+        }
+
+        body { 
+            background-color: var(--win-bg); 
+            color: var(--win-text); 
+            font-family: 'Segoe UI', system-ui, sans-serif; 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+        }
+
+        /* Layout */
+        .window-container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        /* Card / Window Style */
+        .win-card {
+            background: var(--win-card);
+            border: 1px solid var(--win-border);
+            border-radius: 8px;
+            box-shadow: var(--shadow-card);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .win-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--win-border);
+            background: #fafafa;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .win-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        /* Inputs */
+        .win-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d1d1;
+            border-radius: 4px;
+            font-size: 14px;
+            background: white;
+            transition: 0.2s;
+            outline: none;
+            border-bottom-width: 2px; /* Microsoft style focus */
+        }
+        .win-input:focus {
+            border-color: var(--win-blue);
+        }
+        .win-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--win-text-sec);
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        /* Buttons */
+        .win-btn {
+            background-color: var(--win-card);
+            border: 1px solid #d1d1d1;
+            color: var(--win-text);
+            padding: 6px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.1s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+        }
+        .win-btn:hover { background-color: #f0f0f0; }
+        .win-btn:active { background-color: #e0e0e0; transform: scale(0.98); }
+
+        .win-btn-primary {
+            background-color: var(--win-blue);
+            color: white;
+            border-color: var(--win-blue);
+        }
+        .win-btn-primary:hover { background-color: var(--win-blue-hover); }
         
-        .tab-btn { @apply px-6 py-3 font-bold text-gray-500 border-b-2 border-transparent cursor-pointer transition; }
-        .tab-btn.active { @apply text-blue-600 border-blue-600; }
-        
-        .avatar-preview { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0; background: #fff; }
-        
-        /* Form Inputs */
-        .input-box { @apply w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm outline-none focus:border-blue-500 transition; }
-        .label-text { @apply block text-xs font-bold text-gray-500 mb-1; }
-        
+        /* Tabs */
+        .win-tabs { display: flex; padding: 4px; background: #f0f0f0; border-radius: 6px; margin-bottom: 15px; }
+        .win-tab { flex: 1; text-align: center; padding: 6px; font-size: 13px; cursor: pointer; border-radius: 4px; color: var(--win-text-sec); font-weight: 500; transition: 0.2s; }
+        .win-tab.active { background: white; color: black; shadow: 0 1px 2px rgba(0,0,0,0.1); font-weight: 600; }
+
         /* Table */
-        .user-row:hover { background-color: #f8fafc; }
-        .role-badge { @apply text-[10px] px-2 py-0.5 rounded font-bold uppercase; }
+        .win-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .win-table th { text-align: right; padding: 10px; border-bottom: 1px solid var(--win-border); color: var(--win-text-sec); font-weight: 600; background: #fafafa; position: sticky; top: 0; }
+        .win-table td { padding: 10px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+        .win-table tr:hover { background-color: #f3f9fd; }
+
+        /* Avatar */
+        .avatar-circle { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid var(--win-border); }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #999; }
+
+        /* Status Bar */
+        .status-bar { height: 30px; background: var(--win-blue); color: white; display: flex; align-items: center; padding: 0 20px; font-size: 11px; justify-content: space-between; }
     </style>
 </head>
-<body class="p-6">
+<body>
 
-    <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="window-container">
         
-        <div class="lg:col-span-1 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="win-card">
+            <div class="win-header">
+                <span class="win-title"><i class="fas fa-user-plus text-blue-600"></i> יצירת משתמש</span>
+            </div>
             
-            <div class="flex border-b border-gray-100">
-                <div onclick="switchTab('staff')" class="tab-btn active w-1/2 text-center" id="tab-staff"><i class="fas fa-user-tie"></i> צוות</div>
-                <div onclick="switchTab('client')" class="tab-btn w-1/2 text-center" id="tab-client"><i class="fas fa-hard-hat"></i> לקוח</div>
-            </div>
-
-            <form id="createForm" class="p-6 space-y-4">
+            <div class="p-5 flex-1 overflow-y-auto">
                 
-                <div class="text-center mb-4">
-                    <img id="avatarPreview" src="https://ui-avatars.com/api/?name=User&background=random" class="avatar-preview mx-auto mb-2">
-                    <input type="text" id="avatar" placeholder="לינק לתמונה (URL)" class="text-xs text-center bg-transparent border-b border-gray-200 w-2/3 mx-auto outline-none" oninput="updateAvatar()">
+                <div class="win-tabs">
+                    <div onclick="switchTab('staff')" class="win-tab active" id="tab-staff">👨‍💼 איש צוות</div>
+                    <div onclick="switchTab('client')" class="win-tab" id="tab-client">🏗️ לקוח</div>
                 </div>
 
-                <div>
-                    <label class="label-text">שם מלא</label>
-                    <input type="text" id="name" class="input-box" required placeholder="למשל: נתנאל כהן">
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="label-text">טלפון (ללא מקף)</label>
-                        <input type="tel" id="phone" class="input-box" required placeholder="050...">
-                    </div>
-                    <div>
-                        <label class="label-text">אימייל (לכניסה)</label>
-                        <input type="email" id="email" class="input-box" required placeholder="@saban...">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="label-text">סיסמה ראשונית</label>
-                    <input type="text" id="password" class="input-box" required value="Saban2025">
-                </div>
-
-                <div id="staffFields" class="space-y-4">
-                    <div>
-                        <label class="label-text">סניף / מחלקה</label>
-                        <input type="text" id="branch" class="input-box" placeholder="סניף התלמיד - חדר רכש">
-                    </div>
-                    <div>
-                        <label class="label-text">תפקיד</label>
-                        <select id="roleSelect" class="input-box" onchange="updateRoleDesc()">
-                            <option value="admin">👑 מנכ"ל / מנהל על</option>
-                            <option value="ops">🕹️ מנהל תפעול</option>
-                            <option value="purchasing">🛒 רכש וספקים</option>
-                            <option value="warehouse">📦 מחסנאי</option>
-                            <option value="driver_crane">🏗️ נהג מנוף</option>
-                            <option value="driver">🚛 נהג משאית</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="label-text">תיאור תפקיד (יוצג בכרטיס)</label>
-                        <textarea id="description" class="input-box h-20 text-xs"></textarea>
-                    </div>
-                </div>
-
-                <div id="clientFields" class="hidden space-y-4">
-                    <div>
-                        <label class="label-text">מספר לקוח (קומקס)</label>
-                        <input type="text" id="clientNumber" class="input-box" placeholder="12345">
-                    </div>
-                    
-                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-xs font-bold text-slate-600">פרויקטים</span>
-                            <button type="button" onclick="addProjectField()" class="text-xs text-blue-600 hover:underline">+ הוסף</button>
+                <form id="createForm" class="space-y-4">
+                    <div class="flex items-center gap-4">
+                        <img id="avatarPreview" src="https://ui-avatars.com/api/?name=New+User" class="w-14 h-14 rounded-full border shadow-sm">
+                        <div class="flex-1">
+                            <label class="win-label">תמונת פרופיל (URL)</label>
+                            <input type="text" id="avatar" class="win-input" placeholder="https://..." oninput="updateAvatar()">
                         </div>
-                        <div id="projectsContainer" class="space-y-2 max-h-32 overflow-y-auto">
-                            </div>
                     </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="win-label">שם מלא</label>
+                            <input type="text" id="name" class="win-input" required placeholder="שם ושם משפחה">
+                        </div>
+                        <div>
+                            <label class="win-label">טלפון</label>
+                            <input type="tel" id="phone" class="win-input" required placeholder="050...">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="win-label">אימייל (לכניסה)</label>
+                            <input type="email" id="email" class="win-input" required>
+                        </div>
+                        <div>
+                            <label class="win-label">סיסמה</label>
+                            <input type="text" id="password" class="win-input" value="Saban2025" required>
+                        </div>
+                    </div>
+
+                    <div id="staffFields" class="space-y-3 p-3 bg-blue-50 rounded border border-blue-100">
+                        <h4 class="text-xs font-bold text-blue-800 uppercase">פרטי תפקיד</h4>
+                        <div>
+                            <label class="win-label">תפקיד במערכת</label>
+                            <select id="roleSelect" class="win-input" onchange="updateRoleDesc()">
+                                <option value="admin">👑 מנכ"ל / אדמין</option>
+                                <option value="ops">🕹️ מנהל תפעול</option>
+                                <option value="purchasing">🛒 רכש</option>
+                                <option value="warehouse">📦 מחסנאי</option>
+                                <option value="driver">🚛 נהג</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="win-label">סניף / מחלקה</label>
+                            <input type="text" id="branch" class="win-input" placeholder="למשל: סניף החרש">
+                        </div>
+                        <div>
+                            <label class="win-label">תיאור אוטומטי</label>
+                            <textarea id="description" class="win-input h-16 text-xs"></textarea>
+                        </div>
+                    </div>
+
+                    <div id="clientFields" class="hidden space-y-3 p-3 bg-green-50 rounded border border-green-100">
+                        <h4 class="text-xs font-bold text-green-800 uppercase">פרטי לקוח</h4>
+                        <div>
+                            <label class="win-label">מספר לקוח (ERP)</label>
+                            <input type="text" id="clientNumber" class="win-input" placeholder="12345">
+                        </div>
+                        <div class="border-t border-green-200 pt-2">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs font-bold">פרויקטים</span>
+                                <button type="button" onclick="addProjectField()" class="text-xs text-blue-600 font-bold hover:underline">+ הוסף פרויקט</button>
+                            </div>
+                            <div id="projectsContainer" class="space-y-2 max-h-32 overflow-y-auto"></div>
+                        </div>
+                    </div>
+
+                    <div class="pt-2">
+                        <button type="submit" class="win-btn win-btn-primary w-full py-2.5">
+                            <i class="fas fa-save"></i> שמור במערכת
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="win-card">
+            <div class="win-header">
+                <span class="win-title">👥 מאגר משתמשים</span>
+                <div class="flex gap-2">
+                    <button onclick="loadUsers()" class="win-btn" title="רענן רשימה"><i class="fas fa-sync-alt"></i></button>
+                    <input type="text" id="searchUser" oninput="filterUsers()" placeholder="חיפוש..." class="win-input w-48 py-1">
                 </div>
-
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold shadow-lg transition flex justify-center gap-2">
-                    <i class="fas fa-save"></i> צור משתמש
-                </button>
-                <div id="msg" class="text-center text-xs font-bold mt-2"></div>
-            </form>
-        </div>
-
-        <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[600px]">
-            <div class="p-4 border-b border-gray-100 flex justify-between items-center">
-                <h2 class="font-bold text-gray-800">מאגר משתמשים</h2>
-                <input type="text" id="searchUser" oninput="filterUsers()" placeholder="חפש..." class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1 text-sm outline-none">
             </div>
-            <div class="flex-1 overflow-y-auto">
-                <table class="w-full text-sm text-right">
-                    <thead class="bg-gray-50 text-gray-500 text-xs uppercase sticky top-0">
-                        <tr>
-                            <th class="p-3">משתמש</th>
-                            <th class="p-3">תפקיד</th>
-                            <th class="p-3">פרטים</th>
-                            <th class="p-3 text-center">פעולות</th>
-                        </tr>
-                    </thead>
-                    <tbody id="usersTable"></tbody>
-                </table>
+            
+            <div class="flex-1 overflow-hidden relative">
+                <div class="absolute inset-0 overflow-y-auto">
+                    <table class="win-table">
+                        <thead>
+                            <tr>
+                                <th class="w-12"></th>
+                                <th>שם</th>
+                                <th>תפקיד</th>
+                                <th>פרטים / סניף</th>
+                                <th class="text-center">פעולות</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTable">
+                            <tr><td colspan="5" class="text-center p-5 text-gray-400">טוען נתונים...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
+    </div>
+
+    <div class="status-bar">
+        <div id="systemStatus">🟢 מערכת מוכנה</div>
+        <div>SabanOS Admin Station v2.5</div>
     </div>
 
     <script type="module">
@@ -134,7 +269,7 @@
         import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // CONFIG (Embedded for setup page)
+        // --- Firebase Config ---
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -142,98 +277,80 @@
 
         let currentTab = 'staff';
         let usersList = [];
-        let clientProjects = [];
 
-        // --- 1. TAB LOGIC ---
-        window.switchTab = (tab) => {
-            currentTab = tab;
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(`tab-${tab}`).classList.add('active');
-            
-            if(tab === 'staff') {
-                document.getElementById('staffFields').classList.remove('hidden');
-                document.getElementById('clientFields').classList.add('hidden');
-            } else {
-                document.getElementById('staffFields').classList.add('hidden');
-                document.getElementById('clientFields').classList.remove('hidden');
-                if(clientProjects.length === 0) addProjectField(); // Init one project
+        // --- Status Logic ---
+        function setStatus(msg, isError = false) {
+            const el = document.getElementById('systemStatus');
+            el.innerHTML = isError ? `🔴 ${msg}` : `🟢 ${msg}`;
+            el.parentElement.style.backgroundColor = isError ? '#d32f2f' : '#0067c0';
+        }
+
+        // --- 1. Load Users (With Error Handling) ---
+        window.loadUsers = async () => {
+            setStatus("טוען משתמשים...");
+            try {
+                const snap = await getDocs(collection(db, "users"));
+                if (snap.empty) {
+                    usersList = [];
+                    document.getElementById('usersTable').innerHTML = '<tr><td colspan="5" class="text-center p-5">המאגר ריק. צור משתמש חדש.</td></tr>';
+                    setStatus("המאגר ריק");
+                    return;
+                }
+                usersList = snap.docs.map(d => ({...d.data(), id: d.id})); // Keep document ID
+                renderTable(usersList);
+                setStatus(`נטענו ${usersList.length} משתמשים`);
+            } catch (e) {
+                console.error("Load error:", e);
+                setStatus("שגיאה בטעינת משתמשים: " + e.message, true);
+                document.getElementById('usersTable').innerHTML = `<tr><td colspan="5" class="text-center p-5 text-red-500">שגיאה: ${e.message}</td></tr>`;
             }
         };
 
-        // --- 2. DYNAMIC ROLES ---
-        const roleDescriptions = {
-            'admin': 'צפייה בדוחות כספיים, אישור חריגים, ניהול משתמשים ומבט על.',
-            'ops': 'ניהול שרשרת אספקה, בוט, קטלוג, חמ"ל הזמנות ושליטה בנהגים.',
-            'purchasing': 'ניהול מחלקת רכש, הזמנות מיוחדות, דרופ-שיפינג וספקים.',
-            'warehouse': 'ליקוט והכנת הזמנות, קבלת סחורה, ניהול מלאי וסדר במחסן.',
-            'driver_crane': 'שינוע והנפות גובה (עד קומה 6). אחראי על משאית מנוף.',
-            'driver': 'משלוחים דחופים, פריקות ידניות וקווי חלוקה.'
-        };
-
-        window.updateRoleDesc = () => {
-            const role = document.getElementById('roleSelect').value;
-            document.getElementById('description').value = roleDescriptions[role] || '';
-        };
-        // Init
-        updateRoleDesc();
-
-        // --- 3. AVATAR ---
-        window.updateAvatar = () => {
-            const url = document.getElementById('avatar').value;
-            if(url) document.getElementById('avatarPreview').src = url;
-        };
-
-        // --- 4. PROJECTS LOGIC ---
-        window.addProjectField = () => {
-            const id = Date.now();
-            const div = document.createElement('div');
-            div.className = 'bg-white p-2 rounded border mb-2 text-xs relative';
-            div.innerHTML = `
-                <div class="grid grid-cols-2 gap-1 mb-1">
-                    <input type="text" class="border rounded p-1 w-full proj-name" placeholder="שם אתר (הרצליה ב')">
-                    <input type="text" class="border rounded p-1 w-full proj-addr" placeholder="כתובת מדויקת">
-                </div>
-                <div class="grid grid-cols-2 gap-1">
-                    <input type="text" class="border rounded p-1 w-full proj-contact" placeholder="איש קשר">
-                    <input type="tel" class="border rounded p-1 w-full proj-phone" placeholder="טלפון">
-                </div>
-                <i onclick="this.parentElement.remove()" class="fas fa-times absolute top-1 left-1 text-gray-300 hover:text-red-500 cursor-pointer"></i>
-            `;
-            document.getElementById('projectsContainer').appendChild(div);
-        };
-
-        function collectProjects() {
-            const projs = [];
-            document.querySelectorAll('#projectsContainer > div').forEach(div => {
-                const name = div.querySelector('.proj-name').value;
-                if(name) {
-                    projs.push({
-                        name: name,
-                        address: div.querySelector('.proj-addr').value,
-                        contact: div.querySelector('.proj-contact').value,
-                        phone: div.querySelector('.proj-phone').value
-                    });
-                }
-            });
-            return projs;
+        // --- 2. Render Table ---
+        function renderTable(list) {
+            const tbody = document.getElementById('usersTable');
+            tbody.innerHTML = list.map(u => {
+                const isStaff = u.type !== 'client';
+                const info = isStaff ? (u.branch || '-') : `${(u.projects||[]).length} אתרים`;
+                const roleClass = isStaff ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800';
+                const roleName = u.role === 'admin' ? 'מנכ"ל' : (u.role === 'client' ? 'לקוח' : u.role);
+                
+                // כפתור מחיקה עם הגנה
+                const deleteBtn = `<button onclick="deleteUser('${u.id}')" class="text-gray-400 hover:text-red-500 transition px-2" title="מחק"><i class="fas fa-trash"></i></button>`;
+                
+                return `
+                <tr class="border-b hover:bg-slate-50">
+                    <td class="text-center"><img src="${u.avatar || 'https://via.placeholder.com/32'}" class="avatar-circle"></td>
+                    <td class="font-bold">${u.name}</td>
+                    <td><span class="text-[10px] px-2 py-1 rounded font-bold ${roleClass}">${roleName}</span></td>
+                    <td class="text-gray-500">${info}</td>
+                    <td class="text-center">
+                        ${deleteBtn}
+                        <button class="text-gray-400 hover:text-blue-500 px-2" title="ערוך"><i class="fas fa-edit"></i></button>
+                    </td>
+                </tr>`;
+            }).join('');
         }
 
-        // --- 5. SUBMIT ---
+        // --- 3. Create User ---
         document.getElementById('createForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const btn = e.target.querySelector('button');
-            const msg = document.getElementById('msg');
-            btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> יוצר...';
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> מעבד...';
+            btn.disabled = true;
 
             try {
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
                 
-                // 1. Create Auth
+                // 1. Create Auth User
+                // הערה: בפרויקט אמיתי עדיף להשתמש ב-Cloud Functions כדי לא לנתק את המנהל הנוכחי
+                // כאן אנחנו משתמשים ביצירה ישירה
                 const userCred = await createUserWithEmailAndPassword(auth, email, password);
                 const uid = userCred.user.uid;
 
-                // 2. Prepare Data
+                // 2. Data Object
                 const baseData = {
                     name: document.getElementById('name').value,
                     email: email,
@@ -244,7 +361,6 @@
                 };
 
                 let finalData = {};
-
                 if (currentTab === 'staff') {
                     finalData = {
                         ...baseData,
@@ -265,66 +381,84 @@
 
                 // 3. Save to Firestore
                 await setDoc(doc(db, "users", uid), finalData);
-
-                msg.innerText = "✅ נוצר בהצלחה!"; msg.className = "text-green-600";
+                
+                setStatus(`משתמש ${baseData.name} נוצר בהצלחה!`);
                 e.target.reset();
-                if(currentTab === 'client') addProjectField();
-                loadUsers();
+                if(currentTab==='client') addProjectField();
+                loadUsers(); // Refresh list
 
             } catch (error) {
                 console.error(error);
-                msg.innerText = "❌ שגיאה: " + error.message; msg.className = "text-red-600";
+                setStatus("שגיאה ביצירה: " + error.message, true);
+                alert("שגיאה: " + error.message);
             } finally {
-                btn.disabled = false; btn.innerHTML = 'צור משתמש';
+                btn.innerHTML = originalText;
+                btn.disabled = false;
             }
         });
 
-        // --- 6. TABLE & LIST ---
-        async function loadUsers() {
-            const snap = await getDocs(collection(db, "users"));
-            usersList = snap.docs.map(d => d.data());
-            renderTable(usersList);
-        }
+        window.deleteUser = async (id) => {
+            if(confirm("האם אתה בטוח שברצונך למחוק משתמש זה מהמאגר?")) {
+                try {
+                    await deleteDoc(doc(db, "users", id));
+                    loadUsers();
+                    setStatus("משתמש נמחק");
+                } catch(e) { alert("שגיאה במחיקה: " + e.message); }
+            }
+        };
 
-        function renderTable(list) {
-            const tbody = document.getElementById('usersTable');
-            tbody.innerHTML = list.map(u => {
-                const roleBadge = getRoleBadge(u.role);
-                const info = u.type === 'staff' ? u.branch : `${(u.projects||[]).length} פרויקטים`;
-                const whatsappLink = `https://wa.me/972${u.phone.substring(1)}?text=${encodeURIComponent(`שלום ${u.name}, ברוך הבא לאפליקציית סבן! להורדה: https://saban-app.com/?uid=${u.uid}`)}`;
-                
-                return `
-                <tr class="user-row border-b border-gray-50">
-                    <td class="p-3 flex items-center gap-3">
-                        <img src="${u.avatar}" class="w-8 h-8 rounded-full border">
-                        <div>
-                            <div class="font-bold">${u.name}</div>
-                            <div class="text-xs text-gray-400">${u.email}</div>
-                        </div>
-                    </td>
-                    <td class="p-3">${roleBadge}</td>
-                    <td class="p-3 text-xs text-gray-500">${info}</td>
-                    <td class="p-3 text-center">
-                        <div class="flex justify-center gap-2">
-                            <a href="${whatsappLink}" target="_blank" class="text-green-500 hover:bg-green-50 p-2 rounded-full" title="שלח לינק בוואטסאפ"><i class="fab fa-whatsapp"></i></a>
-                            <button class="text-blue-500 hover:bg-blue-50 p-2 rounded-full"><i class="fas fa-edit"></i></button>
-                            <button class="text-red-500 hover:bg-red-50 p-2 rounded-full"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </td>
-                </tr>`;
-            }).join('');
-        }
+        // --- Helpers ---
+        window.switchTab = (tab) => {
+            currentTab = tab;
+            document.querySelectorAll('.win-tab').forEach(b => b.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            
+            if(tab === 'staff') {
+                document.getElementById('staffFields').classList.remove('hidden');
+                document.getElementById('clientFields').classList.add('hidden');
+            } else {
+                document.getElementById('staffFields').classList.add('hidden');
+                document.getElementById('clientFields').classList.remove('hidden');
+                if(document.getElementById('projectsContainer').children.length === 0) addProjectField();
+            }
+        };
 
-        function getRoleBadge(role) {
+        window.updateRoleDesc = () => {
+            const role = document.getElementById('roleSelect').value;
             const map = {
-                'admin': '<span class="role-badge bg-yellow-100 text-yellow-800">מנכ"ל</span>',
-                'ops': '<span class="role-badge bg-blue-100 text-blue-800">תפעול</span>',
-                'purchasing': '<span class="role-badge bg-purple-100 text-purple-800">רכש</span>',
-                'warehouse': '<span class="role-badge bg-orange-100 text-orange-800">מחסן</span>',
-                'driver': '<span class="role-badge bg-slate-100 text-slate-800">נהג</span>',
-                'client': '<span class="role-badge bg-green-100 text-green-800">לקוח</span>'
+                'admin': 'מנכ"ל - הרשאה מלאה לכל המודולים.',
+                'ops': 'מנהל תפעול - שליטה בחמ"ל, נהגים ומלאי.',
+                'purchasing': 'רכש - ניהול ספקים והזמנות מיוחדות.',
+                'warehouse': 'מחסנאי - גישה למסוף ליקוט בלבד.',
+                'driver': 'נהג - גישה לאפליקציית הנהג וניווט.'
             };
-            return map[role] || role;
+            document.getElementById('description').value = map[role] || '';
+        };
+        updateRoleDesc();
+
+        window.updateAvatar = () => {
+            const url = document.getElementById('avatar').value;
+            if(url) document.getElementById('avatarPreview').src = url;
+        };
+
+        window.addProjectField = () => {
+            const div = document.createElement('div');
+            div.className = 'bg-white p-2 rounded border border-green-200 mb-2 relative';
+            div.innerHTML = `
+                <input type="text" class="w-full border-b mb-1 text-xs outline-none proj-name" placeholder="שם אתר (למשל: וילה הרצליה)">
+                <input type="text" class="w-full text-xs outline-none proj-addr" placeholder="כתובת מלאה">
+                <i onclick="this.parentElement.remove()" class="fas fa-times absolute top-1 left-1 text-gray-300 hover:text-red-500 cursor-pointer"></i>
+            `;
+            document.getElementById('projectsContainer').appendChild(div);
+        };
+
+        function collectProjects() {
+            const projs = [];
+            document.querySelectorAll('#projectsContainer > div').forEach(div => {
+                const name = div.querySelector('.proj-name').value;
+                if(name) projs.push({ name, address: div.querySelector('.proj-addr').value });
+            });
+            return projs;
         }
 
         window.filterUsers = () => {
@@ -332,7 +466,7 @@
             renderTable(usersList.filter(u => u.name.toLowerCase().includes(q) || u.email.includes(q)));
         };
 
-        // Init
+        // Start
         loadUsers();
 
     </script>
