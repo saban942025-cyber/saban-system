@@ -2,81 +2,243 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>SabanConnect | חמ"ל v22.1</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SabanConnect | חמ"ל v25.0</title>
+    <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { background-color: #d1d7db; font-family: sans-serif; height: 100vh; display: flex; overflow: hidden; }
-        .sidebar { width: 30%; max-width: 400px; background: white; border-left: 1px solid #e9edef; }
-        .main-chat { flex: 1; background: #efeae2; display: flex; flex-direction: column; }
-        .chat-item { padding: 12px; cursor: pointer; border-bottom: 1px solid #f0f2f5; }
+        body { background-color: #d1d7db; font-family: -apple-system, system-ui, sans-serif; height: 100vh; display: flex; overflow: hidden; }
+        .sidebar { width: 30%; max-width: 400px; background: white; border-left: 1px solid #e9edef; display: flex; flex-direction: column; z-index: 20; }
+        .main-chat { flex: 1; display: flex; flex-direction: column; background-color: #efeae2; background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); position: relative; }
+        
+        /* רשימת צ'אטים */
+        .chat-item { display: flex; align-items: center; padding: 12px; cursor: pointer; border-bottom: 1px solid #f0f2f5; transition: 0.2s; position: relative; }
         .chat-item:hover { background: #f5f6f6; }
-        .msg { max-width: 65%; padding: 8px 12px; border-radius: 8px; margin-bottom: 8px; background: white; align-self: flex-start; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
-        .msg.staff { background: #d9fdd3; align-self: flex-end; }
-        .msg.internal { background: #fff9c4; align-self: center; font-size: 12px; border: 1px dashed orange; }
-        .tag { background: #ffedd5; color: #c2410c; padding: 0 4px; border-radius: 4px; font-weight: bold; }
+        .chat-item.active { background: #f0f2f5; border-right: 4px solid #00a884; }
+        .chat-item.unread::after { content: ''; position: absolute; left: 15px; top: 50%; width: 10px; height: 10px; background: #25d366; border-radius: 50%; transform: translateY(-50%); }
+
+        /* בועות הודעה */
+        .msg { max-width: 65%; padding: 8px 12px; border-radius: 8px; font-size: 14px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); line-height: 1.4; margin-bottom: 8px; word-wrap: break-word; }
+        .msg-user { align-self: flex-start; background: #fff; border-top-right-radius: 0; }
+        .msg-staff { align-self: flex-end; background: #d9fdd3; border-top-left-radius: 0; }
+        .msg-internal { align-self: center; background: #fff9c4; border: 1px dashed #d97706; font-size: 12px; width: 80%; text-align: center; }
+        .msg-time { font-size: 10px; color: #999; text-align: left; margin-top: 3px; }
+        
+        /* תגיות חכמות */
+        .tag-mention { background-color: #ffedd5; color: #c2410c; padding: 0 4px; border-radius: 4px; font-weight: bold; border: 1px solid #fdba74; display: inline-block; font-size: 0.9em; }
+        
+        /* תפריט היתרים */
+        .permits-menu { position: absolute; bottom: 70px; right: 10px; background: white; border-radius: 12px; shadow: 0 4px 20px rgba(0,0,0,0.2); width: 200px; padding: 5px; display: none; z-index: 100; border: 1px solid #e2e8f0; }
+        .permits-menu.open { display: block; animation: popUp 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .permit-item { padding: 8px 12px; cursor: pointer; border-radius: 6px; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+        .permit-item:hover { background: #f1f5f9; color: #008069; }
+        
+        @keyframes popUp { from { opacity: 0; transform: translateY(10px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
     </style>
 </head>
 <body>
-    <div class="sidebar flex flex-col">
-        <div class="h-16 bg-[#f0f2f5] p-4 font-bold border-b">חמ"ל הזמנות</div>
-        <div id="chatList" class="flex-1 overflow-y-auto"></div>
-    </div>
-    <div id="chatArea" class="main-chat hidden">
-        <div class="h-16 bg-[#f0f2f5] px-4 flex justify-between items-center shadow-sm">
-            <div id="activeName" class="font-bold"></div>
-            <button onclick="toggleBot()" id="botBtn" class="bg-white px-3 py-1 rounded shadow text-xs font-bold">🤖 בוט פעיל</button>
+
+    <div class="sidebar">
+        <div class="h-16 bg-[#f0f2f5] border-b flex justify-between items-center px-4">
+            <div class="flex items-center gap-2">
+                <img src="https://ui-avatars.com/api/?name=Admin&background=00a884&color=fff" class="w-10 h-10 rounded-full">
+                <span class="font-bold text-gray-700">חמ"ל הזמנות</span>
+            </div>
+            <div class="text-xs text-gray-400">v25.0</div>
         </div>
-        <div id="messagesBox" class="flex-1 p-4 overflow-y-auto flex flex-col"></div>
-        <div class="bg-[#f0f2f5] p-3 flex gap-2">
-            <button onclick="toggleInternal()" id="intBtn" class="text-gray-400"><i class="fas fa-lock"></i></button>
-            <input id="msgInput" class="flex-1 p-2 rounded" placeholder="הקלד...">
-            <button onclick="send()" class="text-[#00a884]"><i class="fas fa-paper-plane"></i></button>
+        <div id="chatList" class="flex-1 overflow-y-auto bg-white custom-scroll"></div>
+    </div>
+
+    <div id="chatArea" class="main-chat hidden">
+        <div class="h-16 bg-[#f0f2f5] border-b flex justify-between items-center px-4 shadow-sm z-10">
+            <div class="flex items-center gap-3">
+                <img id="activeAvatar" src="" class="w-10 h-10 rounded-full border border-gray-300">
+                <div>
+                    <div id="activeName" class="font-bold text-gray-800 leading-tight"></div>
+                    <div class="text-xs text-gray-500">מחובר</div>
+                </div>
+            </div>
+            <button onclick="toggleBot()" id="botToggleBtn" class="bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm transition flex items-center gap-2">
+                <i class="fas fa-robot"></i> <span id="botStatusText">בוט פעיל</span>
+            </button>
+        </div>
+
+        <div id="messagesBox" class="flex-1 overflow-y-auto flex flex-col p-4"></div>
+
+        <div id="permitsMenu" class="permits-menu">
+            <div class="text-[10px] font-bold text-gray-400 px-2 py-1 uppercase">שלח לינק היתר:</div>
+            <div onclick="sendPermit('הרצליה')" class="permit-item"><i class="fas fa-city text-gray-400"></i> הרצליה</div>
+            <div onclick="sendPermit('רעננה')" class="permit-item"><i class="fas fa-city text-gray-400"></i> רעננה</div>
+            <div onclick="sendPermit('תל אביב')" class="permit-item"><i class="fas fa-city text-gray-400"></i> תל אביב</div>
+            <div onclick="sendPermit('כפר סבא')" class="permit-item"><i class="fas fa-city text-gray-400"></i> כפר סבא</div>
+        </div>
+
+        <div class="bg-[#f0f2f5] p-3 flex items-center gap-3 border-t relative">
+            <i onclick="toggleInternalMode()" id="internalBtn" class="fas fa-eye-slash text-xl text-gray-400 cursor-pointer hover:scale-110 transition" title="הערה פנימית"></i>
+            <i onclick="togglePermits()" class="fas fa-file-contract text-xl text-blue-500 cursor-pointer hover:scale-110 transition" title="שלח טופס היתר"></i>
+            
+            <div class="flex-1 relative">
+                <input type="text" id="msgInput" class="w-full p-3 rounded-xl border-none outline-none shadow-sm text-sm" placeholder="הקלד הודעה..." onkeydown="if(event.key === 'Enter') sendMessage()">
+            </div>
+            <button onclick="sendMessage()" class="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-[#00a884] transition"><i class="fas fa-paper-plane text-xl"></i></button>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, doc, updateDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        const app = initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" });
-        const db = getFirestore(app);
-        let activeId = null, internal = false, botActive = true;
+        import { getFirestore, collection, addDoc, doc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        onSnapshot(query(collection(db, "chat_sessions"), orderBy("lastActivity", "desc")), (snap) => {
-            document.getElementById('chatList').innerHTML = snap.docs.map(d => {
-                const c = d.data();
-                return `<div onclick="openChat('${d.id}','${c.userName}')" class="chat-item">
-                    <div class="font-bold">${c.userName}</div><div class="text-sm text-gray-500 truncate">${c.lastMessage}</div>
+        const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let activeChatId = null;
+        let internalMode = false;
+        let currentBotState = true;
+        
+        // טעינת היתרים לזיכרון
+        let cityPermits = {};
+        fetch('city_permits.json').then(r=>r.json()).then(d=>cityPermits=d).catch(e=>console.log('No permits file'));
+
+        // --- 1. רשימת צ'אטים + סאונד ---
+        const q = query(collection(db, "chat_sessions"), orderBy("lastActivity", "desc"));
+        onSnapshot(q, (snapshot) => {
+            const list = document.getElementById('chatList');
+            list.innerHTML = "";
+            
+            // צליל התראה להודעה חדשה
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === "modified" && change.doc.data().lastActivity) {
+                    const audio = new Audio('https://freesound.org/data/previews/234/234524_4019029-lq.mp3');
+                    audio.volume = 0.5;
+                    audio.play().catch(e=>{});
+                }
+            });
+
+            snapshot.forEach(docSnap => {
+                const chat = { id: docSnap.id, ...docSnap.data() };
+                const time = chat.lastActivity ? new Date(chat.lastActivity.seconds * 1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
+                const active = activeChatId === chat.id ? 'active' : '';
+                const cleanMsg = (chat.lastMessage || '').replace(/<[^>]*>?/gm, ''); // הסרת תגיות HTML לתצוגה מקדימה
+                
+                list.innerHTML += `
+                <div onclick="openChat('${chat.id}', '${chat.userName}')" class="chat-item ${active}">
+                    <div class="relative">
+                        <img src="https://ui-avatars.com/api/?name=${chat.userName}&background=random&color=fff" class="w-12 h-12 rounded-full ml-3 shadow-sm">
+                        ${chat.isBotActive ? '<div class="absolute bottom-0 right-3 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>' : '<div class="absolute bottom-0 right-3 w-3 h-3 bg-gray-400 border-2 border-white rounded-full"></div>'}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex justify-between mb-1"><span class="font-bold text-gray-800 text-sm">${chat.userName}</span><span class="text-xs text-gray-400">${time}</span></div>
+                        <div class="text-sm text-gray-500 truncate dir-rtl">${cleanMsg}</div>
+                    </div>
                 </div>`;
-            }).join('');
+            });
         });
 
-        window.openChat = (id, name) => {
-            activeId = id; document.getElementById('chatArea').classList.remove('hidden'); document.getElementById('activeName').innerText = name;
-            onSnapshot(query(collection(db, `chat_sessions/${id}/messages`), orderBy("createdAt", "asc")), (snap) => {
-                document.getElementById('messagesBox').innerHTML = snap.docs.map(d => {
-                    const m = d.data();
-                    let txt = m.text.replace(/@([\w\u0590-\u05FF]+)/g, '<span class="tag">@$1</span>');
-                    return `<div class="msg ${m.role}">${m.role==='internal'?'🔒 ':''}${txt}</div>`;
-                }).join('');
+        // --- 2. פתיחת צ'אט ---
+        window.openChat = (chatId, name) => {
+            activeChatId = chatId;
+            document.getElementById('chatArea').classList.remove('hidden');
+            document.getElementById('activeName').innerText = name;
+            document.getElementById('activeAvatar').src = `https://ui-avatars.com/api/?name=${name}&background=random&color=fff`;
+            
+            // האזנה לסטטוס בוט
+            onSnapshot(doc(db, "chat_sessions", chatId), (s) => {
+                if(s.exists()) {
+                    currentBotState = s.data().isBotActive;
+                    updateBotUI(currentBotState);
+                }
             });
-            // Listen to bot status
-            onSnapshot(doc(db, "chat_sessions", id), (s) => {
-                botActive = s.data().isBotActive;
-                const btn = document.getElementById('botBtn');
-                btn.innerText = botActive ? "🤖 בוט פעיל" : "🛑 ידני";
-                btn.className = botActive ? "bg-green-100 text-green-700 px-3 py-1 rounded text-xs font-bold" : "bg-red-100 text-red-700 px-3 py-1 rounded text-xs font-bold";
+
+            // האזנה להודעות
+            const msgQ = query(collection(db, `chat_sessions/${chatId}/messages`), orderBy("createdAt", "asc"));
+            onSnapshot(msgQ, (snapshot) => {
+                const box = document.getElementById('messagesBox');
+                box.innerHTML = "";
+                snapshot.forEach(doc => {
+                    const m = doc.data();
+                    const time = m.createdAt ? new Date(m.createdAt.seconds * 1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '...';
+                    
+                    // תיוג חכם ויזואלי
+                    let content = m.text.replace(/@([\u0590-\u05FF\w]+)/g, '<span class="tag-mention">@$1</span>');
+
+                    if (m.role === 'internal') {
+                        box.innerHTML += `<div class="msg msg-internal"><i class="fas fa-lock"></i> <b>פנימי:</b> ${content}<div class="msg-time">${time}</div></div>`;
+                    } else {
+                        const type = m.role === 'user' ? 'msg-user' : 'msg-staff';
+                        const badge = m.sender === 'bot' || m.text.includes("SabanAI") ? '<span class="text-[10px] text-green-600 font-bold block mb-1"><i class="fas fa-robot"></i> SabanAI</span>' : '';
+                        box.innerHTML += `<div class="msg ${type}">${badge}${content}<div class="msg-time">${time}</div></div>`;
+                    }
+                });
+                box.scrollTop = box.scrollHeight;
             });
         };
 
-        window.send = async () => {
-            const txt = document.getElementById('msgInput').value; if(!txt) return;
-            await addDoc(collection(db, `chat_sessions/${activeId}/messages`), { text: txt, role: internal?'internal':'staff', createdAt: serverTimestamp() });
-            if(!internal) await updateDoc(doc(db, "chat_sessions", activeId), { lastMessage: `נציג: ${txt}`, lastActivity: serverTimestamp(), isBotActive: false });
-            document.getElementById('msgInput').value = '';
+        // --- 3. לוגיקה ---
+        window.sendMessage = async () => {
+            const input = document.getElementById('msgInput');
+            const txt = input.value;
+            if (!txt || !activeChatId) return;
+            const role = internalMode ? 'internal' : 'staff';
+            input.value = '';
+
+            await addDoc(collection(db, `chat_sessions/${activeChatId}/messages`), { text: txt, role: role, sender: role === 'internal' ? "System" : "נציג", createdAt: serverTimestamp() });
+            
+            // אם נציג ענה, מכבים בוט
+            const updateData = { lastMessage: role === 'internal' ? '🔒 הערה פנימית' : `נציג: ${txt}`, lastActivity: serverTimestamp() };
+            if (role !== 'internal') updateData.isBotActive = false;
+            
+            await updateDoc(doc(db, "chat_sessions", activeChatId), updateData);
+            if(internalMode) toggleInternalMode();
         };
-        window.toggleBot = () => updateDoc(doc(db, "chat_sessions", activeId), { isBotActive: !botActive });
-        window.toggleInternal = () => { internal = !internal; document.getElementById('intBtn').className = internal ? "text-orange-500" : "text-gray-400"; document.getElementById('msgInput').placeholder = internal ? "הערה פנימית..." : "הקלד..."; };
+
+        window.toggleBot = async () => {
+            if(!activeChatId) return;
+            await updateDoc(doc(db, "chat_sessions", activeChatId), { isBotActive: !currentBotState });
+        };
+
+        function updateBotUI(isActive) {
+            const btn = document.getElementById('botToggleBtn');
+            const txt = document.getElementById('botStatusText');
+            if(isActive) {
+                btn.className = "bg-green-50 text-green-700 border border-green-200 px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm flex items-center gap-2";
+                txt.innerText = "בוט פעיל";
+            } else {
+                btn.className = "bg-gray-100 text-gray-500 border border-gray-300 px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm flex items-center gap-2";
+                txt.innerText = "בוט כבוי (ידני)";
+            }
+        }
+
+        window.toggleInternalMode = () => {
+            internalMode = !internalMode;
+            const btn = document.getElementById('internalBtn');
+            const input = document.getElementById('msgInput');
+            if (internalMode) {
+                btn.classList.replace('text-gray-400', 'text-orange-500');
+                input.style.backgroundColor = '#fff7ed';
+                input.placeholder = "הערה פנימית לצוות...";
+            } else {
+                btn.classList.replace('text-orange-500', 'text-gray-400');
+                input.style.backgroundColor = 'white';
+                input.placeholder = "הקלד הודעה...";
+            }
+            input.focus();
+        };
+
+        // --- היתרים מהירים ---
+        window.togglePermits = () => document.getElementById('permitsMenu').classList.toggle('open');
+        
+        window.sendPermit = (city) => {
+            document.getElementById('permitsMenu').classList.remove('open');
+            // בדיקה אם הוטען קובץ היתרים, אחרת השתמש בדיפולט
+            const data = cityPermits[city] || { url: "https://www.google.com/search?q=היתר+מכולה+"+city, warning: "חובה היתר!" };
+            
+            const msg = `שלום, ב${city} ${data.warning || 'חובה היתר'}.\nלהוצאת היתר און-ליין: ${data.url}`;
+            document.getElementById('msgInput').value = msg;
+            sendMessage(); // שליחה אוטומטית
+        };
+
     </script>
 </body>
 </html>
