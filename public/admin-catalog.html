@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saban Catalog Workstation 💎</title>
+    <title>Saban Catalog Workstation (Live) 💎</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -87,7 +87,7 @@
             <div class="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center text-white text-lg shadow">💎</div>
             <div>
                 <h1 class="font-bold text-slate-800 leading-none">Catalog Workstation</h1>
-                <div class="text-[10px] text-slate-500 font-bold uppercase">מערכת ניהול מוצר v7.0</div>
+                <div class="text-[10px] text-green-600 font-bold uppercase">מחובר לרשת (Live)</div>
             </div>
         </div>
         <div class="flex gap-3">
@@ -106,14 +106,14 @@
             </div>
             <div class="p-3 bg-white border-b">
                 <div class="relative">
-                    <input id="searchInput" class="inp font-bold" placeholder="הקלד שם מוצר (למשל: מקיטה 2470)..." onkeydown="if(event.key==='Enter') runSearch()">
+                    <input id="searchInput" class="inp font-bold" placeholder="הקלד מוצר (למשל: דבק קרמיקה)..." onkeydown="if(event.key==='Enter') runSearch()">
                     <button onclick="runSearch()" class="absolute left-2 top-1.5 text-blue-600 hover:bg-blue-50 p-1 rounded"><i class="fas fa-search"></i></button>
                 </div>
             </div>
             <div id="resultsList" class="panel-content custom-scroll bg-slate-50">
                 <div class="text-center py-10 text-slate-400">
                     <i class="fas fa-globe text-3xl mb-2 opacity-20"></i>
-                    <p class="text-xs">התוצאות יופיעו כאן</p>
+                    <p class="text-xs">הקלד ולחץ Enter לחיפוש חי</p>
                 </div>
             </div>
         </div>
@@ -128,11 +128,11 @@
                 <div class="form-section grid grid-cols-3 gap-3">
                     <div class="col-span-3 form-title"><i class="fas fa-images"></i> מדיה ומותג</div>
                     
-                    <div class="img-slot h-24" onclick="alert('בחר תמונה מהחיפוש משמאל')" id="slotMain">
+                    <div class="img-slot h-24" id="slotMain">
                         <img id="imgMain" src="https://via.placeholder.com/150?text=Main" class="opacity-50">
                         <div class="img-label">ראשית</div>
                     </div>
-                    <div class="img-slot h-24" onclick="alert('בחר תמונה מהחיפוש משמאל')" id="slotSec">
+                    <div class="img-slot h-24" id="slotSec">
                         <img id="imgSec" src="https://via.placeholder.com/150?text=Sec" class="opacity-50">
                         <div class="img-label">משנית</div>
                     </div>
@@ -175,7 +175,7 @@
                 </div>
 
                 <div class="form-section bg-indigo-50 border-indigo-100">
-                    <div class="form-title text-indigo-600"><i class="fas fa-robot"></i> נתוני מוח לבוט</div>
+                    <div class="form-title text-indigo-600"><i class="fas fa-robot"></i> נתונים לבוט</div>
                     <div class="grid grid-cols-2 gap-3">
                         <div class="inp-group">
                             <label class="inp-label">זמן ייבוש</label>
@@ -262,10 +262,11 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Config & Keys
+        // --- Config ---
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
         let app, db; try{app=initializeApp(firebaseConfig);db=getFirestore(app);}catch(e){}
 
+        // --- KEYS (Embedded) ---
         const GOOGLE_API_KEY = "AIzaSyDLkShn6lBBew-PJJWtzvAe_14UF9Kv-QI";
         const GOOGLE_CX = "3331a7d5c75e14f26";
 
@@ -276,16 +277,18 @@
             if(!query) return;
             
             const list = document.getElementById('resultsList');
-            list.innerHTML = '<div class="text-center py-10"><i class="fas fa-spinner fa-spin text-blue-600"></i> מחפש...</div>';
+            list.innerHTML = '<div class="text-center py-10"><i class="fas fa-spinner fa-spin text-blue-600 text-2xl"></i><div class="mt-2 text-xs">סורק...</div></div>';
 
             try {
+                // קריאה אמיתית לגוגל
                 const url = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CX}&q=${encodeURIComponent(query)}`;
                 const res = await fetch(url);
                 const data = await res.json();
 
-                if(!data.items) { list.innerHTML = '<div class="text-center text-slate-400">אין תוצאות</div>'; return; }
+                if(!data.items) { list.innerHTML = '<div class="text-center text-slate-400">לא נמצאו תוצאות</div>'; return; }
 
                 list.innerHTML = data.items.map(item => {
+                    // חילוץ תמונה איכותית ככל האפשר
                     const img = item.pagemap?.cse_image?.[0]?.src || item.pagemap?.og_image?.[0]?.src || '';
                     const title = item.title;
                     const snippet = item.snippet;
@@ -315,11 +318,11 @@
         };
 
         window.takeField = (btn, type, val) => {
-            // Animation
+            // Animation Feedback
             btn.classList.add('picked');
             setTimeout(()=>btn.classList.remove('picked'), 500);
 
-            // Logic
+            // Logic: העברת מידע מהרשת לשדות
             if(type === 'mainImg') { document.getElementById('imgMain').src = val; document.getElementById('prevImgMain').src = val; }
             if(type === 'secImg') { document.getElementById('imgSec').src = val; document.getElementById('prevImgSec').src = val; }
             if(type === 'brandLogo') { 
@@ -355,7 +358,8 @@
         };
 
         window.saveProduct = async () => {
-            if(!db) return alert("אין חיבור לשרת");
+            if(!db) return alert("אין חיבור לשרת (בדוק אינטרנט)");
+            
             const product = {
                 core: {
                     name: document.getElementById('inpName').value,
@@ -381,13 +385,13 @@
                 updatedAt: new Date()
             };
             
-            if(!product.core.name) return alert("חובה שם מוצר");
+            if(!product.core.name) return alert("חובה למלא שם מוצר!");
 
             try {
                 await addDoc(collection(db, "products"), product);
                 alert("מוצר נשמר בהצלחה! 💾");
                 window.clearForm();
-            } catch(e) { console.error(e); alert("שגיאה: " + e.message); }
+            } catch(e) { console.error(e); alert("שגיאה בשמירה: " + e.message); }
         };
 
         function escapeVal(str) { return str.replace(/'/g, "").replace(/"/g, ""); }
