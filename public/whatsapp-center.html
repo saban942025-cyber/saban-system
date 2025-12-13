@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>חמ"ל הזמנות סבן</title>
     <link rel="icon" href="data:;base64,iVBORw0KGgo=">
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
@@ -12,41 +11,41 @@
     <style>
         body { background-color: #d1d7db; font-family: -apple-system, system-ui, sans-serif; height: 100vh; display: flex; overflow: hidden; }
         
-        /* Sidebar */
+        /* סרגל צד */
         .sidebar { width: 35%; min-width: 380px; background: white; border-left: 1px solid #e9edef; display: flex; flex-direction: column; z-index: 20; }
         
-        /* Tabs */
+        /* טאבים */
         .tab-btn { flex: 1; padding: 14px; text-align: center; cursor: pointer; font-weight: 600; color: #54656f; border-bottom: 3px solid transparent; transition: 0.2s; }
         .tab-btn.active { border-color: #008069; color: #008069; background: #f0fdfa; }
         .tab-btn:hover { background: #f5f6f6; }
 
-        /* Story Rings */
+        /* סטורי */
         .story-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; min-width: 60px; transition: transform 0.2s; }
         .story-item:hover { transform: scale(1.05); }
         .story-ring { width: 50px; height: 50px; border-radius: 50%; padding: 2px; border: 2px solid transparent; object-fit: cover; }
         .ring-green { border-color: #10b981; }
+        .ring-orange { border-color: #f59e0b; border-style: dashed; }
         .ring-red { border-color: #ef4444; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 100% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } }
 
-        /* Chat List */
-        .chat-list { flex: 1; overflow-y: auto; }
+        /* רשימות */
         .chat-item { display: flex; align-items: center; padding: 12px 16px; cursor: pointer; border-bottom: 1px solid #f5f6f6; transition: 0.1s; }
         .chat-item:hover { background: #f5f6f6; }
         .chat-item.active { background: #f0f2f5; border-right: 4px solid #00a884; }
 
-        /* Main Chat */
+        /* צ'אט ראשי */
         .main-chat { flex: 1; display: flex; flex-direction: column; background: #efeae2 url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); position: relative; }
         
-        /* Sticky Note */
+        /* פתק */
         #stickyNote { position: absolute; top: 80px; right: 20px; width: 220px; background: #fef08a; padding: 10px; box-shadow: 4px 4px 10px rgba(0,0,0,0.2); transform: rotate(-2deg); z-index: 10; display: none; border: 1px solid #eab308; }
         #stickyNote.visible { display: block; }
 
-        /* Audio Button */
-        .audio-btn { transition: all 0.3s; }
+        /* כפתור סאונד */
+        .audio-btn { transition: all 0.3s; cursor: pointer; }
         .audio-off { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
         .audio-on { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
 
-        /* Messages */
+        /* הודעות */
         .msg { max-width: 75%; padding: 8px 12px; border-radius: 8px; margin: 4px 20px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); width: fit-content; font-size: 14px; }
         .msg.staff { background: #d9fdd3; align-self: flex-end; }
         .msg.user { background: white; align-self: flex-start; }
@@ -64,6 +63,7 @@
                 </div>
                 <div class="font-bold text-gray-700">קבוצת הזמנות</div>
             </div>
+            
             <button id="soundToggle" onclick="toggleSound()" class="audio-btn audio-off px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-2 shadow-sm hover:opacity-80">
                 <i class="fas fa-volume-mute" id="soundIcon"></i> <span id="soundText">הפעל כריזה</span>
             </button>
@@ -81,8 +81,8 @@
             <div class="text-xs text-gray-400 text-center w-full">טוען...</div>
         </div>
 
-        <div id="chatsList" class="chat-list custom-scroll"></div>
-        <div id="sabanList" class="chat-list hidden custom-scroll"></div>
+        <div id="chatsList" class="chat-list custom-scroll flex-1 overflow-y-auto"></div>
+        <div id="sabanList" class="chat-list hidden custom-scroll flex-1 overflow-y-auto"></div>
     </div>
 
     <div id="chatArea" class="main-chat hidden">
@@ -92,7 +92,7 @@
                 <div><div id="activeName" class="font-bold text-gray-800"></div><div class="text-xs text-green-600">מחובר</div></div>
             </div>
             <div class="flex gap-2">
-                <button onclick="promptLinkOrder()" class="bg-orange-100 text-orange-700 px-3 py-1.5 rounded text-xs font-bold border border-orange-200 hover:bg-orange-200 flex items-center gap-2"><i class="fas fa-link"></i> קשור</button>
+                <button onclick="promptLinkOrder()" class="bg-orange-100 text-orange-700 px-3 py-1.5 rounded text-xs font-bold border border-orange-200 hover:bg-orange-200"><i class="fas fa-link"></i> קשור</button>
                 <button onclick="toggleSticky()" class="bg-yellow-100 text-yellow-700 px-3 py-1.5 rounded border border-yellow-200 text-xs font-bold"><i class="fas fa-sticky-note"></i> פתק</button>
             </div>
         </div>
@@ -108,7 +108,7 @@
         <div id="messagesBox" class="flex-1 overflow-y-auto flex flex-col p-4 pb-2"></div>
 
         <div class="bg-[#f0f2f5] p-3 flex items-center gap-2 border-t z-20 flex-shrink-0">
-            <i onclick="toggleInternal()" id="internalBtn" class="fas fa-eye-slash text-gray-400 cursor-pointer text-xl p-2" title="מצב פנימי"></i>
+            <i onclick="toggleInternal()" id="internalBtn" class="fas fa-eye-slash text-gray-400 cursor-pointer text-xl p-2" title="פנימי"></i>
             <input type="text" id="msgInput" class="flex-1 p-3 rounded-lg border-none outline-none shadow-sm bg-white" placeholder="הקלד..." onkeydown="if(event.key==='Enter') sendMessage()">
             <button onclick="sendMessage()" class="text-[#008069] text-2xl hover:scale-110 transition"><i class="fas fa-paper-plane"></i></button>
         </div>
@@ -116,23 +116,21 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, doc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, doc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, setDoc, getDocs, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { SabanSounds } from './js/sounds.js';
 
-        // --- 1. Global State & Helper Functions (Window Scope) ---
+        // --- 1. פונקציות גלובליות ---
         window.activeChatId = null;
-        window.activeColl = 'chat_sessions'; // Default collection
+        window.activeColl = 'chat_sessions';
         window.internalMode = false;
         window.audioEnabled = false;
 
-        // Sound Toggle
         window.toggleSound = () => {
             const btn = document.getElementById('soundToggle');
             const icon = document.getElementById('soundIcon');
             const text = document.getElementById('soundText');
 
             if (!window.audioEnabled) {
-                // Try to play silent sound to unlock browser
                 const a = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAGZGF0YQQAAAAAAA==");
                 a.play().then(() => {
                     window.audioEnabled = true;
@@ -140,7 +138,7 @@
                     icon.className = "fas fa-volume-up";
                     text.innerText = "כריזה פעילה";
                     if(SabanSounds) SabanSounds.playMessage();
-                }).catch(e => alert("דפדפן חוסם סאונד. נא ללחוץ שוב."));
+                }).catch(e => console.warn("Audio blocked")); // בלי Alert!
             } else {
                 window.audioEnabled = false;
                 btn.className = "audio-btn audio-off px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-2 shadow-sm";
@@ -148,9 +146,15 @@
                 text.innerText = "מושתק";
             }
         };
-        // Removed global onclick unlock to prevent annoying popup
 
-        // Tab Switching
+        window.unlockAudio = () => { 
+            // מנסה לשחרר בשקט, אם נכשל לא עושה כלום
+            if(!window.audioEnabled) {
+                const a = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAGZGF0YQQAAAAAAA==");
+                a.play().then(()=>window.toggleSound()).catch(()=>{});
+            }
+        };
+
         window.switchTab = (tab) => {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(`tab-${tab}`).classList.add('active');
@@ -182,16 +186,13 @@
             }
         };
 
-        // --- 2. Firebase Logic ---
+        // --- 2. Firebase ---
         const config = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
-        
-        let db;
-        try {
-            const app = initializeApp(config);
-            db = getFirestore(app);
-            
-            // Listeners
-            // 1. Orders
+        let app, db;
+        try { app = initializeApp(config); db = getFirestore(app); } catch(e) { console.error(e); }
+
+        if(db) {
+            // מאזין הזמנות
             onSnapshot(query(collection(db, "chat_sessions"), orderBy("lastActivity", "desc")), (snap) => {
                 const list = document.getElementById('chatsList');
                 const stories = document.getElementById('storiesBar');
@@ -206,21 +207,30 @@
                         if(window.audioEnabled && SabanSounds) SabanSounds.playAlert(); 
                     }
                     
-                    const avatar = c.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.userName)}`;
-                    
-                    list.innerHTML += `<div onclick="openChat('${d.id}', '${c.userName}', '${avatar}', 'chat_sessions')" class="chat-item ${window.activeChatId===d.id?'active':''}">
-                        <div class="relative"><img src="${avatar}" class="w-10 h-10 rounded-full ${ring} object-cover p-0.5"></div>
+                    // *** תיקון התמונות ***
+                    // אם אין תמונה -> יוצר אווטאר צבעוני עם השם
+                    let displayImg = c.avatar;
+                    if (!displayImg || displayImg === 'undefined') {
+                        displayImg = `https://ui-avatars.com/api/?name=${encodeURIComponent(c.userName)}&background=random&color=fff`;
+                    }
+
+                    const item = `<div onclick="openChat('${d.id}', '${c.userName}', '${displayImg}', 'chat_sessions')" class="chat-item ${window.activeChatId===d.id?'active':''}">
+                        <div class="relative"><img src="${displayImg}" class="w-10 h-10 rounded-full ${ring} object-cover p-0.5" onerror="this.src='https://via.placeholder.com/40'"></div>
                         <div class="flex-1 mr-3 min-w-0">
                             <div class="font-bold text-sm text-gray-800">${c.userName}</div>
                             <div class="text-xs text-gray-500 truncate">${c.lastMessage}</div>
                         </div>
                     </div>`;
+                    list.innerHTML += item;
                     
-                    stories.innerHTML += `<div class="story-item" onclick="openChat('${d.id}', '${c.userName}', '${avatar}', 'chat_sessions')"><img src="${avatar}" class="story-ring ${ring}"><span class="story-name">${c.userName}</span></div>`;
+                    stories.innerHTML += `<div class="story-item" onclick="openChat('${d.id}', '${c.userName}', '${displayImg}', 'chat_sessions')">
+                        <img src="${displayImg}" class="story-ring ${ring}" onerror="this.src='https://via.placeholder.com/40'">
+                        <span class="story-name">${c.userName}</span>
+                    </div>`;
                 });
             });
 
-            // 2. Chat Saban
+            // מאזין צ'אט סבן
             onSnapshot(query(collection(db, "saban_chats_meta"), orderBy("lastActivity", "desc")), (snap) => {
                 const list = document.getElementById('sabanList');
                 list.innerHTML = "";
@@ -228,19 +238,16 @@
                 
                 snap.forEach(d => {
                     const c = d.data();
-                    list.innerHTML += `<div onclick="openChat('${d.id}', '${c.userName}', '${c.avatar}', 'saban_chats')" class="chat-item ${window.activeChatId===d.id?'active':''}">
-                        <img src="${c.avatar}" class="w-10 h-10 rounded-full ring-2 ring-indigo-500 p-0.5">
+                    let displayImg = c.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.userName)}&background=6366f1&color=fff`;
+                    
+                    list.innerHTML += `<div onclick="openChat('${d.id}', '${c.userName}', '${displayImg}', 'saban_chats')" class="chat-item ${window.activeChatId===d.id?'active':''}">
+                        <img src="${displayImg}" class="w-10 h-10 rounded-full ring-2 ring-indigo-500 p-0.5">
                         <div class="flex-1 mr-3"><div class="font-bold text-sm text-indigo-900">${c.userName}</div><div class="text-xs text-gray-500 truncate">${c.lastMessage}</div></div>
                     </div>`;
                 });
             });
-
-        } catch (e) {
-            console.error("Firebase Error:", e);
-            document.body.innerHTML = "<h2 style='text-align:center; margin-top:50px; color:red'>שגיאת חיבור לשרת (נא לצאת מגלישה בסתר)</h2>";
         }
 
-        // Functions needing DB access
         window.openChat = (id, name, img, coll) => {
             window.activeChatId = id;
             window.activeColl = coll;
@@ -271,7 +278,6 @@
             
             if(!window.internalMode) {
                 const metaColl = window.activeColl === 'saban_chats' ? 'saban_chats_meta' : 'chat_sessions';
-                // Using setDoc with merge to ensure document exists
                 await setDoc(doc(db, metaColl, window.activeChatId), { 
                     lastMessage: `נציג: ${txt}`, lastActivity: serverTimestamp(), lastMsgFromStaff: true 
                 }, { merge: true });
