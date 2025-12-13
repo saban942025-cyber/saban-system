@@ -70,3 +70,4 @@ export class SabanChatbot {
         return snap.docs.map(d => `${d.core.name}`).join(", ");
     }
 }
+
