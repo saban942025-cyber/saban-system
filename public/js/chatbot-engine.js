@@ -1,11 +1,10 @@
-/* Saban Chatbot Engine v5.0 (Final Fix)
-   מודל: gemini-1.5-flash
-   שיטה: חיבור ישיר (Direct Fetch)
+/* Saban Chatbot Engine v6.0 (Stable Pro)
+   מודל: gemini-pro (המודל היציב ביותר למפתחות חינמיים)
 */
 
 import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// המפתח שלך (נבדק ותקין)
+// המפתח שלך
 const GEMINI_API_KEY = "AIzaSyD9plWwyTESFm24c_OTunf4mFAsAmfrgj0";
 
 export class SabanChatbot {
@@ -16,88 +15,73 @@ export class SabanChatbot {
         this.emergencyKeywords = ["דחוף", "עצור", "תעצור", "טעות", "סכנה", "פצוע"];
     }
 
-    // --- הפונקציה הראשית ---
     async ask(question) {
-        if (!question) return { text: "אני מקשיב..." };
+        if (!question) return { text: "..." };
         
-        // 1. חוקי ברזל (חירום)
+        // 1. חירום
         if (this.emergencyKeywords.some(k => question.includes(k))) {
-            return { text: "🛑 עצרתי הכל! דיווחתי להראל ולרמי על אירוע חריג.\nנציג אנושי ייצור איתך קשר מיידי.", action: "urgent_alert" };
+            return { text: "🛑 עצרתי הכל! דיווחתי להראל ולרמי.\nנציג ייצור קשר.", action: "urgent_alert" };
         }
 
-        // 2. הפעלת המוח (AI)
+        // 2. AI
         try {
-            // נסיון שליפת מלאי (בלי להפיל את המערכת אם נכשל)
-            let inventory = "רשימת המלאי לא זמינה כרגע (תענה תשובה כללית).";
+            // דילוג על שגיאות פיירבייס
+            let inventory = "המלאי בבדיקה, תענה כללית.";
             try {
-                if (this.db) {
-                    inventory = await this.getInventoryContext();
-                }
-            } catch (e) {
-                console.warn("Inventory fetch skipped:", e);
-            }
+                if (this.db) inventory = await this.getInventoryContext();
+            } catch (e) { console.warn("Firebase skipped"); }
 
-            // שליחה לגוגל
             const aiResponse = await this.generateAIResponse(question, inventory);
             return { text: aiResponse, action: "ai_reply" };
 
         } catch (error) {
-            console.error("Bot Critical Error:", error);
-            return { text: "יש לי תקלה קטנה בחיבור לאינטרנט... 🔌\nרשמתי את השאלה ואעביר לאורן." };
+            console.error("Bot Error:", error);
+            // הודעת שגיאה ברורה למשתמש
+            return { text: "המוח מתעדכן כרגע... (תקלת תקשורת גוגל). 🔌" };
         }
     }
 
-    // --- המנוע של גוגל (חיבור ישיר) ---
     async generateAIResponse(userQ, inventoryList) {
-        // שימוש במודל 1.5 Flash - המהיר והיציב ביותר כרגע
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.apiKey}`;
+        // --- התיקון: חזרה למודל gemini-pro שעובד תמיד ---
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${this.apiKey}`;
 
         const prompt = `
-        אתה העוזר החכם של "סבן חומרי בניין". שמך צ'אט-סבן.
-        הלקוח שואל: "${userQ}"
-        
-        מוצרים שיש לנו במלאי כרגע:
-        ${inventoryList}
+        שמך צ'אט-סבן, מומחה חומרי בניין.
+        שאלה: "${userQ}"
+        מלאי זמין: ${inventoryList}
         
         הנחיות:
-        1. ענה בעברית, קצר ומקצועי (מקסימום 2 משפטים).
-        2. אם המוצר במלאי - תמליץ עליו! זה הכי חשוב.
-        3. אם אין במלאי - תגיד "אבדוק מול המחסן".
-        4. תהיה נחמד.
+        1. ענה בעברית, קצר (עד 2 משפטים).
+        2. אם המוצר במלאי - תמליץ עליו.
+        3. תהיה נחמד.
         `;
 
         const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                contents: [{
-                    parts: [{ text: prompt }]
-                }]
+                contents: [{ parts: [{ text: prompt }] }]
             })
         });
 
         if (!response.ok) {
             const errData = await response.json();
-            throw new Error(`Google API Error: ${errData.error?.message || response.status}`);
+            // זורק שגיאה מדויקת לקונסול כדי שנראה מה קרה
+            throw new Error(`Google Error ${response.status}: ${JSON.stringify(errData)}`);
         }
 
         const data = await response.json();
         
-        if (data.candidates && data.candidates[0].content) {
+        if (data.candidates && data.candidates.length > 0) {
             return data.candidates[0].content.parts[0].text;
         } else {
             return "לא הצלחתי לנסח תשובה.";
         }
     }
 
-    // --- שליפת מלאי ---
     async getInventoryContext() {
         const snap = await getDocs(collection(this.db, "products"));
-        if (snap.empty) return "אין מוצרים רשומים בקטלוג.";
-        // לוקח את השם והמותג של כל מוצר
-        return snap.docs.map(d => {
-            const data = d.data();
-            return `${data.core.name} (${data.core.brand || 'כללי'})`;
-        }).join(", ");
+        if (snap.empty) return "אין מוצרים.";
+        return snap.docs.map(d => d.data().core.name).join(", ");
     }
 }
