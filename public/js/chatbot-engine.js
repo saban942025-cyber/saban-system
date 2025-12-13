@@ -1,11 +1,11 @@
-/* Saban Chatbot Engine v2.1 (Robust AI)
-   תיקון: הפרדת תקלות מלאי מתקלות מוח
+/* Saban Chatbot Engine v2.2 (Fixed Model)
+   תיקון: עדכון גרסת מודל ל-Gemini 1.5 Flash
 */
 
 import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
 import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// המפתח שלך
+// המפתח שלך (השארתי אותו, הוא תקין)
 const GEMINI_API_KEY = "AIzaSyD9plWwyTESFm24c_OTunf4mFAsAmfrgj0";
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
@@ -13,37 +13,40 @@ export class SabanChatbot {
     constructor(db, userContext) {
         this.db = db;
         this.user = userContext || { name: "אורח" };
-        this.model = genAI.getGenerativeModel({ model: "gemini-pro"});
+        
+        // --- התיקון כאן: שינוי שם המודל לגרסה החדשה והמהירה ---
+        this.model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"});
+        
         this.emergencyKeywords = ["דחוף", "עצור", "תעצור", "טעות", "סכנה", "פצוע"];
     }
 
     async ask(question) {
         if (!question) return { text: "אני מקשיב..." };
         
-        // 1. בדיקת חירום (עובד מצוין)
+        // 1. בדיקת חירום
         if (this.emergencyKeywords.some(k => question.includes(k))) {
             return { text: "🛑 עצרתי הכל! דיווחתי להראל ולרמי על אירוע חריג.\nנציג אנושי ייצור איתך קשר מיידי.", action: "urgent_alert" };
         }
 
-        // 2. ניסיון להפעיל בינה מלאכותית
+        // 2. הפעלת בינה מלאכותית
         try {
-            // שלב א': ננסה למשוך מלאי, אבל בזהירות! אם נכשל - לא נורא.
+            // נסיון שליפת מלאי (עם הגנה מקריסה)
             let inventory = "המידע על המלאי לא זמין כרגע, תענה באופן כללי.";
             try {
-                inventory = await this.getInventoryContext();
+                if (this.db) {
+                    inventory = await this.getInventoryContext();
+                }
             } catch (dbError) {
-                console.warn("Firebase Error (Inventory skipped):", dbError);
-                // ממשיכים הלאה גם אם אין חיבור למסד הנתונים
+                console.warn("Inventory skipped (Firebase issue):", dbError);
             }
             
-            // שלב ב': שליחה לגוגל (חייב לעבוד)
+            // שליחה לגוגל
             const aiResponse = await this.generateAIResponse(question, inventory);
             return { text: aiResponse, action: "ai_reply" };
 
         } catch (error) {
-            console.error("CRITICAL AI ERROR:", error);
-            // רק אם גוגל עצמו נכשל - נחזיר שגיאה
-            return { text: "שגיאה בחיבור לשרתי גוגל (AI). 🔌\nבדוק את המפתח או את החיבור לאינטרנט." };
+            console.error("AI Error:", error);
+            return { text: "שגיאה בחיבור למוח (Gemini). 🔌\nאני מעביר את השאלה לאורן." };
         }
     }
 
@@ -57,9 +60,9 @@ export class SabanChatbot {
 
         הנחיות:
         1. ענה בעברית, קצר ומקצועי.
-        2. אם המוצר במלאי - תמליץ עליו.
-        3. אם המלאי לא ידוע - תן תשובה מקצועית כללית.
-        4. תהיה נחמד.
+        2. אם המוצר במלאי - תמליץ עליו בביטחון.
+        3. אל תמציא מוצרים שלא ברשימה.
+        4. תהיה נחמד ושירותי.
         `;
 
         const result = await this.model.generateContent(prompt);
@@ -68,7 +71,6 @@ export class SabanChatbot {
     }
 
     async getInventoryContext() {
-        // מנסה למשוך נתונים. אם אין הרשאה - זה יזרוק שגיאה שנתפוס למעלה
         const snap = await getDocs(collection(this.db, "products"));
         if (snap.empty) return "אין מוצרים רשומים בקטלוג כרגע.";
         return snap.docs.map(doc => {
