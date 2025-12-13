@@ -268,17 +268,7 @@
                 document.getElementById('userName').innerText = currentUser.name;
                 document.getElementById('userAvatar').src = currentUser.avatar;
             }
-        };
-         window.openClientHistory = async () => {
-        toggleActions(); // סגור תפריט
-        const modal = document.getElementById('pasteModal'); // נשתמש במודאל קיים או ניצור חדש, כאן נשתמש בקיים לפשטות
-        // אבל עדיף לייצר modal ייעודי להיסטוריה. בוא ניצור פונקציה מהירה ששולחת את ההיסטוריה לצ'אט.
         
-        // גרסה פשוטה: הלקוח מבקש היסטוריה -> הבוט מציג לו בצ'אט
-        sendChat("הצג לי את היסטוריית ההזמנות שלי 📜");
-        
-        // גרסה מתקדמת (הבוט יטפל בזה בצד השרת/סקריפט ויחזיר רשימה)
-    };
         async function loadRealProducts() {
             try {
                 const snap = await getDocs(collection(db, "products"));
@@ -314,7 +304,7 @@
                 </div>`;
             }).join('');
         }
-
+           
         // --- COMPARE ---
         window.toggleCompare = (pStr) => {
             const p = JSON.parse(decodeURIComponent(pStr));
@@ -417,13 +407,23 @@
             const msg = `אני רוצה להתייעץ לגבי: ${currentProduct.core?.name} (מק"ט: ${currentProduct.id})`;
             sendChat(msg); // שולח אוטומטית וגורם לבוט להגיב
         };
-
+        
+         window.openClientHistory = async () => {
+        toggleActions(); // סגור תפריט
+        const modal = document.getElementById('pasteModal'); // נשתמש במודאל קיים או ניצור חדש, כאן נשתמש בקיים לפשטות
+        // אבל עדיף לייצר modal ייעודי להיסטוריה. בוא ניצור פונקציה מהירה ששולחת את ההיסטוריה לצ'אט.
+        
+        // גרסה פשוטה: הלקוח מבקש היסטוריה -> הבוט מציג לו בצ'אט
+        sendChat("הצג לי את היסטוריית ההזמנות שלי 📜");
+        
+        // גרסה מתקדמת (הבוט יטפל בזה בצד השרת/סקריפט ויחזיר רשימה)
+         };
         window.openPasteOrder = () => { toggleActions(); document.getElementById('pasteModal').classList.add('open'); };
         window.submitPasteOrder = () => { 
             const t = document.getElementById('pasteInput').value; 
             if(t){ sendChat(`הזמנת רשימה:\n${t}`); document.getElementById('pasteModal').classList.remove('open'); }
         };
-
+ 
         window.quickAdd = (pStr) => { const p=JSON.parse(decodeURIComponent(pStr)); const ex=cart.find(i=>i.id===p.id); if(ex)ex.qty++; else cart.push({id:p.id,name:p.core?.name||p.title,price:p.core?.price||p.price,qty:1}); updateCartUI(); };
         function updateCartUI() { document.getElementById('cartBadge').innerText=cart.reduce((a,c)=>a+c.qty,0); document.getElementById('cartBadge').classList.toggle('hidden',!cart.length); document.getElementById('cartItemsList').innerHTML=cart.map((i,x)=>`<div class="bg-white p-3 border rounded flex justify-between"><span>${i.name}</span><div class="flex gap-2"><button onclick="updateQty(${x},-1)">-</button>${i.qty}<button onclick="updateQty(${x},1)">+</button></div></div>`).join(''); }
         window.updateQty = (i,d) => { cart[i].qty+=d; if(cart[i].qty<=0)cart.splice(i,1); updateCartUI(); };
@@ -437,5 +437,6 @@
     </script>
 </body>
 </html>
+
 
 
