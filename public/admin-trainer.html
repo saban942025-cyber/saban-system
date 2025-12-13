@@ -3,457 +3,279 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saban Brain OS 💎</title>
-    
+    <title>Saban Brain Trainer 🧠</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        glass: 'rgba(255, 255, 255, 0.65)',
-                        'glass-border': 'rgba(255, 255, 255, 0.8)'
-                    }
-                }
-            }
-        }
-    </script>
-
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* Base */
-        body { 
-            background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%); 
-            color: #334155; 
-            font-family: 'Segoe UI', system-ui, sans-serif; 
-            height: 100vh; 
-            display: flex; 
-            flex-direction: column; 
-            overflow: hidden; 
-        }
+        :root { --primary: #7c3aed; --glass: rgba(255, 255, 255, 0.95); }
+        body { background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); font-family: system-ui, sans-serif; height: 100vh; display: flex; flex-direction: column; color: #1e293b; overflow: hidden; }
+
+        /* Container */
+        .workspace { max-width: 1200px; margin: 0 auto; width: 100%; height: 100%; display: grid; grid-template-rows: auto 1fr; gap: 20px; padding: 20px; }
+
+        /* Cards */
+        .card { background: var(--glass); border: 1px solid white; border-radius: 20px; box-shadow: 0 10px 30px rgba(124, 58, 237, 0.05); overflow: hidden; display: flex; flex-direction: column; }
         
-        /* Glass Effect */
-        .glass-panel {
-            background: var(--glass);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--glass-border);
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-        }
-
-        /* Layout */
-        .studio-layout { display: grid; grid-template-columns: 280px 1fr 340px; height: 100%; overflow: hidden; gap: 15px; padding: 15px; }
+        /* Inputs */
+        .input-box { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #ddd; outline: none; transition: 0.2s; background: white; font-size: 15px; }
+        .input-box:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1); }
         
-        /* Mobile Adaption */
-        @media (max-width: 1024px) {
-            .studio-layout { display: block; padding: 0; }
-            .panel-col { display: none; height: calc(100vh - 130px); }
-            .panel-col.active { display: block; animation: fadeIn 0.3s; }
-            .mobile-nav { display: flex; }
-        }
-        @media (min-width: 1024px) {
-            .mobile-nav { display: none; }
-            .panel-col { display: block !important; height: 100%; border-radius: 20px; overflow: hidden; }
-        }
-
-        /* Sidebar Items */
-        .brain-item { padding: 14px 18px; border-bottom: 1px solid rgba(0,0,0,0.03); cursor: pointer; transition: all 0.2s; border-right: 3px solid transparent; }
-        .brain-item:hover { background: rgba(255,255,255,0.5); }
-        .brain-item.active { background: white; border-right-color: #3b82f6; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); font-weight: 600; color: #1d4ed8; }
-
-        /* Toolbar */
-        .toolbar { 
-            background: white; border-radius: 12px; padding: 8px; margin-bottom: 15px; 
-            display: flex; gap: 8px; flex-wrap: wrap; border: 1px solid #e2e8f0;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-        }
-        .tool-btn { 
-            background: #f8fafc; border: 1px solid #e2e8f0; color: #475569; 
-            padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; 
-            display: flex; align-items: center; gap: 6px; transition: all 0.2s; font-weight: 600;
-        }
-        .tool-btn:hover { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; transform: translateY(-1px); }
+        /* Table */
+        .knowledge-table { width: 100%; border-collapse: collapse; }
+        .knowledge-table th { text-align: right; padding: 15px; background: #f8fafc; color: #64748b; font-size: 12px; font-weight: 800; uppercase; border-bottom: 2px solid #e2e8f0; position: sticky; top: 0; }
+        .knowledge-table td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; vertical-align: top; }
+        .knowledge-table tr:hover { background: #f1f5f9; }
         
-        /* Phone Simulator */
-        .phone-mockup { 
-            background: white; border-radius: 40px; border: 10px solid #1e293b; 
-            height: 100%; width: 100%; max-width: 320px; margin: 0 auto;
-            overflow: hidden; display: flex; flex-direction: column; 
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        }
-        .sim-screen { background: #f8fafc; flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        /* Buttons */
+        .btn-ai { background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); color: white; padding: 10px 20px; border-radius: 12px; font-weight: bold; transition: 0.2s; display: flex; items-center; gap: 8px; cursor: pointer; }
+        .btn-ai:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(109, 40, 217, 0.3); }
+        .btn-save { background: #10b981; color: white; }
+        .btn-del { color: #ef4444; background: #fef2f2; padding: 6px; border-radius: 8px; }
+        .btn-del:hover { background: #fee2e2; }
 
-        /* Chat Bubbles */
-        .bubble { padding: 12px 16px; border-radius: 18px; font-size: 14px; max-width: 85%; width: fit-content; line-height: 1.5; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .bubble-bot { background: white; border-top-right-radius: 4px; color: #1e293b; }
-        .bubble-user { background: #3b82f6; border-top-left-radius: 4px; color: white; align-self: flex-end; }
-        
-        /* Typing Dots */
-        .typing { display: flex; gap: 4px; padding: 12px; background: white; width: fit-content; border-radius: 18px; border-top-right-radius: 4px; margin-bottom: 5px; display: none; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .dot { width: 6px; height: 6px; background: #94a3b8; border-radius: 50%; animation: bounce 1.4s infinite ease-in-out; }
-        .dot:nth-child(1) { animation-delay: -0.32s; }
-        .dot:nth-child(2) { animation-delay: -0.16s; }
-
-        /* Product Search Dropdown */
-        .product-search-results {
-            position: absolute; top: 110%; right: 0; width: 250px; background: white; 
-            border: 1px solid #e2e8f0; border-radius: 12px; z-index: 50; 
-            max-height: 250px; overflow-y: auto; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
-            display: none; padding: 5px;
-        }
-        .search-item { padding: 8px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: 0.1s; }
-        .search-item:hover { background: #f1f5f9; }
-
-        /* Scrollbar */
-        .custom-scroll::-webkit-scrollbar { width: 6px; }
-        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-
-        @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+        /* Scroll */
+        .custom-scroll { overflow-y: auto; scrollbar-width: thin; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
 </head>
 <body>
 
-    <header class="glass-panel h-16 flex items-center justify-between px-6 z-30 sticky top-0 backdrop-blur-md">
+    <header class="bg-white/80 backdrop-blur px-6 py-3 border-b flex justify-between items-center sticky top-0 z-50">
         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-500 rounded-xl flex items-center justify-center text-white text-xl shadow-lg shadow-blue-500/20">🧠</div>
+            <div class="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center text-white text-xl shadow-lg">🧠</div>
             <div>
-                <h1 class="font-bold text-slate-800 text-lg leading-tight">Saban Brain OS</h1>
-                <div class="text-[11px] text-slate-500 font-medium tracking-wide">Windows Edition v4.0</div>
+                <h1 class="font-bold text-lg leading-none text-slate-800">Brain Trainer</h1>
+                <span class="text-xs text-purple-600 font-bold">אימון בוט בעזרת Gemini</span>
             </div>
         </div>
-        <div>
-            <button onclick="saveChanges()" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-xl font-bold transition shadow-lg shadow-blue-500/30 flex items-center gap-2 text-sm active:scale-95">
-                <i class="fas fa-save"></i> שמור מוח
-            </button>
-        </div>
+        <div class="text-xs text-gray-500 font-mono">v2.0 AI-Core</div>
     </header>
 
-    <div class="mobile-nav bg-white/90 backdrop-blur border-b flex justify-around p-2 lg:hidden sticky top-16 z-20">
-        <button onclick="setTab('list')" class="text-slate-500 active-tab font-bold text-xs px-4 py-2 rounded-lg bg-slate-100" id="btn-list"><i class="fas fa-list mb-1 block text-lg"></i> נושאים</button>
-        <button onclick="setTab('editor')" class="text-slate-500 font-bold text-xs px-4 py-2 rounded-lg" id="btn-editor"><i class="fas fa-edit mb-1 block text-lg"></i> עורך</button>
-        <button onclick="setTab('sim')" class="text-slate-500 font-bold text-xs px-4 py-2 rounded-lg" id="btn-sim"><i class="fas fa-mobile-alt mb-1 block text-lg"></i> טלפון</button>
-    </div>
-
-    <div class="studio-layout">
+    <div class="workspace">
         
-        <div id="col-list" class="panel-col glass-panel active flex flex-col">
-            <div class="p-4 border-b border-gray-100/50 flex justify-between items-center bg-white/40">
-                <span class="font-bold text-slate-700 text-sm">🗂️ ספריית ידע</span>
-                <button onclick="createNewTopic()" class="text-xs bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full font-bold hover:bg-blue-200 transition shadow-sm">+ חדש</button>
-            </div>
-            <div id="topicsContainer" class="flex-1 overflow-y-auto custom-scroll p-2 space-y-1"></div>
-        </div>
-
-        <div id="col-editor" class="panel-col glass-panel flex flex-col relative bg-white/60">
+        <div class="card p-6 grid grid-cols-1 md:grid-cols-2 gap-6 relative">
             
-            <div id="welcomeMsg" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
-                <i class="fab fa-windows text-6xl mb-4 opacity-10"></i>
-                <p class="font-medium">בחר נושא לעריכה</p>
+            <div class="space-y-4 border-l pl-6 md:border-l-0 md:pl-0 md:border-r md:pr-6">
+                <div class="flex justify-between items-center">
+                    <label class="font-bold text-slate-700 flex items-center gap-2"><i class="fas fa-question-circle text-purple-500"></i> השאלה לאימון</label>
+                    <span class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">שלב 1</span>
+                </div>
+                <textarea id="askInput" class="input-box h-32 resize-none" placeholder="למשל: האם מותר להדביק קרמיקה על גבס ירוק?"></textarea>
+                <button onclick="askGemini()" id="btnAsk" class="btn-ai w-full justify-center">
+                    <i class="fas fa-sparkles"></i> שאל את המומחה (Gemini)
+                </button>
             </div>
 
-            <div id="editorPanel" class="hidden flex-1 overflow-y-auto p-6 custom-scroll">
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">שם הנושא</label>
-                        <input type="text" id="editTopic" class="w-full p-3 rounded-xl border border-gray-200/80 bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition font-bold text-slate-700 shadow-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">מילות מפתח (טריגר)</label>
-                        <input type="text" id="editKeywords" class="w-full p-3 rounded-xl border border-gray-200/80 bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition shadow-sm" placeholder="למשל: איטום, נזילה">
-                    </div>
+            <div class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <label class="font-bold text-slate-700 flex items-center gap-2"><i class="fas fa-comment-dots text-green-500"></i> התשובה שתשמר</label>
+                    <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">שלב 2</span>
                 </div>
+                <textarea id="answerOutput" class="input-box h-32 resize-none bg-slate-50" placeholder="התשובה תופיע כאן... ניתן לערוך אותה לפני השמירה."></textarea>
+                <button onclick="saveToBrain()" class="btn-ai btn-save w-full justify-center opacity-50 cursor-not-allowed" id="btnSave" disabled>
+                    <i class="fas fa-save"></i> שמור לזיכרון הבוט
+                </button>
+            </div>
 
-                <label class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">תשובת הבוט</label>
-                
-                <div class="toolbar sticky top-0 z-10 bg-white/95 backdrop-blur">
-                    <div class="relative">
-                        <button class="tool-btn text-blue-600 border-blue-100 bg-blue-50" onclick="toggleSearch()">
-                            <i class="fas fa-box-open"></i> שלוף מוצר
-                        </button>
-                        <div id="productSearchDropdown" class="product-search-results">
-                            <input type="text" placeholder="הקלד שם מוצר..." class="w-full p-2 text-xs border-b outline-none bg-gray-50 mb-1 sticky top-0" oninput="searchProduct(this.value)" autofocus>
-                            <div id="productResultsList"></div>
-                        </div>
-                    </div>
-
-                    <button class="tool-btn" onclick="insertEmoji('👋')"><i class="far fa-smile text-yellow-500"></i> אימוג'י</button>
-                    <button class="tool-btn" onclick="insertTagStaff()"><i class="fas fa-headset text-purple-500"></i> נציג</button>
-                    <button class="tool-btn" onclick="insertVideo()"><i class="fab fa-youtube text-red-500"></i> וידאו</button>
-                    <button class="tool-btn" onclick="addButton()"><i class="fas fa-mouse-pointer text-gray-500"></i> כפתור</button>
-                </div>
-
-                <textarea id="editAnswer" class="w-full h-56 p-4 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500/20 outline-none resize-none leading-relaxed text-slate-700 shadow-sm mb-4 text-sm" placeholder="הקלד את תשובת הבוט כאן..."></textarea>
-
-                <div class="bg-slate-50 p-4 rounded-xl border border-dashed border-slate-300">
-                    <div class="flex justify-between items-center mb-2">
-                        <label class="block text-xs font-bold text-slate-400">כפתורים (JSON)</label>
-                        <span class="text-[10px] text-slate-400 bg-white px-2 py-1 rounded border">מתקדם</span>
-                    </div>
-                    <textarea id="editButtons" class="w-full h-24 bg-transparent text-xs font-mono text-slate-600 outline-none resize-none" placeholder="[]"></textarea>
-                </div>
-                
-                <div class="mt-8 flex justify-end">
-                    <button onclick="deleteTopic()" class="text-red-400 text-xs hover:text-red-600 flex items-center gap-1"><i class="fas fa-trash"></i> מחק נושא זה</button>
-                </div>
+            <div class="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full items-center justify-center shadow border text-gray-400">
+                <i class="fas fa-arrow-left"></i>
             </div>
         </div>
 
-        <div id="col-sim" class="panel-col flex items-center justify-center relative">
-            <div class="absolute inset-0 bg-slate-100/50 backdrop-blur-sm -z-10"></div>
-            <div class="phone-mockup">
-                <div class="bg-white p-4 border-b flex justify-between items-center shadow-sm z-10">
-                    <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center text-white text-sm shadow">🤖</div>
-                        <div>
-                            <div class="text-sm font-bold text-slate-800">צ'אט-סבן</div>
-                            <div class="text-[10px] text-green-500 font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> מחובר כעת</div>
-                        </div>
-                    </div>
-                    <i class="fas fa-ellipsis-v text-slate-300"></i>
+        <div class="card flex-1">
+            <div class="p-4 border-b flex justify-between items-center bg-white sticky top-0 z-10">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-database text-blue-500"></i>
+                    <h2 class="font-bold text-slate-700">מאגר הידע (שאלות ותשובות)</h2>
                 </div>
-                
-                <div class="sim-screen custom-scroll" id="simScreen">
-                    <div class="bubble bubble-bot">היי! אני המוח שאתה עורך. 👇<br>שנה משהו משמאל ותראה איך אני משתנה.</div>
+                <div class="relative w-64">
+                    <input id="searchTable" class="input-box py-2 text-xs" placeholder="חפש בזיכרון..." oninput="filterTable()">
+                    <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
                 </div>
-                
-                <div class="typing ml-4" id="typingInd">
-                    <div class="dot"></div><div class="dot"></div><div class="dot"></div>
-                </div>
-
-                <div class="p-3 bg-white border-t flex gap-2 items-center">
-                    <button class="text-slate-400 hover:text-blue-500 transition"><i class="fas fa-plus-circle text-xl"></i></button>
-                    <input type="text" id="simInput" class="flex-1 bg-slate-100 rounded-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-100 transition" placeholder="הקלד הודעה..." onkeydown="if(event.key==='Enter') testBot()">
-                    <button onclick="testBot()" class="text-indigo-600 p-2 hover:bg-indigo-50 rounded-full transition"><i class="fas fa-paper-plane text-lg"></i></button>
-                </div>
+            </div>
+            
+            <div class="custom-scroll flex-1 bg-white">
+                <table class="knowledge-table">
+                    <thead>
+                        <tr>
+                            <th width="30%">שאלה / נושא</th>
+                            <th>תשובה שמורה</th>
+                            <th width="10%">פעולות</th>
+                        </tr>
+                    </thead>
+                    <tbody id="qaTableBody">
+                        <tr><td colspan="3" class="text-center py-10 text-gray-400">טוען ידע...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="p-2 bg-slate-50 text-center text-xs text-gray-400 border-t">
+                כל המידע כאן זמין לבוט באופן מיידי בזמן שיחה
             </div>
         </div>
 
     </div>
 
-    <script>
-        // --- נתונים מובנים (ללא קריסה) ---
-        const productsDB = [
-            { id: 101, name: "סיקה 107 (25 ק\"ג)", image: "https://via.placeholder.com/40/cccccc/ffffff?text=107" },
-            { id: 102, name: "סיקה 603 איטום", image: "https://via.placeholder.com/40/cccccc/ffffff?text=603" },
-            { id: 103, name: "מלט נשר שחור", image: "https://via.placeholder.com/40/cccccc/ffffff?text=Cem" },
-            { id: 104, name: "טיט מוכן", image: "https://via.placeholder.com/40/cccccc/ffffff?text=Tit" },
-            { id: 105, name: "בלוק 10 פומיס", image: "https://via.placeholder.com/40/cccccc/ffffff?text=Blk" },
-        ];
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, orderBy, query } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        let brainData = [
-            { id: 1, topic: "פתיח", keywords: ["היי", "שלום"], answer: "אהלן! אני צ'אט סבן. איך אפשר לעזור היום? 👋", buttons: [] },
-            { id: 2, topic: "איטום", keywords: ["איטום", "נזילה"], answer: "לאיטום אני ממליץ על סיקה 107.", buttons: [{ label: "הצג מוצר", payload: "SHOW_107" }] }
-        ];
+        // Config
+        const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-        let activeId = null;
+        const GEMINI_KEY = "AIzaSyD9plWwyTESFm24c_OTunf4mFAsAmfrgj0"; // המפתח שלך
 
-        // --- פונקציות גלובליות ---
-        
-        // אתחול
-        window.onload = () => {
+        // State
+        let knowledgeData = [];
+
+        // --- Logic: Ask Gemini ---
+        window.askGemini = async () => {
+            const question = document.getElementById('askInput').value;
+            if(!question) return alert("אנא כתוב שאלה");
+
+            const btn = document.getElementById('btnAsk');
+            const out = document.getElementById('answerOutput');
+            const saveBtn = document.getElementById('btnSave');
+
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ג\'מיני חושב...';
+            out.value = "";
+            saveBtn.disabled = true; saveBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
             try {
-                renderList();
-                if(window.innerWidth > 1024) loadTopic(1);
-                else setTab('list');
-            } catch(e) { console.error("Init error:", e); }
-        };
-
-        // ניהול טאבים (מובייל)
-        window.setTab = (tab) => {
-            document.querySelectorAll('.panel-col').forEach(el => el.classList.remove('active'));
-            document.getElementById(`col-${tab}`).classList.add('active');
-            
-            document.querySelectorAll('.mobile-nav button').forEach(b => {
-                b.classList.remove('text-blue-600', 'bg-blue-50');
-                b.classList.add('text-slate-500');
-            });
-            const btn = document.getElementById(`btn-${tab}`);
-            btn.classList.remove('text-slate-500');
-            btn.classList.add('text-blue-600', 'bg-blue-50');
-        };
-
-        // רשימת נושאים
-        window.renderList = () => {
-            const container = document.getElementById('topicsContainer');
-            if(!container) return;
-            container.innerHTML = brainData.map(item => `
-                <div onclick="loadTopic(${item.id})" class="brain-item ${activeId === item.id ? 'active' : ''} rounded-lg mb-1">
-                    <div class="font-bold text-sm text-slate-700">${item.topic}</div>
-                    <div class="text-[11px] text-slate-400 truncate">${item.keywords.join(', ') || '...'}</div>
-                </div>
-            `).join('');
-        };
-
-        // טעינת נושא
-        window.loadTopic = (id) => {
-            activeId = id;
-            const data = brainData.find(i => i.id === id);
-            if(!data) return;
-            
-            document.getElementById('welcomeMsg').classList.add('hidden');
-            document.getElementById('editorPanel').classList.remove('hidden');
-            
-            document.getElementById('editTopic').value = data.topic;
-            document.getElementById('editKeywords').value = data.keywords.join(', ');
-            document.getElementById('editAnswer').value = data.answer;
-            document.getElementById('editButtons').value = JSON.stringify(data.buttons || [], null, 2);
-            
-            renderList();
-            if(window.innerWidth <= 1024) setTab('editor');
-            
-            // תצוגה מקדימה אוטומטית
-            document.getElementById('simScreen').innerHTML = '';
-            showBotMsg(data.answer, data.buttons, false);
-        };
-
-        // --- עורך וכלים ---
-        
-        window.toggleSearch = () => {
-            const dropdown = document.getElementById('productSearchDropdown');
-            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-            if(dropdown.style.display === 'block') dropdown.querySelector('input').focus();
-        };
-
-        window.searchProduct = (query) => {
-            const list = document.getElementById('productResultsList');
-            if(!query) { list.innerHTML=''; return; }
-            
-            const results = productsDB.filter(p => p.name.includes(query));
-            list.innerHTML = results.map(p => `
-                <div class="search-item" onclick="insertProduct(${p.id})">
-                    <img src="${p.image}" class="w-8 h-8 rounded border">
-                    <div class="text-xs font-bold text-slate-700">${p.name}</div>
-                </div>
-            `).join('');
-        };
-
-        window.insertProduct = (pid) => {
-            const p = productsDB.find(x => x.id === pid);
-            const txt = document.getElementById('editAnswer');
-            txt.value += `\n📦 מצאתי לך: ${p.name}`;
-            
-            const btns = JSON.parse(document.getElementById('editButtons').value || '[]');
-            btns.push({ label: `הוסף לעגלה 🛒`, payload: `ADD_${pid}` });
-            document.getElementById('editButtons').value = JSON.stringify(btns, null, 2);
-            
-            window.toggleSearch(); // סגור דרופדאון
-        };
-
-        window.insertEmoji = (char) => document.getElementById('editAnswer').value += char;
-        window.insertTagStaff = () => document.getElementById('editAnswer').value += "\n(הועבר לטיפול מנהל 👨‍💻)";
-        window.insertVideo = () => document.getElementById('editAnswer').value += "\n🎬 סרטון: [VIDEO_LINK]";
-        
-        window.addButton = () => {
-            const btns = JSON.parse(document.getElementById('editButtons').value || '[]');
-            btns.push({ label: "כפתור חדש", payload: "ACTION" });
-            document.getElementById('editButtons').value = JSON.stringify(btns, null, 2);
-        };
-
-        // --- סימולטור ---
-        window.testBot = () => {
-            const inp = document.getElementById('simInput');
-            const txt = inp.value;
-            if(!txt) return;
-
-            // משתמש
-            const screen = document.getElementById('simScreen');
-            screen.innerHTML += `<div class="bubble bubble-user">${txt}</div>`;
-            inp.value = '';
-            screen.scrollTop = screen.scrollHeight;
-
-            // אפקט הקלדה
-            const typing = document.getElementById('typingInd');
-            typing.style.display = 'flex';
-            screen.scrollTop = screen.scrollHeight;
-
-            setTimeout(() => {
-                typing.style.display = 'none';
+                // שימוש במודל gemini-pro (יציב)
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_KEY}`;
                 
-                const keywords = document.getElementById('editKeywords').value.split(',').map(s=>s.trim());
-                const isMatch = keywords.some(k => txt.includes(k));
+                // הנחיה למומחה
+                const prompt = `
+                אתה יועץ טכני מומחה של "סבן חומרי בניין".
+                שאלה טכנית: "${question}"
                 
-                if (isMatch) {
-                    const ans = document.getElementById('editAnswer').value;
-                    let btns = [];
-                    try { btns = JSON.parse(document.getElementById('editButtons').value); } catch(e){}
-                    showBotMsg(ans, btns);
-                } else {
-                    showBotMsg("🤔 לא הבנתי... נסה מילה מהרשימה בעורך.");
-                }
-            }, 800);
-        };
+                הנחיות לתשובה:
+                1. ענה בעברית מקצועית ומדויקת.
+                2. תהיה קצר ולעניין (עד 3 משפטים).
+                3. אם צריך, ציין מוצרים רלוונטיים (כמו סיקה, טמבור וכו').
+                4. אל תכתוב הקדמות כמו "שלום רב". ישר ולעניין.
+                `;
 
-        window.showBotMsg = (text, buttons = [], animate=true) => {
-            const screen = document.getElementById('simScreen');
-            const htmlText = text.replace(/\n/g, '<br>');
-            
-            // הודעה
-            const msgDiv = document.createElement('div');
-            msgDiv.className = 'bubble bubble-bot';
-            msgDiv.innerHTML = htmlText;
-            if(!animate) msgDiv.style.animation = 'none';
-            screen.appendChild(msgDiv);
-            
-            // כפתורים
-            if(buttons.length > 0) {
-                const btnContainer = document.createElement('div');
-                btnContainer.className = "flex flex-col gap-2 mt-1 w-[85%]";
-                buttons.forEach(b => {
-                    const btn = document.createElement('button');
-                    btn.className = "w-full bg-white text-blue-600 py-2.5 rounded-xl text-xs font-bold border border-blue-100 shadow-sm hover:bg-blue-50 transition";
-                    btn.innerText = b.label;
-                    btnContainer.appendChild(btn);
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                 });
-                screen.appendChild(btnContainer);
+
+                const data = await res.json();
+                
+                if(data.candidates && data.candidates[0].content) {
+                    const answer = data.candidates[0].content.parts[0].text;
+                    out.value = answer;
+                    saveBtn.disabled = false; saveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                } else {
+                    out.value = "שגיאה: לא התקבלה תשובה ברורה מגוגל.";
+                }
+
+            } catch(e) {
+                console.error(e);
+                out.value = "שגיאת תקשורת: " + e.message;
             }
-            screen.scrollTop = screen.scrollHeight;
+            
+            btn.innerHTML = '<i class="fas fa-sparkles"></i> שאל את המומחה (Gemini)';
         };
 
-        // --- ניהול נתונים ---
-        window.createNewTopic = () => {
-            const newId = Date.now();
-            brainData.push({ id: newId, topic: "נושא חדש", keywords: [], answer: "", buttons: [] });
-            loadTopic(newId);
-        };
+        // --- Logic: Save to Brain ---
+        window.saveToBrain = async () => {
+            const question = document.getElementById('askInput').value;
+            const answer = document.getElementById('answerOutput').value;
 
-        window.saveChanges = () => {
-            if(!activeId) return;
-            const item = brainData.find(i => i.id === activeId);
-            item.topic = document.getElementById('editTopic').value;
-            item.keywords = document.getElementById('editKeywords').value.split(',').map(s=>s.trim());
-            item.answer = document.getElementById('editAnswer').value;
+            if(!question || !answer) return;
+
             try {
-                item.buttons = JSON.parse(document.getElementById('editButtons').value);
-            } catch(e) { alert("שגיאה במבנה הכפתורים (JSON)"); return; }
+                await addDoc(collection(db, "qa_knowledge"), {
+                    question: question,
+                    answer: answer,
+                    createdAt: new Date(),
+                    tags: extractKeywords(question) // פונקציית עזר למטה
+                });
+                
+                alert("נשמר בהצלחה במוח הבוט! 🧠");
+                document.getElementById('askInput').value = '';
+                document.getElementById('answerOutput').value = '';
+                document.getElementById('btnSave').disabled = true;
+                document.getElementById('btnSave').classList.add('opacity-50');
+                
+                loadKnowledge(); // רענון הטבלה
 
-            renderList();
-            
-            // חיווי שמירה
-            const btn = document.querySelector('header button');
-            const originalHTML = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-check"></i> נשמר!';
-            btn.classList.add('bg-green-600', 'text-white');
-            btn.classList.remove('bg-blue-600');
-            
-            setTimeout(() => {
-                btn.innerHTML = originalHTML;
-                btn.classList.remove('bg-green-600');
-                btn.classList.add('bg-blue-600');
-            }, 1500);
+            } catch(e) {
+                alert("שגיאה בשמירה");
+                console.error(e);
+            }
         };
 
-        window.deleteTopic = () => {
-            if(!confirm("למחוק נושא זה?")) return;
-            brainData = brainData.filter(i => i.id !== activeId);
-            document.getElementById('editorPanel').classList.add('hidden');
-            document.getElementById('welcomeMsg').classList.remove('hidden');
-            renderList();
+        // --- Logic: Load & Table ---
+        async function loadKnowledge() {
+            const list = document.getElementById('qaTableBody');
+            
+            try {
+                const q = query(collection(db, "qa_knowledge"), orderBy("createdAt", "desc"));
+                const snap = await getDocs(q);
+                
+                knowledgeData = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                renderTable(knowledgeData);
+
+            } catch(e) {
+                console.error(e);
+                list.innerHTML = '<tr><td colspan="3" class="text-center text-red-500">שגיאה בטעינת נתונים</td></tr>';
+            }
+        }
+
+        window.renderTable = (data) => {
+            const list = document.getElementById('qaTableBody');
+            if(data.length === 0) {
+                list.innerHTML = '<tr><td colspan="3" class="text-center py-10 text-gray-400">המוח ריק. תתחיל ללמד אותו!</td></tr>';
+                return;
+            }
+
+            list.innerHTML = data.map(item => `
+                <tr class="group">
+                    <td>
+                        <div class="font-bold text-slate-700">${item.question}</div>
+                        <div class="text-[10px] text-gray-400 mt-1">נוצר: ${new Date(item.createdAt.seconds*1000).toLocaleDateString()}</div>
+                    </td>
+                    <td class="text-slate-600 leading-relaxed">${item.answer}</td>
+                    <td class="text-center">
+                        <button onclick="deleteItem('${item.id}')" class="btn-del" title="מחק"><i class="fas fa-trash-alt"></i></button>
+                    </td>
+                </tr>
+            `).join('');
         };
+
+        window.filterTable = () => {
+            const term = document.getElementById('searchTable').value.toLowerCase();
+            const filtered = knowledgeData.filter(i => 
+                i.question.toLowerCase().includes(term) || 
+                i.answer.toLowerCase().includes(term)
+            );
+            renderTable(filtered);
+        };
+
+        window.deleteItem = async (id) => {
+            if(!confirm("למחוק את פריט הידע הזה?")) return;
+            await deleteDoc(doc(db, "qa_knowledge", id));
+            loadKnowledge();
+        };
+
+        function extractKeywords(text) {
+            // ניסיון פשוט לחילוץ מילות מפתח
+            return text.split(' ').filter(w => w.length > 3);
+        }
+
+        // Init
+        loadKnowledge();
+        
+        // Expose
+        window.deleteItem = window.deleteItem;
 
     </script>
 </body>
