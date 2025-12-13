@@ -2,98 +2,84 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>חמ"ל הזמנות | SabanOS</title>
+    <title>חמ"ל הזמנות סבן</title>
     <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+
     <style>
         body { background-color: #d1d7db; font-family: -apple-system, system-ui, sans-serif; height: 100vh; display: flex; overflow: hidden; }
         
-        /* Sidebar */
+        /* סרגל צד */
         .sidebar { width: 35%; min-width: 380px; background: white; border-left: 1px solid #e9edef; display: flex; flex-direction: column; z-index: 20; }
         
-        /* Header */
-        .sidebar-header { height: 64px; background: #f0f2f5; border-bottom: 1px solid #d1d7db; display: flex; justify-content: space-between; align-items: center; padding: 0 16px; flex-shrink: 0; }
-
-        /* Tabs */
-        .tabs { display: flex; background: white; border-bottom: 1px solid #e9edef; flex-shrink: 0; }
-        .tab-btn { flex: 1; padding: 14px; text-align: center; cursor: pointer; font-weight: 600; color: #54656f; border-bottom: 3px solid transparent; transition: 0.2s; position: relative; }
+        /* כפתור טאב */
+        .tab-btn { flex: 1; padding: 14px; text-align: center; cursor: pointer; font-weight: 600; color: #54656f; border-bottom: 3px solid transparent; transition: 0.2s; }
         .tab-btn.active { border-color: #008069; color: #008069; background: #f0fdfa; }
         .tab-btn:hover { background: #f5f6f6; }
 
-        /* Stories Bar */
-        .stories-container { padding: 12px; display: flex; gap: 10px; overflow-x: auto; background: #fff; border-bottom: 1px solid #f0f0f0; scrollbar-width: none; flex-shrink: 0; }
+        /* סטורי */
+        .stories-container { padding: 12px; display: flex; gap: 10px; overflow-x: auto; background: #fff; border-bottom: 1px solid #f0f0f0; scrollbar-width: none; }
         .story-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; min-width: 60px; transition: transform 0.2s; }
         .story-item:hover { transform: scale(1.05); }
         .story-ring { width: 50px; height: 50px; border-radius: 50%; padding: 2px; border: 2px solid transparent; object-fit: cover; }
-        .story-name { font-size: 10px; margin-top: 4px; font-weight: bold; color: #54656f; max-width: 55px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        
+        /* טבעות צבע */
+        .ring-green { border-color: #10b981; }
+        .ring-orange { border-color: #f59e0b; border-style: dashed; }
+        .ring-red { border-color: #ef4444; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 100% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } }
 
-        /* Rings Animation */
-        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-        .ring-green { border-color: #10b981; } 
-        .ring-orange { border-color: #f59e0b; border-style: dashed; } 
-        .ring-red { border-color: #ef4444; animation: pulse-red 1.5s infinite; }
-
-        /* Lists */
+        /* רשימות */
         .chat-list { flex: 1; overflow-y: auto; }
         .chat-item { display: flex; align-items: center; padding: 12px 16px; cursor: pointer; border-bottom: 1px solid #f5f6f6; transition: 0.1s; }
         .chat-item:hover { background: #f5f6f6; }
         .chat-item.active { background: #f0f2f5; border-right: 4px solid #00a884; }
 
-        /* Main Chat Area */
+        /* אזור צ'אט ראשי */
         .main-chat { flex: 1; display: flex; flex-direction: column; background: #efeae2 url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); position: relative; }
         
-        /* Sticky Order Card */
-        #activeOrderCard { background: #fff; padding: 12px 16px; border-bottom: 1px solid #e9edef; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); z-index: 15; border-left: 5px solid #10b981; animation: slideDown 0.3s ease-out; }
-        @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+        /* פתק דביק */
+        #stickyNote { position: absolute; top: 80px; right: 20px; width: 220px; background: #fef08a; padding: 10px; box-shadow: 4px 4px 10px rgba(0,0,0,0.2); transform: rotate(-2deg); z-index: 10; display: none; }
+        #stickyNote.visible { display: block; }
 
-        /* Messages */
-        .msg { max-width: 70%; padding: 8px 12px; border-radius: 8px; margin: 4px 20px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); width: fit-content; font-size: 14px; }
+        /* הודעות */
+        .msg { max-width: 75%; padding: 8px 12px; border-radius: 8px; margin: 4px 20px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); width: fit-content; font-size: 14px; }
         .msg.staff { background: #d9fdd3; align-self: flex-end; }
         .msg.user { background: white; align-self: flex-start; }
-        .msg.internal { background: #fff9c4; align-self: center; width: 85%; border: 1px dashed #eab308; text-align: center; font-size: 12px; margin: 10px auto; border-radius: 6px; }
+        .msg.internal { background: #fff9c4; align-self: center; border: 1px dashed orange; text-align: center; width: 80%; }
 
-        /* Audio Toggle Button */
-        .audio-btn { transition: all 0.3s; cursor: pointer; }
+        /* כפתור סאונד */
+        .audio-btn { transition: all 0.3s; }
         .audio-off { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
         .audio-on { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-
-        /* Sticky Note */
-        #stickyNote { position: absolute; top: 80px; right: 20px; width: 220px; background: #fef08a; padding: 10px; box-shadow: 4px 4px 10px rgba(0,0,0,0.2); transform: rotate(-2deg); z-index: 10; display: none; border-radius: 2px; }
-        #stickyNote.visible { display: block; }
     </style>
 </head>
-<body>
+<body onclick="unlockAudio()">
 
     <div class="sidebar">
-        <div class="sidebar-header">
+        <div class="h-16 bg-[#f0f2f5] border-b flex justify-between items-center px-4 flex-shrink-0">
             <div class="flex items-center gap-2">
-                <div class="relative">
-                    <img src="https://ui-avatars.com/api/?name=Admin&background=008069&color=fff" class="w-10 h-10 rounded-full border-2 border-white shadow-sm">
-                    <div class="absolute bottom-0 left-0 w-3 h-3 bg-green-500 rounded-full border border-white"></div>
-                </div>
-                <div>
-                    <div class="font-bold text-gray-800 leading-tight">קבוצת הזמנות</div>
-                    <div class="text-[10px] text-gray-500">חמ"ל פעיל</div>
-                </div>
+                <img src="https://ui-avatars.com/api/?name=Admin&background=008069&color=fff" class="w-10 h-10 rounded-full border shadow-sm">
+                <div class="font-bold text-gray-700">קבוצת הזמנות</div>
             </div>
-            
-            <button id="soundToggle" onclick="toggleSound()" class="audio-btn audio-off px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-2 shadow-sm hover:opacity-80">
+            <button id="soundToggle" onclick="toggleSound()" class="audio-btn audio-off px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-2 shadow-sm">
                 <i class="fas fa-volume-mute" id="soundIcon"></i> <span id="soundText">הפעל כריזה</span>
             </button>
         </div>
 
-        <div class="tabs">
+        <div class="flex border-b bg-white flex-shrink-0">
             <div onclick="switchTab('chats')" class="tab-btn active" id="tab-chats">📦 הזמנות</div>
-            <div onclick="switchTab('saban')" class="tab-btn relative" id="tab-saban">
+            <div onclick="switchTab('saban')" class="tab-btn" id="tab-saban">
                 🧠 צ'אט-סבן
-                <span id="sabanAlert" class="hidden absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
+                <span id="sabanAlert" class="hidden w-2 h-2 bg-red-500 rounded-full inline-block ml-1 animate-ping"></span>
             </div>
         </div>
 
         <div class="stories-container" id="storiesBar">
-            <div class="text-xs text-gray-400 text-center w-full py-2">טוען סטטוסים...</div>
+            <div class="text-xs text-gray-400 text-center w-full">טוען...</div>
         </div>
 
         <div id="chatsList" class="chat-list custom-scroll"></div>
@@ -103,629 +89,198 @@
     <div id="chatArea" class="main-chat hidden">
         <div class="h-16 bg-[#f0f2f5] border-b flex justify-between items-center px-4 shadow-sm z-20 flex-shrink-0">
             <div class="flex items-center gap-3">
-                <img id="activeAvatar" src="" class="w-10 h-10 rounded-full border bg-white shadow-sm object-cover">
-                <div>
-                    <div id="activeName" class="font-bold text-gray-800"></div>
-                    <div id="activeStatus" class="text-xs text-green-600 font-bold">מחובר</div>
-                </div>
+                <img id="activeAvatar" src="" class="w-10 h-10 rounded-full border bg-white object-cover">
+                <div><div id="activeName" class="font-bold text-gray-800"></div><div class="text-xs text-green-600">מחובר</div></div>
             </div>
             <div class="flex gap-2">
-                <button onclick="promptLinkOrder()" class="bg-orange-50 text-orange-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-orange-200 hover:bg-orange-100 transition shadow-sm flex items-center gap-2">
-                    <i class="fas fa-link"></i> קשור הזמנה
-                </button>
-                <button onclick="toggleSticky()" class="text-yellow-600 hover:text-yellow-700 bg-yellow-50 p-2 rounded-lg border border-yellow-200 shadow-sm transition">
-                    <i class="fas fa-sticky-note"></i>
-                </button>
+                <button onclick="promptLinkOrder()" class="bg-orange-100 text-orange-700 px-3 py-1.5 rounded text-xs font-bold border border-orange-200 hover:bg-orange-200">🔗 קשור הזמנה</button>
+                <button onclick="toggleSticky()" class="bg-yellow-100 text-yellow-700 px-3 py-1.5 rounded border border-yellow-200 text-xs font-bold"><i class="fas fa-sticky-note"></i> פתק</button>
             </div>
-        </div>
-
-        <div id="activeOrderCard" class="hidden">
-            <div class="flex items-center gap-3">
-                <div class="bg-green-100 text-green-700 p-2 rounded-full border border-green-200"><i class="fas fa-box-open"></i></div>
-                <div>
-                    <div class="text-sm font-bold text-gray-800" id="orderTitle">הזמנה פעילה</div>
-                    <div class="text-xs text-gray-500" id="orderStatus">בטיפול</div>
-                </div>
-            </div>
-            <button id="btnArchive" onclick="archiveOrder(this.getAttribute('data-id'))" class="bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow hover:bg-green-700 transition flex items-center gap-2">
-                <i class="fas fa-check-circle"></i> סופק וארכב
-            </button>
         </div>
 
         <div id="stickyNote">
-            <div class="flex justify-between mb-1 border-b border-yellow-300/50 pb-1">
-                <span class="font-bold text-xs text-yellow-900">📌 פתק פנימי</span>
-                <i class="fas fa-times cursor-pointer hover:text-red-500" onclick="toggleSticky()"></i>
+            <div class="flex justify-between mb-1 border-b border-yellow-300 pb-1">
+                <span class="font-bold text-xs">📌 פתק פנימי</span>
+                <i class="fas fa-times cursor-pointer" onclick="toggleSticky()"></i>
             </div>
-            <textarea class="w-full bg-transparent outline-none text-sm resize-none text-gray-800 h-24" placeholder="הערות לצוות..."></textarea>
+            <textarea class="w-full bg-transparent outline-none text-sm resize-none h-24" placeholder="הערות לצוות..."></textarea>
         </div>
 
         <div id="messagesBox" class="flex-1 overflow-y-auto flex flex-col p-4 pb-2"></div>
 
         <div class="bg-[#f0f2f5] p-3 flex items-center gap-2 border-t z-20 flex-shrink-0">
-            <i onclick="toggleInternal()" id="internalBtn" class="fas fa-eye-slash text-gray-400 cursor-pointer text-xl p-2 hover:text-orange-500 transition" title="מצב הערה פנימית"></i>
-            <input type="text" id="msgInput" class="flex-1 p-3 rounded-lg border-none outline-none shadow-sm focus:ring-2 focus:ring-green-500 transition" placeholder="הקלד הודעה..." onkeydown="if(event.key==='Enter') sendMessage()">
-            <button onclick="sendMessage()" class="text-[#008069] text-2xl hover:scale-110 transition p-2"><i class="fas fa-paper-plane"></i></button>
+            <i onclick="toggleInternal()" id="internalBtn" class="fas fa-eye-slash text-gray-400 cursor-pointer text-xl p-2" title="פנימי"></i>
+            <input type="text" id="msgInput" class="flex-1 p-3 rounded-lg border-none outline-none shadow-sm bg-white" placeholder="הקלד..." onkeydown="if(event.key==='Enter') sendMessage()">
+            <button onclick="sendMessage()" class="text-[#008069] text-2xl hover:scale-110 transition"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, doc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, setDoc, getDocs, where, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, doc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { SabanSounds } from './js/sounds.js';
 
-        const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
-        let app, db;
+        // --- 1. פונקציות גלובליות (מוגדרות על window למניעת שגיאות) ---
         
-        try {
-            app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-        } catch(e) { 
-            console.error("Firebase Error", e);
-            document.body.innerHTML = `<div class="p-10 text-center text-red-500">שגיאת חיבור. נא לרענן או לצאת מגלישה בסתר.</div>`;
-        }
-
-        let activeChatId = null;
-        let internalMode = false;
+        window.activeChatId = null;
+        window.internalMode = false;
         window.audioEnabled = false;
 
-        // --- סאונד מתוקן (ללא הודעה קופצת) ---
         window.toggleSound = () => {
             const btn = document.getElementById('soundToggle');
             const icon = document.getElementById('soundIcon');
             const text = document.getElementById('soundText');
 
             if (!window.audioEnabled) {
-                // קובץ MP3 שקט ותקין (Base64)
-                const silentMp3 = "data:audio/mp3;base64,SUQzBAAAAAAAI1RTSVMAAAAPAAADTGF2ZjU4LjIwLjEwMAAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAAEAAABIADAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAw275.0),
-    });
-        private Button * */
-    }
-    
-    .card-tools {
-      position: absolute;
-      top: 15px;
-      right: 15px;
-      display: flex;
-      gap: 10px;
-      font-size: 1.1rem;
-      align-items: center;
-    }
-    
-    .card-tools .views {
-      color: var(--secondary-text);
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-    
-    .card-tools .views .fa-eye {
-      font-size: 0.9em;
-    }
-    
-    .card-tools .tag {
-      padding: 0.2rem 0.5rem;
-      border-radius: 12px;
-      font-size: 0.8rem;
-      background: var(--bg-hover);
-      color: var(--secondary-text);
-    }
-    
-    .category-card:hover .card-tools .star {
-      color: #6366f1;
-    }
-    
-    .category-title {
-      font-size: 1.5rem;
-      font-weight: 600;
-      margin-bottom: 5px;
-      color: var(--text-color);
-    }
-    
-    .category-description {
-      color: var(--secondary-text);
-      font-size: 0.9rem;
-      line-height: 1.6;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      margin-bottom: 20px;
-    }
-    
-    .category-stats {
-      display: flex;
-      gap: 15px;
-      color: var(--secondary-text);
-      font-size: 0.9rem;
-      margin-top: auto;
-    }
-    
-    .stat-item {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-    
-    /* Project Grid */
-    .projects-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 20px;
-      padding: 20px;
-    }
-    
-    .project-card {
-      background: var(--card-bg);
-      border-radius: 12px;
-      overflow: hidden;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      border: 1px solid var(--border-color);
-      cursor: pointer;
-      position: relative;
-    }
-    
-    .project-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.2);
-      border-color: var(--accent-color);
-    }
-    
-    .project-preview {
-      height: 160px;
-      background: var(--bg-hover);
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .project-preview img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: transform 0.3s ease;
-    }
-    
-    .project-card:hover .project-preview img {
-      transform: scale(1.05);
-    }
-    
-    .project-content {
-      padding: 15px;
-    }
-    
-    .project-title {
-      font-size: 1.1rem;
-      font-weight: 600;
-      margin-bottom: 8px;
-      color: var(--text-color);
-    }
-    
-    .project-meta {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 15px;
-      font-size: 0.85rem;
-      color: var(--secondary-text);
-    }
-    
-    .author {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-    
-    .author img {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-    }
-    
-    /* Animations */
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    
-    .fade-in {
-      animation: fadeIn 0.4s ease forwards;
-    }
-    
-    /* Responsive */
-    @media (max-width: 768px) {
-      .sidebar {
-        transform: translateX(-100%);
-        z-index: 1000;
-      }
-      
-      .sidebar.active {
-        transform: translateX(0);
-      }
-      
-      .main-content {
-        margin-left: 0;
-        width: 100%;
-      }
-      
-      .categories-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-    
-    /* Scrollbar Styling */
-    ::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
-    
-    ::-webkit-scrollbar-track {
-      background: var(--bg-color);
-    }
-    
-    ::-webkit-scrollbar-thumb {
-      background: var(--border-color);
-      border-radius: 4px;
-    }
-    
-    ::-webkit-scrollbar-thumb:hover {
-      background: var(--secondary-text);
-    }
-    </style>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    </head>
-    <body>
-    
-    <div class="sidebar" id="sidebar">
-      <div class="sidebar-header">
-        <div class="logo">
-          <i class="fas fa-cube"></i>
-          <span>DevHub</span>
-        </div>
-      </div>
-      
-      <div class="nav-section">
-        <div class="nav-item active" onclick="loadContent('home')">
-          <i class="fas fa-home"></i>
-          <span>Overview</span>
-        </div>
-        <div class="nav-item" onclick="loadContent('trending')">
-          <i class="fas fa-fire"></i>
-          <span>Trending</span>
-        </div>
-        <div class="nav-item" onclick="loadContent('new')">
-          <i class="fas fa-clock"></i>
-          <span>New & Noteworthy</span>
-        </div>
-      </div>
-    
-      <div class="category-header">Technologies</div>
-      <div class="nav-section">
-        <div class="nav-item" onclick="filterProjects('react')">
-          <i class="fab fa-react"></i>
-          <span>React</span>
-          <span class="badge">124</span>
-        </div>
-        <div class="nav-item" onclick="filterProjects('vue')">
-          <i class="fab fa-vuejs"></i>
-          <span>Vue</span>
-          <span class="badge">86</span>
-        </div>
-        <div class="nav-item" onclick="filterProjects('angular')">
-          <i class="fab fa-angular"></i>
-          <span>Angular</span>
-          <span class="badge">45</span>
-        </div>
-        <div class="nav-item" onclick="filterProjects('node')">
-          <i class="fab fa-node-js"></i>
-          <span>Node.js</span>
-          <span class="badge">92</span>
-        </div>
-        <div class="nav-item" onclick="filterProjects('python')">
-          <i class="fab fa-python"></i>
-          <span>Python</span>
-          <span class="badge">156</span>
-        </div>
-      </div>
-    
-      <div class="category-header">Resources</div>
-      <div class="nav-section">
-        <div class="nav-item">
-          <i class="fas fa-book"></i>
-          <span>Documentation</span>
-        </div>
-        <div class="nav-item">
-          <i class="fas fa-users"></i>
-          <span>Community</span>
-        </div>
-      </div>
-    </div>
-    
-    <div class="main-content">
-      <header class="top-bar">
-        <div class="search-bar">
-          <i class="fas fa-search"></i>
-          <input type="text" placeholder="Search projects, components, templates...">
-        </div>
-        <div class="user-menu">
-          <button class="icon-btn theme-toggle" onclick="toggleTheme()">
-            <i class="fas fa-moon"></i>
-          </button>
-          <button class="icon-btn notification-btn">
-            <i class="fas fa-bell"></i>
-            <span class="notification-dot"></span>
-          </button>
-          <div class="user-profile">
-            <img src="https://ui-avatars.com/api/?name=John+Doe&background=random" alt="Profile">
-          </div>
-        </div>
-      </header>
-    
-      <div class="content-area" id="content">
-        </div>
-    </div>
-    
-    <script>
-    // State management
-    const state = {
-      currentView: 'home',
-      projects: [
-        {
-          id: 1,
-          title: "Modern E-commerce Dashboard",
-          author: "Sarah Smith",
-          category: "react",
-          views: "2.4k",
-          likes: 342,
-          image: "https://via.placeholder.com/400x200/2a2a2a/ffffff?text=Dashboard+UI",
-          tags: ["React", "Tailwind", "Charts"]
-        },
-        {
-          id: 2,
-          title: "AI Chat Interface",
-          author: "Mike Johnson",
-          category: "vue",
-          views: "1.8k",
-          likes: 256,
-          image: "https://via.placeholder.com/400x200/3b82f6/ffffff?text=Chat+UI",
-          tags: ["Vue", "OpenAI", "Socket.io"]
-        },
-        {
-          id: 3,
-          title: "Crypto Trading Platform",
-          author: "Alex Chen",
-          category: "angular",
-          views: "5.2k",
-          likes: 890,
-          image: "https://via.placeholder.com/400x200/10b981/ffffff?text=Crypto+App",
-          tags: ["Angular", "Web3", "Real-time"]
-        },
-        {
-          id: 4,
-          title: "Task Management System",
-          author: "Emily Davis",
-          category: "react",
-          views: "3.1k",
-          likes: 445,
-          image: "https://via.placeholder.com/400x200/8b5cf6/ffffff?text=Task+Manager",
-          tags: ["React", "Redux", "DND"]
-        },
-        {
-          id: 5,
-          title: "Social Media Analytics",
-          author: "Chris Wilson",
-          category: "python",
-          views: "4.5k",
-          likes: 623,
-          image: "https://via.placeholder.com/400x200/f59e0b/ffffff?text=Analytics",
-          tags: ["Python", "Django", "D3.js"]
-        },
-        {
-          id: 6,
-          title: "Portfolio Template 2023",
-          author: "Lisa Anderson",
-          category: "html",
-          views: "8.9k",
-          likes: 1205,
-          image: "https://via.placeholder.com/400x200/ec4899/ffffff?text=Portfolio",
-          tags: ["HTML5", "Sass", "GSAP"]
-        }
-      ],
-      categories: [
-        {
-          id: 'frontend',
-          title: 'Frontend Development',
-          icon: 'fa-code',
-          color: '#3b82f6',
-          desc: 'Modern UI/UX components, frameworks, and libraries for web applications.',
-          projects: 1240,
-          trending: true
-        },
-        {
-          id: 'backend',
-          title: 'Backend Services',
-          icon: 'fa-server',
-          color: '#10b981',
-          desc: 'Scalable server architectures, APIs, and database management systems.',
-          projects: 856,
-          trending: false
-        },
-        {
-          id: 'mobile',
-          title: 'Mobile Apps',
-          icon: 'fa-mobile-alt',
-          color: '#8b5cf6',
-          desc: 'Cross-platform mobile applications using React Native and Flutter.',
-          projects: 645,
-          trending: true
-        },
-        {
-          id: 'ai',
-          title: 'AI & Machine Learning',
-          icon: 'fa-brain',
-          color: '#ef4444',
-          desc: 'Intelligent algorithms, neural networks, and data processing models.',
-          projects: 432,
-          trending: true
-        }
-      ]
-    };
-    
-    // Theme Management
-    function toggleTheme() {
-      const body = document.body;
-      const currentTheme = body.getAttribute('data-theme');
-      const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-      body.setAttribute('data-theme', newTheme);
-      
-      const icon = document.querySelector('.theme-toggle i');
-      icon.className = newTheme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
-    }
-    
-    // Content Rendering
-    function renderHome() {
-      return `
-        <div class="fade-in">
-          <div style="margin-bottom: 30px;">
-            <h1 style="font-size: 2rem; margin-bottom: 10px;">Welcome back, John! 👋</h1>
-            <p style="color: var(--secondary-text);">Here's what's happening in the developer community today.</p>
-          </div>
-    
-          <h2 style="margin-bottom: 20px;">Popular Categories</h2>
-          <div class="categories-grid">
-            ${state.categories.map(cat => `
-              <div class="category-card">
-                <div class="card-icon" style="background: ${cat.color}20; color: ${cat.color}">
-                  <i class="fas ${cat.icon}"></i>
-                </div>
-                <div class="card-tools">
-                  ${cat.trending ? '<span class="tag"><i class="fas fa-fire" style="color: #ef4444; margin-right: 5px;"></i>Trending</span>' : ''}
-                </div>
-                <h3 class="category-title">${cat.title}</h3>
-                <p class="category-description">${cat.desc}</p>
-                <div class="category-stats">
-                  <div class="stat-item">
-                    <i class="fas fa-project-diagram"></i>
-                    <span>${cat.projects} Projects</span>
-                  </div>
-                </div>
-              </div>
-            `).join('')}
-          </div>
-    
-          <div style="display: flex; justify-content: space-between; align-items: center; margin: 40px 0 20px;">
-            <h2>Featured Projects</h2>
-            <div style="display: flex; gap: 10px;">
-              <button class="icon-btn"><i class="fas fa-filter"></i></button>
-              <button class="icon-btn"><i class="fas fa-sort-amount-down"></i></button>
-            </div>
-          </div>
-          
-          <div class="projects-grid">
-            ${state.projects.map(project => renderProjectCard(project)).join('')}
-          </div>
-        </div>
-      `;
-    }
-    
-    function renderProjectCard(project) {
-      return `
-        <div class="project-card fade-in">
-          <div class="project-preview">
-            <img src="${project.image}" alt="${project.title}">
-          </div>
-          <div class="project-content">
-            <div style="display: flex; gap: 5px; margin-bottom: 10px;">
-              ${project.tags.map(tag => `
-                <span style="font-size: 0.7rem; padding: 2px 8px; background: var(--bg-hover); border-radius: 10px; color: var(--secondary-text);">${tag}</span>
-              `).join('')}
-            </div>
-            <h3 class="project-title">${project.title}</h3>
-            <div class="project-meta">
-              <div class="author">
-                <img src="https://ui-avatars.com/api/?name=${project.author}&background=random" alt="${project.author}">
-                <span>${project.author}</span>
-              </div>
-              <div style="display: flex; gap: 10px;">
-                <span><i class="far fa-eye"></i> ${project.views}</span>
-                <span><i class="far fa-heart"></i> ${project.likes}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-    
-    function loadContent(view) {
-      const content = document.getElementById('content');
-      state.currentView = view;
-      
-      // Update active nav item
-      document.querySelectorAll('.nav-item').forEach(item => {
-        item.classList.remove('active');
-        if(item.textContent.trim().toLowerCase().includes(view)) {
-          item.classList.add('active');
-        }
-      });
-    
-      if (view === 'home') {
-        content.innerHTML = renderHome();
-      } else if (view === 'trending' || view === 'new') {
-        // Shuffle projects for demo
-        const shuffled = [...state.projects].sort(() => 0.5 - Math.random());
-        content.innerHTML = `
-          <div class="fade-in">
-            <h2 style="margin-bottom: 20px; text-transform: capitalize;">${view} Projects</h2>
-            <div class="projects-grid">
-              ${shuffled.map(project => renderProjectCard(project)).join('')}
-            </div>
-          </div>
-        `;
-      }
-    }
-    
-    function filterProjects(category) {
-      const content = document.getElementById('content');
-      const filtered = state.projects.filter(p => p.category === category);
-      
-      content.innerHTML = `
-        <div class="fade-in">
-          <h2 style="margin-bottom: 20px;">${category.charAt(0).toUpperCase() + category.slice(1)} Projects</h2>
-          <div class="projects-grid">
-            ${filtered.length ? filtered.map(project => renderProjectCard(project)).join('') : '<p>No projects found in this category.</p>'}
-          </div>
-        </div>
-      `;
-    
-      // Update active state in sidebar
-      document.querySelectorAll('.nav-item').forEach(item => {
-        item.classList.remove('active');
-        if(item.textContent.trim().toLowerCase() === category) {
-          item.classList.add('active');
-        }
-      });
-    }
-    
-    // Initial load
-    document.addEventListener('DOMContentLoaded', () => {
-      loadContent('home');
-      
-      // Add search functionality
-      const searchInput = document.querySelector('.search-bar input');
-      searchInput.addEventListener('input', (e) => {
-        const term = e.target.value.toLowerCase();
-        const filtered = state.projects.filter(p => 
-          p.title.toLowerCase().includes(term) || 
-          p.author.toLowerCase().includes(term) ||
-          p.tags.some(tag => tag.toLowerCase().includes(term))
-        );
+                const a = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAGZGF0YQQAAAAAAA==");
+                a.play().then(() => {
+                    window.audioEnabled = true;
+                    btn.className = "audio-btn audio-on px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-2 shadow-sm";
+                    icon.className = "fas fa-volume-up";
+                    text.innerText = "כריזה פעילה";
+                    SabanSounds.playMessage();
+                }).catch(e => alert("לחץ שוב!"));
+            } else {
+                window.audioEnabled = false;
+                btn.className = "audio-btn audio-off px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-2 shadow-sm";
+                icon.className = "fas fa-volume-mute";
+                text.innerText = "מושתק";
+            }
+        };
+        window.unlockAudio = () => { if(!window.audioEnabled) window.toggleSound(); };
+
+        window.switchTab = (tab) => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            
+            if (tab === 'chats') {
+                document.getElementById('chatsList').classList.remove('hidden');
+                document.getElementById('sabanList').classList.add('hidden');
+            } else {
+                document.getElementById('chatsList').classList.add('hidden');
+                document.getElementById('sabanList').classList.remove('hidden');
+                document.getElementById('sabanAlert').classList.add('hidden');
+            }
+        };
+
+        window.toggleSticky = () => document.getElementById('stickyNote').classList.toggle('visible');
+
+        window.toggleInternal = () => { 
+            window.internalMode = !window.internalMode; 
+            const inp = document.getElementById('msgInput');
+            const btn = document.getElementById('internalBtn');
+            if(window.internalMode) {
+                inp.placeholder = "הערה פנימית (מוסתר)...";
+                inp.classList.add('bg-yellow-100');
+                btn.className = "fas fa-eye-slash text-orange-500 text-xl p-2";
+            } else {
+                inp.placeholder = "הקלד הודעה...";
+                inp.classList.remove('bg-yellow-100');
+                btn.className = "fas fa-eye text-gray-400 text-xl p-2";
+            }
+        };
+
+        // --- 2. לוגיקה ופיירבייס ---
+        const config = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
         
-        const grid = document.querySelector('.projects-grid');
-        if (grid) {
-          grid.innerHTML = filtered.map(project => renderProjectCard(project)).join('');
+        let db;
+        try {
+            const app = initializeApp(config);
+            db = getFirestore(app);
+            
+            // מאזין הזמנות
+            onSnapshot(query(collection(db, "chat_sessions"), orderBy("lastActivity", "desc")), (snap) => {
+                const list = document.getElementById('chatsList');
+                const stories = document.getElementById('storiesBar');
+                list.innerHTML = ""; stories.innerHTML = "";
+                
+                snap.forEach(d => {
+                    const c = d.data();
+                    let ring = "ring-green";
+                    if(c.lastMessage?.includes("ממתין")) ring = "ring-orange";
+                    if(c.lastMessage?.includes("🛑")) { ring = "ring-red"; if(window.audioEnabled) SabanSounds.playAlert(); }
+                    
+                    const avatar = c.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.userName)}`;
+                    
+                    const item = `<div onclick="openChat('${d.id}', '${c.userName}', '${avatar}', 'chat_sessions')" class="chat-item ${window.activeChatId===d.id?'active':''}">
+                        <div class="relative"><img src="${avatar}" class="w-10 h-10 rounded-full ${ring} object-cover p-0.5"></div>
+                        <div class="flex-1 mr-3 min-w-0">
+                            <div class="font-bold text-sm text-gray-800">${c.userName}</div>
+                            <div class="text-xs text-gray-500 truncate">${c.lastMessage}</div>
+                        </div>
+                    </div>`;
+                    list.innerHTML += item;
+                    
+                    stories.innerHTML += `<div class="story-item" onclick="openChat('${d.id}', '${c.userName}', '${avatar}', 'chat_sessions')">
+                        <img src="${avatar}" class="story-ring ${ring}">
+                        <span class="story-name">${c.userName}</span>
+                    </div>`;
+                });
+            });
+
+            // מאזין צ'אט סבן
+            onSnapshot(query(collection(db, "saban_chats_meta"), orderBy("lastActivity", "desc")), (snap) => {
+                const list = document.getElementById('sabanList');
+                list.innerHTML = "";
+                if(!snap.empty) document.getElementById('sabanAlert').classList.remove('hidden');
+                
+                snap.forEach(d => {
+                    const c = d.data();
+                    list.innerHTML += `<div onclick="openChat('${d.id}', '${c.userName}', '${c.avatar}', 'saban_chats')" class="chat-item ${window.activeChatId===d.id?'active':''}">
+                        <img src="${c.avatar}" class="w-10 h-10 rounded-full ring-2 ring-indigo-500 p-0.5">
+                        <div class="flex-1 mr-3"><div class="font-bold text-sm text-indigo-900">${c.userName}</div><div class="text-xs text-gray-500 truncate">${c.lastMessage}</div></div>
+                    </div>`;
+                });
+            });
+
+        } catch (e) {
+            console.error(e);
+            document.body.innerHTML = "<h2 style='padding:20px; color:red'>שגיאת חיבור לשרת (נסה לצאת מגלישה בסתר)</h2>";
         }
-      });
-    });
+
+        window.openChat = (id, name, img, coll) => {
+            window.activeChatId = id;
+            window.activeColl = coll; // נשמור את סוג האוסף
+            document.getElementById('chatArea').classList.remove('hidden');
+            document.getElementById('activeName').innerText = name;
+            document.getElementById('activeAvatar').src = img;
+            
+            onSnapshot(query(collection(db, `${coll}/${id}/messages`), orderBy("createdAt", "asc")), (snap) => {
+                const box = document.getElementById('messagesBox');
+                box.innerHTML = snap.docs.map(d => {
+                    const m = d.data();
+                    let cls = m.role==='staff' ? 'msg staff' : 'msg user';
+                    if(m.role==='internal') cls = 'msg internal';
+                    return `<div class="${cls}">${m.role==='internal'?'🔒 ':''}${m.text}</div>`;
+                }).join('');
+                box.scrollTop = box.scrollHeight;
+            });
+        };
+
+        window.sendMessage = async () => {
+            const txt = document.getElementById('msgInput').value; 
+            if(!txt || !window.activeChatId) return;
+            document.getElementById('msgInput').value = '';
+            
+            await addDoc(collection(db, `${window.activeColl}/${window.activeChatId}/messages`), { 
+                text: txt, role: window.internalMode ? 'internal' : 'staff', sender: "חמ\"ל", createdAt: serverTimestamp() 
+            });
+            
+            if(!window.internalMode) {
+                const metaColl = window.activeColl === 'saban_chats' ? 'saban_chats_meta' : 'chat_sessions';
+                await setDoc(doc(db, metaColl, window.activeChatId), { 
+                    lastMessage: `נציג: ${txt}`, lastActivity: serverTimestamp(), lastMsgFromStaff: true 
+                }, { merge: true });
+            }
+            if(window.internalMode) window.toggleInternal();
+        };
+
+        window.promptLinkOrder = async () => {
+            const id = prompt("הזן מספר הזמנה:"); if(!id) return;
+            await addDoc(collection(db, `${window.activeColl}/${window.activeChatId}/messages`), { text: `⏳ ממתין למסמך הזמנה <b>${id}</b>...`, role: 'internal', createdAt: serverTimestamp() });
+            updateDoc(doc(db, "chat_sessions", window.activeChatId), { lastMessage: `ממתין למסמך ${id}`, lastActivity: serverTimestamp() });
+        };
+
     </script>
-    </body>
-    </html>
-<ctrl63>
+</body>
+</html>
