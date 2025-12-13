@@ -14,7 +14,6 @@
         .chat-item { display: flex; align-items: center; padding: 12px; cursor: pointer; border-bottom: 1px solid #f0f2f5; }
         .chat-item:hover { background: #f5f6f6; }
         .chat-item.active { background: #f0f2f5; border-right: 4px solid #00a884; }
-        /* Rings */
         @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 100% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } }
         .ring-green { border: 3px solid #10b981; }
         .ring-orange { border: 3px dashed #f59e0b; }
@@ -77,10 +76,14 @@
         let activeChatId = null;
         let internalMode = false;
 
-        // Audio Unlock
+        // Audio Unlock - קליק אחד לפתיחת הסאונד
         window.unlockAudio = () => {
-            const a = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAGZGF0YQQAAAAAAA==");
-            a.play().catch(()=>{});
+            if (!window.audioUnlocked) {
+                // מנגן צליל ריק כדי לשחרר את החסימה
+                const a = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAGZGF0YQQAAAAAAA==");
+                a.play().catch(()=>{});
+                window.audioUnlocked = true;
+            }
         };
 
         onSnapshot(query(collection(db, "chat_sessions"), orderBy("lastActivity", "desc")), (snap) => {
@@ -88,20 +91,25 @@
             snap.forEach(d => {
                 const c = d.data();
                 const lastMsg = c.lastMessage || "";
-                let ring = "ring-green";
                 
                 // Color & Sound Logic
+                let ring = "ring-green";
+                
                 if(lastMsg.includes("ממתין")) ring = "ring-orange";
+                
                 if(lastMsg.includes("🛑") || lastMsg.includes("דחוף") || lastMsg.includes("עצור")) { 
                     ring = "ring-red"; 
                     SabanSounds.playAlert(); // 🔊 אזעקה
-                } else if (!c.lastMsgFromStaff) {
-                    // צליל רגיל להודעה חדשה מלקוח
+                } else if (c.role === 'user' && !c.lastMsgFromStaff) {
+                    // אם זו הודעה חדשה מהלקוח, ועדיין לא ענינו -> צליל עדין
                     SabanSounds.playMessage();
                 }
 
-                list.innerHTML += `<div onclick="openChat('${d.id}', '${c.userName}', '${c.avatar}')" class="chat-item ${activeChatId===d.id?'active':''}">
-                    <img src="${c.avatar || 'https://ui-avatars.com/api/?name='+c.userName}" class="w-12 h-12 rounded-full ${ring} object-cover ml-3 p-0.5 shadow-sm">
+                // מגן תמונות
+                const avatar = c.avatar || `https://ui-avatars.com/api/?name=${c.userName}&background=random&color=fff`;
+
+                list.innerHTML += `<div onclick="openChat('${d.id}', '${c.userName}', '${avatar}')" class="chat-item ${activeChatId===d.id?'active':''}">
+                    <img src="${avatar}" class="w-12 h-12 rounded-full ${ring} object-cover ml-3 p-0.5 shadow-sm" onerror="this.src='https://via.placeholder.com/40'">
                     <div class="flex-1 min-w-0">
                         <div class="font-bold text-gray-800">${c.userName}</div>
                         <div class="text-xs text-gray-500 truncate">${lastMsg}</div>
@@ -114,7 +122,7 @@
             activeChatId = id;
             document.getElementById('chatArea').classList.remove('hidden');
             document.getElementById('activeName').innerText = name;
-            document.getElementById('activeAvatar').src = avatar || `https://ui-avatars.com/api/?name=${name}`;
+            document.getElementById('activeAvatar').src = avatar;
             
             onSnapshot(query(collection(db, `chat_sessions/${id}/messages`), orderBy("createdAt", "asc")), (snap) => {
                 const box = document.getElementById('messagesBox');
