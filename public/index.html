@@ -3,202 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SabanOS | Gateway v29.1 (Debug Fix)</title>
+    <title>SabanOS | Gateway v32.0 (Role Fix)</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap');
-        body { font-family: 'Rubik', sans-serif; background-color: #0f172a; background-image: linear-gradient(rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.8)), url('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=2070'); background-size: cover; height: 100vh; display: flex; align-items: center; justify-content: center; }
-        .login-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-radius: 24px; width: 100%; max-width: 400px; padding: 40px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
-        .input-field { width: 100%; padding: 14px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; margin-bottom: 15px; outline: none; transition: 0.3s; }
-        .input-field:focus { border-color: #008069; background: white; box-shadow: 0 0 0 4px rgba(0, 128, 105, 0.1); }
-        
-        .btn-login { width: 100%; background: linear-gradient(135deg, #008069, #006d59); color: white; padding: 14px; border-radius: 12px; font-weight: bold; transition: 0.3s; display: flex; justify-content: center; align-items: center; }
-        .btn-login:hover { transform: translateY(-2px); box-shadow: 0 10px 20px -5px rgba(0, 128, 105, 0.4); }
-        .btn-login:disabled { background: #94a3b8; cursor: not-allowed; transform: none; box-shadow: none; }
-
-        .loader {
-            border: 3px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top: 3px solid white;
-            width: 20px; height: 20px;
-            animation: spin 1s linear infinite;
-            display: none;
-        }
+        body { font-family: 'Rubik', sans-serif; background-color: #0f172a; height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .login-card { background: white; border-radius: 20px; width: 100%; max-width: 400px; padding: 40px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); text-align: center; }
+        .input-field { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; background: #f8fafc; margin-bottom: 15px; outline: none; }
+        .input-field:focus { border-color: #008069; background: white; }
+        .btn-login { width: 100%; background: #008069; color: white; padding: 12px; border-radius: 10px; font-weight: bold; transition: 0.2s; }
+        .btn-login:hover { background: #006d59; }
+        .loader { width: 20px; height: 20px; border: 3px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; display: none; margin: 0 auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .hidden { display: none; }
     </style>
 </head>
 <body>
 
     <div class="login-card">
-        <div class="text-center mb-8">
-            <div class="w-20 h-20 bg-gradient-to-br from-green-600 to-teal-500 rounded-2xl flex items-center justify-center text-white text-4xl shadow-lg mx-auto mb-4"><i class="fas fa-cubes"></i></div>
-            <h1 class="text-2xl font-bold text-slate-800">ח.סבן חומרי בניין</h1>
-            <p class="text-slate-500 text-sm">כניסה למערכת SabanOS</p>
-        </div>
+        <div class="mb-6"><i class="fas fa-cubes text-5xl text-green-600"></i></div>
+        <h1 class="text-2xl font-bold text-slate-800 mb-1">SabanOS</h1>
+        <p class="text-slate-500 text-sm mb-6">מערכת הפעלה לוגיסטית</p>
 
-        <form id="loginForm" onsubmit="handleLogin(event)">
+        <form onsubmit="handleLogin(event)">
             <input type="email" id="email" class="input-field" placeholder="אימייל" required>
             <input type="password" id="password" class="input-field" placeholder="סיסמה" required>
             
-            <div class="flex items-center justify-between mb-6 text-sm text-slate-600">
-                <label><input type="checkbox" id="rememberMe" class="ml-2"> זכור אותי</label>
-            </div>
-
             <button type="submit" id="submitBtn" class="btn-login">
-                <span id="btnText">כניסה למערכת</span>
+                <span id="btnText">כניסה</span>
                 <div id="btnLoader" class="loader"></div>
             </button>
-            
-            <div id="errorMsg" class="bg-red-50 text-red-600 p-3 rounded-lg text-sm text-center mt-4 hidden font-bold border border-red-200"></div>
+            <div id="errorMsg" class="text-red-500 text-xs mt-3 font-bold hidden"></div>
         </form>
+        
+        <div class="mt-4 text-xs text-gray-400">
+            <a href="#" onclick="localStorage.clear(); location.reload()" class="underline">נקה זיכרון מקומי (אם נתקע)</a>
+        </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
         
-        let app, auth, db;
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-        // אתחול מוגן
-        try {
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-            console.log("Firebase initialized successfully");
-        } catch (e) {
-            console.error("Firebase init failed:", e);
-            alert("שגיאת מערכת קריטית: חיבור ל-Firebase נכשל");
-        }
-
-        // --- 1. זיהוי אוטומטי ---
-        window.onload = () => {
+        // 1. בדיקת לינק קסם (Magic Link)
+        window.onload = async () => {
             const params = new URLSearchParams(window.location.search);
-            if(params.get('uid')) {
-                window.location.href = `client.html?uid=${params.get('uid')}`;
-                return;
-            }
-            const saved = localStorage.getItem('saban_user');
-            if (saved && !sessionStorage.getItem('redirect_done')) {
-                const u = JSON.parse(saved);
-                console.log("Auto login for:", u.name);
-                redirectUser(u.role, u.uid);
+            const uid = params.get('uid');
+            if (uid) {
+                // אם נכנס עם לינק - בודק בשרת מה התפקיד שלו
+                try {
+                    const snap = await getDoc(doc(db, "users", uid));
+                    if (snap.exists()) {
+                        const d = snap.data();
+                        forceRedirect(d.role, uid);
+                    }
+                } catch(e) { console.error(e); }
             }
         };
 
-        // --- 2. התחברות (עם מנגנון בטיחות) ---
+        // 2. התחברות עם אימות תפקיד בזמן אמת
         window.handleLogin = async (e) => {
             e.preventDefault();
-            console.log("Login button clicked");
-            
-            const email = document.getElementById('email').value.trim(); // Trim רווחים
+            const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             
-            if(!email || !password) return showError("נא למלא את כל השדות");
-
             setLoading(true);
 
-            // טיימר בטיחות: משחרר את הכפתור אם נתקע
-            const safetyTimer = setTimeout(() => {
-                if (document.getElementById('submitBtn').disabled) {
-                    setLoading(false);
-                    showError("התקשורת איטית מדי. בדוק את החיבור לאינטרנט ונסה שוב.");
-                    console.warn("Login timeout reached");
-                }
-            }, 10000); // 10 שניות
-
             try {
-                // שלב 1: אימות מול גוגל
-                console.log("Authenticating...");
-                await setPersistence(auth, browserLocalPersistence);
+                // התחברות
                 const cred = await signInWithEmailAndPassword(auth, email, password);
                 const uid = cred.user.uid;
-                console.log("Auth success, UID:", uid);
 
-                // שלב 2: משיכת נתונים מה-DB
-                console.log("Fetching user data...");
+                // משיכת נתונים עדכניים מהשרת (עוקף את הזיכרון המקומי)
                 const docSnap = await getDoc(doc(db, "users", uid));
                 
-                // עצירת הטיימר - הצלחנו
-                clearTimeout(safetyTimer); 
-
                 if (docSnap.exists()) {
                     const userData = docSnap.data();
-                    console.log("User data found:", userData.role);
                     
-                    // שמירה
-                    localStorage.setItem('saban_user', JSON.stringify({ uid, role: userData.role, name: userData.name }));
-                    sessionStorage.setItem('redirect_done', 'true');
+                    // עדכון הזיכרון המקומי בנתונים החדשים
+                    const cleanUser = { uid, role: userData.role, name: userData.name };
+                    localStorage.setItem('saban_user', JSON.stringify(cleanUser));
                     
-                    redirectUser(userData.role, uid);
+                    forceRedirect(userData.role, uid);
                 } else {
-                    console.error("User doc not found in Firestore");
-                    throw new Error("משתמש קיים בגוגל אך לא במסד הנתונים. פנה למנהל.");
+                    throw new Error("משתמש לא קיים במסד הנתונים");
                 }
 
             } catch (err) {
-                clearTimeout(safetyTimer); // ביטול טיימר
-                console.error("Login Flow Error:", err);
-                
-                let msg = "שגיאה לא ידועה";
-                if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') msg = "אימייל או סיסמה שגויים";
-                else if (err.code === 'auth/user-not-found') msg = "משתמש לא רשום במערכת";
-                else if (err.code === 'auth/too-many-requests') msg = "יותר מדי ניסיונות. נחסמת זמנית.";
-                else if (err.code === 'auth/network-request-failed') msg = "בעיית רשת. בדוק חיבור אינטרנט.";
-                else msg = err.message;
-
-                showError(msg);
+                console.error(err);
+                document.getElementById('errorMsg').innerText = "שגיאה: " + err.message;
+                document.getElementById('errorMsg').classList.remove('hidden');
                 setLoading(false);
             }
         };
 
-        function redirectUser(role, uid) {
-            const btn = document.getElementById('submitBtn');
-            const txt = document.getElementById('btnText');
-            
-            btn.style.background = "#10b981"; // ירוק הצלחה
-            document.getElementById('btnLoader').style.display = 'none';
-            txt.style.display = 'block';
-            txt.innerText = `שלום ${role === 'client' ? 'לקוח' : 'מנהל'}, מתחבר...`;
-
-            setTimeout(() => {
-                if (['admin', 'ops'].includes(role)) window.location.href = 'whatsapp-center.html';
-                else if (role === 'driver') window.location.href = 'driver.html';
-                else if (role === 'warehouse') window.location.href = 'staff.html';
-                else window.location.href = `client.html?uid=${uid}`;
-            }, 1000);
+        function forceRedirect(role, uid) {
+            // ניתוב קשיח לפי תפקיד
+            if (['admin', 'ops', 'manager'].includes(role)) {
+                window.location.href = 'whatsapp-center.html';
+            } else if (role === 'driver') {
+                window.location.href = 'driver.html';
+            } else {
+                window.location.href = `client.html?uid=${uid}`; // לקוח רגיל
+            }
         }
 
         function setLoading(state) {
             const btn = document.getElementById('submitBtn');
             const loader = document.getElementById('btnLoader');
             const text = document.getElementById('btnText');
-            const err = document.getElementById('errorMsg');
             
-            if (state) {
+            if(state) {
                 btn.disabled = true;
-                loader.style.display = 'block';
                 text.style.display = 'none';
-                err.classList.add('hidden'); // הסתרת שגיאות קודמות
+                loader.style.display = 'block';
             } else {
                 btn.disabled = false;
-                loader.style.display = 'none';
                 text.style.display = 'block';
-                btn.style.background = "linear-gradient(135deg, #008069, #006d59)"; // חזרה לצבע מקורי
+                loader.style.display = 'none';
             }
-        }
-
-        function showError(msg) {
-            const el = document.getElementById('errorMsg');
-            el.innerText = msg; 
-            el.classList.remove('hidden');
-            // רעידה קלה להדגשה
-            el.animate([ { transform: 'translateX(0)' }, { transform: 'translateX(-5px)' }, { transform: 'translateX(5px)' }, { transform: 'translateX(0)' } ], { duration: 300 });
         }
     </script>
 </body>
