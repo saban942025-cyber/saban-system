@@ -104,6 +104,14 @@
                     <div id="activeName" class="font-bold text-gray-800"></div>
                     <div id="activeStatus" class="text-xs text-green-600 font-bold">מחובר</div>
                 </div>
+                </div>
+<div class="tabs">
+    <div onclick="switchTab('orders')" class="tab-btn active" id="tab-orders">📦 הזמנות</div>
+    <div onclick="switchTab('saban')" class="tab-btn relative" id="tab-saban">
+        🧠 צ'אט-סבן 
+        <span id="sabanAlert" class="hidden absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
+    </div>
+</div>
             </div>
             <div class="flex gap-2">
                 <button onclick="promptLinkOrder()" class="bg-orange-50 text-orange-700 px-3 py-1.5 rounded text-xs font-bold border border-orange-200 hover:bg-orange-100 transition shadow-sm">
@@ -143,14 +151,7 @@
             <input type="text" id="msgInput" class="flex-1 p-3 rounded-lg border-none outline-none shadow-sm focus:ring-2 focus:ring-green-500 transition" placeholder="הקלד הודעה..." onkeydown="if(event.key==='Enter') sendMessage()">
             <button onclick="sendMessage()" class="text-[#008069] text-2xl hover:scale-110 transition"><i class="fas fa-paper-plane"></i></button>
         </div>
-    </div>
-<div class="tabs">
-    <div onclick="switchTab('orders')" class="tab-btn active" id="tab-orders">📦 הזמנות</div>
-    <div onclick="switchTab('saban')" class="tab-btn relative" id="tab-saban">
-        🧠 צ'אט-סבן 
-        <span id="sabanAlert" class="hidden absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
-    </div>
-</div>
+    
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, doc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, setDoc, getDocs, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -372,4 +373,5 @@
     </script>
 </body>
 </html>
+
 
