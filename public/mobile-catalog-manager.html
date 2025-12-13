@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Saban Catalog Mobile</title>
+    <title>Saban Mobile Manager</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -13,7 +13,7 @@
             font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
             -webkit-tap-highlight-color: transparent;
             color: #1c1c1e;
-            padding-bottom: 40px;
+            padding-bottom: 90px;
         }
 
         /* Accordion Section */
@@ -28,29 +28,34 @@
         
         .section-header {
             padding: 20px; display: flex; align-items: center; justify-content: space-between;
-            cursor: pointer; background: white;
+            cursor: pointer; background: white; border-bottom: 1px solid transparent;
         }
+        .section-card.open .section-header { border-bottom-color: #e5e5ea; }
         
         .section-content {
             max-height: 0; overflow: hidden; transition: max-height 0.4s ease-in-out;
             background: #f9f9f9;
         }
-        .section-card.open .section-content { max-height: 1000px; /* מספיק גדול */ }
+        .section-card.open .section-content { max-height: 1200px; /* מספיק לגלילה */ }
         .section-card.open .arrow-icon { transform: rotate(180deg); }
 
-        /* Product Item */
-        .list-item {
-            display: flex; gap: 12px; padding: 12px; border-bottom: 1px solid #e5e5ea;
-            align-items: center; background: white;
+        /* Google Result Card (Mobile) */
+        .g-mobile-card {
+            background: white; border-radius: 16px; padding: 12px; margin-bottom: 10px;
+            border: 1px solid #e5e5ea;
         }
-        .list-item:last-child { border-bottom: none; }
-        .item-img { width: 50px; height: 50px; border-radius: 10px; object-fit: cover; background: #f2f2f7; }
-
-        /* Action Buttons */
-        .btn-action {
-            width: 36px; height: 36px; border-radius: 50%; display: flex; 
-            align-items: center; justify-content: center; font-size: 14px;
+        .g-mobile-actions {
+            display: flex; gap: 8px; overflow-x: auto; padding-top: 10px; margin-top: 10px;
+            border-top: 1px dashed #e5e5ea; scrollbar-width: none;
         }
+        .g-mobile-actions::-webkit-scrollbar { display: none; }
+        
+        .action-chip {
+            white-space: nowrap; padding: 6px 12px; border-radius: 20px;
+            font-size: 11px; font-weight: bold; background: #f2f2f7; color: #666;
+            border: 1px solid #e5e5ea; flex-shrink: 0;
+        }
+        .action-chip:active { background: #007aff; color: white; }
 
         /* Drawer Modal (Edit Form) */
         .drawer {
@@ -58,7 +63,7 @@
             background: #ffffff; border-radius: 24px 24px 0 0;
             transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
             z-index: 100; box-shadow: 0 -10px 40px rgba(0,0,0,0.15);
-            height: 90vh; display: flex; flex-direction: column;
+            height: 92vh; display: flex; flex-direction: column;
         }
         .drawer.open { transform: translateY(0); }
         .drawer-handle {
@@ -66,27 +71,32 @@
             margin: 10px auto;
         }
 
-        /* Form Inputs */
+        /* Inputs */
         .input-box {
             background: #f2f2f7; border-radius: 12px; padding: 12px;
             margin-bottom: 12px; width: 100%; border: 1px solid transparent;
-            font-size: 16px; outline: none; transition: 0.2s;
+            font-size: 16px; outline: none; transition: 0.2s; font-weight: 500;
         }
         .input-box:focus { background: white; border-color: #007aff; }
         
+        /* Stock Selector */
         .stock-selector {
             display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 15px;
         }
         .stock-opt {
-            padding: 10px; text-align: center; border-radius: 10px; background: #f2f2f7;
+            padding: 12px; text-align: center; border-radius: 12px; background: #f2f2f7;
             font-size: 12px; font-weight: 600; color: #8e8e93; border: 2px solid transparent;
         }
-        .stock-opt.active {
-            background: #eef2ff; border-color: #007aff; color: #007aff;
-        }
+        .stock-opt.active { background: #eef2ff; border-color: #007aff; color: #007aff; }
 
-        /* Animations */
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+        /* Toast */
+        .toast {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.8); color: white; px-4 py-2; border-radius: 30px;
+            font-size: 12px; font-weight: bold; z-index: 200; pointer-events: none;
+            opacity: 0; transition: 0.3s; padding: 10px 20px; width: max-content;
+        }
+        .toast.show { opacity: 1; top: 40px; }
     </style>
 </head>
 <body>
@@ -96,92 +106,58 @@
             <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white text-lg shadow-lg">📱</div>
             <div>
                 <h1 class="font-bold text-lg leading-none">Catalog Mobile</h1>
-                <span class="text-xs text-gray-500">ניהול שטח</span>
+                <span class="text-xs text-gray-500 font-bold">Live Connected</span>
             </div>
         </div>
-        <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
-            <i class="fas fa-user"></i>
-        </div>
+        <button onclick="openEditor()" class="bg-blue-600 text-white w-9 h-9 rounded-full shadow-lg flex items-center justify-center text-sm">
+            <i class="fas fa-plus"></i>
+        </button>
     </div>
 
-    <div class="py-4">
+    <div id="toast" class="toast"><i class="fas fa-check"></i> נתונים עודכנו</div>
 
-        <div class="section-card" id="card-products">
-            <div class="section-header" onclick="toggleSection('products')">
+    <div class="py-2">
+
+        <div class="section-card open" id="card-search">
+            <div class="section-header" onclick="toggleSection('search')">
                 <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center"><i class="fas fa-box"></i></div>
-                    <span class="font-bold text-lg">ניהול מוצרים</span>
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-green-400 text-white flex items-center justify-center"><i class="fab fa-google"></i></div>
+                    <span class="font-bold text-lg">חיפוש ברשת (Google)</span>
                 </div>
                 <i class="fas fa-chevron-down arrow-icon text-gray-400 transition-transform duration-300"></i>
             </div>
             
             <div class="section-content">
-                <div class="p-3 bg-gray-50 border-b">
+                <div class="p-3 bg-white border-b sticky top-0 z-10">
                     <div class="relative">
-                        <i class="fas fa-search absolute right-3 top-3.5 text-gray-400"></i>
-                        <input type="text" placeholder="חיפוש מוצר..." class="w-full bg-white p-3 pr-10 rounded-xl border-none shadow-sm outline-none" oninput="filterProducts(this.value)">
+                        <input id="searchInput" type="text" placeholder="הקלד שם מוצר (למשל: סיקה)..." class="w-full bg-gray-100 p-3 pl-4 pr-12 rounded-xl outline-none font-bold" onkeydown="if(event.key==='Enter') runMobileSearch()">
+                        <button onclick="runMobileSearch()" class="absolute right-2 top-2 bg-blue-600 text-white w-8 h-8 rounded-lg flex items-center justify-center shadow">
+                            <i class="fas fa-search text-xs"></i>
+                        </button>
                     </div>
-                    <button onclick="openEditor()" class="w-full mt-3 bg-blue-600 text-white py-3 rounded-xl font-bold shadow-md active:scale-95 transition">
-                        <i class="fas fa-plus"></i> הוסף מוצר חדש
-                    </button>
                 </div>
                 
-                <div id="productsList" class="divide-y divide-gray-100">
+                <div id="searchResults" class="p-3 space-y-3 min-h-[200px]">
+                    <div class="text-center py-10 text-gray-400">
+                        <i class="fas fa-cloud-download-alt text-3xl mb-2 opacity-30"></i>
+                        <p class="text-xs">חפש מוצר כדי למשוך נתונים</p>
                     </div>
-            </div>
-        </div>
-
-        <div class="section-card">
-            <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center"><i class="fas fa-th-large"></i></div>
-                    <span class="font-bold text-lg">קטגוריות</span>
-                </div>
-                <i class="fas fa-chevron-down arrow-icon text-gray-400 transition-transform duration-300"></i>
-            </div>
-            <div class="section-content p-4">
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="bg-white p-3 rounded-xl shadow-sm border text-center font-bold">איטום</div>
-                    <div class="bg-white p-3 rounded-xl shadow-sm border text-center font-bold">צבע</div>
-                    <div class="bg-white p-3 rounded-xl shadow-sm border text-center font-bold">כלי עבודה</div>
-                    <button class="border-2 border-dashed border-gray-300 p-3 rounded-xl text-gray-400 font-bold">+ חדש</button>
                 </div>
             </div>
         </div>
 
-        <div class="section-card">
-            <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="section-card" id="card-manage">
+            <div class="section-header" onclick="toggleSection('manage')">
                 <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center"><i class="fas fa-crown"></i></div>
-                    <span class="font-bold text-lg">מותגים</span>
+                    <div class="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center"><i class="fas fa-boxes"></i></div>
+                    <span class="font-bold text-lg">ניהול מלאי</span>
                 </div>
                 <i class="fas fa-chevron-down arrow-icon text-gray-400 transition-transform duration-300"></i>
             </div>
-            <div class="section-content p-4 overflow-x-auto whitespace-nowrap">
-                <div class="inline-block w-20 h-20 bg-white rounded-full border shadow-sm mr-2 align-middle"></div>
-                <div class="inline-block w-20 h-20 bg-white rounded-full border shadow-sm mr-2 align-middle"></div>
-                <div class="inline-block w-20 h-20 bg-white rounded-full border shadow-sm mr-2 align-middle"></div>
-                <div class="inline-block w-20 h-20 border-2 border-dashed border-gray-300 rounded-full flex items-center justify-center text-gray-400 font-bold mr-2 align-middle">+</div>
-            </div>
-        </div>
-
-        <div class="section-card">
-            <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center"><i class="fas fa-fire"></i></div>
-                    <span class="font-bold text-lg">מבצעים חמים</span>
+            <div class="section-content p-3">
+                <div id="inventoryList" class="space-y-2">
+                    <div class="text-center py-4 text-gray-400">טוען מוצרים...</div>
                 </div>
-                <i class="fas fa-chevron-down arrow-icon text-gray-400 transition-transform duration-300"></i>
-            </div>
-            <div class="section-content p-4">
-                <div class="bg-gradient-to-r from-red-500 to-pink-500 text-white p-4 rounded-xl shadow-lg mb-3">
-                    <div class="flex justify-between items-center">
-                        <span class="font-bold text-lg">20% הנחה</span>
-                        <div class="bg-white/20 px-2 py-1 rounded text-xs">פעיל</div>
-                    </div>
-                    <div class="text-sm opacity-90">על כל מחלקת האיטום</div>
-                </div>
-                <button class="w-full py-3 border-2 border-dashed border-red-200 text-red-400 rounded-xl font-bold">צור מבצע חדש</button>
             </div>
         </div>
 
@@ -189,139 +165,225 @@
 
     <div id="editDrawer" class="drawer">
         <div class="p-4 border-b flex justify-between items-center bg-gray-50 rounded-t-[24px]">
-            <button onclick="closeDrawer()" class="text-gray-500 font-bold text-sm">ביטול</button>
-            <div class="font-bold text-lg">עריכת מוצר</div>
-            <button onclick="saveProduct()" class="text-blue-600 font-bold text-sm">שמור</button>
+            <button onclick="closeDrawer()" class="text-gray-500 font-bold text-sm">סגור</button>
+            <div class="font-bold text-lg">עריכת כרטיס</div>
+            <button onclick="saveProduct()" class="text-blue-600 font-bold text-sm bg-blue-50 px-3 py-1 rounded-full">שמור</button>
         </div>
         <div class="drawer-handle absolute top-2 left-1/2 -translate-x-1/2"></div>
 
-        <div class="flex-1 overflow-y-auto p-5 pb-20">
+        <div class="flex-1 overflow-y-auto p-5 pb-20 custom-scroll">
             
-            <div class="flex justify-center mb-6">
-                <div class="w-24 h-24 bg-gray-100 rounded-2xl flex items-center justify-center text-gray-400 border-2 border-dashed border-gray-300 relative">
-                    <i class="fas fa-camera text-2xl"></i>
-                    <img id="editImg" src="" class="absolute inset-0 w-full h-full object-cover rounded-2xl hidden">
+            <div class="flex justify-center gap-4 mb-6">
+                <div class="relative w-24 h-24 bg-gray-100 rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden">
+                    <img id="imgMain" src="https://via.placeholder.com/100?text=Main" class="w-full h-full object-contain">
+                    <div class="absolute bottom-0 w-full bg-black/50 text-white text-[9px] text-center">ראשית</div>
+                </div>
+                <div class="relative w-24 h-24 bg-gray-100 rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden">
+                    <img id="imgBrand" src="https://via.placeholder.com/100?text=Logo" class="w-full h-full object-cover">
+                    <div class="absolute bottom-0 w-full bg-black/50 text-white text-[9px] text-center">לוגו מותג</div>
                 </div>
             </div>
 
-            <label class="text-xs font-bold text-gray-400 uppercase mb-1 block">פרטים כלליים</label>
-            <input id="editName" class="input-box font-bold" placeholder="שם מוצר">
+            <label class="text-xs font-bold text-gray-400 uppercase mb-1 block">פרטי בסיס</label>
+            <input id="inpName" class="input-box font-bold text-lg text-slate-800" placeholder="שם מוצר">
             <div class="flex gap-3">
-                <input id="editSku" class="input-box" placeholder='מק"ט'>
-                <input id="editPrice" type="number" class="input-box text-green-600 font-bold" placeholder="מחיר">
+                <input id="inpSku" class="input-box" placeholder='מק"ט'>
+                <input id="inpPrice" type="number" class="input-box text-green-600 font-bold" placeholder="מחיר (₪)">
             </div>
+            <input id="inpBrandName" class="input-box" placeholder="שם המותג (טקסט)">
 
-            <label class="text-xs font-bold text-gray-400 uppercase mb-2 block mt-2">זמינות מלאי</label>
+            <label class="text-xs font-bold text-gray-400 uppercase mb-2 block mt-2">מיקום במלאי</label>
             <div class="stock-selector">
-                <div onclick="selectStock(this, 'both')" class="stock-opt active">הכל</div>
-                <div onclick="selectStock(this, 'talmid')" class="stock-opt">תלמיד</div>
-                <div onclick="selectStock(this, 'harash')" class="stock-opt">חרש</div>
+                <div onclick="setStock('both')" id="stock-both" class="stock-opt active">הכל</div>
+                <div onclick="setStock('harash')" id="stock-harash" class="stock-opt">חרש</div>
+                <div onclick="setStock('talmid')" id="stock-talmid" class="stock-opt">תלמיד</div>
+            </div>
+            <input type="hidden" id="inpStock" value="both">
+
+            <label class="text-xs font-bold text-blue-500 uppercase mb-1 block mt-2"><i class="fas fa-robot"></i> נתוני מוח לבוט</label>
+            <div class="bg-blue-50 p-3 rounded-xl border border-blue-100 mb-3">
+                <div class="flex gap-3 mb-2">
+                    <input id="inpDry" class="input-box bg-white mb-0 text-sm" placeholder="זמן ייבוש">
+                    <input id="inpWeight" class="input-box bg-white mb-0 text-sm" placeholder="משקל">
+                </div>
+                <input id="inpMethod" class="input-box bg-white mb-0 text-sm" placeholder="שיטת יישום (רולר/מרית)">
             </div>
 
-            <label class="text-xs font-bold text-gray-400 uppercase mb-1 block mt-2">מידע לבוט</label>
-            <input id="editDesc" class="input-box" placeholder="תיאור קצר...">
-            <div class="flex gap-3">
-                <input id="editDry" class="input-box" placeholder="זמן ייבוש">
-                <input id="editWeight" class="input-box" placeholder="משקל">
-            </div>
+            <label class="text-xs font-bold text-gray-400 uppercase mb-1 block">תוכן עשיר</label>
+            <textarea id="inpDesc" class="input-box h-24" placeholder="תיאור..."></textarea>
+            <input id="inpVideo" class="input-box text-sm text-red-500" placeholder="קישור וידאו (Youtube)">
 
-            <button class="w-full mt-4 py-3 bg-red-50 text-red-600 rounded-xl font-bold flex items-center justify-center gap-2">
-                <i class="fas fa-trash"></i> מחק מוצר
-            </button>
-        </div>
+            <input type="hidden" id="valMainImg">
+            <input type="hidden" id="valSecImg">
+            <input type="hidden" id="valBrandLogo">
+
+            <div class="h-10"></div> </div>
     </div>
 
-    <div id="overlay" onclick="closeDrawer()" class="fixed inset-0 bg-black/50 z-90 hidden backdrop-blur-sm transition-opacity"></div>
+    <div id="overlay" onclick="closeDrawer()" class="fixed inset-0 bg-black/60 z-90 hidden backdrop-blur-sm transition-opacity"></div>
 
-    <script>
-        // Mock Data
-        let products = [
-            { id: 1, name: "סיקה טופסיל 107", sku: "1001", price: 120, stock: "both", img: "https://via.placeholder.com/50" },
-            { id: 2, name: "מלט שחור נשר", sku: "2005", price: 28, stock: "harash", img: "https://via.placeholder.com/50" },
-            { id: 3, name: "דבק קרמיקה 114", sku: "3010", price: 45, stock: "talmid", img: "https://via.placeholder.com/50" }
-        ];
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, orderBy, query } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // --- Logic ---
-        
-        function toggleSection(id) {
-            // Close others
+        const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
+        let app, db; try{app=initializeApp(firebaseConfig);db=getFirestore(app);}catch(e){}
+
+        const GOOGLE_API_KEY = "AIzaSyDLkShn6lBBew-PJJWtzvAe_14UF9Kv-QI";
+        const GOOGLE_CX = "3331a7d5c75e14f26";
+
+        // --- Functions ---
+
+        window.toggleSection = (id) => {
             document.querySelectorAll('.section-card').forEach(el => {
                 if(el.id !== `card-${id}`) el.classList.remove('open');
             });
-            // Toggle current
-            const card = document.getElementById(`card-${id}`);
-            card.classList.toggle('open');
-            
-            if(id === 'products' && card.classList.contains('open')) renderProducts();
+            document.getElementById(`card-${id}`).classList.toggle('open');
         }
 
-        function renderProducts(filter = "") {
-            const list = document.getElementById('productsList');
-            const filtered = products.filter(p => p.name.includes(filter));
+        window.runMobileSearch = async () => {
+            const query = document.getElementById('searchInput').value;
+            if(!query) return;
             
-            list.innerHTML = filtered.map(p => `
-                <div class="list-item" onclick="openEditor(${p.id})">
-                    <img src="${p.img}" class="item-img">
-                    <div class="flex-1">
-                        <div class="font-bold text-gray-800">${p.name}</div>
-                        <div class="text-xs text-gray-500">מק"ט: ${p.sku}</div>
-                    </div>
-                    <div class="text-right">
-                        <div class="font-bold text-green-600">₪${p.price}</div>
-                        <div class="text-[10px] px-2 py-0.5 rounded bg-gray-100 text-gray-500 inline-block">${getStockLabel(p.stock)}</div>
-                    </div>
-                    <i class="fas fa-chevron-left text-gray-300 text-xs"></i>
-                </div>
-            `).join('');
-        }
+            const container = document.getElementById('searchResults');
+            container.innerHTML = '<div class="text-center py-6"><i class="fas fa-spinner fa-spin text-blue-600"></i> טוען...</div>';
 
-        function getStockLabel(s) {
-            if(s==='both') return 'תלמיד+חרש';
-            if(s==='talmid') return 'תלמיד';
-            return 'חרש';
-        }
+            try {
+                const url = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CX}&q=${encodeURIComponent(query)}`;
+                const res = await fetch(url);
+                const data = await res.json();
 
-        // --- Drawer Logic ---
-        function openEditor(id) {
-            const p = id ? products.find(x => x.id === id) : { name: '', sku: '', price: '', stock: 'both' };
-            
-            document.getElementById('editName').value = p.name;
-            document.getElementById('editSku').value = p.sku;
-            document.getElementById('editPrice').value = p.price;
-            
-            // Stock Selector UI
-            document.querySelectorAll('.stock-opt').forEach(el => el.classList.remove('active'));
-            // (Simplification for demo logic - needs full implementation)
-            
+                if(!data.items) {
+                    container.innerHTML = '<div class="text-center text-sm text-gray-400">לא נמצאו תוצאות</div>';
+                    return;
+                }
+
+                container.innerHTML = data.items.map(item => {
+                    const img = item.pagemap?.cse_image?.[0]?.src || item.pagemap?.og_image?.[0]?.src || '';
+                    const title = item.title;
+                    const snippet = item.snippet;
+                    const link = item.link;
+
+                    return `
+                    <div class="g-mobile-card">
+                        <div class="flex gap-3">
+                            ${img ? `<img src="${img}" class="w-14 h-14 rounded-lg object-cover bg-gray-100 border">` : ''}
+                            <div class="min-w-0">
+                                <div class="font-bold text-xs text-slate-800 line-clamp-2 leading-tight mb-1">${title}</div>
+                                <div class="text-[10px] text-gray-500 line-clamp-2">${snippet}</div>
+                            </div>
+                        </div>
+                        <div class="g-mobile-actions">
+                            <button class="action-chip" onclick="takeField('mainImg', '${img}')"><i class="fas fa-image"></i> תמונה</button>
+                            <button class="action-chip" onclick="takeField('brandLogo', '${img}')"><i class="fas fa-copyright"></i> לוגו</button>
+                            <button class="action-chip" onclick="takeField('name', '${escapeVal(title)}')"><i class="fas fa-tag"></i> שם</button>
+                            <button class="action-chip" onclick="takeField('desc', '${escapeVal(snippet)}')"><i class="fas fa-align-right"></i> תיאור</button>
+                            ${link.includes('youtu') ? `<button class="action-chip text-red-500" onclick="takeField('video', '${link}')"><i class="fab fa-youtube"></i> וידאו</button>` : ''}
+                        </div>
+                    </div>`;
+                }).join('');
+
+            } catch(e) {
+                container.innerHTML = `<div class="text-red-500 text-xs text-center">שגיאה: ${e.message}</div>`;
+            }
+        };
+
+        window.takeField = (type, val) => {
+            showToast('נתון נמשך לטופס');
+            // Auto open drawer if closed
+            if(!document.getElementById('editDrawer').classList.contains('open')) openEditor();
+
+            if(type === 'mainImg') { document.getElementById('imgMain').src = val; document.getElementById('valMainImg').value = val; }
+            if(type === 'brandLogo') { document.getElementById('imgBrand').src = val; document.getElementById('valBrandLogo').value = val; }
+            if(type === 'name') document.getElementById('inpName').value = val;
+            if(type === 'desc') document.getElementById('inpDesc').value += val + '\n';
+            if(type === 'video') document.getElementById('inpVideo').value = val;
+        };
+
+        window.openEditor = () => {
             document.getElementById('overlay').classList.remove('hidden');
             setTimeout(() => document.getElementById('editDrawer').classList.add('open'), 10);
-        }
+        };
 
-        function closeDrawer() {
+        window.closeDrawer = () => {
             document.getElementById('editDrawer').classList.remove('open');
             setTimeout(() => document.getElementById('overlay').classList.add('hidden'), 300);
-        }
+        };
 
-        function selectStock(el, val) {
-            document.querySelectorAll('.stock-opt').forEach(e => e.classList.remove('active'));
-            el.classList.add('active');
-        }
+        window.setStock = (val) => {
+            document.getElementById('inpStock').value = val;
+            document.querySelectorAll('.stock-opt').forEach(el => el.classList.remove('active'));
+            document.getElementById(`stock-${val}`).classList.add('active');
+        };
 
-        function saveProduct() {
-            // Logic to save to Firebase would go here
-            closeDrawer();
+        window.showToast = (msg) => {
+            const t = document.getElementById('toast');
+            t.innerHTML = `<i class="fas fa-check"></i> ${msg}`;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2000);
+        };
+
+        function escapeVal(str) { return str.replace(/'/g, "").replace(/"/g, ""); }
+
+        // --- Save & Load ---
+        window.saveProduct = async () => {
+            if(!db) return alert("אין חיבור");
             
-            // Toast Animation
-            const toast = document.createElement('div');
-            toast.className = "fixed top-5 left-1/2 -translate-x-1/2 bg-black text-white px-6 py-3 rounded-full shadow-xl text-sm font-bold z-[200] animate-bounce";
-            toast.innerHTML = '<i class="fas fa-check text-green-400"></i> נשמר בהצלחה';
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 2000);
+            const product = {
+                core: {
+                    name: document.getElementById('inpName').value,
+                    sku: document.getElementById('inpSku').value,
+                    price: Number(document.getElementById('inpPrice').value),
+                    brand: document.getElementById('inpBrandName').value,
+                    brandLogo: document.getElementById('valBrandLogo').value || document.getElementById('imgBrand').src
+                },
+                logistics: {
+                    warehouse: document.getElementById('inpStock').value,
+                    weight: document.getElementById('inpWeight').value
+                },
+                rich: {
+                    description: document.getElementById('inpDesc').value,
+                    image: document.getElementById('valMainImg').value || document.getElementById('imgMain').src,
+                    video_url: document.getElementById('inpVideo').value
+                },
+                chatbot: {
+                    drying_time: document.getElementById('inpDry').value,
+                    application_method: document.getElementById('inpMethod').value
+                },
+                updatedAt: new Date()
+            };
+
+            if(!product.core.name) return alert("חובה למלא שם");
+
+            try {
+                await addDoc(collection(db, "products"), product);
+                showToast("מוצר נשמר בהצלחה!");
+                closeDrawer();
+                loadInventory();
+            } catch(e) { alert("שגיאה"); console.error(e); }
+        };
+
+        async function loadInventory() {
+            if(!db) return;
+            const q = query(collection(db, "products"), orderBy("updatedAt", "desc"));
+            const snap = await getDocs(q);
+            
+            const list = document.getElementById('inventoryList');
+            list.innerHTML = snap.docs.map(d => {
+                const p = d.data();
+                return `
+                <div class="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-100">
+                    <img src="${p.rich?.image}" class="w-10 h-10 rounded-lg object-cover bg-gray-50">
+                    <div class="flex-1 min-w-0">
+                        <div class="font-bold text-sm text-slate-800 truncate">${p.core.name}</div>
+                        <div class="text-xs text-gray-500">מק"ט: ${p.core.sku}</div>
+                    </div>
+                    <div class="font-bold text-green-600 text-sm">₪${p.core.price}</div>
+                </div>`;
+            }).join('');
         }
 
-        // Init
-        document.getElementById('card-products').classList.add('open');
-        renderProducts();
+        window.onload = loadInventory;
 
     </script>
 </body>
