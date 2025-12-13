@@ -1,21 +1,30 @@
 // public/js/sounds.js
 
 export const SabanSounds = {
-    // צליל הודעה עדין (Ping) - לשימוש שוטף
+    // צליל הודעה (Ping)
     playMessage: () => {
-        try {
-            const audio = new Audio("https://cdn.freesound.org/previews/536/536108_11969407-lq.mp3");
-            audio.volume = 0.5;
-            audio.play().catch(e => console.warn("Audio autoplay blocked by browser"));
-        } catch (e) {}
+        // צליל 'בועה' קצר
+        const audio = new Audio("https://cdn.freesound.org/previews/320/320655_5260872-lq.mp3");
+        audio.volume = 0.5;
+        handlePlay(audio);
     },
 
-    // צליל אזעקה חזק (Alert) - לשינויים דחופים/עצירת הזמנה
+    // צליל אזעקה (Alert) - לשינויים דחופים
     playAlert: () => {
-        try {
-            const audio = new Audio("https://cdn.freesound.org/previews/336/336873_4939798-lq.mp3");
-            audio.volume = 1.0;
-            audio.play().catch(e => console.warn("Audio autoplay blocked by browser"));
-        } catch (e) {}
+        // צליל התראה כפול
+        const audio = new Audio("https://cdn.freesound.org/previews/336/336873_4939798-lq.mp3");
+        audio.volume = 1.0;
+        handlePlay(audio);
     }
 };
+
+function handlePlay(audio) {
+    const promise = audio.play();
+    if (promise !== undefined) {
+        promise.then(_ => {
+            console.log("🔊 Sound played successfully");
+        }).catch(error => {
+            console.warn("🔇 Sound blocked! Interaction required.", error);
+        });
+    }
+}
