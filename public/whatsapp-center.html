@@ -144,7 +144,13 @@
             <button onclick="sendMessage()" class="text-[#008069] text-2xl hover:scale-110 transition"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
-
+<div class="tabs">
+    <div onclick="switchTab('orders')" class="tab-btn active" id="tab-orders">📦 הזמנות</div>
+    <div onclick="switchTab('saban')" class="tab-btn relative" id="tab-saban">
+        🧠 צ'אט-סבן 
+        <span id="sabanAlert" class="hidden absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
+    </div>
+</div>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, doc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, setDoc, getDocs, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -366,3 +372,4 @@
     </script>
 </body>
 </html>
+
