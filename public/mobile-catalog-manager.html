@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Saban Catalog Mobile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* iOS Glass Theme */
+        body { 
+            background: #f2f2f7; 
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+            -webkit-tap-highlight-color: transparent;
+            color: #1c1c1e;
+            padding-bottom: 40px;
+        }
+
+        /* Accordion Section */
+        .section-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            margin: 15px; border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            overflow: hidden; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+        
+        .section-header {
+            padding: 20px; display: flex; align-items: center; justify-content: space-between;
+            cursor: pointer; background: white;
+        }
+        
+        .section-content {
+            max-height: 0; overflow: hidden; transition: max-height 0.4s ease-in-out;
+            background: #f9f9f9;
+        }
+        .section-card.open .section-content { max-height: 1000px; /* מספיק גדול */ }
+        .section-card.open .arrow-icon { transform: rotate(180deg); }
+
+        /* Product Item */
+        .list-item {
+            display: flex; gap: 12px; padding: 12px; border-bottom: 1px solid #e5e5ea;
+            align-items: center; background: white;
+        }
+        .list-item:last-child { border-bottom: none; }
+        .item-img { width: 50px; height: 50px; border-radius: 10px; object-fit: cover; background: #f2f2f7; }
+
+        /* Action Buttons */
+        .btn-action {
+            width: 36px; height: 36px; border-radius: 50%; display: flex; 
+            align-items: center; justify-content: center; font-size: 14px;
+        }
+
+        /* Drawer Modal (Edit Form) */
+        .drawer {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: #ffffff; border-radius: 24px 24px 0 0;
+            transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+            z-index: 100; box-shadow: 0 -10px 40px rgba(0,0,0,0.15);
+            height: 90vh; display: flex; flex-direction: column;
+        }
+        .drawer.open { transform: translateY(0); }
+        .drawer-handle {
+            width: 40px; height: 5px; background: #e5e5ea; border-radius: 10px;
+            margin: 10px auto;
+        }
+
+        /* Form Inputs */
+        .input-box {
+            background: #f2f2f7; border-radius: 12px; padding: 12px;
+            margin-bottom: 12px; width: 100%; border: 1px solid transparent;
+            font-size: 16px; outline: none; transition: 0.2s;
+        }
+        .input-box:focus { background: white; border-color: #007aff; }
+        
+        .stock-selector {
+            display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 15px;
+        }
+        .stock-opt {
+            padding: 10px; text-align: center; border-radius: 10px; background: #f2f2f7;
+            font-size: 12px; font-weight: 600; color: #8e8e93; border: 2px solid transparent;
+        }
+        .stock-opt.active {
+            background: #eef2ff; border-color: #007aff; color: #007aff;
+        }
+
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+    </style>
+</head>
+<body>
+
+    <div class="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-200 p-4 flex justify-between items-center shadow-sm">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white text-lg shadow-lg">📱</div>
+            <div>
+                <h1 class="font-bold text-lg leading-none">Catalog Mobile</h1>
+                <span class="text-xs text-gray-500">ניהול שטח</span>
+            </div>
+        </div>
+        <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
+            <i class="fas fa-user"></i>
+        </div>
+    </div>
+
+    <div class="py-4">
+
+        <div class="section-card" id="card-products">
+            <div class="section-header" onclick="toggleSection('products')">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center"><i class="fas fa-box"></i></div>
+                    <span class="font-bold text-lg">ניהול מוצרים</span>
+                </div>
+                <i class="fas fa-chevron-down arrow-icon text-gray-400 transition-transform duration-300"></i>
+            </div>
+            
+            <div class="section-content">
+                <div class="p-3 bg-gray-50 border-b">
+                    <div class="relative">
+                        <i class="fas fa-search absolute right-3 top-3.5 text-gray-400"></i>
+                        <input type="text" placeholder="חיפוש מוצר..." class="w-full bg-white p-3 pr-10 rounded-xl border-none shadow-sm outline-none" oninput="filterProducts(this.value)">
+                    </div>
+                    <button onclick="openEditor()" class="w-full mt-3 bg-blue-600 text-white py-3 rounded-xl font-bold shadow-md active:scale-95 transition">
+                        <i class="fas fa-plus"></i> הוסף מוצר חדש
+                    </button>
+                </div>
+                
+                <div id="productsList" class="divide-y divide-gray-100">
+                    </div>
+            </div>
+        </div>
+
+        <div class="section-card">
+            <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center"><i class="fas fa-th-large"></i></div>
+                    <span class="font-bold text-lg">קטגוריות</span>
+                </div>
+                <i class="fas fa-chevron-down arrow-icon text-gray-400 transition-transform duration-300"></i>
+            </div>
+            <div class="section-content p-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-white p-3 rounded-xl shadow-sm border text-center font-bold">איטום</div>
+                    <div class="bg-white p-3 rounded-xl shadow-sm border text-center font-bold">צבע</div>
+                    <div class="bg-white p-3 rounded-xl shadow-sm border text-center font-bold">כלי עבודה</div>
+                    <button class="border-2 border-dashed border-gray-300 p-3 rounded-xl text-gray-400 font-bold">+ חדש</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-card">
+            <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center"><i class="fas fa-crown"></i></div>
+                    <span class="font-bold text-lg">מותגים</span>
+                </div>
+                <i class="fas fa-chevron-down arrow-icon text-gray-400 transition-transform duration-300"></i>
+            </div>
+            <div class="section-content p-4 overflow-x-auto whitespace-nowrap">
+                <div class="inline-block w-20 h-20 bg-white rounded-full border shadow-sm mr-2 align-middle"></div>
+                <div class="inline-block w-20 h-20 bg-white rounded-full border shadow-sm mr-2 align-middle"></div>
+                <div class="inline-block w-20 h-20 bg-white rounded-full border shadow-sm mr-2 align-middle"></div>
+                <div class="inline-block w-20 h-20 border-2 border-dashed border-gray-300 rounded-full flex items-center justify-center text-gray-400 font-bold mr-2 align-middle">+</div>
+            </div>
+        </div>
+
+        <div class="section-card">
+            <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center"><i class="fas fa-fire"></i></div>
+                    <span class="font-bold text-lg">מבצעים חמים</span>
+                </div>
+                <i class="fas fa-chevron-down arrow-icon text-gray-400 transition-transform duration-300"></i>
+            </div>
+            <div class="section-content p-4">
+                <div class="bg-gradient-to-r from-red-500 to-pink-500 text-white p-4 rounded-xl shadow-lg mb-3">
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-lg">20% הנחה</span>
+                        <div class="bg-white/20 px-2 py-1 rounded text-xs">פעיל</div>
+                    </div>
+                    <div class="text-sm opacity-90">על כל מחלקת האיטום</div>
+                </div>
+                <button class="w-full py-3 border-2 border-dashed border-red-200 text-red-400 rounded-xl font-bold">צור מבצע חדש</button>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="editDrawer" class="drawer">
+        <div class="p-4 border-b flex justify-between items-center bg-gray-50 rounded-t-[24px]">
+            <button onclick="closeDrawer()" class="text-gray-500 font-bold text-sm">ביטול</button>
+            <div class="font-bold text-lg">עריכת מוצר</div>
+            <button onclick="saveProduct()" class="text-blue-600 font-bold text-sm">שמור</button>
+        </div>
+        <div class="drawer-handle absolute top-2 left-1/2 -translate-x-1/2"></div>
+
+        <div class="flex-1 overflow-y-auto p-5 pb-20">
+            
+            <div class="flex justify-center mb-6">
+                <div class="w-24 h-24 bg-gray-100 rounded-2xl flex items-center justify-center text-gray-400 border-2 border-dashed border-gray-300 relative">
+                    <i class="fas fa-camera text-2xl"></i>
+                    <img id="editImg" src="" class="absolute inset-0 w-full h-full object-cover rounded-2xl hidden">
+                </div>
+            </div>
+
+            <label class="text-xs font-bold text-gray-400 uppercase mb-1 block">פרטים כלליים</label>
+            <input id="editName" class="input-box font-bold" placeholder="שם מוצר">
+            <div class="flex gap-3">
+                <input id="editSku" class="input-box" placeholder='מק"ט'>
+                <input id="editPrice" type="number" class="input-box text-green-600 font-bold" placeholder="מחיר">
+            </div>
+
+            <label class="text-xs font-bold text-gray-400 uppercase mb-2 block mt-2">זמינות מלאי</label>
+            <div class="stock-selector">
+                <div onclick="selectStock(this, 'both')" class="stock-opt active">הכל</div>
+                <div onclick="selectStock(this, 'talmid')" class="stock-opt">תלמיד</div>
+                <div onclick="selectStock(this, 'harash')" class="stock-opt">חרש</div>
+            </div>
+
+            <label class="text-xs font-bold text-gray-400 uppercase mb-1 block mt-2">מידע לבוט</label>
+            <input id="editDesc" class="input-box" placeholder="תיאור קצר...">
+            <div class="flex gap-3">
+                <input id="editDry" class="input-box" placeholder="זמן ייבוש">
+                <input id="editWeight" class="input-box" placeholder="משקל">
+            </div>
+
+            <button class="w-full mt-4 py-3 bg-red-50 text-red-600 rounded-xl font-bold flex items-center justify-center gap-2">
+                <i class="fas fa-trash"></i> מחק מוצר
+            </button>
+        </div>
+    </div>
+
+    <div id="overlay" onclick="closeDrawer()" class="fixed inset-0 bg-black/50 z-90 hidden backdrop-blur-sm transition-opacity"></div>
+
+    <script>
+        // Mock Data
+        let products = [
+            { id: 1, name: "סיקה טופסיל 107", sku: "1001", price: 120, stock: "both", img: "https://via.placeholder.com/50" },
+            { id: 2, name: "מלט שחור נשר", sku: "2005", price: 28, stock: "harash", img: "https://via.placeholder.com/50" },
+            { id: 3, name: "דבק קרמיקה 114", sku: "3010", price: 45, stock: "talmid", img: "https://via.placeholder.com/50" }
+        ];
+
+        // --- Logic ---
+        
+        function toggleSection(id) {
+            // Close others
+            document.querySelectorAll('.section-card').forEach(el => {
+                if(el.id !== `card-${id}`) el.classList.remove('open');
+            });
+            // Toggle current
+            const card = document.getElementById(`card-${id}`);
+            card.classList.toggle('open');
+            
+            if(id === 'products' && card.classList.contains('open')) renderProducts();
+        }
+
+        function renderProducts(filter = "") {
+            const list = document.getElementById('productsList');
+            const filtered = products.filter(p => p.name.includes(filter));
+            
+            list.innerHTML = filtered.map(p => `
+                <div class="list-item" onclick="openEditor(${p.id})">
+                    <img src="${p.img}" class="item-img">
+                    <div class="flex-1">
+                        <div class="font-bold text-gray-800">${p.name}</div>
+                        <div class="text-xs text-gray-500">מק"ט: ${p.sku}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-bold text-green-600">₪${p.price}</div>
+                        <div class="text-[10px] px-2 py-0.5 rounded bg-gray-100 text-gray-500 inline-block">${getStockLabel(p.stock)}</div>
+                    </div>
+                    <i class="fas fa-chevron-left text-gray-300 text-xs"></i>
+                </div>
+            `).join('');
+        }
+
+        function getStockLabel(s) {
+            if(s==='both') return 'תלמיד+חרש';
+            if(s==='talmid') return 'תלמיד';
+            return 'חרש';
+        }
+
+        // --- Drawer Logic ---
+        function openEditor(id) {
+            const p = id ? products.find(x => x.id === id) : { name: '', sku: '', price: '', stock: 'both' };
+            
+            document.getElementById('editName').value = p.name;
+            document.getElementById('editSku').value = p.sku;
+            document.getElementById('editPrice').value = p.price;
+            
+            // Stock Selector UI
+            document.querySelectorAll('.stock-opt').forEach(el => el.classList.remove('active'));
+            // (Simplification for demo logic - needs full implementation)
+            
+            document.getElementById('overlay').classList.remove('hidden');
+            setTimeout(() => document.getElementById('editDrawer').classList.add('open'), 10);
+        }
+
+        function closeDrawer() {
+            document.getElementById('editDrawer').classList.remove('open');
+            setTimeout(() => document.getElementById('overlay').classList.add('hidden'), 300);
+        }
+
+        function selectStock(el, val) {
+            document.querySelectorAll('.stock-opt').forEach(e => e.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        function saveProduct() {
+            // Logic to save to Firebase would go here
+            closeDrawer();
+            
+            // Toast Animation
+            const toast = document.createElement('div');
+            toast.className = "fixed top-5 left-1/2 -translate-x-1/2 bg-black text-white px-6 py-3 rounded-full shadow-xl text-sm font-bold z-[200] animate-bounce";
+            toast.innerHTML = '<i class="fas fa-check text-green-400"></i> נשמר בהצלחה';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+
+        // Init
+        document.getElementById('card-products').classList.add('open');
+        renderProducts();
+
+    </script>
+</body>
+</html>
