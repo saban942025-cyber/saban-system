@@ -5,7 +5,7 @@
 import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // המפתח שלך
-const GEMINI_API_KEY = "AIzaSyD9plWwyTESFm24c_OTunf4mFAsAmfrgj0";
+const GEMINI_API_KEY = "AIzaSyD2PehLHX2olQQavvHo2vjclOq7iSdiagI";
 
 export class SabanChatbot {
     constructor(db, userContext) {
@@ -89,3 +89,4 @@ export class SabanChatbot {
         return snap.docs.map(d => `${d.core.name}`).join(", ");
     }
 }
+
