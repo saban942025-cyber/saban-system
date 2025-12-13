@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SabanOS | Client App v40.0 (Final)</title>
+    <title>SabanOS | Client App v41.0 (History Edition)</title>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="data:;base64,iVBORw0KGgo=">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -21,7 +21,7 @@
         .product-card:active { transform: scale(0.98); }
         .product-img { width: 100%; height: 140px; object-fit: contain; padding: 15px; background: #fff; }
         
-        /* כפתור מאזניים (הגדלתי מעט) */
+        /* כפתור מאזניים */
         .scale-btn { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.95); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.15); color: #64748b; z-index: 10; border: 1px solid #e2e8f0; font-size: 16px; }
         .scale-btn.active { background: #3b82f6; color: white; border-color: #2563eb; }
 
@@ -31,21 +31,18 @@
         .msg-in { align-self: flex-start; background: #fff; border-top-right-radius: 0; }
         .msg-out { align-self: flex-end; background: #d9fdd3; border-top-left-radius: 0; }
         
-        /* Navigation & FAB */
+        /* Navigation */
         .nav-bar { position: fixed; bottom: 0; width: 100%; height: 70px; background: white; border-top: 1px solid #e5e5eb; display: grid; grid-template-columns: 1fr 1fr 1fr; z-index: 50; padding-bottom: 10px; }
         .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #9ca3af; font-size: 10px; font-weight: 600; }
         .nav-item.active { color: #008069; }
         
-        /* Comparison Bar */
-        .compare-bar { position: absolute; bottom: 80px; left: 0; width: 100%; padding: 0 16px; z-index: 40; display: none; }
-        .compare-box { background: #1e293b; color: white; padding: 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; shadow: 0 10px 25px rgba(0,0,0,0.25); }
-
         /* Actions Menu */
         .header-actions { position: absolute; top: 60px; left: 10px; background: white; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); width: 240px; z-index: 100; transform-origin: top left; transition: 0.2s; border: 1px solid #e5e5ea; }
         .action-item { padding: 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #f0f0f0; font-size: 15px; font-weight: 600; color: #333; }
         .action-item:last-child { border-bottom: none; }
         .action-item:active { background: #f5f5f7; }
 
+        /* Modals */
         .modal-full { position: fixed; inset: 0; background: white; z-index: 100; transform: translateY(100%); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; }
         .modal-full.open { transform: translateY(0); }
         
@@ -54,6 +51,10 @@
         .prod-tab.active { border-color: #008069; color: #008069; }
         .prod-content { display: none; padding: 15px; background: #f8fafc; border-radius: 8px; font-size: 14px; color: #334155; line-height: 1.6; }
         .prod-content.active { display: block; }
+
+        /* Comparison Bar */
+        .compare-bar { position: absolute; bottom: 80px; left: 0; width: 100%; padding: 0 16px; z-index: 40; display: none; }
+        .compare-box { background: #1e293b; color: white; padding: 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; shadow: 0 10px 25px rgba(0,0,0,0.25); }
     </style>
 </head>
 <body onclick="unlockAudio()">
@@ -76,6 +77,9 @@
         </header>
 
         <div id="actionsMenu" class="header-actions hidden scale-0">
+            <div onclick="openHistoryModal()" class="action-item text-purple-600">
+                <i class="fas fa-history w-6 text-center text-lg"></i> <span>ההזמנות שלי (LOG)</span>
+            </div>
             <div onclick="triggerQuickAction('שינוי הזמנה 🛑')" class="action-item text-red-600">
                 <i class="fas fa-hand-paper w-6 text-center text-lg"></i> <span>עצור/שנה הזמנה</span>
             </div>
@@ -85,12 +89,7 @@
             <div onclick="startContainerFlow()" class="action-item text-orange-600">
                 <i class="fas fa-truck-loading w-6 text-center text-lg"></i> <span>הזמן מכולה</span>
             </div>
-            <div onclick="triggerQuickAction('מתי מגיע? 🚚')" class="action-item text-gray-600">
-                <i class="fas fa-clock w-6 text-center text-lg"></i> <span>מתי מגיע?</span>
-            </div>
-            <div onclick="openClientHistory()" class="action-item text-purple-600">
-            <i class="fas fa-history w-6 text-center text-lg"></i> <span>ההזמנות שלי</span>
-          </div>
+        </div>
 
         <div id="screen-shop" class="screen active">
             <div class="p-4 flex-1 overflow-y-auto pb-24">
@@ -151,10 +150,8 @@
             <span class="font-bold text-sm" id="modalTitle">פרטי מוצר</span>
             <div class="w-9"></div>
         </div>
-        
         <div class="flex-1 overflow-y-auto p-5 pb-24 bg-white">
             <img id="modalImg" src="" class="w-full h-64 object-contain mb-6">
-            
             <div class="flex justify-between items-start mb-6">
                 <div>
                     <h1 class="text-2xl font-bold text-gray-800 leading-tight" id="modalName"></h1>
@@ -162,57 +159,46 @@
                 </div>
                 <div class="text-3xl font-bold text-[#008069]">₪<span id="modalPrice"></span></div>
             </div>
-
             <div class="flex border-b border-gray-200 mb-4">
                 <div onclick="switchProdTab('desc')" id="tab-desc" class="prod-tab active">תיאור</div>
                 <div onclick="switchProdTab('specs')" id="tab-specs" class="prod-tab">מפרט</div>
-                <div onclick="switchProdTab('apply')" id="tab-apply" class="prod-tab">יישום</div>
             </div>
-
             <div id="content-desc" class="prod-content active"></div>
             <div id="content-specs" class="prod-content">
                 <div class="grid grid-cols-2 gap-3">
-                    <div class="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                        <div class="text-xs text-blue-600 font-bold uppercase">משקל יח'</div>
-                        <div class="font-bold text-blue-900" id="modalWeight">-</div>
+                    <div class="bg-blue-50 p-3 rounded-lg border border-blue-100 text-center">
+                        <div class="text-[10px] text-blue-600 font-bold uppercase">משקל יח'</div>
+                        <div class="font-bold text-blue-900 text-lg" id="modalWeight">-</div>
                     </div>
-                    <div class="bg-orange-50 p-3 rounded-lg border border-orange-100">
-                        <div class="text-xs text-orange-600 font-bold uppercase">מנוף</div>
-                        <div class="font-bold text-orange-900" id="modalCrane">-</div>
+                    <div class="bg-orange-50 p-3 rounded-lg border border-orange-100 text-center">
+                        <div class="text-[10px] text-orange-600 font-bold uppercase">מנוף</div>
+                        <div class="font-bold text-orange-900 text-lg" id="modalCrane">-</div>
                     </div>
                 </div>
             </div>
-            <div id="content-apply" class="prod-content">
-                מידע על יישום יעודכן בהמשך (PDF/וידאו).
-            </div>
-
-            <button onclick="consultBot()" class="w-full bg-white border border-blue-200 text-blue-600 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 mt-6 hover:bg-blue-50 shadow-sm">
-                <i class="fas fa-robot text-lg"></i> התייעץ עם הבוט על מוצר זה
-            </button>
+            <button onclick="consultBot()" class="w-full bg-white border border-blue-200 text-blue-600 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 mt-6 hover:bg-blue-50 shadow-sm"><i class="fas fa-robot text-lg"></i> התייעץ עם הבוט</button>
         </div>
-        
-        <div class="p-4 bg-white border-t sticky bottom-0 shadow-[0_-4px_15px_rgba(0,0,0,0.1)] z-30">
-            <button onclick="addToCartFromModal()" class="w-full bg-[#008069] text-white py-3.5 rounded-xl font-bold shadow-md active:scale-95 transition text-lg">הוסף לעגלה 🛒</button>
+        <div class="p-4 bg-white border-t sticky bottom-0 shadow-lg z-30"><button onclick="addToCartFromModal()" class="w-full bg-[#008069] text-white py-3.5 rounded-xl font-bold shadow-md active:scale-95 transition text-lg">הוסף לעגלה 🛒</button></div>
+    </div>
+
+    <div id="historyModal" class="modal-full">
+        <div class="h-14 flex items-center justify-between px-4 border-b bg-white shadow-sm sticky top-0 z-30">
+            <button onclick="document.getElementById('historyModal').classList.remove('open')" class="w-9 h-9 bg-gray-100 rounded-full text-gray-600"><i class="fas fa-arrow-right"></i></button>
+            <span class="font-bold text-sm">היסטוריית הזמנות</span>
+            <div class="w-9"></div>
+        </div>
+        <div class="p-4 bg-gray-50 flex-1 overflow-y-auto" id="historyContent">
+            <div class="text-center text-gray-400 mt-10"><i class="fas fa-circle-notch fa-spin"></i> טוען נתונים...</div>
         </div>
     </div>
 
     <div id="compareModal" class="modal-full">
-        <div class="h-14 flex items-center justify-between px-4 border-b bg-white">
-            <button onclick="document.getElementById('compareModal').classList.remove('open')" class="w-9 h-9 bg-gray-100 rounded-full"><i class="fas fa-times"></i></button>
-            <span class="font-bold">השוואת מוצרים</span><div class="w-9"></div>
-        </div>
+        <div class="h-14 flex items-center justify-between px-4 border-b bg-white"><button onclick="document.getElementById('compareModal').classList.remove('open')" class="w-9 h-9 bg-gray-100 rounded-full"><i class="fas fa-times"></i></button><span class="font-bold">השוואה</span><div class="w-9"></div></div>
         <div class="p-4 bg-gray-50 flex-1 overflow-y-auto" id="compareContent"></div>
     </div>
-
     <div id="pasteModal" class="modal-full">
-        <div class="h-14 flex items-center justify-between px-4 border-b bg-white">
-            <button onclick="document.getElementById('pasteModal').classList.remove('open')" class="w-9 h-9 bg-gray-100 rounded-full"><i class="fas fa-times"></i></button>
-            <span class="font-bold">הזמנה מהירה</span><div class="w-9"></div>
-        </div>
-        <div class="p-5 flex-1 flex flex-col">
-            <textarea id="pasteInput" class="flex-1 w-full border p-4 rounded-xl text-sm bg-gray-50 outline-none resize-none focus:bg-white focus:border-green-500 shadow-inner leading-relaxed" placeholder="הדבק כאן רשימה..."></textarea>
-            <button onclick="submitPasteOrder()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold mt-4 shadow-lg active:scale-95 text-lg">שלח הזמנה 🚀</button>
-        </div>
+        <div class="h-14 flex items-center justify-between px-4 border-b bg-white"><button onclick="document.getElementById('pasteModal').classList.remove('open')" class="w-9 h-9 bg-gray-100 rounded-full"><i class="fas fa-times"></i></button><span class="font-bold">הזמנה מהירה</span><div class="w-9"></div></div>
+        <div class="p-5 flex-1 flex flex-col"><textarea id="pasteInput" class="flex-1 w-full border p-4 rounded-xl text-sm bg-gray-50 outline-none resize-none focus:bg-white focus:border-green-500 shadow-inner" placeholder="הדבק רשימה..."></textarea><button onclick="submitPasteOrder()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold mt-4 shadow-lg active:scale-95 text-lg">שלח הזמנה 🚀</button></div>
     </div>
 
     <nav class="nav-bar">
@@ -223,15 +209,14 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, doc, setDoc, onSnapshot, query, orderBy, serverTimestamp, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, doc, setDoc, onSnapshot, query, orderBy, serverTimestamp, getDocs, getDoc, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { SabanPush } from './js/notifications.js';
         import { SmartContacts } from './js/smart-contacts.js';
         import { SabanChatbot } from './js/chatbot-engine.js';
         import { SabanSounds } from './js/sounds.js';
 
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
-        
         let app, db, auth;
         try { app = initializeApp(firebaseConfig); db = getFirestore(app); auth = getAuth(app); } catch(e) {}
 
@@ -242,14 +227,8 @@
         let currentProduct = null;
         let bot = null;
 
-        // --- AUDIO UNLOCK ---
         window.audioUnlocked = false;
-        window.unlockAudio = () => {
-            if(!window.audioUnlocked) {
-                SabanSounds.playMessage(); 
-                window.audioUnlocked = true;
-            }
-        };
+        window.unlockAudio = () => { if(!window.audioUnlocked) { SabanSounds.playMessage(); window.audioUnlocked = true; } };
 
         window.onload = async () => {
             loadRealProducts();
@@ -268,15 +247,61 @@
                 document.getElementById('userName').innerText = currentUser.name;
                 document.getElementById('userAvatar').src = currentUser.avatar;
             }
-        
+        };
+
+        // --- HISTORY FEATURE ---
+        window.openHistoryModal = async () => {
+            toggleActions();
+            document.getElementById('historyModal').classList.add('open');
+            const container = document.getElementById('historyContent');
+            
+            try {
+                // 1. הזמנות פעילות
+                const qActive = query(collection(db, "active_orders"), where("clientUid", "==", currentUser.id));
+                const snapActive = await getDocs(qActive);
+                
+                // 2. ארכיון
+                const qArchive = query(collection(db, "orders_archive"), where("clientUid", "==", currentUser.id), orderBy("archivedAt", "desc"));
+                const snapArchive = await getDocs(qArchive);
+
+                if(snapActive.empty && snapArchive.empty) {
+                    container.innerHTML = '<div class="text-center py-10 text-gray-400">אין היסטוריה זמינה</div>';
+                    return;
+                }
+
+                let html = '<h3 class="font-bold text-gray-500 text-xs uppercase mb-2">הזמנות פעילות</h3>';
+                if(snapActive.empty) html += '<div class="text-sm text-gray-400 mb-4">אין הזמנות בטיפול</div>';
+                
+                snapActive.forEach(d => {
+                    const o = d.data();
+                    html += `<div class="bg-white p-3 rounded-xl border-l-4 border-green-500 shadow-sm mb-2">
+                        <div class="flex justify-between font-bold text-gray-800"><span>הזמנה #${d.id}</span><span>בטיפול</span></div>
+                        <div class="text-xs text-gray-500">${o.status==='waiting'?'ממתין למסמך':'ליקוט/שינוע'}</div>
+                    </div>`;
+                });
+
+                html += '<h3 class="font-bold text-gray-500 text-xs uppercase mb-2 mt-4">היסטוריה (סופק)</h3>';
+                snapArchive.forEach(d => {
+                    const o = d.data();
+                    html += `<div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm mb-2 opacity-80">
+                        <div class="flex justify-between font-bold text-gray-700"><span>#${d.id}</span><span class="text-xs bg-gray-100 px-2 rounded">${new Date(o.archivedAt?.seconds*1000).toLocaleDateString()}</span></div>
+                        <div class="text-xs text-gray-500">${o.clientName}</div>
+                    </div>`;
+                });
+
+                container.innerHTML = html;
+
+            } catch(e) { container.innerHTML = `<div class="text-red-500">שגיאה בטעינה: ${e.message}</div>`; }
+        };
+
+        // --- PRODUCTS & SHOP ---
         async function loadRealProducts() {
             try {
                 const snap = await getDocs(collection(db, "products"));
                 allProducts = snap.docs.map(d => ({id: d.id, ...d.data()}));
                 renderProducts(allProducts);
             } catch(e) {
-                console.error(e);
-                allProducts = [{id:'demo', core:{name:'מוצר דמו', price:100}, rich:{image:'https://via.placeholder.com/150'}}];
+                allProducts = [{id:'demo', core:{name:'דמו - מלט', price:25}, rich:{image:'https://via.placeholder.com/150'}}];
                 renderProducts(allProducts);
             }
         }
@@ -304,7 +329,7 @@
                 </div>`;
             }).join('');
         }
-           
+
         // --- COMPARE ---
         window.toggleCompare = (pStr) => {
             const p = JSON.parse(decodeURIComponent(pStr));
@@ -336,7 +361,7 @@
             document.getElementById('compareModal').classList.add('open');
         };
 
-        // --- BOT & CHAT ---
+        // --- BOT ---
         async function handleBotInteraction(txt) {
             if(!bot) return;
             const response = await bot.ask(txt);
@@ -372,7 +397,7 @@
             });
         }
 
-        // --- UI UTILS ---
+        // --- UTILS ---
         window.toggleActions = () => {
             const menu = document.getElementById('actionsMenu');
             if(menu.classList.contains('hidden')) { menu.classList.remove('hidden'); setTimeout(()=>menu.classList.remove('scale-0'),10); } 
@@ -399,31 +424,11 @@
             document.getElementById(`content-${tab}`).classList.add('active');
         };
         window.addToCartFromModal = () => { quickAdd(encodeURIComponent(JSON.stringify(currentProduct))); closeProductModal(); };
-        
-        // ** התייעצות חכמה עם הקשר **
-        window.consultBot = () => { 
-            closeProductModal(); 
-            switchScreen('chat'); 
-            const msg = `אני רוצה להתייעץ לגבי: ${currentProduct.core?.name} (מק"ט: ${currentProduct.id})`;
-            sendChat(msg); // שולח אוטומטית וגורם לבוט להגיב
-        };
-        
-         window.openClientHistory = async () => {
-        toggleActions(); // סגור תפריט
-        const modal = document.getElementById('pasteModal'); // נשתמש במודאל קיים או ניצור חדש, כאן נשתמש בקיים לפשטות
-        // אבל עדיף לייצר modal ייעודי להיסטוריה. בוא ניצור פונקציה מהירה ששולחת את ההיסטוריה לצ'אט.
-        
-        // גרסה פשוטה: הלקוח מבקש היסטוריה -> הבוט מציג לו בצ'אט
-        sendChat("הצג לי את היסטוריית ההזמנות שלי 📜");
-        
-        // גרסה מתקדמת (הבוט יטפל בזה בצד השרת/סקריפט ויחזיר רשימה)
-         };
+        window.consultBot = () => { closeProductModal(); switchScreen('chat'); sendChat(`מתייעץ על ${currentProduct.core?.name}`); };
+
         window.openPasteOrder = () => { toggleActions(); document.getElementById('pasteModal').classList.add('open'); };
-        window.submitPasteOrder = () => { 
-            const t = document.getElementById('pasteInput').value; 
-            if(t){ sendChat(`הזמנת רשימה:\n${t}`); document.getElementById('pasteModal').classList.remove('open'); }
-        };
- 
+        window.submitPasteOrder = () => { const t = document.getElementById('pasteInput').value; if(t){ sendChat(`הזמנת רשימה:\n${t}`); document.getElementById('pasteModal').classList.remove('open'); } };
+
         window.quickAdd = (pStr) => { const p=JSON.parse(decodeURIComponent(pStr)); const ex=cart.find(i=>i.id===p.id); if(ex)ex.qty++; else cart.push({id:p.id,name:p.core?.name||p.title,price:p.core?.price||p.price,qty:1}); updateCartUI(); };
         function updateCartUI() { document.getElementById('cartBadge').innerText=cart.reduce((a,c)=>a+c.qty,0); document.getElementById('cartBadge').classList.toggle('hidden',!cart.length); document.getElementById('cartItemsList').innerHTML=cart.map((i,x)=>`<div class="bg-white p-3 border rounded flex justify-between"><span>${i.name}</span><div class="flex gap-2"><button onclick="updateQty(${x},-1)">-</button>${i.qty}<button onclick="updateQty(${x},1)">+</button></div></div>`).join(''); }
         window.updateQty = (i,d) => { cart[i].qty+=d; if(cart[i].qty<=0)cart.splice(i,1); updateCartUI(); };
@@ -437,6 +442,3 @@
     </script>
 </body>
 </html>
-
-
-
