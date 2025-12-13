@@ -1,10 +1,9 @@
-/* Saban Chatbot Engine v6.0 (Stable Pro)
-   מודל: gemini-pro (המודל היציב ביותר למפתחות חינמיים)
+/* Saban Chatbot Engine v7.0 (Auto-Discovery)
+   פיצ'ר: זיהוי אוטומטי של המודל הזמין במפתח
 */
 
 import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// המפתח שלך
 const GEMINI_API_KEY = "AIzaSyD9plWwyTESFm24c_OTunf4mFAsAmfrgj0";
 
 export class SabanChatbot {
@@ -13,6 +12,7 @@ export class SabanChatbot {
         this.user = userContext || { name: "אורח" };
         this.apiKey = GEMINI_API_KEY;
         this.emergencyKeywords = ["דחוף", "עצור", "תעצור", "טעות", "סכנה", "פצוע"];
+        this.cachedModelName = null; // נשמור את השם שנמצא כדי לא לחפש כל פעם
     }
 
     async ask(question) {
@@ -20,40 +20,72 @@ export class SabanChatbot {
         
         // 1. חירום
         if (this.emergencyKeywords.some(k => question.includes(k))) {
-            return { text: "🛑 עצרתי הכל! דיווחתי להראל ולרמי.\nנציג ייצור קשר.", action: "urgent_alert" };
+            return { text: "🛑 עצרתי הכל! דיווחתי להראל ולרמי.", action: "urgent_alert" };
         }
 
         // 2. AI
         try {
-            // דילוג על שגיאות פיירבייס
-            let inventory = "המלאי בבדיקה, תענה כללית.";
-            try {
-                if (this.db) inventory = await this.getInventoryContext();
-            } catch (e) { console.warn("Firebase skipped"); }
+            // מלאי (דילוג שגיאות)
+            let inventory = "מלאי בבדיקה.";
+            try { if(this.db) inventory = await this.getInventoryContext(); } 
+            catch (e) { console.warn("Firebase skipped"); }
 
             const aiResponse = await this.generateAIResponse(question, inventory);
             return { text: aiResponse, action: "ai_reply" };
 
         } catch (error) {
             console.error("Bot Error:", error);
-            // הודעת שגיאה ברורה למשתמש
-            return { text: "המוח מתעדכן כרגע... (תקלת תקשורת גוגל). 🔌" };
+            return { text: "תקלה במוח (בדוק F12 לפרטים). 🔌" };
+        }
+    }
+
+    // --- איתור מודל אוטומטי ---
+    async findActiveModel() {
+        if (this.cachedModelName) return this.cachedModelName;
+
+        try {
+            // שואלים את גוגל: איזה מודלים יש לי?
+            const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${this.apiKey}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            
+            if (!res.ok) throw new Error(data.error?.message || "ListModels Failed");
+
+            // מחפשים מודל שמכיל 'gemini' ותומך ב-generateContent
+            const model = data.models.find(m => 
+                m.name.includes("gemini") && 
+                m.supportedGenerationMethods.includes("generateContent")
+            );
+
+            if (!model) throw new Error("לא נמצא מודל Gemini פעיל במפתח זה");
+            
+            console.log("✅ מודל נבחר אוטומטית:", model.name);
+            this.cachedModelName = model.name; // שומרים לפעם הבאה (למשל: models/gemini-1.5-flash)
+            return model.name;
+
+        } catch (e) {
+            console.error("Auto-Discovery Failed:", e);
+            // ברירת מחדל אם הזיהוי נכשל
+            return "models/gemini-pro"; 
         }
     }
 
     async generateAIResponse(userQ, inventoryList) {
-        // --- התיקון: חזרה למודל gemini-pro שעובד תמיד ---
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${this.apiKey}`;
+        // שלב 1: מצא את המודל הנכון
+        const modelName = await this.findActiveModel(); // מחזיר למשל 'models/gemini-1.5-flash'
+        
+        // שלב 2: שלח את הבקשה
+        // שים לב: modelName כבר מכיל את ה-prefix 'models/' אז לא מוסיפים אותו ב-URL
+        // אבל ה-API דורש לפעמים מבנה ספציפי. הנה התיקון:
+        // אם modelName הוא "models/gemini-pro", ה-URL צריך להיות .../models/gemini-pro:generateContent
+        
+        const url = `https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${this.apiKey}`;
 
         const prompt = `
-        שמך צ'אט-סבן, מומחה חומרי בניין.
+        שמך צ'אט-סבן. מומחה חומרי בניין.
         שאלה: "${userQ}"
-        מלאי זמין: ${inventoryList}
-        
-        הנחיות:
-        1. ענה בעברית, קצר (עד 2 משפטים).
-        2. אם המוצר במלאי - תמליץ עליו.
-        3. תהיה נחמד.
+        מלאי: ${inventoryList}
+        הנחיות: ענה בעברית, קצר (2 משפטים), תמליץ אם יש במלאי. תהיה נחמד.
         `;
 
         const response = await fetch(url, {
@@ -66,8 +98,7 @@ export class SabanChatbot {
 
         if (!response.ok) {
             const errData = await response.json();
-            // זורק שגיאה מדויקת לקונסול כדי שנראה מה קרה
-            throw new Error(`Google Error ${response.status}: ${JSON.stringify(errData)}`);
+            throw new Error(`Google API Error (${modelName}): ${JSON.stringify(errData)}`);
         }
 
         const data = await response.json();
