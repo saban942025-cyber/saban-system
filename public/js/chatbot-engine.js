@@ -50,6 +50,12 @@ export class SabanChatbot {
                 answer: "אהלן {name}! כאן הבוט של סבן. 👋\nאפשר להקליד כאן הזמנה, לבקש שינוי, או לשאול מתי מגיע.",
                 buttons: [{ label: "הדבק הזמנה", payload: "paste_order" }]
             }
+            
+            {
+    keywords: ["היסטוריה", "הזמנות שלי", "מה הזמנתי", "LOG"],
+    answer: "בטח! 📜\nאתה יכול לראות את כל ההזמנות הקודמות שלך באזור האישי, או לבקש ממני תאריך ספציפי.\nהנה ההזמנה האחרונה שסופקה: [שליפת נתונים...]",
+    action: "fetch_history"
+},
         ];
     }
 
@@ -88,3 +94,4 @@ export class SabanChatbot {
         };
     }
 }
+
