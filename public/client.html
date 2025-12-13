@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SabanOS | Client v47.0 (Restored)</title>
+    <title>SabanOS | Client App v47.0</title>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="data:;base64,iVBORw0KGgo=">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -16,265 +16,229 @@
         .screen.active { display: flex; animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Big Gate Buttons */
-        .gate-btn { background: white; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; transition: transform 0.1s; border: 1px solid #eef2f6; height: 140px; }
-        .gate-btn:active { transform: scale(0.96); background: #f8fafc; }
-        .gate-emoji { font-size: 40px; }
-        .gate-title { font-weight: 800; font-size: 16px; color: #1e293b; }
-        .gate-desc { font-size: 11px; color: #64748b; text-align: center; }
+        /* תפריט פעולות (הכי חשוב) */
+        .header-actions { position: absolute; top: 60px; left: 10px; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); width: 220px; z-index: 100; transform-origin: top left; transition: 0.2s; border: 1px solid #e5e5ea; display: none; }
+        .header-actions.open { display: block; animation: popIn 0.2s; }
+        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        .action-item { padding: 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #f0f0f0; font-size: 15px; font-weight: 600; color: #333; cursor: pointer; }
+        .action-item:last-child { border-bottom: none; }
+        .action-item:active { background: #f5f5f7; }
 
-        /* Rich Product Card */
-        .product-card { background: white; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid #e5e7eb; position: relative; overflow: hidden; }
-        .product-img { width: 100%; height: 150px; object-fit: contain; padding: 10px; background: #fff; }
-        .scale-btn { position: absolute; top: 10px; right: 10px; background: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-size: 14px; color: #64748b; border: 1px solid #e2e8f0; }
+        /* כרטיסי מוצר */
+        .product-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid #e5e7eb; position: relative; }
+        .product-img { width: 100%; height: 140px; object-fit: contain; padding: 10px; background: #fff; }
+        .scale-btn { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.9); width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; color: #64748b; }
         .scale-btn.active { background: #3b82f6; color: white; border-color: #2563eb; }
 
-        /* Chat-Saban Portal */
-        #screen-saban { background: #e0e7ff; background-image: radial-gradient(#c7d2fe 1px, transparent 1px); background-size: 20px 20px; }
-        .saban-header { background: #4338ca; color: white; padding: 15px; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 10px rgba(67, 56, 202, 0.3); }
-        .msg-saban { background: #eef2ff; border-left: 4px solid #4338ca; } /* הודעות של צ'אט סבן */
-
-        /* Chat Content */
-        .chat-content { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { max-width: 85%; padding: 12px; border-radius: 12px; font-size: 15px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
-        .msg-in { align-self: flex-start; background: #fff; border-top-right-radius: 0; }
-        .msg-out { align-self: flex-end; background: #d9fdd3; border-top-left-radius: 0; }
-
-        /* Modals */
+        /* מודאל */
         .modal-full { position: fixed; inset: 0; background: white; z-index: 100; transform: translateY(100%); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; }
         .modal-full.open { transform: translateY(0); }
         
-        /* Tabs */
-        .prod-tab { padding: 14px; flex: 1; text-align: center; font-weight: bold; color: #64748b; border-bottom: 3px solid transparent; cursor: pointer; }
-        .prod-tab.active { color: #008069; border-color: #008069; background: #f0fdfa; }
-        .prod-content { display: none; padding: 20px; overflow-y: auto; flex: 1; }
-        .prod-content.active { display: block; }
-
-        /* Video Container */
-        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; background: black; margin-bottom: 10px; }
-        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-
-        /* Navbar */
+        /* Nav */
         .nav-bar { position: fixed; bottom: 0; width: 100%; height: 70px; background: white; border-top: 1px solid #e5e5eb; display: grid; grid-template-columns: 1fr 1fr 1fr; z-index: 50; padding-bottom: 10px; }
         .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #9ca3af; font-size: 10px; font-weight: 600; }
-        .nav-item.active { color: #008069; } .nav-item i { font-size: 24px; margin-bottom: 4px; }
+        .nav-item.active { color: #008069; }
+        
+        /* Chat */
+        .chat-content { flex: 1; overflow-y: auto; background-color: #efeae2; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .msg { max-width: 85%; padding: 12px; border-radius: 12px; font-size: 15px; width: fit-content; }
+        .msg-in { align-self: flex-start; background: white; border-top-right-radius: 0; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+        .msg-out { align-self: flex-end; background: #d9fdd3; border-top-left-radius: 0; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body onclick="unlockAudio()">
 
     <div class="app-container">
-        <div id="screen-home" class="screen active bg-gray-50">
-            <header class="p-6 bg-white shadow-sm flex justify-between items-center">
+        <header class="bg-[#008069] text-white p-4 h-16 flex items-center justify-between shadow-md z-20 shrink-0">
+            <div class="flex items-center gap-3" onclick="showMyProfile()">
+                <img id="userAvatar" src="https://via.placeholder.com/40" class="w-10 h-10 rounded-full border-2 border-white/30 bg-white/10 object-cover">
                 <div>
-                    <h1 class="text-2xl font-black text-gray-800">שלום, <span id="userName">אורח</span> 👋</h1>
-                    <p class="text-sm text-gray-500">ברוך הבא לפורטל סבן</p>
+                    <h1 class="font-bold text-lg leading-tight">ח.סבן</h1>
+                    <span class="text-xs opacity-90 block">שלום, <span id="userName" class="font-bold">אורח</span></span>
                 </div>
-                <img id="userAvatar" src="https://via.placeholder.com/50" class="w-12 h-12 rounded-full border-2 border-green-500 p-0.5">
-            </header>
-            
-            <div class="p-6 grid grid-cols-2 gap-4">
-                <div onclick="switchScreen('shop')" class="gate-btn border-green-100">
-                    <span class="gate-emoji">🏪</span>
-                    <span class="gate-title">חנות והזמנות</span>
-                    <span class="gate-desc">קטלוג מוצרים, מכולות, וחומרים</span>
-                </div>
-                <div onclick="switchScreen('saban')" class="gate-btn border-indigo-100 bg-indigo-50/50">
-                    <span class="gate-emoji">🤖</span>
-                    <span class="gate-title">צ'אט-סבן</span>
-                    <span class="gate-desc">העוזר האישי שלך, התייעצות ומנהלה</span>
-                </div>
-                <div onclick="openHistoryModal()" class="gate-btn border-purple-100">
-                    <span class="gate-emoji">📜</span>
-                    <span class="gate-title">הזמנות שלי</span>
-                    <span class="gate-desc">היסטוריה, סטטוס וארכיון</span>
-                </div>
-                <div onclick="document.getElementById('contactModal').classList.add('open')" class="gate-btn border-orange-100">
-                    <span class="gate-emoji">📞</span>
-                    <span class="gate-title">צור קשר</span>
-                    <span class="gate-desc">עדכון אנשי קשר ומיקום לאספקה</span>
-                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="toggleActions()" class="bg-white/20 w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-sm active:bg-white/30 transition border border-white/10 shadow-sm">
+                    <i class="fas fa-plus text-white text-lg"></i>
+                </button>
+            </div>
+        </header>
+
+        <div id="actionsMenu" class="header-actions">
+            <div onclick="openPasteOrder()" class="action-item text-blue-600">
+                <i class="fas fa-paste w-6 text-center text-lg"></i> <span>📝 הזמנה מהירה</span>
+            </div>
+            <div onclick="triggerQuickAction('עצור הכל! יש שינוי בהזמנה 🛑')" class="action-item text-red-600">
+                <i class="fas fa-hand-paper w-6 text-center text-lg"></i> <span>🛑 עצור/שנה הזמנה</span>
+            </div>
+            <div onclick="openHistoryModal()" class="action-item text-purple-600">
+                <i class="fas fa-history w-6 text-center text-lg"></i> <span>📜 הזמנות שלי</span>
+            </div>
+            <div onclick="startContainerFlow()" class="action-item text-orange-600">
+                <i class="fas fa-truck-loading w-6 text-center text-lg"></i> <span>🚚 הזמן מכולה</span>
+            </div>
+            <div onclick="document.getElementById('contactModal').classList.add('open'); toggleActions();" class="action-item text-gray-600">
+                <i class="fas fa-address-book w-6 text-center text-lg"></i> <span>📞 אנשי קשר</span>
             </div>
         </div>
 
-        <div id="screen-shop" class="screen">
-            <header class="p-4 bg-white border-b flex items-center gap-3 sticky top-0 z-20">
-                <button onclick="switchScreen('home')" class="text-gray-500"><i class="fas fa-arrow-right"></i></button>
-                <h2 class="font-bold text-lg">חנות והזמנות</h2>
-            </header>
+        <div id="screen-shop" class="screen active">
             <div class="p-4 flex-1 overflow-y-auto pb-24">
-                <input type="text" id="searchInput" oninput="filterProducts()" placeholder="חיפוש מוצר..." class="w-full p-3 rounded-xl border mb-4 shadow-sm">
-                <div id="productsGrid" class="grid grid-cols-2 gap-4 pb-4"></div>
-            </div>
-        </div>
-
-        <div id="screen-saban" class="screen">
-            <div class="saban-header">
-                <button onclick="switchScreen('home')"><i class="fas fa-arrow-right"></i></button>
-                <img src="https://cdn-icons-png.flaticon.com/512/4712/4712035.png" class="w-10 h-10 bg-white rounded-full p-1">
-                <div>
-                    <div class="font-bold">צ'אט-סבן (העוזר האישי)</div>
-                    <div class="text-[10px] opacity-80">מחובר ● זמין לכל שאלה</div>
+                <div class="relative mb-6">
+                    <input type="text" id="searchInput" oninput="filterProducts()" placeholder="חיפוש מוצר..." class="w-full p-3 pl-10 bg-white rounded-xl text-sm outline-none shadow-sm border border-gray-200 focus:border-green-500">
+                    <i class="fas fa-search absolute left-3 top-3.5 text-gray-400"></i>
                 </div>
-            </div>
-            <div class="chat-content" id="sabanBox">
-                <div class="text-center text-xs text-gray-500 my-4 bg-white/50 p-2 rounded-lg mx-auto w-3/4">
-                    כאן אפשר לשאול על מוצרים, לבקש חשבוניות מהראל, או להתייעץ טכנית.
+                <div id="productsGrid" class="grid grid-cols-2 gap-4 pb-4">
+                    <div class="col-span-2 text-center py-20 text-gray-400">טוען קטלוג...</div>
                 </div>
-            </div>
-            <div class="p-3 bg-white border-t flex items-center gap-2">
-                <input id="sabanInput" class="flex-1 bg-gray-100 rounded-full px-4 py-3 text-sm outline-none" placeholder="תשאיר הודעה להראל..." onkeydown="if(event.key === 'Enter') sendSaban()">
-                <button onclick="sendSaban()" class="bg-indigo-600 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg active:scale-90"><i class="fas fa-paper-plane text-lg"></i></button>
             </div>
         </div>
 
         <div id="screen-cart" class="screen bg-white">
-            <header class="p-4 border-b flex justify-between items-center"><h2 class="font-bold">עגלה</h2><button onclick="clearCart()" class="text-red-500 text-xs font-bold">נקה</button></header>
-            <div id="cartItemsList" class="p-4 space-y-3"></div>
-            <div class="p-4 border-t mt-auto"><button onclick="submitOrder()" class="w-full bg-[#008069] text-white py-3.5 rounded-xl font-bold shadow-lg">שלח הזמנה</button></div>
-        </div>
-    </div>
-
-    <div id="productModal" class="modal-full">
-        <div class="h-14 flex items-center justify-between px-4 border-b bg-white shadow-sm sticky top-0 z-30">
-            <button onclick="closeProductModal()" class="w-9 h-9 bg-gray-100 rounded-full text-gray-600"><i class="fas fa-arrow-right"></i></button>
-            <span class="font-bold text-sm">כרטיס מוצר</span><div class="w-9"></div>
-        </div>
-        <div class="flex-1 flex flex-col overflow-hidden bg-white">
-            <img id="modalImg" src="" class="h-48 object-contain my-4">
-            <div class="px-6 text-center">
-                <h1 class="text-2xl font-bold text-gray-800" id="modalName"></h1>
-                <div class="text-3xl font-bold text-[#008069] mt-2">₪<span id="modalPrice"></span></div>
-            </div>
-            
-            <div class="flex border-b border-gray-100 mt-4">
-                <div onclick="switchTab('desc')" id="tab-desc" class="prod-tab active">מידע</div>
-                <div onclick="switchTab('specs')" id="tab-specs" class="prod-tab">מפרט</div>
-                <div onclick="switchTab('video')" id="tab-video" class="prod-tab">וידאו/יישום</div>
-            </div>
-
-            <div id="content-desc" class="prod-content active"></div>
-            
-            <div id="content-specs" class="prod-content">
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="bg-blue-50 p-4 rounded-xl text-center"><div class="text-xs font-bold text-blue-600">משקל</div><div class="text-xl font-bold text-blue-900" id="modalWeight">-</div></div>
-                    <div class="bg-orange-50 p-4 rounded-xl text-center"><div class="text-xs font-bold text-orange-600">מנוף</div><div class="text-xl font-bold text-orange-900" id="modalCrane">-</div></div>
+            <header class="p-4 border-b flex justify-between items-center sticky top-0 bg-white z-20 shadow-sm">
+                <h2 class="font-bold text-xl text-gray-800">🛒 העגלה שלי</h2>
+                <button onclick="clearCart()" class="text-red-500 text-xs font-bold">נקה הכל</button>
+            </header>
+            <div class="flex-1 p-4 overflow-y-auto pb-24">
+                <div id="cartItemsList" class="space-y-3 mb-6"></div>
+                
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 shadow-sm space-y-3">
+                    <h3 class="font-bold text-xs text-gray-500 uppercase">פרטי משלוח</h3>
+                    <input type="text" id="projName" placeholder="שם אתר/פרויקט" class="w-full p-3 rounded-lg border text-sm bg-white">
+                    <button onclick="sendLocation()" class="w-full bg-green-100 text-green-700 py-2 rounded-lg text-xs font-bold border border-green-200 flex items-center justify-center gap-2">
+                        <i class="fas fa-map-marker-alt"></i> שלח מיקום GPS מדויק
+                    </button>
                 </div>
             </div>
-
-            <div id="content-video" class="prod-content">
-                <div class="video-container">
-                    <iframe id="modalVideo" src="" frameborder="0" allowfullscreen></iframe>
-                </div>
-                <p class="text-gray-500 text-xs mt-2 text-center">סרטון הדרכה רשמי מהיצרן</p>
+            <div class="p-4 border-t bg-white sticky bottom-0 z-20 shadow-lg">
+                <button onclick="submitOrder()" class="w-full bg-[#008069] text-white py-3.5 rounded-xl font-bold shadow-md active:scale-95 transition text-lg">שלח הזמנה</button>
             </div>
         </div>
-        <div class="p-4 border-t flex gap-3">
-            <button onclick="consultSaban()" class="bg-indigo-50 text-indigo-600 px-4 rounded-xl font-bold border border-indigo-100 flex flex-col items-center justify-center text-[10px] w-20">
-                <i class="fas fa-robot text-xl mb-1"></i> התייעץ
-            </button>
-            <button onclick="addToCartFromModal()" class="flex-1 bg-[#008069] text-white py-3 rounded-xl font-bold text-lg shadow-lg">הוסף לעגלה 🛒</button>
+
+        <div id="screen-chat" class="screen">
+            <div class="chat-content" id="chatBox"></div>
+            <div class="p-3 bg-white border-t flex items-center gap-2">
+                <input id="chatInput" class="flex-1 bg-gray-100 rounded-full px-4 py-3 text-sm outline-none" placeholder="הקלד..." onkeydown="if(event.key === 'Enter') sendChat()">
+                <button onclick="sendChat()" class="bg-[#008069] text-white w-12 h-12 rounded-full flex items-center justify-center shadow-sm"><i class="fas fa-paper-plane text-lg"></i></button>
+            </div>
         </div>
     </div>
 
-    <div id="historyModal" class="modal-full">
-        <div class="h-14 flex items-center justify-between px-4 border-b bg-white"><button onclick="document.getElementById('historyModal').classList.remove('open')" class="w-9 h-9 bg-gray-100 rounded-full"><i class="fas fa-arrow-right"></i></button><span class="font-bold">הזמנות שלי</span><div class="w-9"></div></div>
-        <div class="p-4 bg-gray-50 flex-1 overflow-y-auto" id="historyContent"></div>
+    <div id="pasteModal" class="modal-full">
+        <div class="h-14 flex items-center justify-between px-4 border-b bg-white"><button onclick="document.getElementById('pasteModal').classList.remove('open')" class="w-9 h-9 bg-gray-100 rounded-full"><i class="fas fa-times"></i></button><span class="font-bold">הדבק רשימה</span><div class="w-9"></div></div>
+        <div class="p-5 flex-1 flex flex-col">
+            <textarea id="pasteInput" class="flex-1 w-full border p-4 rounded-xl text-sm bg-gray-50 outline-none resize-none" placeholder="הדבק כאן רשימה מוואטסאפ..."></textarea>
+            <button onclick="submitPasteOrder()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold mt-4 shadow-lg text-lg">שלח הזמנה 🚀</button>
+        </div>
     </div>
 
-    <div id="contactModal" class="modal-full"><div class="h-14 flex items-center justify-between px-4 border-b bg-white"><button onclick="document.getElementById('contactModal').classList.remove('open')" class="w-9 h-9 bg-gray-100 rounded-full"><i class="fas fa-times"></i></button><span class="font-bold">אנשי קשר</span><div class="w-9"></div></div><div class="p-6 space-y-4"><input id="contactName" placeholder="שם איש קשר" class="w-full p-4 border rounded-xl"><input id="contactPhone" placeholder="טלפון" class="w-full p-4 border rounded-xl"><button onclick="saveContact()" class="w-full bg-[#008069] text-white py-4 rounded-xl font-bold">שמור</button></div></div>
+    <div id="contactModal" class="modal-full">
+        <div class="h-14 flex items-center justify-between px-4 border-b bg-white"><button onclick="document.getElementById('contactModal').classList.remove('open')" class="w-9 h-9 bg-gray-100 rounded-full"><i class="fas fa-times"></i></button><span class="font-bold">אנשי קשר</span><div class="w-9"></div></div>
+        <div class="p-6 space-y-4">
+            <input id="contactNameInput" placeholder="שם איש קשר" class="w-full p-4 border rounded-xl">
+            <input id="contactPhoneInput" placeholder="טלפון" class="w-full p-4 border rounded-xl">
+            <button onclick="submitContact()" class="w-full bg-[#008069] text-white py-4 rounded-xl font-bold">שמור ועדכן</button>
+        </div>
+    </div>
 
     <nav class="nav-bar">
-        <div onclick="switchScreen('home')" class="nav-item nav-home active"><i class="fas fa-home"></i><span>ראשי</span></div>
-        <div onclick="switchScreen('shop')" class="nav-item nav-shop"><i class="fas fa-store"></i><span>חנות</span></div>
+        <div onclick="switchScreen('shop')" class="nav-item nav-shop active"><i class="fas fa-store"></i><span>חנות</span></div>
         <div onclick="switchScreen('cart')" class="nav-item nav-cart"><i class="fas fa-shopping-bag"></i><span>עגלה</span></div>
+        <div onclick="switchScreen('chat')" class="nav-item nav-chat"><i class="fas fa-comments"></i><span>צ'אט</span></div>
     </nav>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, doc, setDoc, onSnapshot, query, orderBy, serverTimestamp, getDocs, getDoc, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { SabanChatbot } from './js/chatbot-engine.js';
+        import { getFirestore, collection, addDoc, doc, setDoc, onSnapshot, query, orderBy, serverTimestamp, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { SabanSounds } from './js/sounds.js';
+        import { SabanChatbot } from './js/chatbot-engine.js';
 
+        // Init
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
         let app, db; try{app=initializeApp(firebaseConfig);db=getFirestore(app);}catch(e){}
 
-        let currentUser = { id: 'guest', name: 'אורח' }, cart = [], allProducts = [], currentProduct = {}, bot;
+        let currentUser={id:'guest',name:'אורח'}, cart=[], allProducts=[], bot;
         window.audioUnlocked = false;
 
-        // --- Logic ---
+        // Global UI Functions
         window.unlockAudio = () => { if(!window.audioUnlocked && SabanSounds) { SabanSounds.playMessage(); window.audioUnlocked = true; } };
         
-        window.switchScreen = (n) => { 
-            document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); 
+        window.toggleActions = () => {
+            const m = document.getElementById('actionsMenu');
+            m.classList.toggle('open');
+        };
+
+        window.switchScreen = (n) => {
+            document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
             document.getElementById(`screen-${n}`).classList.add('active');
             document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active'));
-            if(document.querySelector(`.nav-${n}`)) document.querySelector(`.nav-${n}`).classList.add('active');
+            if(n==='shop')document.querySelector('.nav-item:nth-child(1)').classList.add('active');
+            if(n==='cart')document.querySelector('.nav-item:nth-child(2)').classList.add('active');
+            if(n==='chat')document.querySelector('.nav-item:nth-child(3)').classList.add('active');
         };
 
-        window.openProduct = (pStr) => { 
-            const p=JSON.parse(decodeURIComponent(pStr)); currentProduct=p; 
-            document.getElementById('modalName').innerText=p.core?.name; 
-            document.getElementById('modalPrice').innerText=p.core?.price; 
-            document.getElementById('modalImg').src=p.rich?.image; 
-            document.getElementById('content-desc').innerText=p.rich?.description || "אין תיאור";
-            document.getElementById('modalWeight').innerText=(p.logistics?.weight||'-')+' ק"ג';
-            document.getElementById('modalCrane').innerText=p.logistics?.requires_crane?'כן':'לא';
-            document.getElementById('modalVideo').src = p.rich?.video_url ? p.rich.video_url.replace("watch?v=", "embed/") : ""; 
-            document.getElementById('productModal').classList.add('open'); 
-        };
-        window.closeProductModal = () => document.getElementById('productModal').classList.remove('open');
-        window.switchTab = (t) => { document.querySelectorAll('.prod-tab').forEach(e=>e.classList.remove('active')); document.querySelectorAll('.prod-content').forEach(e=>e.classList.remove('active')); document.getElementById(`tab-${t}`).classList.add('active'); document.getElementById(`content-${t}`).classList.add('active'); };
+        window.triggerQuickAction = (msg) => { window.toggleActions(); window.switchScreen('chat'); window.sendChat(msg); };
         
-        window.addToCartFromModal = () => { cart.push(currentProduct); updateCart(); closeProductModal(); };
-        window.consultSaban = () => { closeProductModal(); switchScreen('saban'); sendSaban(`אני מתייעץ לגבי ${currentProduct.core?.name}`); };
-
-        window.updateCart = () => { document.getElementById('cartItemsList').innerHTML = cart.map(i => `<div class="p-2 border-b">${i.core.name}</div>`).join(''); };
-        window.submitOrder = () => { if(cart.length) { sendSaban('הזמנה חדשה נשלחה לחמ"ל'); cart=[]; updateCart(); } };
-
-        window.openHistoryModal = async () => {
-            document.getElementById('historyModal').classList.add('open');
-            const c = document.getElementById('historyContent');
-            if(!db) { c.innerHTML="אופליין"; return; }
-            const q = query(collection(db, "active_orders"), where("clientUid", "==", currentUser.id));
-            const snap = await getDocs(q);
-            c.innerHTML = snap.docs.map(d => `<div class="bg-white p-3 mb-2 rounded border-l-4 border-green-500 font-bold">#${d.id} - ${d.data().status}</div>`).join('') || "אין הזמנות";
+        window.openPasteOrder = () => { window.toggleActions(); document.getElementById('pasteModal').classList.add('open'); };
+        window.submitPasteOrder = () => { 
+            const t = document.getElementById('pasteInput').value; 
+            if(t){ window.sendChat(`📝 הזמנת רשימה:\n${t}`); document.getElementById('pasteModal').classList.remove('open'); window.switchScreen('chat'); }
         };
 
-        window.sendSaban = async (msg) => {
-            const txt = msg || document.getElementById('sabanInput').value; if(!txt) return;
-            document.getElementById('sabanInput').value = '';
-            
-            // שולח לקבוצת צ'אט-סבן (נפרדת מהזמנות)
-            if(db) await addDoc(collection(db, `saban_chats/${currentUser.id}/messages`), { text: txt, role: 'user', createdAt: serverTimestamp() });
-            
+        window.startContainerFlow = () => { window.triggerQuickAction('אני צריך מכולה'); };
+
+        window.sendLocation = () => {
+            if(!navigator.geolocation) return alert("לא ניתן לקבל מיקום");
+            navigator.geolocation.getCurrentPosition(pos => {
+                const link = `https://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`;
+                window.sendChat(`📍 המיקום שלי לשטח: ${link}`);
+            });
+        };
+
+        window.submitContact = () => {
+            const name = document.getElementById('contactNameInput').value;
+            const phone = document.getElementById('contactPhoneInput').value;
+            if(name){ window.sendChat(`📞 איש קשר לאספקה: ${name} ${phone}`); document.getElementById('contactModal').classList.remove('open'); }
+        };
+
+        // Chat Logic
+        window.sendChat = async (msg) => {
+            const txt = msg || document.getElementById('chatInput').value; if(!txt) return;
+            document.getElementById('chatInput').value = '';
+            if(db) await addDoc(collection(db, `chat_sessions/${currentUser.id}/messages`), { text: txt, role: 'user', createdAt: serverTimestamp() });
             if(bot) {
-                const res = await bot.ask(txt); // המוח המאומן
-                if(res?.text && db) setTimeout(()=>addDoc(collection(db, `saban_chats/${currentUser.id}/messages`), { text: res.text, role: 'staff', sender: 'ChatSaban', createdAt: serverTimestamp() }), 1000);
+                const res = await bot.ask(txt);
+                if(res?.text && db) setTimeout(()=>addDoc(collection(db, `chat_sessions/${currentUser.id}/messages`), { text: res.text, role: 'staff', sender: 'SabanBot', createdAt: serverTimestamp() }), 800);
             }
         };
 
         // Init
         window.onload = async () => {
-            const uid = new URLSearchParams(window.location.search).get('uid') || localStorage.getItem('impersonateId');
             if(db) {
-                getDocs(collection(db, "products")).then(s => {
+                // Products
+                getDocs(collection(db,"products")).then(s => {
                     allProducts = s.docs.map(d=>({id:d.id, ...d.data()}));
                     document.getElementById('productsGrid').innerHTML = allProducts.map(p => {
-                        const pStr = encodeURIComponent(JSON.stringify(p));
-                        return `<div class="product-card" onclick="openProduct('${pStr}')"><img src="${p.rich?.image}" class="product-img"><div class="p-3 border-t font-bold text-xs">${p.core.name}</div><button class="scale-btn"><i class="fas fa-balance-scale"></i></button></div>`;
+                        return `<div class="product-card">
+                            <img src="${p.rich?.image}" class="product-img">
+                            <div class="p-3 border-t"><div class="font-bold text-xs h-8">${p.core.name}</div>
+                            <div class="flex justify-between mt-1"><span class="text-green-600 font-bold">₪${p.core.price}</span></div></div>
+                        </div>`;
                     }).join('');
                 });
 
+                // User
+                const uid = new URLSearchParams(window.location.search).get('uid') || localStorage.getItem('impersonateId');
                 if(uid) {
                     getDoc(doc(db,"users",uid)).then(s=>{ 
                         if(s.exists()) currentUser={id:uid,...s.data()};
                         document.getElementById('userName').innerText=currentUser.name;
-                        document.getElementById('userAvatar').src=currentUser.avatar;
                         bot = new SabanChatbot(db, currentUser);
                         
-                        // האזנה לצ'אט סבן
-                        onSnapshot(query(collection(db, `saban_chats/${uid}/messages`), orderBy("createdAt", "asc")), snap => {
-                            document.getElementById('sabanBox').innerHTML = snap.docs.map(d => `<div class="msg ${d.data().role==='user'?'msg-out':'msg-in msg-saban'}">${d.data().text}</div>`).join('');
+                        onSnapshot(query(collection(db, `chat_sessions/${uid}/messages`), orderBy("createdAt", "asc")), snap => {
+                            document.getElementById('chatBox').innerHTML = snap.docs.map(d => `<div class="msg ${d.data().role==='user'?'msg-out':'msg-in'}">${d.data().text}</div>`).join('');
+                            document.getElementById('chatBox').scrollTop = 9999;
                         });
                     });
                 }
