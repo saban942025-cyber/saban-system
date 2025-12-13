@@ -1,118 +1,100 @@
-import { SabanPush } from './notifications.js';
-import { SabanSounds } from './sounds.js';
-import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+/* Saban Chatbot Engine v2.0 (AI Powered)
+   מופעל על ידי Google Gemini API
+*/
+
+import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+// --- המפתח שלך (מוטמע) ---
+const GEMINI_API_KEY = "AIzaSyD9plWwyTESFm24c_OTunf4mFAsAmfrgj0";
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 export class SabanChatbot {
     constructor(db, userContext) {
         this.db = db;
-        this.user = userContext; 
+        this.user = userContext || { name: "אורח" };
         
-        // חוקים קבועים (חירום, סמול טוק וכו')
-        this.rules = [
-            {
-                category: "EMERGENCY",
-                keywords: ["דחוף", "בהול", "עצור", "תעצור", "טעות", "תקלה"],
-                answer: "🛑 עצרתי הכל! הקפצתי התראה אדומה לכל המנהלים (רמי/אורן).\nאני מחייג אליך או שולח נציג לצ'אט מיד.",
-                action: "urgent_alert"
-            },
-            {
-                category: "CONTAINERS",
-                keywords: ["מכולה", "8 קוב", "פינוי פסולת"],
-                answer: "אין בעיה, נארגן מכולה 8 קוב. 🚛\nלאיזו עיר המכולה מיועדת? (בת\"א/הרצליה חובה היתר הצבה).",
-                buttons: [{ label: "🏙️ תל אביב", payload: "TLV" }, { label: "🏠 עיר אחרת", payload: "OTHER" }]
-            },
-            {
-                category: "SMALL_TALK",
-                keywords: ["תודה", "אלוף", "בוקר טוב", "היי", "שלום"],
-                answer: "בכיף {name}! אני כאן לכל מה שצריך. 💪",
-                buttons: []
-            }
-        ];
+        // הגדרת המודל (המוח)
+        this.model = genAI.getGenerativeModel({ model: "gemini-pro"});
+        
+        // חוקי ברזל (עוקפים את ה-AI)
+        this.emergencyKeywords = ["דחוף", "עצור", "תעצור", "טעות", "סכנה", "פצוע"];
     }
 
-    // --- הפונקציה הראשית שרצה בכל הודעה ---
+    // --- הפונקציה הראשית ---
     async ask(question) {
-        if (!question) return null;
-        const cleanQ = question.toLowerCase();
-
-        // 1. בדיקה מול חוקים קבועים (Rules)
-        for (const rule of this.rules) {
-            if (rule.keywords.some(kw => cleanQ.includes(kw))) {
-                if (rule.action === 'urgent_alert') {
-                    if(SabanSounds) SabanSounds.playAlert();
-                    await SabanPush.send('admin_rami', '🚨 דחוף', `${this.user.name}: ${question}`);
-                } else {
-                    if(SabanSounds) SabanSounds.playMessage();
-                }
-                return { 
-                    text: rule.answer.replace("{name}", this.user.name || "חבר"), 
-                    buttons: rule.buttons || [],
-                    action: rule.action 
-                };
-            }
+        if (!question) return { text: "אני כאן, מקשיב... 👂" };
+        
+        // 1. בדיקת חירום (בטיחות קודמת לכל)
+        if (this.emergencyKeywords.some(k => question.includes(k))) {
+            return { 
+                text: "🛑 עצרתי הכל! דיווחתי להראל ולרמי על אירוע חריג.\nנציג אנושי ייצור איתך קשר מיידי.", 
+                action: "urgent_alert" 
+            };
         }
 
-        // 2. חיפוש מוצר ב-Firebase (בדיקת מלאי חכמה) 🧠
-        // אם לא מצאנו חוק, נבדוק אם המשתמש שאל על מוצר מהקטלוג
+        // 2. הפעלת הבינה המלאכותית
         try {
-            const productsRef = collection(this.db, "products");
-            const snapshot = await getDocs(productsRef);
+            // שלב א': שליפת המלאי העדכני מה-Firebase
+            // הבוט "מציץ" במחסן לפני שהוא עונה
+            const inventory = await this.getInventoryContext();
             
-            // חיפוש בתוך המוצרים (האם שם המוצר מופיע בשאלה?)
-            const foundProduct = snapshot.docs.find(doc => {
-                const p = doc.data();
-                return p.core && p.core.name && cleanQ.includes(p.core.name.toLowerCase()); // חיפוש לפי שם
-            });
+            // שלב ב': שליחה לגוגל
+            const aiResponse = await this.generateAIResponse(question, inventory);
+            
+            return { 
+                text: aiResponse, 
+                action: "ai_reply" 
+            };
 
-            if (foundProduct) {
-                const productData = foundProduct.data();
-                
-                // --- כאן אנחנו משתמשים בפונקציה שלך! ---
-                const stockMsg = this.checkStockLogic(productData);
-                
-                // בונים תשובה מלאה
-                let fullAnswer = `מצאתי את המוצר: **${productData.core.name}**\nמחיר: ₪${productData.core.price}\n\n${stockMsg}`;
-                
-                // הוספת מידע טכני אם יש
-                if(productData.chatbot) {
-                    if(productData.chatbot.drying_time) fullAnswer += `\n⏳ זמן ייבוש: ${productData.chatbot.drying_time}`;
-                }
-
-                return {
-                    text: fullAnswer,
-                    buttons: [
-                        { label: "הוסף לעגלה 🛒", payload: `ADD_${foundProduct.id}` },
-                        { label: "פרטים נוספים ℹ️", payload: `INFO_${foundProduct.id}` }
-                    ]
-                };
-            }
-        } catch (e) {
-            console.error("Error searching products:", e);
+        } catch (error) {
+            console.error("AI Brain Freeze:", error);
+            // אם ה-AI נכשל (אין אינטרנט וכו'), תשובת גיבוי:
+            return { text: "המוח שלי מתעדכן כרגע... 🔌\nאבל רשמתי את השאלה ואעביר לאורן בחמ\"ל." };
         }
-
-        // 3. Fallback (לא הבנתי)
-        return { 
-            text: "שאלה טובה... אני בודק את זה רגע מול רמי/אורן וחוזר אליך. ⏳", 
-            action: "fallback" 
-        };
     }
 
-    // --- הפונקציה שלך (משולבת במחלקה) ---
-    checkStockLogic(product) {
-        if (!product || !product.core) return "מידע על מלאי לא זמין."; // הגנה משגיאות
+    // --- עזרים טכניים ---
 
-        const loc = product.core.warehouse || 'both'; // ברירת מחדל
-        const productName = product.core.name;
+    // פונקציה שבונה את "האישיות" ושולחת לגוגל
+    async generateAIResponse(userQ, inventoryList) {
+        const prompt = `
+        התנהג כמו מומחה מכירות ושירות של "סבן חומרי בניין".
+        שמך הוא צ'אט-סבן.
+        הלקוח (${this.user.name}) שואל: "${userQ}"
+        
+        הנה רשימת המוצרים שיש לנו כרגע במלאי (מהמסד נתונים):
+        ${inventoryList}
 
-        if (loc === 'both') {
-            return `יש חדשות טובות! ה-${productName} זמין במלאי גם בחרש וגם בתלמיד. 🟢\nמאיפה נוח לך לאסוף?`;
-        } 
-        else if (loc === 'harash') {
-            return `שים לב: ה-${productName} נמצא כרגע רק בסניף **החרש**. 📍\nסניף התלמיד חסר כרגע. לשריין לך בחרש?`;
-        } 
-        else if (loc === 'talmid') {
-            return `בדיקה במערכת מראה שהמוצר זמין בסניף **התלמיד** בלבד. 📍\nתרצה שאפתח משימת ליקוט להעברה לחרש, או שתאסוף משם?`;
+        הנחיות לתשובה:
+        1. תענה בעברית, קצר ולעניין (מקסימום 3 משפטים).
+        2. תהיה אדיב ומקצועי.
+        3. אם הלקוח מחפש מוצר שמופיע ברשימה למעלה - תמליץ לו עליו ותגיד "יש לנו במלאי!".
+        4. אם המוצר לא ברשימה - תגיד "אבדוק מול המחסן אם נשאר".
+        5. אם הוא שואל שאלה מקצועית (כמו "כמה זמן ייבוש"), תנסה לענות מידע כללי אם אתה יודע.
+        6. הוסף אימוג'י אחד או שניים לאווירה טובה.
+
+        תשובה:
+        `;
+
+        const result = await this.model.generateContent(prompt);
+        const response = await result.response;
+        return response.text();
+    }
+
+    // שליפת שמות המוצרים מהדאטה-בייס לתוך מחרוזת אחת
+    async getInventoryContext() {
+        try {
+            const snap = await getDocs(collection(this.db, "products"));
+            if (snap.empty) return "המלאי כרגע בבדיקה.";
+            
+            // לוקח את כל שמות המוצרים והמותגים ומחבר לרשימה
+            return snap.docs.map(doc => {
+                const data = doc.data();
+                return `${data.core.name} (${data.core.brand})`;
+            }).join(", ");
+        } catch (e) {
+            return "לא הצלחתי לקרוא את המלאי.";
         }
-        return `נראה שהמוצר חסר זמנית בשני הסניפים. 🔴`;
     }
 }
