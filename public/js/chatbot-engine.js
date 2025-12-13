@@ -1,11 +1,11 @@
-/* Saban Chatbot Engine v3.0 (Direct API)
-   חיבור ישיר ל-API למניעת שגיאות ספרייה
+/* Saban Chatbot Engine v4.0 (Flash Model)
+   מודל: gemini-1.5-flash (החדש והמהיר ביותר)
 */
 
 import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// המפתח שלך
-const GEMINI_API_KEY = "AIzaSyD2PehLHX2olQQavvHo2vjclOq7iSdiagI";
+// המפתח שלך (שעבר את הבדיקה!)
+const GEMINI_API_KEY = "AIzaSyD9plWwyTESFm24c_OTunf4mFAsAmfrgj0";
 
 export class SabanChatbot {
     constructor(db, userContext) {
@@ -20,73 +20,68 @@ export class SabanChatbot {
         
         // 1. חירום
         if (this.emergencyKeywords.some(k => question.includes(k))) {
-            return { text: "🛑 עצרתי הכל! דיווחתי להראל ולרמי.\nנציג ייצור קשר.", action: "urgent_alert" };
+            return { text: "🛑 עצרתי הכל! דיווחתי להראל ולרמי.\nנציג ייצור קשר מיידי.", action: "urgent_alert" };
         }
 
-        // 2. AI (חיבור ישיר)
+        // 2. AI
         try {
-            // נסיון שליפת מלאי
-            let inventory = "מלאי בבדיקה, תענה כללית.";
+            // דילוג על שגיאות פיירבייס אם יש (כדי לא לתקוע את הבוט)
+            let inventory = "מלאי בבדיקה, תענה באופן כללי.";
             try {
-                if (this.db) inventory = await this.getInventoryContext();
+                if(this.db) inventory = await this.getInventoryContext();
             } catch (e) { console.warn("Firebase skipped"); }
-            
-            // שליחה לגוגל
+
             const aiResponse = await this.generateAIResponse(question, inventory);
             return { text: aiResponse, action: "ai_reply" };
 
         } catch (error) {
-            console.error("AI Error:", error);
-            return { text: "שגיאה בתקשורת עם גוגל. 🔌\n(בדוק את ה-API Key)" };
+            console.error("Bot Error:", error);
+            return { text: "שגיאה בחיבור למוח (נסה שוב). 🔌" };
         }
     }
 
-    // פונקציה שפונה ישירות לכתובת ה-API (בלי ספריות)
     async generateAIResponse(userQ, inventoryList) {
-        // הכתובת הישירה למודל הכי חדש ומהיר (Flash 1.5)
+        // --- התיקון הגדול: שימוש במודל 1.5-flash ---
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.apiKey}`;
 
         const prompt = `
         אתה העוזר החכם של "סבן חומרי בניין". שמך צ'אט-סבן.
-        שאלה: "${userQ}"
-        מלאי זמין: ${inventoryList}
+        הלקוח שואל: "${userQ}"
+        
+        מוצרים שיש לנו במלאי כרגע:
+        ${inventoryList}
         
         הנחיות:
-        1. ענה בעברית, קצר ומקצועי (עד 2 משפטים).
-        2. אם המוצר במלאי - תמליץ עליו.
-        3. תהיה נחמד.
+        1. ענה בעברית, קצר (עד 2 משפטים) ומקצועי.
+        2. אם המוצר במלאי - תמליץ עליו! זה הכי חשוב.
+        3. אם אין במלאי - תגיד שתבדוק.
+        4. תהיה נחמד.
         `;
 
         const response = await fetch(url, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                contents: [{
-                    parts: [{ text: prompt }]
-                }]
-            })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
         });
 
         if (!response.ok) {
-            throw new Error(`Google API Error: ${response.status} ${response.statusText}`);
+            const errData = await response.json();
+            throw new Error(`Google Error: ${errData.error?.message || response.status}`);
         }
 
         const data = await response.json();
         
-        // חילוץ התשובה מהמבנה של גוגל
-        if (data.candidates && data.candidates[0].content) {
+        // הגנה מפני תשובות ריקות
+        if (data.candidates && data.candidates.length > 0 && data.candidates[0].content) {
             return data.candidates[0].content.parts[0].text;
         } else {
-            return "לא הצלחתי לנסח תשובה.";
+            return "מצטער, לא הצלחתי לנסח תשובה כרגע.";
         }
     }
 
     async getInventoryContext() {
         const snap = await getDocs(collection(this.db, "products"));
-        if (snap.empty) return "אין מוצרים רשומים.";
+        if (snap.empty) return "אין פריטים רשומים.";
         return snap.docs.map(d => `${d.core.name}`).join(", ");
     }
 }
-
