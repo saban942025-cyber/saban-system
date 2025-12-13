@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Saban Key Tester 🔑</title>
+    <style>body { font-family: sans-serif; padding: 50px; text-align: center; }</style>
+</head>
+<body>
+    <h1>בדיקת מפתח גוגל (Tester)</h1>
+    <input type="text" id="apiKey" placeholder="הדבק כאן את המפתח (AIza...)" style="width: 300px; padding: 10px;">
+    <br><br>
+    <button onclick="testKey()" style="padding: 10px 20px; background: blue; color: white; cursor: pointer;">בדוק מפתח</button>
+    <div id="result" style="margin-top: 20px; font-weight: bold;"></div>
+
+    <script>
+        async function testKey() {
+            const key = document.getElementById('apiKey').value.trim();
+            const resDiv = document.getElementById('result');
+            
+            if (!key) { resDiv.innerText = "נא להכניס מפתח"; return; }
+            resDiv.innerText = "בודק תקשורת לגוגל...";
+
+            // מנסים את המודל הכי בסיסי ויציב (gemini-pro)
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${key}`;
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ contents: [{ parts: [{ text: "תגיד שלום" }] }] })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    resDiv.style.color = "green";
+                    resDiv.innerHTML = "✅ המפתח תקין ועובד!<br>גוגל ענה: " + data.candidates[0].content.parts[0].text;
+                } else {
+                    resDiv.style.color = "red";
+                    resDiv.innerText = "❌ שגיאה: " + (data.error?.message || response.statusText);
+                }
+            } catch (e) {
+                resDiv.style.color = "red";
+                resDiv.innerText = "❌ שגיאת רשת: " + e.message;
+            }
+        }
+    </script>
+</body>
+</html>
