@@ -2,277 +2,135 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SabanOS | מצגת שליטה</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SabanOS | Gateway v32.0 (Role Fix)</title>
+    <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* תיקון גובה למובייל */
-        body { 
-            background: #0f172a; 
-            color: white; 
-            font-family: system-ui, -apple-system, sans-serif; 
-            height: 100dvh; /* Dynamic Height Fix */
-            display: flex; 
-            flex-direction: column; 
-            overflow: hidden; 
-        }
-        
-        /* The Stage (iPhone Area) */
-        .stage-container { 
-            flex: 1; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            position: relative; 
-            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%); 
-            overflow: hidden;
-        }
-        
-        /* iPhone Bezel */
-        .iphone {
-            width: 300px; height: 600px; /* גודל קבוע ויציב */
-            background: #000; border-radius: 40px; border: 10px solid #333;
-            position: relative; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            transition: transform 0.5s ease;
-        }
-        /* התאמה למסכים קטנים */
-        @media (max-height: 700px) {
-            .iphone { height: 450px; width: 240px; border-width: 8px; }
-        }
-
-        .notch { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 100px; height: 25px; background: #333; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; z-index: 20; }
-        
-        /* Screen Content */
-        .screen { background: #f0f2f5; height: 100%; width: 100%; overflow-y: auto; position: relative; display: flex; flex-direction: column; padding-top: 30px; }
-        
-        /* Bubbles */
-        .chat-bubble { padding: 10px 14px; border-radius: 16px; margin: 6px 10px; font-size: 13px; width: fit-content; max-width: 85%; animation: popIn 0.3s forwards; opacity: 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); line-height: 1.4; }
-        .bubble-bot { background: #fff; color: #333; border-top-right-radius: 4px; border: 1px solid #e2e8f0; }
-        .bubble-user { background: #008069; color: white; border-top-left-radius: 4px; align-self: flex-end; }
-        .bubble-alert { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; text-align: center; width: 90%; align-self: center; font-weight: bold; animation: shake 0.5s; }
-        
-        /* Director's Notes (Bottom Panel) */
-        .director-notes {
-            height: auto; min-height: 160px; /* גובה מינימלי */
-            background: rgba(30, 41, 59, 0.95); 
-            border-top: 1px solid #334155; 
-            padding: 15px;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            text-align: center; z-index: 100;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.2);
-        }
-        .note-title { font-size: 11px; font-weight: bold; color: #fbbf24; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 1px; }
-        .note-text { font-size: 16px; font-weight: 500; line-height: 1.4; max-width: 600px; color: #e2e8f0; margin-bottom: 15px; }
-        
-        /* Big Buttons */
-        .controls { display: flex; gap: 30px; align-items: center; }
-        .ctrl-btn { 
-            width: 60px; height: 60px; border-radius: 50%; background: white; color: black; 
-            font-size: 24px; cursor: pointer; transition: 0.1s; 
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: none;
-        }
-        .ctrl-btn:active { transform: scale(0.95); background: #f1f5f9; }
-        .ctrl-btn.play { background: #fbbf24; color: #78350f; animation: pulse 2s infinite; }
-
-        /* Animations */
-        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(251, 191, 36, 0); } 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); } }
-
-        /* Mock Elements */
-        .product-card { background: white; border-radius: 12px; padding: 10px; margin: 10px; border: 1px solid #e2e8f0; }
-        .map-mock { height: 120px; background: #cbd5e1; border-radius: 12px; margin: 10px; position: relative; overflow: hidden; }
-        .map-mock::after { content: "WAZE"; position: absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:rgba(0,0,0,0.1); font-weight:900; font-size:30px; }
+        @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap');
+        body { font-family: 'Rubik', sans-serif; background-color: #0f172a; height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .login-card { background: white; border-radius: 20px; width: 100%; max-width: 400px; padding: 40px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); text-align: center; }
+        .input-field { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; background: #f8fafc; margin-bottom: 15px; outline: none; }
+        .input-field:focus { border-color: #008069; background: white; }
+        .btn-login { width: 100%; background: #008069; color: white; padding: 12px; border-radius: 10px; font-weight: bold; transition: 0.2s; }
+        .btn-login:hover { background: #006d59; }
+        .loader { width: 20px; height: 20px; border: 3px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; display: none; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <div class="absolute top-0 w-full p-4 flex justify-between items-center z-50 pointer-events-none">
-        <div class="flex items-center gap-2 pointer-events-auto">
-            <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white text-sm">S</div>
-            <div>
-                <div class="font-bold text-sm leading-none">SabanOS</div>
-                <div class="text-[10px] text-blue-400">Presentation Mode</div>
-            </div>
-        </div>
-    </div>
+    <div class="login-card">
+        <div class="mb-6"><i class="fas fa-cubes text-5xl text-green-600"></i></div>
+        <h1 class="text-2xl font-bold text-slate-800 mb-1">SabanOS</h1>
+        <p class="text-slate-500 text-sm mb-6">מערכת הפעלה לוגיסטית</p>
 
-    <div class="stage-container">
-        <div class="iphone" id="phoneBody">
-            <div class="notch"></div>
-            <div class="screen" id="screenContent">
-                </div>
-        </div>
-    </div>
-
-    <div class="director-notes">
-        <div id="sceneTitle" class="note-title">טוען מצגת...</div>
-        <div id="sceneText" class="note-text"></div>
+        <form onsubmit="handleLogin(event)">
+            <input type="email" id="email" class="input-field" placeholder="אימייל" required>
+            <input type="password" id="password" class="input-field" placeholder="סיסמה" required>
+            
+            <button type="submit" id="submitBtn" class="btn-login">
+                <span id="btnText">כניסה</span>
+                <div id="btnLoader" class="loader"></div>
+            </button>
+            <div id="errorMsg" class="text-red-500 text-xs mt-3 font-bold hidden"></div>
+        </form>
         
-        <div class="controls">
-            <button class="ctrl-btn" onclick="window.prevScene()"><i class="fas fa-step-backward"></i></button>
-            <button class="ctrl-btn play" onclick="window.nextScene()"><i class="fas fa-play"></i></button>
+        <div class="mt-4 text-xs text-gray-400">
+            <a href="#" onclick="localStorage.clear(); location.reload()" class="underline">נקה זיכרון מקומי (אם נתקע)</a>
         </div>
     </div>
 
-    <script>
-        // --- התוכן (הסיפור) ---
-        const scenes = [
-            {
-                title: "1. פתיחה: חוסר אמון במזל",
-                text: "הראל, עזוב דפים ועטים. המערכת הזאת נבנתה כי רמי לא סומך על טעויות אנוש. בוא תראה איך המכונה עובדת.",
-                ui: `<div class="flex h-full items-center justify-center flex-col text-slate-400 p-4 text-center">
-                        <i class="fas fa-robot text-6xl mb-6 text-blue-500"></i>
-                        <h2 class="text-2xl font-bold text-slate-800">SabanOS</h2>
-                        <p class="text-sm mt-2">טוען מערכת הפעלה...</p>
-                        <div class="mt-4 w-32 h-1 bg-gray-300 rounded-full overflow-hidden"><div class="h-full bg-blue-500 w-2/3"></div></div>
-                     </div>`
-            },
-            {
-                title: "2. שחר בלחץ (גבס)",
-                text: "שחר תקוע בפיגום בלי גבס. הוא לא מחייג, הוא מקליד. הבוט מזהה את המילה 'דחוף' ויודע שזה אירוע מתגלגל.",
-                ui: `
-                    <div class="chat-bubble bubble-user">רמי דחוף!!! חסר לי 20 גבס בפיגום</div>
-                    <div class="chat-bubble bubble-bot">קיבלתי שחר. 🚨<br>פתחתי כרטיס חירום לאורן לליקוט מיידי. אל דאגה.</div>
-                `
-            },
-            {
-                title: "3. אזעקה בחמ\"ל (צוואר בקבוק)",
-                text: "אצל אורן בחמ\"ל - המערכת מצפצפת! זה לא סתם הודעה, זה 'צוואר בקבוק' שעוצר עבודה. אורן חייב לאשר קבלה.",
-                sound: "alert",
-                ui: `
-                    <div class="chat-bubble bubble-alert text-lg"><i class="fas fa-exclamation-triangle"></i> התראת דחיפות!</div>
-                    <div class="chat-bubble bubble-bot"><b>אורן (סידור):</b> המשימה התקבלה. יורד למחסן להעמיס. 🚜</div>
-                `
-            },
-            {
-                title: "4. סניף החרש vs התלמיד",
-                text: "זוכר ששוכחים ברגים בחרש? הבוט יודע שהברגים נמצאים רק שם. הוא שולח משימה ספציפית לאיציק בחרש.",
-                ui: `
-                    <div class="chat-bubble bubble-user">תוסיף גם קופסת ברגים שחורים</div>
-                    <div class="chat-bubble bubble-bot bg-yellow-50 border-yellow-200">
-                        שים לב! ⚠️<br>ברגים נמצאים ב**סניף החרש** בלבד.<br>
-                        שלחתי התראה לאיציק שיכין את זה ליד השער.
-                    </div>
-                `
-            },
-            {
-                title: "5. הכרטיס החכם (סיקה 603)",
-                text: "כשהבוט מציג מוצר, הוא לא משאיר מקום לשאלות. זמן ייבוש, משקל, שיטה - הכל כתוב כדי שהלקוח לא יחפור.",
-                ui: `
-                    <div class="product-card">
-                        <div class="flex gap-3 mb-2">
-                            <div class="w-12 h-12 bg-gray-100 rounded border flex items-center justify-center text-xs">IMG</div>
-                            <div>
-                                <div class="font-bold text-slate-800">סיקה 603</div>
-                                <div class="text-xs text-gray-500">מק"ט: 8821 | איטום</div>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2 text-[10px] bg-slate-50 p-2 rounded border border-slate-100">
-                            <div class="flex items-center gap-1"><i class="far fa-clock"></i> ייבוש: 24 שעות</div>
-                            <div class="flex items-center gap-1"><i class="fas fa-weight-hanging"></i> משקל: 25 ק"ג</div>
-                            <div class="flex items-center gap-1"><i class="fas fa-layer-group"></i> יישום: שתי וערב</div>
-                        </div>
-                        <button class="w-full bg-blue-600 text-white text-xs font-bold py-2 rounded mt-2">הוסף להזמנה</button>
-                    </div>
-                `
-            },
-            {
-                title: "6. מכולות (כסף על הרצפה)",
-                text: "שחר מזמין מכולה לת\"א. הבוט עוצר אותו: 'יש היתר?'. אם לא - חסכנו קנס. הבוט גם ממליץ מי הנהג הכי קרוב (יואב).",
-                ui: `
-                    <div class="chat-bubble bubble-user">שלח מכולה לאבן גבירול</div>
-                    <div class="chat-bubble bubble-bot border-red-200 bg-red-50 text-red-800">
-                        ✋ רגע אחד!<br>עיריית ת"א מחייבת <b>היתר הצבה</b>.<br>יש לך אישור ביד? אחרת הקנס עליך.
-                    </div>
-                    <div class="chat-bubble bubble-bot bg-blue-50 text-blue-800 text-xs">
-                        💡 המלצה למשרד: יואב נמצא ברוקח, 12 דקות משם.
-                    </div>
-                `
-            },
-            {
-                title: "7. איפה הנהג? (שקט תעשייתי)",
-                text: "הלקוח שואל 'מתי מגיע'. הבוט לא מציק לחכמת. הוא בודק GPS ועונה: 'הוא בצומת רעננה, 25 דקות אצלך'.",
-                ui: `
-                    <div class="chat-bubble bubble-user">מה עם המשאית?</div>
-                    <div class="map-mock relative">
-                        <div class="absolute top-1/2 left-1/3 text-blue-600 text-2xl transform -translate-y-1/2"><i class="fas fa-truck"></i></div>
-                        <div class="absolute bottom-1 right-2 text-[9px] bg-white px-1 rounded shadow">חכמת (מנוף 10)</div>
-                    </div>
-                    <div class="chat-bubble bubble-bot">
-                        הוא 15 ק"מ ממך (צומת רעננה).<br>
-                        צפי הגעה משוער: <b>10:45</b> 🕒
-                    </div>
-                `
-            },
-            {
-                title: "8. סיכום: העתיד כאן",
-                text: "זה לא חלום, הראל. זו המערכת שלנו. היא עובדת, היא חוסכת טעויות, והיא של סבן. בוא נצא לדרך.",
-                ui: `
-                    <div class="flex h-full items-center justify-center flex-col text-center p-6">
-                        <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-4 animate-bounce">
-                            <i class="fas fa-check text-4xl text-green-600"></i>
-                        </div>
-                        <h2 class="text-2xl font-bold text-slate-800 mb-2">המערכת מוכנה</h2>
-                        <div class="space-y-2 text-sm text-slate-500">
-                            <p>✅ סנכרון מלאי הושלם</p>
-                            <p>✅ צוות מחובר</p>
-                            <p>🚀 מתחילים לעבוד</p>
-                        </div>
-                    </div>
-                `
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // 1. בדיקת לינק קסם (Magic Link)
+        window.onload = async () => {
+            const params = new URLSearchParams(window.location.search);
+            const uid = params.get('uid');
+            if (uid) {
+                // אם נכנס עם לינק - בודק בשרת מה התפקיד שלו
+                try {
+                    const snap = await getDoc(doc(db, "users", uid));
+                    if (snap.exists()) {
+                        const d = snap.data();
+                        forceRedirect(d.role, uid);
+                    }
+                } catch(e) { console.error(e); }
             }
-        ];
+        };
 
-        // --- Logic ---
-        let currentScene = 0;
+        // 2. התחברות עם אימות תפקיד בזמן אמת
+        window.handleLogin = async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            setLoading(true);
 
-        window.renderScene = function() {
-            const scene = scenes[currentScene];
-            
-            // Update Text
-            document.getElementById('sceneTitle').innerText = scene.title;
-            document.getElementById('sceneText').innerText = scene.text;
-            
-            // Update Screen
-            const screen = document.getElementById('screenContent');
-            screen.innerHTML = scene.ui;
-            
-            // Effect: Shake on Alert
-            if(scene.sound === 'alert') {
-                const phone = document.getElementById('phoneBody');
-                phone.style.animation = "shake 0.5s";
-                document.body.style.backgroundColor = "#450a0a"; // רקע אדום לאווירה
-                setTimeout(() => {
-                    phone.style.animation = "";
-                    document.body.style.backgroundColor = "#0f172a";
-                }, 1000);
+            try {
+                // התחברות
+                const cred = await signInWithEmailAndPassword(auth, email, password);
+                const uid = cred.user.uid;
+
+                // משיכת נתונים עדכניים מהשרת (עוקף את הזיכרון המקומי)
+                const docSnap = await getDoc(doc(db, "users", uid));
+                
+                if (docSnap.exists()) {
+                    const userData = docSnap.data();
+                    
+                    // עדכון הזיכרון המקומי בנתונים החדשים
+                    const cleanUser = { uid, role: userData.role, name: userData.name };
+                    localStorage.setItem('saban_user', JSON.stringify(cleanUser));
+                    
+                    forceRedirect(userData.role, uid);
+                } else {
+                    throw new Error("משתמש לא קיים במסד הנתונים");
+                }
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('errorMsg').innerText = "שגיאה: " + err.message;
+                document.getElementById('errorMsg').classList.remove('hidden');
+                setLoading(false);
             }
-        }
+        };
 
-        window.nextScene = function() {
-            if (currentScene < scenes.length - 1) {
-                currentScene++;
-                renderScene();
+        function forceRedirect(role, uid) {
+            // ניתוב קשיח לפי תפקיד
+            if (['admin', 'ops', 'manager'].includes(role)) {
+                window.location.href = 'whatsapp-center.html';
+            } else if (role === 'driver') {
+                window.location.href = 'driver.html';
             } else {
-                // Loop back or finish
-                currentScene = 0; 
-                renderScene();
+                window.location.href = `client.html?uid=${uid}`; // לקוח רגיל
             }
         }
 
-        window.prevScene = function() {
-            if (currentScene > 0) {
-                currentScene--;
-                renderScene();
+        function setLoading(state) {
+            const btn = document.getElementById('submitBtn');
+            const loader = document.getElementById('btnLoader');
+            const text = document.getElementById('btnText');
+            
+            if(state) {
+                btn.disabled = true;
+                text.style.display = 'none';
+                loader.style.display = 'block';
+            } else {
+                btn.disabled = false;
+                text.style.display = 'block';
+                loader.style.display = 'none';
             }
         }
-
-        // Start
-        window.onload = renderScene;
-
     </script>
 </body>
 </html>
