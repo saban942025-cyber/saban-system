@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>SabanOS | ניהול משתמשים וגישות</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f1f5f9; font-family: system-ui, -apple-system, sans-serif; }
+        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+        .role-admin { background: #ede9fe; color: #6d28d9; }
+        .role-client { background: #dcfce7; color: #15803d; }
+        .role-driver { background: #ffedd5; color: #c2410c; }
+    </style>
+</head>
+<body class="p-8">
+
+    <div class="max-w-6xl mx-auto">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">ניהול משתמשים וגישות</h1>
+                <p class="text-gray-500 text-sm">יצירת משתמשים, ניהול תפקידים ולינקים לכניסה מהירה</p>
+            </div>
+            <a href="whatsapp-center.html" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-bold">חזרה לחמ"ל</a>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <div class="card md:col-span-1 h-fit">
+                <h2 class="font-bold text-lg mb-4 flex items-center gap-2"><i class="fas fa-user-plus text-blue-600"></i> צור משתמש חדש</h2>
+                <form id="createUserForm" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1">שם מלא</label>
+                        <input type="text" id="newName" class="w-full border p-2 rounded" required placeholder="ישראל ישראלי">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1">אימייל (לכניסה)</label>
+                        <input type="email" id="newEmail" class="w-full border p-2 rounded" required placeholder="user@saban.co.il">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1">סיסמה</label>
+                        <input type="text" id="newPass" class="w-full border p-2 rounded" value="Saban1234">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1">תפקיד</label>
+                        <select id="newRole" class="w-full border p-2 rounded bg-white">
+                            <option value="client">לקוח (Client)</option>
+                            <option value="admin">מנהל (Admin)</option>
+                            <option value="ops">תפעול (Ops)</option>
+                            <option value="driver">נהג (Driver)</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-bold">צור משתמש</button>
+                </form>
+            </div>
+
+            <div class="card md:col-span-2">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="font-bold text-lg"><i class="fas fa-users text-green-600"></i> כל המשתמשים במערכת</h2>
+                    <button onclick="loadUsers()" class="text-sm text-blue-600 hover:underline"><i class="fas fa-sync"></i> רענן</button>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-right">
+                        <thead class="bg-gray-50 text-gray-500 border-b">
+                            <tr>
+                                <th class="p-3">שם</th>
+                                <th class="p-3">תפקיד</th>
+                                <th class="p-3">אימייל</th>
+                                <th class="p-3">לינק קסם 🪄</th>
+                                <th class="p-3">פעולות</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <tr><td colspan="5" class="p-4 text-center text-gray-400">טוען נתונים...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // טעינת משתמשים
+        window.loadUsers = async () => {
+            const tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center">טוען...</td></tr>';
+            
+            try {
+                const querySnapshot = await getDocs(collection(db, "users"));
+                let html = "";
+                
+                querySnapshot.forEach((docSnap) => {
+                    const u = docSnap.data();
+                    const uid = docSnap.id;
+                    const roleClass = u.role === 'admin' ? 'role-admin' : (u.role === 'driver' ? 'role-driver' : 'role-client');
+                    const roleLabel = u.role === 'admin' ? 'מנהל' : (u.role === 'driver' ? 'נהג' : 'לקוח');
+                    
+                    // יצירת לינק הקסם
+                    const magicLink = `${window.location.origin}/index.html?uid=${uid}`;
+
+                    html += `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="p-3 font-bold text-gray-800">${u.name}</td>
+                        <td class="p-3"><span class="badge ${roleClass}">${roleLabel}</span></td>
+                        <td class="p-3 text-gray-500 text-xs">${u.email || '-'}</td>
+                        <td class="p-3">
+                            <button onclick="copyLink('${magicLink}')" class="bg-indigo-50 text-indigo-700 px-3 py-1 rounded text-xs font-bold hover:bg-indigo-100 border border-indigo-200">
+                                <i class="fas fa-link"></i> העתק לינק
+                            </button>
+                        </td>
+                        <td class="p-3">
+                            <button onclick="deleteUser('${uid}')" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>`;
+                });
+                
+                tbody.innerHTML = html || '<tr><td colspan="5" class="p-4 text-center">אין משתמשים</td></tr>';
+
+            } catch (error) {
+                console.error(error);
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">שגיאה: ${error.message}</td></tr>`;
+            }
+        };
+
+        // העתקת לינק
+        window.copyLink = (link) => {
+            navigator.clipboard.writeText(link);
+            alert("הלינק הועתק! 📋\nשלח אותו למשתמש לכניסה ישירה.");
+        };
+
+        // יצירת משתמש
+        document.getElementById('createUserForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            const originalText = btn.innerText;
+            btn.innerText = "יוצר...";
+            btn.disabled = true;
+
+            const email = document.getElementById('newEmail').value;
+            const password = document.getElementById('newPass').value;
+            const name = document.getElementById('newName').value;
+            const role = document.getElementById('newRole').value;
+
+            try {
+                // 1. יצירה ב-Auth
+                const userCred = await createUserWithEmailAndPassword(auth, email, password);
+                const uid = userCred.user.uid;
+
+                // 2. שמירה ב-DB עם התפקיד הנכון
+                await setDoc(doc(db, "users", uid), {
+                    name: name,
+                    email: email,
+                    role: role,
+                    createdAt: new Date(),
+                    avatar: `https://ui-avatars.com/api/?name=${name}`
+                });
+
+                alert(`המשתמש ${name} נוצר בהצלחה כמנהל!`);
+                e.target.reset();
+                loadUsers(); // רענון טבלה
+
+            } catch (error) {
+                alert("שגיאה: " + error.message);
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        });
+
+        // מחיקת משתמש (מה-DB בלבד כרגע)
+        window.deleteUser = async (uid) => {
+            if(confirm("למחוק משתמש זה מהמאגר?")) {
+                await deleteDoc(doc(db, "users", uid));
+                loadUsers();
+            }
+        }
+
+        // טעינה ראשונית
+        loadUsers();
+
+    </script>
+</body>
+</html>
