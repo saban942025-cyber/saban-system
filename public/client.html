@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SabanOS | Client App v36.0</title>
+    <title>SabanOS | Client App v36.2 (Live Bot)</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -191,6 +191,7 @@
         import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { SabanPush } from './js/notifications.js';
         import { SmartContacts } from './js/smart-contacts.js';
+        import { SabanChatbot } from './js/chatbot-engine.js'; 
 
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
         const app = initializeApp(firebaseConfig);
@@ -201,6 +202,7 @@
         let cart = [];
         let allProducts = [];
         let currentProduct = null;
+        let bot = null;
 
         // --- INIT ---
         window.onload = async () => {
@@ -213,10 +215,14 @@
                         const d = snap.data();
                         currentUser = { id:uid, name:d.name, avatar:d.avatar||`https://ui-avatars.com/api/?name=${d.name}`, role:d.role, phone:d.phone };
                     } else {
-                        // Fallback
                         let name = uid.includes('shahar') ? "שחר שאול" : "אורח";
                         currentUser = { id:uid, name:name, avatar:`https://ui-avatars.com/api/?name=${name}` };
                     }
+                    
+                    // Initialize Bot
+                    bot = new SabanChatbot(db, currentUser);
+                    console.log("🤖 Bot initialized for:", currentUser.name);
+
                 } catch(e) { console.error(e); }
 
                 document.getElementById('userName').innerText = currentUser.name;
@@ -280,7 +286,7 @@
         
         window.closeProductModal = () => document.getElementById('productModal').classList.remove('open');
         window.addToCartFromModal = () => { quickAdd(encodeURIComponent(JSON.stringify(currentProduct))); closeProductModal(); };
-        window.consultBot = () => { closeProductModal(); switchScreen('chat'); document.getElementById('chatInput').value = `מתייעץ על ${currentProduct.core?.name}`; };
+        window.consultBot = () => { closeProductModal(); switchScreen('chat'); sendChat(`מתייעץ על ${currentProduct.core?.name}`); };
 
         // --- PASTE ORDER ---
         window.openPasteOrder = () => document.getElementById('pasteModal').classList.add('open');
@@ -293,9 +299,71 @@
             switchScreen('chat');
             await addDoc(collection(db, `chat_sessions/${currentUser.id}/messages`), { text: html, role: 'user', createdAt: serverTimestamp() });
             
+            // 🔥 BOT TRIGGER (FIX) 🔥
+            handleBotInteraction(`הזמנת רשימה: ${text}`);
+
             document.getElementById('pasteModal').classList.remove('open');
             document.getElementById('pasteInput').value = "";
             SabanPush.send('admin_rami', 'הזמנת טקסט', `${currentUser.name} שלח רשימה`);
+        };
+
+        // --- BOT LOGIC ---
+        async function handleBotInteraction(txt) {
+            if(!bot) return;
+            console.log("Triggering bot for:", txt); // דיבאג
+            
+            const response = await bot.ask(txt);
+            
+            if(response && response.text) {
+                // השהייה קלה לתחושה טבעית
+                setTimeout(async () => {
+                    await addDoc(collection(db, `chat_sessions/${currentUser.id}/messages`), { 
+                        text: response.text, role: 'staff', sender: 'SabanBot', createdAt: serverTimestamp() 
+                    });
+                    
+                    // כפתורים
+                    if(response.buttons && response.buttons.length > 0) {
+                         const btnsHtml = response.buttons.map(b => 
+                            `<button onclick="sendChat('${b.label}')" class="block w-full bg-white border border-green-200 text-green-700 text-sm font-bold py-2 rounded mt-1 shadow-sm active:scale-95">${b.label}</button>`
+                         ).join('');
+                         
+                         await addDoc(collection(db, `chat_sessions/${currentUser.id}/messages`), { 
+                            text: btnsHtml, role: 'staff', sender: 'System', createdAt: serverTimestamp() 
+                        });
+                    }
+                }, 800);
+            }
+        }
+
+        // --- CHAT ---
+        function subscribeToChat(uid) {
+            onSnapshot(query(collection(db, `chat_sessions/${uid}/messages`), orderBy("createdAt", "asc")), (snap) => {
+                const box = document.getElementById('chatBox');
+                box.innerHTML = snap.docs.map(d => {
+                    const m = d.data();
+                    const cls = m.role==='user'?'msg-out':'msg-in';
+                    const avt = m.role==='user' ? currentUser.avatar : 'https://ui-avatars.com/api/?name=Saban&background=008069&color=fff';
+                    
+                    if (m.sender === 'System') return `<div class="w-full flex justify-center">${m.text}</div>`;
+
+                    return `<div class="flex gap-2 items-end ${m.role==='user'?'flex-row-reverse':''}">
+                        <img src="${avt}" class="w-6 h-6 rounded-full border">
+                        <div class="msg ${cls}">${m.text}</div>
+                    </div>`;
+                }).join('');
+                box.scrollTop = box.scrollHeight;
+            });
+        }
+
+        window.sendChat = async (prefill) => {
+            const txt = prefill || document.getElementById('chatInput').value; 
+            if(!txt) return;
+            document.getElementById('chatInput').value = '';
+            
+            await addDoc(collection(db, `chat_sessions/${currentUser.id}/messages`), { text: txt, role: 'user', createdAt: serverTimestamp() });
+            
+            // 🔥 BOT TRIGGER (FIX) 🔥
+            handleBotInteraction(txt);
         };
 
         // --- CART ---
@@ -365,35 +433,15 @@
 
             switchScreen('chat');
             await addDoc(collection(db, `chat_sessions/${currentUser.id}/messages`), { text: html, role: 'user', createdAt: serverTimestamp() });
-            await setDoc(doc(db, "chat_sessions", currentUser.id), { userName: currentUser.name, lastMessage: "📥 הזמנה חדשה", lastActivity: serverTimestamp(), isBotActive: true }, { merge: true });
             
+            // 🔥 BOT TRIGGER (FIX) 🔥
+            handleBotInteraction("הזמנה חדשה נשלחה");
+
             SabanPush.send('admin_rami', 'הזמנה חדשה!', `${currentUser.name} שלח הזמנה (${driver})`);
             cart = []; updateCartUI();
         };
 
-        // --- CHAT ---
-        function subscribeToChat(uid) {
-            onSnapshot(query(collection(db, `chat_sessions/${uid}/messages`), orderBy("createdAt", "asc")), (snap) => {
-                const box = document.getElementById('chatBox');
-                box.innerHTML = snap.docs.map(d => {
-                    const m = d.data();
-                    const cls = m.role==='user'?'msg-out':'msg-in';
-                    return `<div class="msg ${cls}">${m.text}</div>`;
-                }).join('');
-                box.scrollTop = box.scrollHeight;
-            });
-        }
-
-        window.sendChat = async () => {
-            const txt = document.getElementById('chatInput').value; if(!txt) return;
-            document.getElementById('chatInput').value = '';
-            await addDoc(collection(db, `chat_sessions/${currentUser.id}/messages`), { text: txt, role: 'user', createdAt: serverTimestamp() });
-        };
-
-        window.startContainerFlow = () => { switchScreen('chat'); sendChatBotTrigger('מכולה'); };
-        async function sendChatBotTrigger(txt) {
-            await addDoc(collection(db, `chat_sessions/${currentUser.id}/messages`), { text: txt, role: 'user', createdAt: serverTimestamp() });
-        }
+        window.startContainerFlow = () => { switchScreen('chat'); sendChat('אני צריך מכולה'); };
 
         window.switchScreen = (n) => {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
