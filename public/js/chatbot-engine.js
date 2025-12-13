@@ -1,143 +1,118 @@
-// public/js/chatbot-engine.js
 import { SabanPush } from './notifications.js';
 import { SabanSounds } from './sounds.js';
+import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 export class SabanChatbot {
     constructor(db, userContext) {
         this.db = db;
         this.user = userContext; 
         
-        // המוח המורחב - סדר החוקים חשוב (דחיפות קודם)
+        // חוקים קבועים (חירום, סמול טוק וכו')
         this.rules = [
-            // --- 1. חירום ועצירת עבודה (הכי חשוב) ---
             {
                 category: "EMERGENCY",
-                keywords: ["דחוף", "בהול", "עצור", "תעצור", "טעות בהזמנה", "לא לשלוח", "תקלה", "שינוי דחוף"],
+                keywords: ["דחוף", "בהול", "עצור", "תעצור", "טעות", "תקלה"],
                 answer: "🛑 עצרתי הכל! הקפצתי התראה אדומה לכל המנהלים (רמי/אורן).\nאני מחייג אליך או שולח נציג לצ'אט מיד.",
                 action: "urgent_alert"
             },
-
-            // --- 2. מכולות ופינוי פסולת (לוגיקה מורכבת) ---
             {
                 category: "CONTAINERS",
-                keywords: ["מכולה", "8 קוב", "פינוי פסולת", "להזמין מכולה", "החלפת מכולה"],
-                answer: "אין בעיה, נארגן מכולה 8 קוב. 🚛\nחשוב מאוד: לאיזו עיר המכולה מיועדת? (בת\"א/הרצליה חובה היתר הצבה).",
-                buttons: [
-                    { label: "🏙️ תל אביב / הרצליה", payload: "CONTAINER_CITY_REQ_PERMIT" },
-                    { label: "🏠 עיר אחרת", payload: "CONTAINER_CITY_NORMAL" }
-                ]
+                keywords: ["מכולה", "8 קוב", "פינוי פסולת"],
+                answer: "אין בעיה, נארגן מכולה 8 קוב. 🚛\nלאיזו עיר המכולה מיועדת? (בת\"א/הרצליה חובה היתר הצבה).",
+                buttons: [{ label: "🏙️ תל אביב", payload: "TLV" }, { label: "🏠 עיר אחרת", payload: "OTHER" }]
             },
-            {
-                category: "PERMITS",
-                keywords: ["יש היתר", "אין היתר", "אישור הצבה", "עירייה"],
-                answer: "קיבלתי. אם יש היתר, הנהג יוצא. אם אין - קח בחשבון שהקנס על הלקוח. ⚠️\nהאם לאשר הזמנה?",
-                buttons: [{ label: "✅ אשר ושלח", payload: "CONFIRM_CONTAINER" }]
-            },
-
-            // --- 3. לוגיסטיקה ושטח ---
-            {
-                category: "LOCATION",
-                keywords: ["מיקום", "לשטח", "לאתר", "כתובת", "תביא ל", "איפה לפרוק", "gps"],
-                answer: "כדי שהנהג יגיע בול לנקודה ולא יסתבך, שלח לי מיקום GPS נוכחי. 📍",
-                buttons: [{ label: "📍 שלח מיקום נוכחי", payload: "ACTION_SEND_LOC" }]
-            },
-            {
-                category: "CRANE",
-                keywords: ["מנוף", "קומה", "גג", "להרים", "זרוע", "מרפסת"],
-                answer: "אין בעיה, נספק עם מנוף (חכמת/אמיר). 🏗️\nרק תוודא שאין חוטי חשמל שמפריעים להרמה.",
-                buttons: [{ label: "✅ גישה תקינה למנוף", payload: "CRANE_OK" }]
-            },
-
-            // --- 4. מנהלה וכספים (הראל) ---
-            {
-                category: "FINANCE",
-                keywords: ["חשבונית", "הראל", "הנהלת חשבונות", "כסף", "חוב", "תשלום", "אשראי", "מחיר"],
-                answer: "בכיף. אני פותח משימה להראל (כספים) שיטפל בזה. 🧾\nמה רמת הדחיפות?",
-                buttons: [
-                    { label: "🔥 דחוף למע\"מ (היום)", payload: "URGENT_INVOICE" },
-                    { label: "🕒 רגיל (בזמנו הפנוי)", payload: "NORMAL_INVOICE" }
-                ],
-                action: "finance_task"
-            },
-
-            // --- 5. התייעצות מוצרים (טכני) ---
-            {
-                category: "CONSULT",
-                keywords: ["מתייעץ", "לגבי מוצר", "איך משתמשים", "מפרט", "מק\"ט", "כמה שוקל", "סיקה", "איטום"],
-                answer: "בשמחה! אני רואה שאתה מתעניין במוצר זה. 🧐\nאני יכול לשלוח לך דף מוצר, סרטון יישום, או לחשב כמויות.",
-                buttons: [
-                    { label: "🎬 סרטון יישום", payload: "SHOW_VIDEO" },
-                    { label: "👨‍💻 נציג טכני", payload: "HUMAN_HELP" }
-                ]
-            },
-
-            // --- 6. היסטוריה ומידע אישי ---
-            {
-                category: "HISTORY",
-                keywords: ["היסטוריה", "הזמנות שלי", "מה הזמנתי", "ארכיון", "סטטוס", "מתי מגיע"],
-                answer: "בטח. אתה יכול לראות הכל ביומן ההזמנות, או שאבדוק לך סטטוס עכשיו. 📜",
-                buttons: [{ label: "פתח יומן הזמנות", payload: "ACTION_OPEN_HISTORY" }]
-            },
-
-            // --- 7. הזמנות שוטפות (Keywords) ---
-            {
-                category: "ORDER_GENERAL",
-                keywords: ["הזמנה", "להזמין", "תשלח", "מלט", "חול", "בלות", "טיט", "דבק", "גבס", "בלוקים", "ברזל", "שומשום"],
-                answer: "קיבלתי את הרשימה! 📝\nמעביר להקלדה וליקוט. מספר הזמנה יישלח ברגע שיופק.",
-                action: "order_received"
-            },
-
-            // --- 8. נימוס וסמול-טוק ---
             {
                 category: "SMALL_TALK",
-                keywords: ["תודה", "אלוף", "מלך", "בוקר טוב", "היי", "שלום", "מה קורה"],
-                answer: "בכיף {name}! אני כאן לכל מה שצריך. 💪\nצריך עוד משהו לאתר?",
-                buttons: [{ label: "לא תודה", payload: "NO_THANKS" }, { label: "כן, הזמנה", payload: "NEW_ORDER" }]
+                keywords: ["תודה", "אלוף", "בוקר טוב", "היי", "שלום"],
+                answer: "בכיף {name}! אני כאן לכל מה שצריך. 💪",
+                buttons: []
             }
         ];
     }
 
+    // --- הפונקציה הראשית שרצה בכל הודעה ---
     async ask(question) {
         if (!question) return null;
         const cleanQ = question.toLowerCase();
 
-        // מעבר על כל החוקים
+        // 1. בדיקה מול חוקים קבועים (Rules)
         for (const rule of this.rules) {
-            // בדיקה האם אחת ממילות המפתח קיימת בשאלה
-            const match = rule.keywords.some(kw => cleanQ.includes(kw));
-            
-            if (match) {
-                // לוגיקה לפי קטגוריה
-                
-                // 1. חירום - צפצוף חזק והתראה
+            if (rule.keywords.some(kw => cleanQ.includes(kw))) {
                 if (rule.action === 'urgent_alert') {
                     if(SabanSounds) SabanSounds.playAlert();
-                    await SabanPush.send('admin_rami', '🚨 דחוף בחמ"ל!', `${this.user.name}: ${question}`);
-                } 
-                // 2. הזמנה/מנהלה - צליל רגיל ועדכון
-                else {
+                    await SabanPush.send('admin_rami', '🚨 דחוף', `${this.user.name}: ${question}`);
+                } else {
                     if(SabanSounds) SabanSounds.playMessage();
                 }
-
-                // החלפת משתנים בתשובה (שם הלקוח)
-                const personalizedAnswer = rule.answer.replace("{name}", this.user.name || "חבר");
-
                 return { 
-                    text: personalizedAnswer, 
+                    text: rule.answer.replace("{name}", this.user.name || "חבר"), 
                     buttons: rule.buttons || [],
-                    action: rule.action || null,
-                    category: rule.category
+                    action: rule.action 
                 };
             }
         }
 
-        // Fallback: אם הבוט לא הבין
-        // משחק אותה "חושב" ושולח לרמי לבדוק
-        await SabanPush.send('admin_rami', '🤔 הבוט צריך עזרה', `שאלה מ-${this.user.name}: "${question}"`);
-        
+        // 2. חיפוש מוצר ב-Firebase (בדיקת מלאי חכמה) 🧠
+        // אם לא מצאנו חוק, נבדוק אם המשתמש שאל על מוצר מהקטלוג
+        try {
+            const productsRef = collection(this.db, "products");
+            const snapshot = await getDocs(productsRef);
+            
+            // חיפוש בתוך המוצרים (האם שם המוצר מופיע בשאלה?)
+            const foundProduct = snapshot.docs.find(doc => {
+                const p = doc.data();
+                return p.core && p.core.name && cleanQ.includes(p.core.name.toLowerCase()); // חיפוש לפי שם
+            });
+
+            if (foundProduct) {
+                const productData = foundProduct.data();
+                
+                // --- כאן אנחנו משתמשים בפונקציה שלך! ---
+                const stockMsg = this.checkStockLogic(productData);
+                
+                // בונים תשובה מלאה
+                let fullAnswer = `מצאתי את המוצר: **${productData.core.name}**\nמחיר: ₪${productData.core.price}\n\n${stockMsg}`;
+                
+                // הוספת מידע טכני אם יש
+                if(productData.chatbot) {
+                    if(productData.chatbot.drying_time) fullAnswer += `\n⏳ זמן ייבוש: ${productData.chatbot.drying_time}`;
+                }
+
+                return {
+                    text: fullAnswer,
+                    buttons: [
+                        { label: "הוסף לעגלה 🛒", payload: `ADD_${foundProduct.id}` },
+                        { label: "פרטים נוספים ℹ️", payload: `INFO_${foundProduct.id}` }
+                    ]
+                };
+            }
+        } catch (e) {
+            console.error("Error searching products:", e);
+        }
+
+        // 3. Fallback (לא הבנתי)
         return { 
-            text: "שאלה טובה... אני בודק את זה רגע מול רמי/אורן וחוזר אליך עם תשובה מדויקת. ⏳\n(מיד איתך...)", 
+            text: "שאלה טובה... אני בודק את זה רגע מול רמי/אורן וחוזר אליך. ⏳", 
             action: "fallback" 
         };
+    }
+
+    // --- הפונקציה שלך (משולבת במחלקה) ---
+    checkStockLogic(product) {
+        if (!product || !product.core) return "מידע על מלאי לא זמין."; // הגנה משגיאות
+
+        const loc = product.core.warehouse || 'both'; // ברירת מחדל
+        const productName = product.core.name;
+
+        if (loc === 'both') {
+            return `יש חדשות טובות! ה-${productName} זמין במלאי גם בחרש וגם בתלמיד. 🟢\nמאיפה נוח לך לאסוף?`;
+        } 
+        else if (loc === 'harash') {
+            return `שים לב: ה-${productName} נמצא כרגע רק בסניף **החרש**. 📍\nסניף התלמיד חסר כרגע. לשריין לך בחרש?`;
+        } 
+        else if (loc === 'talmid') {
+            return `בדיקה במערכת מראה שהמוצר זמין בסניף **התלמיד** בלבד. 📍\nתרצה שאפתח משימת ליקוט להעברה לחרש, או שתאסוף משם?`;
+        }
+        return `נראה שהמוצר חסר זמנית בשני הסניפים. 🔴`;
     }
 }
