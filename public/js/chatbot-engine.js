@@ -5,51 +5,86 @@ export class SabanChatbot {
     constructor(db, userContext) {
         this.db = db;
         this.user = userContext; 
-        this.knowledgeBase = [];
-    }
-
-    async loadTemplates() {
-        try {
-            const response = await fetch('templates.json');
-            this.knowledgeBase = await response.json();
-        } catch (e) {
-            console.warn("Using fallback templates");
-            this.knowledgeBase = [
-                { keywords: ["היי", "שלום"], answer: "אהלן {name}! אני הבוט של סבן. איך אפשר לעזור?", buttons: [] }
-            ];
-        }
+        
+        // --- המוח (Hardcoded Knowledge Base) ---
+        // הגדרת חוקים ותשובות ישירות בתוך הקוד למניעת תקלות טעינה
+        this.rules = [
+            // 1. זיהוי הזמנות ורשימות
+            {
+                keywords: ["הזמנה", "להזמין", "תשלח", "מלט", "חול", "בלות", "טיט", "דבק", "גבס", "בלוקים", "ברזל"],
+                answer: "קיבלתי את רשימת ההזמנה! 📝\nאני מעביר אותה מיד לצוות (רמי/יואב) להקלדה בקומקס.\nתקבל עדכון וקובץ PDF לאישור ברגע שזה יהיה מוכן.",
+                action: "order_received"
+            },
+            // 2. לוגיקה תפעולית (מנוף/משאית)
+            {
+                keywords: ["מנוף", "קומה", "גג", "להרים"],
+                answer: "אין בעיה, נספק עם מנוף (חכמת/אמיר). 🏗️\nרק תוודא שאין חוטי חשמל בגישה ושמשטח הפריקה פנוי.",
+                buttons: [{ label: "מאשר גישה תקינה ✅", payload: "crane_ok" }]
+            },
+            {
+                keywords: ["ידני", "סבלות", "מדרגות"],
+                answer: "פריקה ידנית? זה לטיפול של עלי. 💪\nשים לב שיש תוספת תשלום על סבלות לפי קומה.",
+                buttons: [{ label: "מאשר תוספת", payload: "manual_ok" }]
+            },
+            // 3. מקרי חירום
+            {
+                keywords: ["דחוף", "בהול", "עכשיו", "תקוע", "תקלה", "לא הגיע"],
+                answer: "הבנתי שזה דחוף! 🚨\nהקפצתי התראה מיוחדת למנהל התפעול. איתך תוך דקות.",
+                action: "urgent_alert"
+            },
+            // 4. היתרים ואיזורים מיוחדים
+            {
+                keywords: ["הרצליה", "פיתוח", "תל אביב"],
+                answer: "🛑 שים לב: באזור הזה העירייה דורשת היתר כניסה/העמדה.\nיש לך היתר בתוקף?",
+                buttons: [{ label: "כן, יש לי 👍", payload: "permit_yes" }, { label: "לא, תבדקו לי ❓", payload: "permit_no" }]
+            },
+            // 5. נימוסין וכללי
+            {
+                keywords: ["תודה", "אחלה", "מעולה", "סבבה", "תותח"],
+                answer: "בכיף {name}! אני כאן אם צריך עוד משהו. 😊"
+            },
+            {
+                keywords: ["היי", "שלום", "בוקר טוב", "ערב טוב", "אהלן"],
+                answer: "אהלן {name}! ברוך הבא לסבן. 👋\nאפשר להקליד כאן הזמנה חופשית, לצלם מסמך, או לבחור מהתפריט.",
+                buttons: [{ label: "הדבק הזמנה", payload: "paste_order" }, { label: "קטלוג מוצרים", payload: "catalog" }]
+            }
+        ];
     }
 
     async ask(question) {
-        if (this.knowledgeBase.length === 0) await this.loadTemplates();
+        console.log("🤖 SabanBot thinking about:", question); // לוג לבדיקה בדפדפן
         
+        if (!question) return null;
         const cleanQ = question.toLowerCase();
 
-        // 1. חירום והתראות
-        if (cleanQ.includes("דחוף") || cleanQ.includes("תקלה")) {
-            await SabanPush.send('admin_rami', '🚨 התראה מהבוט', `הלקוח ${this.user.name}: "${question}"`);
-            return { text: "הבנתי, זה דחוף. שלחתי התראה לרמי והצוות. נחזור מיד.", action: "urgent" };
+        // מעבר על כל החוקים במוח
+        for (const rule of this.rules) {
+            // האם אחת ממילות המפתח נמצאת במשפט?
+            const match = rule.keywords.some(kw => cleanQ.includes(kw));
+            
+            if (match) {
+                console.log("✅ Match found via keyword:", rule.keywords[0]);
+                
+                // שליחת התראה למנהל במקרה דחוף
+                if (rule.action === 'urgent_alert') {
+                    await SabanPush.send('admin_rami', '🚨 דחוף מבוט', `${this.user.name}: ${question}`);
+                }
+
+                // עיבוד התשובה (הכנסת שם הלקוח)
+                const finalText = rule.answer.replace("{name}", this.user.name || "חבר");
+                
+                return { 
+                    text: finalText, 
+                    buttons: rule.buttons || [],
+                    action: rule.action || null
+                };
+            }
         }
 
-        // 2. לוגיקה תפעולית (מנוף/ידני)
-        if (cleanQ.includes("מנוף")) return { text: "מנוף? אין בעיה. משימה ל-<b>חכמת</b>. 🏗️<br>רק תוודא שאין חוטי חשמל.", buttons: [{ label: "מאשר", action: "next_node", payload: "crane_ok" }] };
-        if (cleanQ.includes("ידני")) return { text: "פריקה ידנית? זה <b>עלי</b>. 💪<br>יש תוספת תשלום על סבלות.", buttons: [{ label: "מאשר תוספת", action: "next_node", payload: "manual_ok" }] };
-        
-        // 3. היתרים
-        if (cleanQ.includes("הרצליה")) return { text: "🛑 בהרצליה חייבים היתר עירייה! יש לך?", buttons: [{ label: "יש לי", action: "permit_ok" }, { label: "אין לי", action: "permit_info" }] };
-
-        // 4. חיפוש בתבניות
-        let bestMatch = null, maxScore = 0;
-        this.knowledgeBase.forEach(item => {
-            let score = 0;
-            if (item.keywords) item.keywords.forEach(kw => { if (cleanQ.includes(kw)) score++; });
-            if (score > maxScore) { maxScore = score; bestMatch = item; }
-        });
-
-        if (bestMatch && maxScore > 0) {
-            return { text: bestMatch.answer.replace("{name}", this.user.name || "לקוח"), buttons: bestMatch.buttons || [] };
-        }
-
-        return { text: "לא הבנתי בדיוק. נסה לשאול על מכולות, חומרים או לכתוב 'דחוף'.", action: "fallback" };
+        // תשובת ברירת מחדל (אם לא הבין כלום)
+        return { 
+            text: "קיבלתי את ההודעה. מעביר לנציג אנושי להמשך טיפול. 👨‍💻",
+            action: "fallback"
+        };
     }
 }
