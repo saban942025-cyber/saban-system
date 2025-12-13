@@ -1,172 +1,118 @@
-<script type="module">
-        import { initializeApp } from "[https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js](https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js)";
-        import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, limit } from "[https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js](https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js)";
-        import { SabanChatbot } from './js/chatbot-engine.js';
+/* Saban Chatbot Engine v7.0 (Auto-Discovery)
+   פיצ'ר: זיהוי אוטומטי של המודל הזמין במפתח
+*/
 
-        // Firebase Config
-        const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // API Key (אותו מפתח שעובד בבוט)
-        const GEMINI_KEY = "AIzaSyD9plWwyTESFm24c_OTunf4mFAsAmfrgj0";
+const GEMINI_API_KEY = "AIzaSyD9plWwyTESFm24c_OTunf4mFAsAmfrgj0";
 
-        // User Data
-        const user = { name: "שחר שאול", phone: "050-0000000", avatar: "[https://ui-avatars.com/api/?name=Shahar+Shaul&background=0D8ABC&color=fff](https://ui-avatars.com/api/?name=Shahar+Shaul&background=0D8ABC&color=fff)" };
+export class SabanChatbot {
+    constructor(db, userContext) {
+        this.db = db;
+        this.user = userContext || { name: "אורח" };
+        this.apiKey = GEMINI_API_KEY;
+        this.emergencyKeywords = ["דחוף", "עצור", "תעצור", "טעות", "סכנה", "פצוע"];
+        this.cachedModelName = null; // נשמור את השם שנמצא כדי לא לחפש כל פעם
+    }
+
+    async ask(question) {
+        if (!question) return { text: "..." };
         
-        // Bot Instance
-        const botEngine = new SabanChatbot(db, user);
-
-        // State
-        let allProducts = [];
-        let cart = [];
-
-        // --- 1. Load Data ---
-        async function loadData() {
-            try {
-                const snap = await getDocs(collection(db, "products"));
-                allProducts = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                renderCatalog();
-            } catch(e) { console.error("Error loading products:", e); }
+        // 1. חירום
+        if (this.emergencyKeywords.some(k => question.includes(k))) {
+            return { text: "🛑 עצרתי הכל! דיווחתי להראל ולרמי.", action: "urgent_alert" };
         }
 
-        // --- 2. Smart Order Logic (התיקון הגדול) ---
-        window.processSmartOrder = async () => {
-            const text = document.getElementById('smartInput').value;
-            if(!text) return alert("הדבק קודם רשימה...");
+        // 2. AI
+        try {
+            // מלאי (דילוג שגיאות)
+            let inventory = "מלאי בבדיקה.";
+            try { if(this.db) inventory = await this.getInventoryContext(); } 
+            catch (e) { console.warn("Firebase skipped"); }
 
-            const btn = document.getElementById('btnSmart');
-            const originalBtnText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> מפענח הזמנה...';
-            btn.disabled = true;
+            const aiResponse = await this.generateAIResponse(question, inventory);
+            return { text: aiResponse, action: "ai_reply" };
 
-            // שימוש במודל 1.5 Flash המהיר
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`;
+        } catch (error) {
+            console.error("Bot Error:", error);
+            return { text: "תקלה במוח (בדוק F12 לפרטים). 🔌" };
+        }
+    }
+
+    // --- איתור מודל אוטומטי ---
+    async findActiveModel() {
+        if (this.cachedModelName) return this.cachedModelName;
+
+        try {
+            // שואלים את גוגל: איזה מודלים יש לי?
+            const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${this.apiKey}`;
+            const res = await fetch(url);
+            const data = await res.json();
             
-            // הנחיה קשוחה לבוט להחזיר רק JSON נקי
-            const prompt = `
-            Task: Extract construction products and quantities from this Hebrew text: "${text}".
-            Output Requirement: Return ONLY a raw JSON array. Do not use Markdown. Do not say "Here is the JSON".
-            Format: [{"name": "Product Name in Hebrew", "qty": Number}]
-            If no quantity is specified, assume 1.
-            `;
+            if (!res.ok) throw new Error(data.error?.message || "ListModels Failed");
 
-            try {
-                const res = await fetch(url, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
+            // מחפשים מודל שמכיל 'gemini' ותומך ב-generateContent
+            const model = data.models.find(m => 
+                m.name.includes("gemini") && 
+                m.supportedGenerationMethods.includes("generateContent")
+            );
 
-                if(!res.ok) throw new Error("Google Error");
-
-                const data = await res.json();
-                let rawText = data.candidates[0].content.parts[0].text;
-
-                // --- שלב הניקוי (Cleaning) ---
-                // מוחק סימני קוד (```json) ורווחים מיותרים
-                let cleanJson = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-                
-                // מנסה להפוך את הטקסט לאובייקט
-                const items = JSON.parse(cleanJson);
-
-                if(!Array.isArray(items)) throw new Error("Not an array");
-
-                // הוספה לעגלה
-                items.forEach(item => {
-                    cart.push({
-                        id: 'smart_' + Date.now() + Math.random(),
-                        core: { name: item.name + ` (כמות: ${item.qty})`, price: 0 },
-                        rich: { image: 'https://cdn-icons-png.flaticon.com/512/1040/1040241.png' } // תמונה גנרית לפריט חכם
-                    });
-                });
-
-                updateCart(); // עדכון התצוגה בעגלה (פונקציה קיימת)
-                
-                // מעבר ללשונית עגלה והודעת הצלחה
-                alert(`✅ הצלחתי! זיהיתי ${items.length} פריטים והוספתי לעגלה.`);
-                document.getElementById('smartInput').value = ''; // ניקוי שדה
-                switchView('cart'); // מעבר לעגלה (לוודא שיש לך פונקציה כזו או לשנות לפי הלוגיקה שלך)
-
-            } catch(e) {
-                console.error("Smart Order Failed:", e);
-                alert("לא הצלחתי להבין את הרשימה.\nנסה לכתוב ברור יותר (למשל: '10 שקי מלט').");
-            }
+            if (!model) throw new Error("לא נמצא מודל Gemini פעיל במפתח זה");
             
-            // החזרת הכפתור למצב רגיל
-            btn.innerHTML = originalBtnText;
-            btn.disabled = false;
-        };
+            console.log("✅ מודל נבחר אוטומטית:", model.name);
+            this.cachedModelName = model.name; // שומרים לפעם הבאה (למשל: models/gemini-1.5-flash)
+            return model.name;
 
-        // --- 3. Chat Logic ---
-        window.sendMsg = async () => {
-            const input = document.getElementById('userIn');
-            const txt = input.value;
-            if(!txt) return;
+        } catch (e) {
+            console.error("Auto-Discovery Failed:", e);
+            // ברירת מחדל אם הזיהוי נכשל
+            return "models/gemini-pro"; 
+        }
+    }
 
-            addMessage(txt, 'user');
-            input.value = '';
+    async generateAIResponse(userQ, inventoryList) {
+        // שלב 1: מצא את המודל הנכון
+        const modelName = await this.findActiveModel(); // מחזיר למשל 'models/gemini-1.5-flash'
+        
+        // שלב 2: שלח את הבקשה
+        // שים לב: modelName כבר מכיל את ה-prefix 'models/' אז לא מוסיפים אותו ב-URL
+        // אבל ה-API דורש לפעמים מבנה ספציפי. הנה התיקון:
+        // אם modelName הוא "models/gemini-pro", ה-URL צריך להיות .../models/gemini-pro:generateContent
+        
+        const url = `https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${this.apiKey}`;
 
-            const loadId = addMessage('<i class="fas fa-circle-notch fa-spin"></i> ...', 'bot');
-            const res = await botEngine.ask(txt);
-            document.getElementById(loadId).remove();
-            
-            // Render Bot with Product Scan
-            addMessage(res.text, 'bot', true);
-        };
+        const prompt = `
+        שמך צ'אט-סבן. מומחה חומרי בניין.
+        שאלה: "${userQ}"
+        מלאי: ${inventoryList}
+        הנחיות: ענה בעברית, קצר (2 משפטים), תמליץ אם יש במלאי. תהיה נחמד.
+        `;
 
-        function addMessage(text, type, scan = false) {
-            const box = document.getElementById('chatBox');
-            const row = document.createElement('div');
-            row.className = `msg-row ${type}`;
-            
-            // Product Detection
-            let cards = '';
-            if(scan && allProducts.length) {
-                const found = allProducts.filter(p => text.includes(p.core.name));
-                found.forEach(p => {
-                    cards += `
-                    <div class="chat-product" onclick="alert('מעבר למוצר')">
-                        <img src="${p.rich?.image}" class="cp-img">
-                        <div class="cp-info">
-                            <div class="cp-title">${p.core.name}</div>
-                            <div class="cp-price">₪${p.core.price}</div>
-                        </div>
-                    </div>`;
-                });
-            }
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }]
+            })
+        });
 
-            const avatar = type==='user' ? user.avatar : 'https://i.postimg.cc/W3nYsP7X/h-sbn.png';
-            
-            row.innerHTML = `
-                <img src="${avatar}" class="avatar">
-                <div class="bubble ${type}">
-                    <div class="sender-name">${type==='user'?'אני':'Saban'}</div>
-                    ${text.replace(/\n/g, '<br>')}
-                    ${cards}
-                </div>`;
-            
-            box.appendChild(row);
-            box.scrollTop = box.scrollHeight;
-            return row.id;
+        if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(`Google API Error (${modelName}): ${JSON.stringify(errData)}`);
         }
 
-        // --- Helpers ---
-        window.switchView = (v) => {
-            document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
-            document.getElementById('view-'+v)?.classList.add('active');
-            
-            document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));
-            // כאן אפשר להוסיף לוגיקה לסימון האייקון הפעיל
-        };
-
-        // פונקציית עדכון עגלה בסיסית (אם חסרה לך)
-        function updateCart() {
-             // כאן צריך להיות הקוד שמעדכן את ה-HTML של העגלה
-             // אם כבר יש לך אותו בקובץ למעלה - מצוין.
-             console.log("Cart Updated:", cart);
+        const data = await response.json();
+        
+        if (data.candidates && data.candidates.length > 0) {
+            return data.candidates[0].content.parts[0].text;
+        } else {
+            return "לא הצלחתי לנסח תשובה.";
         }
+    }
 
-        // Init
-        loadData();
-    </script>
+    async getInventoryContext() {
+        const snap = await getDocs(collection(this.db, "products"));
+        if (snap.empty) return "אין מוצרים.";
+        return snap.docs.map(d => d.data().core.name).join(", ");
+    }
+}
