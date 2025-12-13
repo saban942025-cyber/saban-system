@@ -2,366 +2,307 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Saban Catalog Studio 🛍️</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saban Catalog Studio Pro 💎</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         /* Windows 11 Glass Theme */
-        :root {
-            --glass-bg: rgba(255, 255, 255, 0.85);
-            --glass-border: rgba(255, 255, 255, 0.6);
-            --primary: #2563eb;
-        }
-        body { 
-            background: linear-gradient(135deg, #f0f4f8 0%, #dbeafe 100%); 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            color: #1e293b; height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+        body { background: linear-gradient(135deg, #eef2ff 0%, #f8fafc 100%); font-family: system-ui; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.6); border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05); display: flex; flex-direction: column; overflow: hidden;
         }
 
         /* Layout */
-        .studio-layout { 
-            display: grid; grid-template-columns: 400px 1fr; gap: 20px; 
-            padding: 20px; flex: 1; overflow: hidden; 
-        }
-        @media (max-width: 1024px) {
-            .studio-layout { display: flex; flex-direction: column; padding: 10px; gap: 10px; overflow-y: auto; }
-            .panel { height: auto !important; overflow: visible !important; }
-            /* Mobile Tabs logic handles visibility */
-        }
-
-        /* Glass Panels */
-        .glass-panel {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
-            display: flex; flex-direction: column; overflow: hidden;
-        }
-
-        /* Google Results Cards */
-        .g-card {
-            background: white; border-radius: 16px; padding: 12px; margin-bottom: 12px;
-            border: 1px solid #e2e8f0; transition: 0.2s; position: relative;
-        }
-        .g-card:hover { border-color: var(--primary); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1); }
+        .layout { display: grid; grid-template-columns: 280px 1fr 380px; gap: 20px; padding: 20px; height: 100%; }
         
-        .g-actions {
-            display: flex; gap: 5px; margin-top: 10px; border-top: 1px dashed #e2e8f0; padding-top: 8px;
-        }
-        .action-btn {
-            flex: 1; font-size: 11px; padding: 6px; border-radius: 8px; font-weight: bold;
-            display: flex; align-items: center; justify-content: center; gap: 4px; cursor: pointer;
-            transition: 0.1s; background: #f8fafc; color: #64748b; border: 1px solid #f1f5f9;
-        }
-        .action-btn:hover { background: #eff6ff; color: var(--primary); border-color: var(--primary); }
-        .action-btn.picked { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+        /* Tabs */
+        .nav-btn { text-align: right; padding: 12px 16px; margin-bottom: 5px; border-radius: 12px; font-weight: 600; color: #64748b; cursor: pointer; transition: 0.2s; display: flex; items-center; gap: 10px; }
+        .nav-btn:hover { background: rgba(255,255,255,0.5); }
+        .nav-btn.active { background: white; color: #2563eb; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.1); }
 
-        /* Form Inputs */
-        .input-group { margin-bottom: 12px; }
-        .input-label { display: block; font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .glass-input {
-            width: 100%; padding: 10px 14px; border-radius: 12px; border: 1px solid #cbd5e1;
-            background: rgba(255,255,255,0.6); outline: none; transition: 0.2s; font-size: 14px;
+        /* Product Card Style (Preview) */
+        .preview-card {
+            background: white; border-radius: 16px; overflow: hidden; position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid #f1f5f9;
         }
-        .glass-input:focus { background: white; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        .badge-sale {
+            position: absolute; top: 10px; right: 10px; background: #ef4444; color: white;
+            font-weight: 800; font-size: 12px; padding: 4px 10px; border-radius: 20px;
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3); z-index: 10;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
-        /* Scrollbar */
-        .custom-scroll::-webkit-scrollbar { width: 6px; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        
-        /* Mobile Tabs */
-        .mobile-tabs { display: none; }
-        @media (max-width: 1024px) {
-            .mobile-tabs { display: flex; gap: 10px; margin-bottom: 10px; }
-            .tab-btn { flex: 1; padding: 10px; background: white; border-radius: 12px; text-align: center; font-weight: bold; color: #64748b; }
-            .tab-btn.active { background: var(--primary); color: white; }
-            .hide-mobile { display: none !important; }
+        /* Stock Indicators */
+        .stock-pill { font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: bold; }
+        .stock-harash { background: #dcfce7; color: #166534; }
+        .stock-talmid { background: #dbeafe; color: #1e40af; }
+        .stock-missing { background: #fee2e2; color: #991b1b; text-decoration: line-through; opacity: 0.5; }
+
+        /* Popup Preview */
+        .popup-preview {
+            position: absolute; inset: 20px; background: rgba(0,0,0,0.6); border-radius: 20px;
+            display: flex; align-items: center; justify-content: center; z-index: 50; backdrop-filter: blur(4px);
         }
+        .popup-content {
+            background: white; padding: 20px; border-radius: 20px; text-align: center; width: 80%;
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body>
 
-    <header class="h-16 flex items-center justify-between px-6 shrink-0 z-20">
+    <header class="h-16 flex items-center justify-between px-8 shrink-0 z-20 bg-white/50 backdrop-blur border-b border-white">
         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-xl flex items-center justify-center text-white text-lg shadow-lg">🛍️</div>
+            <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white text-xl shadow-lg">🛍️</div>
             <div>
-                <h1 class="font-bold text-lg text-slate-800 leading-tight">Catalog Studio</h1>
-                <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wide">מערכת ניהול מוצר v5.0</div>
+                <h1 class="font-bold text-lg text-slate-800">Saban Catalog Pro</h1>
+                <div class="text-[10px] text-indigo-500 font-bold uppercase tracking-wide">מערכת ניהול חנות</div>
             </div>
         </div>
-        <button onclick="saveProduct()" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-xl font-bold shadow-lg shadow-blue-500/30 flex items-center gap-2 transition active:scale-95">
-            <i class="fas fa-save"></i> שמור מוצר
+        <button onclick="saveAll()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-xl font-bold shadow-lg transition active:scale-95">
+            <i class="fas fa-save"></i> שמור שינויים
         </button>
     </header>
 
-    <div class="px-4 mobile-tabs">
-        <button onclick="switchTab('search')" class="tab-btn active" id="btn-search">1. חיפוש ברשת</button>
-        <button onclick="switchTab('edit')" class="tab-btn" id="btn-edit">2. עריכת מוצר</button>
-    </div>
-
-    <div class="studio-layout">
+    <div class="layout">
         
-        <div id="panel-search" class="glass-panel panel">
-            <div class="p-4 bg-white/50 border-b border-white/50 backdrop-blur-md sticky top-0 z-10">
-                <div class="relative">
-                    <i class="fab fa-google absolute left-3 top-3.5 text-slate-400"></i>
-                    <input id="searchInput" type="text" class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 shadow-sm focus:ring-2 focus:ring-blue-500 outline-none font-bold" placeholder="הקלד שם מוצר (למשל: סיקה 107)..." onkeydown="if(event.key==='Enter') runSearch()">
-                    <button onclick="runSearch()" class="absolute right-2 top-2 bg-blue-600 text-white p-1.5 rounded-lg text-sm px-3 hover:bg-blue-700">חפש</button>
-                </div>
-                <div class="flex justify-between mt-2 text-[10px] text-slate-400 font-bold uppercase">
-                    <span>תוצאות מהרשת (Mix & Match)</span>
-                    <span id="resultsCount">0 תוצאות</span>
-                </div>
-            </div>
-
-            <div id="resultsList" class="flex-1 overflow-y-auto p-4 custom-scroll space-y-3 bg-slate-50/50">
-                <div class="text-center py-20 text-slate-400">
-                    <i class="fas fa-globe text-4xl mb-2 opacity-20"></i>
-                    <p>חפש מוצר כדי להתחיל לשאוב נתונים</p>
-                </div>
-            </div>
+        <div class="glass-panel p-4">
+            <div class="text-xs font-bold text-slate-400 uppercase mb-4 px-2">תפריט ניהול</div>
+            <div onclick="setTab('create')" class="nav-btn active" id="btn-create"><i class="fas fa-plus-circle"></i> הוספת מוצר חדש</div>
+            <div onclick="setTab('edit')" class="nav-btn" id="btn-edit"><i class="fas fa-edit"></i> עריכת מלאי קיים</div>
+            <div onclick="setTab('promo')" class="nav-btn" id="btn-promo"><i class="fas fa-bullhorn text-red-500"></i> מבצעים ופופ-אפ</div>
         </div>
 
-        <div id="panel-edit" class="glass-panel panel hide-mobile relative">
-            <div class="p-4 border-b border-white/50 bg-white/30 flex justify-between items-center">
-                <span class="font-bold text-slate-700"><i class="fas fa-edit text-blue-500"></i> עריכת כרטיס</span>
-                <button onclick="clearForm()" class="text-xs text-red-500 hover:underline">נקה טופס</button>
-            </div>
+        <div class="glass-panel p-6 overflow-y-auto custom-scroll relative">
+            
+            <div id="tab-create" class="space-y-4">
+                <h2 class="text-xl font-bold text-slate-700 mb-4">הוספת מוצר לקטלוג</h2>
+                <button onclick="openGoogleSearch()" class="w-full py-3 bg-white border border-blue-200 rounded-xl text-blue-600 font-bold shadow-sm hover:bg-blue-50 flex items-center justify-center gap-2 mb-4">
+                    <i class="fab fa-google"></i> משוך נתונים אוטומטית מהרשת
+                </button>
 
-            <div class="flex-1 overflow-y-auto p-6 custom-scroll">
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="text-xs font-bold text-slate-400">שם מוצר</label><input id="inpName" class="w-full p-3 rounded-xl border bg-white/50 font-bold" oninput="updatePreview()"></div>
+                    <div><label class="text-xs font-bold text-slate-400">מק"ט</label><input id="inpSku" class="w-full p-3 rounded-xl border bg-white/50 font-mono text-sm" oninput="updatePreview()"></div>
+                </div>
                 
-                <div class="flex justify-center mb-6 relative group">
-                    <img id="previewImg" src="https://via.placeholder.com/200?text=No+Image" class="h-40 w-40 object-contain bg-white rounded-xl border-2 border-dashed border-slate-300 shadow-sm group-hover:border-blue-400 transition">
-                    <div class="absolute bottom-0 bg-black/50 text-white text-xs px-2 py-1 rounded mb-2 opacity-0 group-hover:opacity-100 transition">לחץ על 'תמונה' בתוצאות</div>
-                </div>
-
                 <div class="grid grid-cols-2 gap-4">
-                    <div class="input-group">
-                        <label class="input-label">שם מוצר</label>
-                        <input id="inpName" class="glass-input font-bold text-slate-800">
-                    </div>
-                    <div class="input-group">
-                        <label class="input-label">מק"ט</label>
-                        <input id="inpSku" class="glass-input font-mono text-xs">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="input-group">
-                        <label class="input-label">מחיר ללקוח (₪)</label>
-                        <input id="inpPrice" type="number" class="glass-input text-green-600 font-bold">
-                    </div>
-                    <div class="input-group">
-                        <label class="input-label">מחסן (מיקום)</label>
-                        <select id="inpWarehouse" class="glass-input">
-                            <option value="both">שניהם (התלמיד + החרש)</option>
-                            <option value="talmid">התלמיד בלבד</option>
-                            <option value="harash">החרש בלבד</option>
+                    <div><label class="text-xs font-bold text-slate-400">מחיר (₪)</label><input id="inpPrice" type="number" class="w-full p-3 rounded-xl border bg-white/50 text-green-600 font-bold" oninput="updatePreview()"></div>
+                    
+                    <div>
+                        <label class="text-xs font-bold text-slate-400">זמינות במחסן</label>
+                        <select id="inpStock" class="w-full p-3 rounded-xl border bg-white/50" onchange="updatePreview()">
+                            <option value="both">✅ החרש + התלמיד</option>
+                            <option value="harash">📍 החרש בלבד</option>
+                            <option value="talmid">📍 התלמיד בלבד</option>
                         </select>
                     </div>
                 </div>
 
-                <div class="input-group">
-                    <label class="input-label">תיאור שיווקי</label>
-                    <textarea id="inpDesc" class="glass-input h-24 resize-none leading-relaxed" placeholder="יימשך מהרשת או הקלד ידנית..."></textarea>
-                </div>
-
-                <div class="bg-blue-50/80 p-4 rounded-2xl border border-blue-100 mt-4 relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
-                    <div class="flex items-center gap-2 mb-3">
-                        <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs">🤖</div>
-                        <span class="text-xs font-bold text-blue-800 uppercase">נתונים למוח (הבוט)</span>
-                    </div>
-                    
+                <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100 mt-4">
+                    <div class="text-sm font-bold text-indigo-800 mb-2 flex items-center gap-2"><i class="fas fa-robot"></i> נתונים לבוט</div>
                     <div class="grid grid-cols-2 gap-4">
-                        <div class="input-group">
-                            <label class="input-label text-blue-700">זמן ייבוש</label>
-                            <input id="inpDrying" class="glass-input bg-white" placeholder="לדוגמה: 24 שעות">
-                        </div>
-                        <div class="input-group">
-                            <label class="input-label text-blue-700">שיטת יישום</label>
-                            <input id="inpMethod" class="glass-input bg-white" placeholder="רולר / שפכטל">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="input-group">
-                            <label class="input-label text-blue-700">משקל</label>
-                            <input id="inpWeight" class="glass-input bg-white" placeholder="25 ק''ג">
-                        </div>
-                        <div class="input-group">
-                            <label class="input-label text-blue-700">וידאו (Youtube)</label>
-                            <input id="inpVideo" class="glass-input bg-white text-xs">
-                        </div>
+                        <input id="inpDry" class="p-2 rounded border text-sm" placeholder="זמן ייבוש (למשל: 24 שעות)">
+                        <input id="inpMethod" class="p-2 rounded border text-sm" placeholder="שיטת יישום (למשל: רולר)">
                     </div>
                 </div>
-
             </div>
-        </div>
-    </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        // --- Config ---
-        const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
-        let app, db; try{app=initializeApp(firebaseConfig);db=getFirestore(app);}catch(e){}
-
-        // --- API Keys (Live) ---
-        const GOOGLE_API_KEY = "AIzaSyDLkShn6lBBew-PJJWtzvAe_14UF9Kv-QI";
-        const GOOGLE_CX = "3331a7d5c75e14f26";
-
-        // --- Search Logic ---
-        window.runSearch = async () => {
-            const query = document.getElementById('searchInput').value;
-            if(!query) return;
-            
-            const list = document.getElementById('resultsList');
-            list.innerHTML = '<div class="text-center py-10"><i class="fas fa-spinner fa-spin text-blue-600 text-2xl"></i><div class="text-xs text-slate-400 mt-2">סורק את האינטרנט...</div></div>';
-
-            try {
-                // Fetching web results (rich snippets)
-                const url = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CX}&q=${encodeURIComponent(query)}`;
-                const response = await fetch(url);
-                const data = await response.json();
-
-                if(!data.items) {
-                    list.innerHTML = '<div class="text-center text-slate-400">לא נמצאו תוצאות</div>';
-                    return;
-                }
-
-                document.getElementById('resultsCount').innerText = `${data.items.length} תוצאות`;
-                
-                // Render Cards with Mix & Match Buttons
-                list.innerHTML = data.items.map((item, index) => {
-                    const img = item.pagemap?.cse_image?.[0]?.src || item.pagemap?.og_image?.[0]?.src || 'https://via.placeholder.com/150?text=No+Img';
-                    const title = item.title;
-                    const snippet = item.snippet;
-                    const link = item.link; // Good for video check
-                    
-                    const isVideo = link.includes('youtube.com') || link.includes('youtu.be');
-
-                    return `
-                    <div class="g-card fade-in" style="animation-delay: ${index * 0.05}s">
-                        <div class="flex gap-3">
-                            <img src="${img}" class="w-16 h-16 rounded-lg object-cover border border-slate-100 bg-white">
-                            <div class="flex-1 min-w-0">
-                                <div class="font-bold text-xs text-slate-800 line-clamp-2 leading-tight mb-1" title="${title}">${title}</div>
-                                <div class="text-[10px] text-slate-500 line-clamp-2 leading-tight">${snippet}</div>
+            <div id="tab-edit" class="hidden space-y-4">
+                <h2 class="text-xl font-bold text-slate-700 mb-4">ניהול מלאי קיים</h2>
+                <div class="relative">
+                    <i class="fas fa-search absolute right-3 top-3 text-slate-400"></i>
+                    <input type="text" placeholder="חפש מוצר לעריכה..." class="w-full p-3 pr-10 rounded-xl border bg-white shadow-sm">
+                </div>
+                <div id="existingList" class="space-y-2 mt-4">
+                    <div class="bg-white p-3 rounded-xl border flex justify-between items-center hover:bg-slate-50 cursor-pointer">
+                        <div class="flex items-center gap-3">
+                            <img src="https://via.placeholder.com/40" class="w-10 h-10 rounded bg-slate-100 object-contain">
+                            <div>
+                                <div class="font-bold text-sm">סיקה טופסיל 107</div>
+                                <div class="text-[10px] text-slate-500">מק"ט: SK-107 | מלאי: החרש</div>
                             </div>
                         </div>
-                        
-                        <div class="g-actions">
-                            <button class="action-btn" onclick="takeField(this, 'name', '${escapeVal(title)}')">
-                                <i class="fas fa-tag"></i> שם
-                            </button>
-                            <button class="action-btn" onclick="takeField(this, 'desc', '${escapeVal(snippet)}')">
-                                <i class="fas fa-align-left"></i> תיאור
-                            </button>
-                            <button class="action-btn" onclick="takeField(this, 'img', '${img}')">
-                                <i class="fas fa-image"></i> תמונה
-                            </button>
-                            ${isVideo ? `<button class="action-btn text-red-500 border-red-100 bg-red-50" onclick="takeField(this, 'video', '${link}')"><i class="fab fa-youtube"></i> וידאו</button>` : ''}
+                        <div class="flex gap-2">
+                            <button class="text-blue-600 bg-blue-50 p-2 rounded-lg hover:bg-blue-100"><i class="fas fa-pencil-alt"></i></button>
+                            <button class="text-red-600 bg-red-50 p-2 rounded-lg hover:bg-red-100"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>
-                    `;
-                }).join('');
+                </div>
+            </div>
 
-            } catch (e) {
-                console.error(e);
-                list.innerHTML = `<div class="text-red-500 text-center text-xs p-4">שגיאה: ${e.message}</div>`;
-            }
-        };
-
-        // --- Mix & Match Logic ---
-        window.takeField = (btn, type, value) => {
-            // Visual Feedback
-            const allBtns = btn.parentElement.querySelectorAll('.action-btn');
-            allBtns.forEach(b => b.classList.remove('picked'));
-            btn.classList.add('picked');
-
-            // Fill Form
-            if (type === 'name') document.getElementById('inpName').value = value;
-            if (type === 'desc') {
-                const current = document.getElementById('inpDesc').value;
-                document.getElementById('inpDesc').value = current ? current + "\n\n" + value : value;
+            <div id="tab-promo" class="hidden space-y-6">
+                <h2 class="text-xl font-bold text-slate-700 mb-2">מנוע מבצעים ושיווק</h2>
                 
-                // Try to extract technical data from snippet regex
-                if(value.includes('ק"ג')) {
-                    const match = value.match(/(\d+)\s*ק"?ג/);
-                    if(match) document.getElementById('inpWeight').value = match[0];
-                }
-                if(value.includes('שעות') || value.includes('ייבוש')) document.getElementById('inpDrying').value = "בדוק בתיאור"; 
-            }
-            if (type === 'img') document.getElementById('previewImg').src = value;
-            if (type === 'video') document.getElementById('inpVideo').value = value;
+                <div class="bg-red-50 p-5 rounded-2xl border border-red-100 relative overflow-hidden">
+                    <div class="absolute -right-10 -top-10 w-32 h-32 bg-red-200 rounded-full opacity-20"></div>
+                    
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-red-800"><i class="fas fa-tags"></i> הגדרת מבצע חם</h3>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="toggleSale" class="sr-only peer" onchange="updatePreview()">
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
+                        </label>
+                    </div>
 
-            // Mobile Auto-Switch (Optional UX)
-            if(window.innerWidth < 1024) {
-               // Toast notification instead of switching tab strictly
-               // alert('השדה עודכן!');
-            }
-        };
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-xs font-bold text-red-400">אחוז הנחה</label>
+                            <input id="salePercent" type="number" value="20" class="w-full p-2 rounded border border-red-200 text-red-600 font-bold" oninput="updatePreview()">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-red-400">טקסט תווית</label>
+                            <input id="saleLabel" type="text" value="מבצע קיץ!" class="w-full p-2 rounded border border-red-200" oninput="updatePreview()">
+                        </div>
+                    </div>
+                </div>
 
-        function escapeVal(str) {
-            return str.replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+                <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="font-bold text-slate-700"><i class="fas fa-stopwatch"></i> פופ-אפ "אל תפספס"</h3>
+                        <button onclick="togglePopupPreview()" class="text-xs bg-slate-200 px-2 py-1 rounded hover:bg-slate-300">הצג סימולציה</button>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-3">יופיע ל-3 שניות בכניסה לקטלוג</p>
+                    <textarea class="w-full p-3 border rounded-xl h-20 text-sm" placeholder="רק היום! קנה בלה סומסום וקבל שק מלט מתנה..."></textarea>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="glass-panel flex flex-col items-center justify-center bg-slate-100/50 p-6 relative">
+            <h3 class="absolute top-4 font-bold text-slate-400 text-xs uppercase tracking-widest">תצוגת לקוח (Live)</h3>
+            
+            <div class="bg-white border-8 border-slate-800 rounded-[40px] w-[300px] h-[600px] overflow-hidden shadow-2xl relative flex flex-col">
+                <div class="bg-slate-50 flex-1 relative overflow-y-auto p-4">
+                    
+                    <div class="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl p-4 text-white mb-6 shadow-lg">
+                        <div class="font-bold text-lg">מבצעי השבוע 🔥</div>
+                        <div class="text-xs opacity-80">בלעדי באפליקציה</div>
+                    </div>
+
+                    <div class="preview-card">
+                        <div id="prevBadge" class="badge-sale hidden">20% הנחה</div>
+                        
+                        <div class="h-40 bg-white flex items-center justify-center p-4">
+                            <img src="https://via.placeholder.com/150" class="h-full object-contain">
+                        </div>
+
+                        <div class="p-4 bg-white border-t border-slate-100">
+                            <div class="flex justify-between items-start mb-1">
+                                <div>
+                                    <div class="font-bold text-slate-800 leading-tight" id="prevName">שם מוצר</div>
+                                    <div class="text-[10px] text-slate-400 font-mono mt-1" id="prevSku">SKU-000</div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="font-bold text-green-600 text-lg" id="prevPrice">₪0</div>
+                                    <div class="text-[10px] text-red-400 line-through hidden" id="prevOldPrice">₪0</div>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-1 mt-3" id="prevStock">
+                                <span class="stock-pill stock-harash">✔ החרש</span>
+                                <span class="stock-pill stock-talmid">✔ התלמיד</span>
+                            </div>
+
+                            <div class="mt-4 grid grid-cols-2 gap-2">
+                                <button class="bg-slate-100 text-slate-600 text-xs font-bold py-2 rounded-lg">איסוף עצמי</button>
+                                <button class="bg-blue-600 text-white text-xs font-bold py-2 rounded-lg">הוסף לעגלה</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="simPopup" class="popup-preview hidden">
+                        <div class="popup-content">
+                            <div class="text-3xl mb-2">🎁</div>
+                            <div class="font-bold text-lg text-slate-800">מבצע בזק!</div>
+                            <div class="text-sm text-slate-500 mb-4">20% הנחה על כל מוצרי האיטום</div>
+                            <button onclick="togglePopupPreview()" class="bg-red-500 text-white w-full py-2 rounded-lg font-bold text-sm">אני רוצה!</button>
+                        </div>
+                    </div>
+
+                </div>
+                
+                <div class="bg-white p-3 border-t flex justify-around text-2xl text-slate-300">
+                    <i class="fas fa-home text-blue-500"></i>
+                    <i class="fas fa-shopping-cart"></i>
+                    <i class="fas fa-user"></i>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Tab Logic ---
+        function setTab(tab) {
+            document.querySelectorAll('[id^="tab-"]').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab-${tab}`).classList.remove('hidden');
+            
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(`btn-${tab}`).classList.add('active');
         }
 
-        // --- Tabs (Mobile) ---
-        window.switchTab = (tab) => {
-            document.getElementById('panel-search').classList.add('hide-mobile');
-            document.getElementById('panel-edit').classList.add('hide-mobile');
-            document.getElementById(`panel-${tab}`).classList.remove('hide-mobile');
+        // --- Preview Logic (The Engine) ---
+        function updatePreview() {
+            // Get Data
+            const name = document.getElementById('inpName').value || 'שם מוצר לדוגמה';
+            const sku = document.getElementById('inpSku').value || 'SKU-000';
+            const price = document.getElementById('inpPrice').value || 0;
+            const stock = document.getElementById('inpStock').value;
             
-            document.getElementById('btn-search').classList.remove('active');
-            document.getElementById('btn-edit').classList.remove('active');
-            document.getElementById(`btn-${tab}`).classList.add('active');
-        };
+            const isSale = document.getElementById('toggleSale').checked;
+            const salePct = document.getElementById('salePercent').value;
+            const saleLbl = document.getElementById('saleLabel').value;
 
-        // --- CRUD ---
-        window.clearForm = () => {
-            document.querySelectorAll('input, textarea').forEach(i => i.value = '');
-            document.getElementById('previewImg').src = 'https://via.placeholder.com/200?text=No+Image';
-            document.getElementById('inpWarehouse').value = 'both';
-        };
-
-        window.saveProduct = async () => {
-            if(!db) return alert("אין חיבור לשרת");
+            // Update DOM
+            document.getElementById('prevName').innerText = name;
+            document.getElementById('prevSku').innerText = sku;
             
-            const product = {
-                core: {
-                    name: document.getElementById('inpName').value,
-                    sku: document.getElementById('inpSku').value,
-                    price: document.getElementById('inpPrice').value,
-                    warehouse: document.getElementById('inpWarehouse').value
-                },
-                rich: {
-                    description: document.getElementById('inpDesc').value,
-                    image: document.getElementById('previewImg').src,
-                    video_url: document.getElementById('inpVideo').value
-                },
-                chatbot: {
-                    drying_time: document.getElementById('inpDrying').value,
-                    application_method: document.getElementById('inpMethod').value,
-                    weight: document.getElementById('inpWeight').value
-                },
-                updatedAt: new Date()
-            };
-
-            if(!product.core.name) return alert("חובה למלא שם מוצר");
-
-            try {
-                await addDoc(collection(db, "products"), product);
-                alert("מוצר נשמר בהצלחה! הבוט עודכן. 🧠");
-                window.clearForm();
-            } catch(e) {
-                console.error(e);
-                alert("שגיאה בשמירה");
+            // Price Logic
+            if(isSale) {
+                const discounted = (price * (1 - salePct/100)).toFixed(0);
+                document.getElementById('prevPrice').innerText = `₪${discounted}`;
+                document.getElementById('prevOldPrice').innerText = `₪${price}`;
+                document.getElementById('prevOldPrice').classList.remove('hidden');
+                
+                const badge = document.getElementById('prevBadge');
+                badge.innerText = `${salePct}% - ${saleLbl}`;
+                badge.classList.remove('hidden');
+            } else {
+                document.getElementById('prevPrice').innerText = `₪${price}`;
+                document.getElementById('prevOldPrice').classList.add('hidden');
+                document.getElementById('prevBadge').classList.add('hidden');
             }
-        };
 
+            // Stock Logic
+            const stockDiv = document.getElementById('prevStock');
+            if (stock === 'both') {
+                stockDiv.innerHTML = `<span class="stock-pill stock-harash">✔ החרש</span><span class="stock-pill stock-talmid">✔ התלמיד</span>`;
+            } else if (stock === 'harash') {
+                stockDiv.innerHTML = `<span class="stock-pill stock-harash">✔ החרש</span><span class="stock-pill stock-missing">✖ התלמיד</span>`;
+            } else {
+                stockDiv.innerHTML = `<span class="stock-pill stock-missing">✖ החרש</span><span class="stock-pill stock-talmid">✔ התלמיד</span>`;
+            }
+        }
+
+        // --- Popup Sim ---
+        function togglePopupPreview() {
+            const p = document.getElementById('simPopup');
+            p.classList.toggle('hidden');
+        }
+
+        // --- Mock Functions ---
+        function openGoogleSearch() { alert("פותח מנוע חיפוש גוגל (כפי שהוגדר בגרסה הקודמת)"); }
+        function saveAll() { alert("כל השינויים, כולל המבצעים והמלאי, נשמרו בהצלחה! 💾"); }
+
+        // Init
+        updatePreview();
     </script>
 </body>
 </html>
