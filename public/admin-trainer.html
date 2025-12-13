@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saban Brain Trainer 🧠</title>
+    <title>Saban Brain Trainer v3.0 🧠</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -46,10 +46,10 @@
             <div class="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center text-white text-xl shadow-lg">🧠</div>
             <div>
                 <h1 class="font-bold text-lg leading-none text-slate-800">Brain Trainer</h1>
-                <span class="text-xs text-purple-600 font-bold">אימון בוט בעזרת Gemini</span>
+                <span class="text-xs text-purple-600 font-bold">אימון בוט (Auto-Discovery)</span>
             </div>
         </div>
-        <div class="text-xs text-gray-500 font-mono">v2.0 AI-Core</div>
+        <div class="text-xs text-gray-500 font-mono">v3.0 Stable</div>
     </header>
 
     <div class="workspace">
@@ -76,10 +76,6 @@
                 <button onclick="saveToBrain()" class="btn-ai btn-save w-full justify-center opacity-50 cursor-not-allowed" id="btnSave" disabled>
                     <i class="fas fa-save"></i> שמור לזיכרון הבוט
                 </button>
-            </div>
-
-            <div class="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full items-center justify-center shadow border text-gray-400">
-                <i class="fas fa-arrow-left"></i>
             </div>
         </div>
 
@@ -109,10 +105,6 @@
                     </tbody>
                 </table>
             </div>
-            
-            <div class="p-2 bg-slate-50 text-center text-xs text-gray-400 border-t">
-                כל המידע כאן זמין לבוט באופן מיידי בזמן שיחה
-            </div>
         </div>
 
     </div>
@@ -126,10 +118,40 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        const GEMINI_KEY = "AIzaSyD9plWwyTESFm24c_OTunf4mFAsAmfrgj0"; // המפתח שלך
+        // API Key & Model Cache
+        const GEMINI_KEY = "AIzaSyD9plWwyTESFm24c_OTunf4mFAsAmfrgj0";
+        let cachedModelName = null;
 
         // State
         let knowledgeData = [];
+
+        // --- Logic: Auto Discovery Model ---
+        async function findActiveModel() {
+            if (cachedModelName) return cachedModelName;
+            try {
+                // שואלים את גוגל אילו מודלים פתוחים במפתח הזה
+                const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_KEY}`;
+                const res = await fetch(url);
+                const data = await res.json();
+                
+                if (!res.ok) throw new Error("Failed to list models");
+
+                // מחפשים מודל Gemini שתומך ב-generateContent
+                const model = data.models.find(m => 
+                    m.name.includes("gemini") && 
+                    m.supportedGenerationMethods.includes("generateContent")
+                );
+
+                if (!model) throw new Error("No Gemini model found");
+                
+                console.log("Trainer found model:", model.name);
+                cachedModelName = model.name;
+                return model.name;
+            } catch (e) {
+                console.warn("Auto-discovery failed, defaulting to pro:", e);
+                return "models/gemini-pro"; // Fallback
+            }
+        }
 
         // --- Logic: Ask Gemini ---
         window.askGemini = async () => {
@@ -140,15 +162,18 @@
             const out = document.getElementById('answerOutput');
             const saveBtn = document.getElementById('btnSave');
 
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ג\'מיני חושב...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> מאתר מודל AI...';
             out.value = "";
             saveBtn.disabled = true; saveBtn.classList.add('opacity-50', 'cursor-not-allowed');
 
             try {
-                // שימוש במודל gemini-pro (יציב)
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_KEY}`;
+                // שלב 1: מציאת המודל
+                const modelName = await findActiveModel();
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ג\'מיני חושב...';
+
+                // שלב 2: שליחת השאלה
+                const url = `https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${GEMINI_KEY}`;
                 
-                // הנחיה למומחה
                 const prompt = `
                 אתה יועץ טכני מומחה של "סבן חומרי בניין".
                 שאלה טכנית: "${question}"
@@ -156,8 +181,7 @@
                 הנחיות לתשובה:
                 1. ענה בעברית מקצועית ומדויקת.
                 2. תהיה קצר ולעניין (עד 3 משפטים).
-                3. אם צריך, ציין מוצרים רלוונטיים (כמו סיקה, טמבור וכו').
-                4. אל תכתוב הקדמות כמו "שלום רב". ישר ולעניין.
+                3. אם צריך, ציין מוצרים רלוונטיים.
                 `;
 
                 const res = await fetch(url, {
@@ -166,6 +190,8 @@
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                 });
 
+                if(!res.ok) throw new Error("Google Error: " + res.status);
+
                 const data = await res.json();
                 
                 if(data.candidates && data.candidates[0].content) {
@@ -173,12 +199,12 @@
                     out.value = answer;
                     saveBtn.disabled = false; saveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
                 } else {
-                    out.value = "שגיאה: לא התקבלה תשובה ברורה מגוגל.";
+                    out.value = "לא התקבלה תשובה ברורה.";
                 }
 
             } catch(e) {
                 console.error(e);
-                out.value = "שגיאת תקשורת: " + e.message;
+                out.value = "שגיאה: " + e.message;
             }
             
             btn.innerHTML = '<i class="fas fa-sparkles"></i> שאל את המומחה (Gemini)';
@@ -196,56 +222,44 @@
                     question: question,
                     answer: answer,
                     createdAt: new Date(),
-                    tags: extractKeywords(question) // פונקציית עזר למטה
+                    tags: question.split(' ').filter(w => w.length > 3)
                 });
                 
-                alert("נשמר בהצלחה במוח הבוט! 🧠");
+                alert("נשמר בהצלחה! 🧠");
                 document.getElementById('askInput').value = '';
                 document.getElementById('answerOutput').value = '';
                 document.getElementById('btnSave').disabled = true;
                 document.getElementById('btnSave').classList.add('opacity-50');
                 
-                loadKnowledge(); // רענון הטבלה
+                loadKnowledge();
 
-            } catch(e) {
-                alert("שגיאה בשמירה");
-                console.error(e);
-            }
+            } catch(e) { alert("שגיאה בשמירה"); console.error(e); }
         };
 
         // --- Logic: Load & Table ---
         async function loadKnowledge() {
             const list = document.getElementById('qaTableBody');
-            
             try {
                 const q = query(collection(db, "qa_knowledge"), orderBy("createdAt", "desc"));
                 const snap = await getDocs(q);
-                
                 knowledgeData = snap.docs.map(d => ({id: d.id, ...d.data()}));
                 renderTable(knowledgeData);
-
-            } catch(e) {
-                console.error(e);
-                list.innerHTML = '<tr><td colspan="3" class="text-center text-red-500">שגיאה בטעינת נתונים</td></tr>';
-            }
+            } catch(e) { console.error(e); list.innerHTML = '<tr><td colspan="3" class="text-center text-red-500">שגיאה בטעינת נתונים</td></tr>'; }
         }
 
         window.renderTable = (data) => {
             const list = document.getElementById('qaTableBody');
-            if(data.length === 0) {
-                list.innerHTML = '<tr><td colspan="3" class="text-center py-10 text-gray-400">המוח ריק. תתחיל ללמד אותו!</td></tr>';
-                return;
-            }
+            if(data.length === 0) { list.innerHTML = '<tr><td colspan="3" class="text-center py-10 text-gray-400">המוח ריק. תתחיל ללמד אותו!</td></tr>'; return; }
 
             list.innerHTML = data.map(item => `
                 <tr class="group">
                     <td>
                         <div class="font-bold text-slate-700">${item.question}</div>
-                        <div class="text-[10px] text-gray-400 mt-1">נוצר: ${new Date(item.createdAt.seconds*1000).toLocaleDateString()}</div>
+                        <div class="text-[10px] text-gray-400 mt-1">${new Date(item.createdAt.seconds*1000).toLocaleDateString()}</div>
                     </td>
                     <td class="text-slate-600 leading-relaxed">${item.answer}</td>
                     <td class="text-center">
-                        <button onclick="deleteItem('${item.id}')" class="btn-del" title="מחק"><i class="fas fa-trash-alt"></i></button>
+                        <button onclick="deleteItem('${item.id}')" class="btn-del"><i class="fas fa-trash-alt"></i></button>
                     </td>
                 </tr>
             `).join('');
@@ -253,29 +267,19 @@
 
         window.filterTable = () => {
             const term = document.getElementById('searchTable').value.toLowerCase();
-            const filtered = knowledgeData.filter(i => 
-                i.question.toLowerCase().includes(term) || 
-                i.answer.toLowerCase().includes(term)
-            );
+            const filtered = knowledgeData.filter(i => i.question.toLowerCase().includes(term) || i.answer.toLowerCase().includes(term));
             renderTable(filtered);
         };
 
         window.deleteItem = async (id) => {
-            if(!confirm("למחוק את פריט הידע הזה?")) return;
+            if(!confirm("למחוק?")) return;
             await deleteDoc(doc(db, "qa_knowledge", id));
             loadKnowledge();
         };
 
-        function extractKeywords(text) {
-            // ניסיון פשוט לחילוץ מילות מפתח
-            return text.split(' ').filter(w => w.length > 3);
-        }
-
         // Init
         loadKnowledge();
-        
-        // Expose
-        window.deleteItem = window.deleteItem;
+        window.deleteItem = window.deleteItem; // Expose
 
     </script>
 </body>
