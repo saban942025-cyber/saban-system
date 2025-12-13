@@ -2,97 +2,98 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>SabanOS | קבוצת הזמנות (חמ"ל)</title>
+    <title>קבוצת הזמנות ח.סבן | חמ"ל מבצעי</title>
     <link rel="icon" href="data:;base64,iVBORw0KGgo=">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    
     <style>
-        body { background-color: #d1d7db; font-family: -apple-system, system-ui, sans-serif; height: 100vh; display: flex; overflow: hidden; }
+        /* Base */
+        body { background-color: #d1d7db; font-family: system-ui, -apple-system, sans-serif; height: 100vh; display: flex; overflow: hidden; }
         
-        /* Audio Unlock Overlay */
-        #startOverlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.95); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; }
-        .pulse-btn { animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(34, 197, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
+        /* Sidebar */
+        .sidebar { width: 35%; min-width: 380px; background: white; border-left: 1px solid #e9edef; display: flex; flex-direction: column; z-index: 20; }
+        
+        /* Stories Bar */
+        .stories-container { padding: 12px; display: flex; gap: 10px; overflow-x: auto; background: #fff; border-bottom: 1px solid #f0f0f0; scrollbar-width: none; }
+        .story-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; min-width: 60px; transition: transform 0.2s; }
+        .story-item:hover { transform: scale(1.05); }
+        .story-ring { width: 50px; height: 50px; border-radius: 50%; padding: 2px; border: 2px solid transparent; object-fit: cover; }
+        .story-name { font-size: 10px; margin-top: 4px; font-weight: bold; color: #54656f; max-width: 55px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-        /* Sidebar & Stories */
-        .sidebar { width: 35%; min-width: 380px; background: white; border-left: 1px solid #e9edef; display: flex; flex-direction: column; }
-        
-        /* Story Bar */
-        .stories-container { padding: 15px 10px; display: flex; gap: 12px; overflow-x: auto; background: #f0f2f5; border-bottom: 1px solid #e9edef; scrollbar-width: none; }
-        .story-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; min-width: 60px; }
-        .story-ring { width: 56px; height: 56px; border-radius: 50%; padding: 2px; border: 2px solid transparent; object-fit: cover; transition: transform 0.2s; }
-        .story-item:hover .story-ring { transform: scale(1.05); }
-        .story-name { font-size: 10px; margin-top: 4px; font-weight: 600; color: #54656f; max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        
-        /* Ring Colors */
-        .ring-green { border-color: #25D366; } /* פעיל תקין */
-        .ring-red { border-color: #ef4444; animation: spin-slow 3s linear infinite; } /* תקלה/דחוף */
-        .ring-orange { border-color: #f59e0b; border-style: dashed; } /* ממתין למסמך */
-        @keyframes spin-slow { 100% { transform: rotate(360deg); } }
+        /* Rings Animation */
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        .ring-green { border-color: #10b981; } 
+        .ring-orange { border-color: #f59e0b; border-style: dashed; } 
+        .ring-red { border-color: #ef4444; animation: pulse-red 1.5s infinite; }
 
         /* Tabs */
-        .tabs { display: flex; border-bottom: 1px solid #e9edef; }
-        .tab-btn { flex: 1; padding: 12px; text-align: center; cursor: pointer; border-bottom: 3px solid transparent; font-weight: 500; color: #54656f; transition: 0.2s; }
-        .tab-btn.active { border-color: #008069; color: #008069; background: #f0f2f5; }
+        .tabs { display: flex; background: #f0f2f5; padding: 4px; }
+        .tab-btn { flex: 1; padding: 10px; text-align: center; cursor: pointer; font-size: 13px; font-weight: 600; color: #54656f; border-bottom: 3px solid transparent; }
+        .tab-btn.active { border-color: #008069; color: #008069; background: #e7f5f3; }
 
-        /* Chat Area */
+        /* Lists */
+        .chat-list { flex: 1; overflow-y: auto; }
+        .chat-item { display: flex; align-items: center; padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #f5f6f6; transition: 0.1s; }
+        .chat-item:hover { background: #f5f6f6; }
+        .chat-item.active { background: #f0f2f5; border-right: 4px solid #00a884; }
+
+        /* Main Chat Area */
         .main-chat { flex: 1; display: flex; flex-direction: column; background: #efeae2 url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); position: relative; }
         
-        /* Pinned Order Card (Sticky) */
-        #activeOrderCard { background: #fff; padding: 10px 15px; border-bottom: 1px solid #e9edef; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); z-index: 10; animation: slideDown 0.3s ease-out; }
-        @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+        /* Sticky Order Card */
+        #activeOrderCard { background: #fff; padding: 10px 15px; border-bottom: 1px solid #e9edef; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); z-index: 10; border-left: 4px solid #10b981; }
 
         /* Messages */
-        .msg { max-width: 70%; padding: 8px 12px; border-radius: 8px; margin: 4px 20px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); width: fit-content; font-size: 14px; position: relative; }
+        .msg { max-width: 70%; padding: 8px 12px; border-radius: 8px; margin: 4px 20px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); width: fit-content; font-size: 14px; }
         .msg.staff { background: #d9fdd3; align-self: flex-end; }
         .msg.user { background: white; align-self: flex-start; }
-        .msg.internal { background: #fff9c4; align-self: center; width: 80%; border: 1px dashed #eab308; text-align: center; font-size: 12px; }
-        .msg-time { font-size: 10px; color: #999; text-align: left; margin-top: 2px; }
+        .msg.internal { background: #fff9c4; align-self: center; width: 85%; border: 1px dashed #eab308; text-align: center; font-size: 12px; margin: 10px auto; }
 
-        /* Archive Modal */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; display: none; justify-content: center; align-items: center; }
-        .modal-overlay.open { display: flex; }
-        .modal-box { background: white; width: 600px; max-width: 90%; border-radius: 12px; height: 80vh; display: flex; flex-direction: column; overflow: hidden; }
+        /* Audio Toggle Button */
+        .audio-btn { transition: all 0.3s; }
+        .audio-off { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
+        .audio-on { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+
+        /* Sticky Note */
+        #stickyNote { position: absolute; top: 80px; right: 20px; width: 220px; background: #fef08a; padding: 10px; box-shadow: 4px 4px 10px rgba(0,0,0,0.2); transform: rotate(-2deg); z-index: 10; display: none; }
+        #stickyNote.visible { display: block; }
     </style>
 </head>
 <body>
 
-    <div id="startOverlay">
-        <div class="text-6xl mb-6">🎧</div>
-        <h1 class="text-3xl font-bold mb-2">חמ"ל הזמנות סבן</h1>
-        <p class="mb-8 text-gray-400">יש ללחוץ כדי להפעיל את מערכת הכריזה וההתראות</p>
-        <button onclick="startShift()" class="bg-green-600 text-white px-8 py-4 rounded-full font-bold text-xl shadow-lg pulse-btn hover:bg-green-500 transition">
-            <i class="fas fa-play"></i> התחל משמרת
-        </button>
-    </div>
-
     <div class="sidebar">
-        <div class="h-16 bg-[#f0f2f5] border-b flex justify-between items-center px-4">
-            <div class="flex items-center gap-3">
-                <img src="https://ui-avatars.com/api/?name=Rami+Saban&background=008069&color=fff" class="w-10 h-10 rounded-full">
+        <div class="h-16 bg-[#f0f2f5] border-b flex justify-between items-center px-4 py-2">
+            <div class="flex items-center gap-2">
+                <div class="relative">
+                    <img src="https://ui-avatars.com/api/?name=Rami+Saban&background=008069&color=fff" class="w-10 h-10 rounded-full border-2 border-white shadow-sm">
+                    <div class="absolute bottom-0 left-0 w-3 h-3 bg-green-500 rounded-full border border-white"></div>
+                </div>
                 <div>
-                    <div class="font-bold text-gray-800">קבוצת הזמנות</div>
-                    <div class="text-xs text-green-600 font-bold">● מחובר</div>
+                    <div class="font-bold text-gray-800 leading-tight">קבוצת הזמנות</div>
+                    <div class="text-[10px] text-gray-500">חמ"ל פעיל</div>
                 </div>
             </div>
-            <div class="flex gap-3 text-gray-500">
-                <button onclick="openArchive()" title="היסטוריה וארכיון"><i class="fas fa-history"></i></button>
-                <button onclick="localStorage.clear(); location.href='index.html'" title="יציאה"><i class="fas fa-sign-out-alt"></i></button>
-            </div>
+            
+            <button id="soundToggle" onclick="toggleSound()" class="audio-btn audio-off px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-2 shadow-sm">
+                <i class="fas fa-volume-mute" id="soundIcon"></i> <span id="soundText">הפעל כריזה</span>
+            </button>
         </div>
 
         <div class="stories-container" id="storiesBar">
-            </div>
+            <div class="text-xs text-gray-400 text-center w-full py-2">טוען סטטוסים...</div>
+        </div>
 
         <div class="tabs">
             <div onclick="switchTab('chats')" class="tab-btn active" id="tab-chats">💬 צ'אטים</div>
             <div onclick="switchTab('tasks')" class="tab-btn" id="tab-tasks">📋 משימות</div>
-            <div onclick="switchTab('team')" class="tab-btn" id="tab-team">👷 צוות</div>
+            <div onclick="switchTab('logs')" class="tab-btn" id="tab-logs">📜 יומן (LOG)</div>
         </div>
 
-        <div id="chatsList" class="flex-1 overflow-y-auto custom-scroll"></div>
-        <div id="tasksList" class="flex-1 overflow-y-auto hidden bg-gray-50 p-2"></div>
+        <div id="chatsList" class="chat-list custom-scroll"></div>
+        <div id="tasksList" class="chat-list hidden bg-gray-50 p-2"></div>
+        <div id="logsList" class="chat-list hidden bg-white p-2 text-sm space-y-2"></div>
     </div>
 
     <div id="chatArea" class="main-chat hidden">
@@ -101,12 +102,16 @@
                 <img id="activeAvatar" src="" class="w-10 h-10 rounded-full border bg-white">
                 <div>
                     <div id="activeName" class="font-bold text-gray-800"></div>
-                    <div id="activeStatus" class="text-xs text-gray-500">לקוח</div>
+                    <div id="activeStatus" class="text-xs text-green-600 font-bold">מחובר</div>
                 </div>
             </div>
             <div class="flex gap-2">
-                <button onclick="promptLinkOrder()" class="bg-orange-100 text-orange-700 px-3 py-1.5 rounded text-xs font-bold border border-orange-200 hover:bg-orange-200">🔗 קשור מסמך</button>
-                <button onclick="openHistoryForUser()" class="bg-blue-100 text-blue-700 px-3 py-1.5 rounded text-xs font-bold border border-blue-200 hover:bg-blue-200">📜 היסטוריה</button>
+                <button onclick="promptLinkOrder()" class="bg-orange-50 text-orange-700 px-3 py-1.5 rounded text-xs font-bold border border-orange-200 hover:bg-orange-100 transition shadow-sm">
+                    🔗 קשור מסמך
+                </button>
+                <button onclick="toggleSticky()" class="text-yellow-600 hover:text-yellow-700 bg-yellow-50 p-2 rounded border border-yellow-200" title="פתק">
+                    <i class="fas fa-sticky-note"></i>
+                </button>
             </div>
         </div>
 
@@ -114,115 +119,151 @@
             <div class="flex items-center gap-3">
                 <div class="bg-green-100 text-green-700 p-2 rounded-full"><i class="fas fa-box-open"></i></div>
                 <div>
-                    <div class="text-sm font-bold text-gray-800" id="orderTitle">הזמנה פעילה #---</div>
+                    <div class="text-sm font-bold text-gray-800" id="orderTitle">הזמנה פעילה</div>
                     <div class="text-xs text-gray-500" id="orderStatus">בטיפול</div>
                 </div>
             </div>
-            <button onclick="archiveOrder()" class="bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow hover:bg-green-700">
-                <i class="fas fa-check"></i> סופק וארכב
+            <button onclick="archiveOrder()" class="bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow hover:bg-green-700 transition">
+                ✅ סופק וארכב
             </button>
         </div>
 
-        <div id="messagesBox" class="flex-1 overflow-y-auto flex flex-col p-4"></div>
+        <div id="stickyNote">
+            <div class="flex justify-between mb-1 border-b border-yellow-300/50 pb-1">
+                <span class="font-bold text-xs text-yellow-900">📌 פתק פנימי לצוות</span>
+                <i class="fas fa-times cursor-pointer hover:text-red-500" onclick="toggleSticky()"></i>
+            </div>
+            <textarea class="w-full bg-transparent outline-none text-sm resize-none text-gray-800 h-24" placeholder="הערות להזמנה זו..."></textarea>
+        </div>
+
+        <div id="messagesBox" class="flex-1 overflow-y-auto flex flex-col p-4 pb-2"></div>
 
         <div class="bg-[#f0f2f5] p-3 flex items-center gap-2 border-t z-20">
-            <i onclick="toggleInternal()" id="internalBtn" class="fas fa-eye-slash text-gray-400 cursor-pointer text-2xl p-2" title="הערה פנימית"></i>
-            <input type="text" id="msgInput" class="flex-1 p-3 rounded-lg border-none outline-none shadow-inner" placeholder="הקלד הודעה..." onkeydown="if(event.key==='Enter') sendMessage()">
-            <button onclick="sendMessage()" class="text-[#008069] text-3xl hover:scale-110 transition"><i class="fas fa-paper-plane"></i></button>
-        </div>
-    </div>
-
-    <div id="archiveModal" class="modal-overlay">
-        <div class="modal-box">
-            <div class="flex justify-between items-center p-4 border-b bg-gray-50">
-                <h2 class="font-bold text-lg"><i class="fas fa-history"></i> ארכיון הזמנות (LOG)</h2>
-                <button onclick="document.getElementById('archiveModal').classList.remove('open')"><i class="fas fa-times"></i></button>
-            </div>
-            <div id="archiveContent" class="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-3">
-                </div>
+            <i onclick="toggleInternal()" id="internalBtn" class="fas fa-eye-slash text-gray-400 cursor-pointer text-xl p-2 hover:text-orange-500 transition" title="מצב הערה פנימית"></i>
+            <input type="text" id="msgInput" class="flex-1 p-3 rounded-lg border-none outline-none shadow-sm focus:ring-2 focus:ring-green-500 transition" placeholder="הקלד הודעה..." onkeydown="if(event.key==='Enter') sendMessage()">
+            <button onclick="sendMessage()" class="text-[#008069] text-2xl hover:scale-110 transition"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, doc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, setDoc, getDoc, getDocs, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, doc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, setDoc, getDocs, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { SabanSounds } from './js/sounds.js';
 
+        // --- Firebase Init Safe Block ---
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        let app, db;
+        
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            console.log("🔥 Firebase Connected");
+        } catch(e) {
+            console.error("Firebase Critical Error:", e);
+            document.body.innerHTML = `<div class='p-10 text-center text-red-600 font-bold'>שגיאת חיבור קריטית למסד הנתונים.<br>נא לרענן או לבדוק חיבור אינטרנט.</div>`;
+        }
 
         let activeChatId = null;
         let internalMode = false;
         let currentOrder = null;
+        window.audioEnabled = false;
 
-        // --- 1. Audio Unlock & Startup ---
-        window.startShift = () => {
-            // מפעיל צליל ריק כדי לשחרר את הדפדפן
-            const a = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAGZGF0YQQAAAAAAA==");
-            a.play().then(() => {
-                SabanSounds.playMessage(); // צפצוף אישור
-                document.getElementById('startOverlay').style.display = 'none';
-            }).catch(e => alert("נא לאפשר סאונד בדפדפן!"));
+        // --- Audio Logic ---
+        window.toggleSound = () => {
+            const btn = document.getElementById('soundToggle');
+            const icon = document.getElementById('soundIcon');
+            const text = document.getElementById('soundText');
+
+            if (!window.audioEnabled) {
+                // נסיון ניגון לשחרור החסימה
+                const a = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAGZGF0YQQAAAAAAA==");
+                a.play().then(() => {
+                    window.audioEnabled = true;
+                    btn.className = "audio-btn audio-on px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-2 shadow-sm";
+                    icon.className = "fas fa-volume-up";
+                    text.innerText = "כריזה פעילה";
+                    SabanSounds.playMessage(); // צליל בדיקה
+                }).catch(e => alert("הדפדפן חוסם סאונד. נא לאשר הרשאות אודיו לאתר זה."));
+            } else {
+                window.audioEnabled = false;
+                btn.className = "audio-btn audio-off px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-2 shadow-sm";
+                icon.className = "fas fa-volume-mute";
+                text.innerText = "כריזה מושתקת";
+            }
         };
 
-        // --- 2. Chat & Stories Listener ---
-        onSnapshot(query(collection(db, "chat_sessions"), orderBy("lastActivity", "desc")), (snap) => {
-            const list = document.getElementById('chatsList'); 
-            const stories = document.getElementById('storiesBar');
-            list.innerHTML = "";
-            stories.innerHTML = "";
-            
-            snap.forEach(d => {
-                const c = d.data();
-                const lastMsg = c.lastMessage || "";
+        // --- Core Listener ---
+        try {
+            onSnapshot(query(collection(db, "chat_sessions"), orderBy("lastActivity", "desc")), (snap) => {
+                const list = document.getElementById('chatsList'); 
+                const stories = document.getElementById('storiesBar');
+                list.innerHTML = "";
+                stories.innerHTML = "";
                 
-                // Logic for Ring Color
-                let ring = "ring-green";
-                if(lastMsg.includes("ממתין")) ring = "ring-orange";
-                if(lastMsg.includes("🛑") || lastMsg.includes("עצור")) { ring = "ring-red"; SabanSounds.playAlert(); }
+                snap.forEach(d => {
+                    const c = d.data();
+                    const lastMsg = c.lastMessage || "";
+                    
+                    // Logic: Rings & Alerts
+                    let ring = "ring-green";
+                    if (lastMsg.includes("ממתין")) ring = "ring-orange";
+                    if (lastMsg.includes("🛑") || lastMsg.includes("דחוף") || lastMsg.includes("עצור")) { 
+                        ring = "ring-red"; 
+                        if (window.audioEnabled) SabanSounds.playAlert(); 
+                    } else if (c.role === 'user' && !c.lastMsgFromStaff && window.audioEnabled) {
+                        SabanSounds.playMessage();
+                    }
 
-                const avatar = c.avatar || `https://ui-avatars.com/api/?name=${c.userName}`;
+                    // Safe Avatar
+                    const avatar = c.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.userName)}&background=random&color=fff`;
 
-                // Add to Chat List
-                list.innerHTML += `<div onclick="openChat('${d.id}', '${c.userName}', '${avatar}')" class="flex items-center p-3 hover:bg-gray-50 cursor-pointer border-b ${activeChatId===d.id?'bg-gray-100':''}">
-                    <div class="relative"><img src="${avatar}" class="w-12 h-12 rounded-full ${ring} p-0.5 object-cover"></div>
-                    <div class="flex-1 mr-3 min-w-0">
-                        <div class="font-bold text-gray-800 text-sm flex justify-between"><span>${c.userName}</span><span class="text-xs text-gray-400 font-normal">10:00</span></div>
-                        <div class="text-xs text-gray-500 truncate">${lastMsg}</div>
-                    </div>
-                </div>`;
+                    // Render Chat Item
+                    list.innerHTML += `
+                    <div onclick="openChat('${d.id}', '${c.userName}', '${avatar}')" class="chat-item ${activeChatId===d.id?'active':''}">
+                        <div class="relative">
+                            <img src="${avatar}" class="w-10 h-10 rounded-full ${ring} story-ring object-cover p-0.5">
+                        </div>
+                        <div class="flex-1 mr-3 min-w-0">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="font-bold text-sm text-gray-800 truncate">${c.userName}</span>
+                                <span class="text-[10px] text-gray-400">${c.lastActivity ? new Date(c.lastActivity.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : ''}</span>
+                            </div>
+                            <div class="text-xs text-gray-500 truncate">${lastMsg}</div>
+                        </div>
+                    </div>`;
 
-                // Add to Stories (רק אם פעיל)
-                stories.innerHTML += `<div class="story-item" onclick="openChat('${d.id}', '${c.userName}', '${avatar}')">
-                    <img src="${avatar}" class="story-ring ${ring}">
-                    <span class="story-name">${c.userName}</span>
-                </div>`;
+                    // Render Story Item
+                    stories.innerHTML += `
+                    <div class="story-item" onclick="openChat('${d.id}', '${c.userName}', '${avatar}')">
+                        <img src="${avatar}" class="story-ring ${ring}">
+                        <span class="story-name">${c.userName}</span>
+                    </div>`;
+                });
             });
-        });
+        } catch(e) { console.error("Snapshot Error:", e); }
 
-        // --- 3. Open Chat & Pinned Order ---
+        // --- Chat Functions ---
         window.openChat = async (id, name, img) => {
             activeChatId = id;
             document.getElementById('chatArea').classList.remove('hidden');
             document.getElementById('activeName').innerText = name;
             document.getElementById('activeAvatar').src = img;
             
-            // Check for active order (Logic Mockup: looking for last order doc)
-            // Here we simulate getting the "Pinned Order" from user data
+            // בדיקת הזמנה פעילה (Pinned)
             const orderCard = document.getElementById('activeOrderCard');
-            orderCard.classList.add('hidden'); // Reset
+            orderCard.classList.add('hidden');
             
-            // Real logic: Fetch active order for this user
-            const q = query(collection(db, "active_orders"), where("clientUid", "==", id), where("status", "!=", "archived"));
-            const orderSnap = await getDocs(q);
-            if (!orderSnap.empty) {
-                const o = orderSnap.docs[0].data();
-                currentOrder = { id: orderSnap.docs[0].id, ...o };
-                document.getElementById('orderTitle').innerText = `הזמנה פעילה #${orderSnap.docs[0].id}`;
-                document.getElementById('orderStatus').innerText = o.status === 'waiting' ? 'ממתין למסמך' : 'בטיפול';
-                orderCard.classList.remove('hidden');
-            }
+            try {
+                const q = query(collection(db, "active_orders"), where("clientUid", "==", id), where("status", "!=", "archived"));
+                const orderSnap = await getDocs(q);
+                if (!orderSnap.empty) {
+                    const o = orderSnap.docs[0].data();
+                    currentOrder = { id: orderSnap.docs[0].id, ...o };
+                    document.getElementById('orderTitle').innerText = `הזמנה #${orderSnap.docs[0].id}`;
+                    document.getElementById('orderStatus').innerText = o.status === 'waiting' ? '⏳ ממתין למסמך קומקס' : '🚚 בטיפול / ליקוט';
+                    orderCard.classList.remove('hidden');
+                }
+            } catch(e) {}
 
             // Messages
             onSnapshot(query(collection(db, `chat_sessions/${id}/messages`), orderBy("createdAt", "asc")), (snap) => {
@@ -231,111 +272,94 @@
                     const m = d.data();
                     let cls = m.role==='staff' ? 'msg staff' : 'msg user';
                     if(m.role==='internal') cls = 'msg internal';
+                    
                     return `<div class="${cls}">
-                        ${m.role==='internal'?'<div class="text-[10px] text-orange-600 font-bold">🔒 פנימי</div>':''}
+                        ${m.role==='internal'?'<div class="text-[10px] text-orange-600 font-bold mb-1">🔒 פתק פנימי</div>':''}
                         ${m.text}
-                        <div class="msg-time">${new Date(m.createdAt?.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
+                        <div class="text-[9px] text-gray-400 mt-1 opacity-60 text-left">${m.createdAt ? new Date(m.createdAt.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : ''}</div>
                     </div>`;
                 }).join('');
                 box.scrollTop = box.scrollHeight;
             });
         };
 
-        // --- 4. Messaging ---
         window.sendMessage = async () => {
-            const txt = document.getElementById('msgInput').value; if(!txt) return;
+            const txt = document.getElementById('msgInput').value; if(!txt || !activeChatId) return;
             document.getElementById('msgInput').value = '';
+            
             await addDoc(collection(db, `chat_sessions/${activeChatId}/messages`), { 
                 text: txt, role: internalMode ? 'internal' : 'staff', sender: "חמ\"ל", createdAt: serverTimestamp() 
             });
-            if(!internalMode) updateDoc(doc(db, "chat_sessions", activeChatId), { lastMessage: `נציג: ${txt}`, lastActivity: serverTimestamp() });
+            
+            if(!internalMode) {
+                updateDoc(doc(db, "chat_sessions", activeChatId), { lastMessage: `נציג: ${txt}`, lastActivity: serverTimestamp(), lastMsgFromStaff: true });
+            }
+            
             if(internalMode) window.toggleInternal();
         };
 
+        // --- Archive & History ---
+        window.archiveOrder = async () => {
+            if(!currentOrder || !confirm("לארכב את ההזמנה ליומן?")) return;
+            await addDoc(collection(db, "orders_archive"), { ...currentOrder, archivedAt: serverTimestamp() });
+            await updateDoc(doc(db, "active_orders", currentOrder.id), { status: "archived" });
+            
+            await addDoc(collection(db, `chat_sessions/${activeChatId}/messages`), { 
+                text: `✅ הזמנה ${currentOrder.id} טופלה ואורכבה.`, role: 'internal', createdAt: serverTimestamp() 
+            });
+            document.getElementById('activeOrderCard').classList.add('hidden');
+        };
+
+        // --- UI Utils ---
         window.toggleInternal = () => { 
             internalMode=!internalMode; 
             const inp = document.getElementById('msgInput');
             const btn = document.getElementById('internalBtn');
             if(internalMode) {
-                inp.placeholder = "הערה פנימית (מוסתר)...";
+                inp.placeholder = "הערה פנימית (מוסתר מהלקוח)...";
                 inp.classList.add('bg-yellow-50');
-                btn.className = "fas fa-eye-slash text-orange-500 text-2xl p-2";
+                btn.className = "fas fa-eye-slash text-orange-500 text-xl p-2";
             } else {
                 inp.placeholder = "הקלד הודעה...";
                 inp.classList.remove('bg-yellow-50');
-                btn.className = "fas fa-eye text-gray-400 text-2xl p-2";
+                btn.className = "fas fa-eye text-gray-400 text-xl p-2";
             }
         };
 
-        // --- 5. Archive & History Logic ---
-        window.archiveOrder = async () => {
-            if(!currentOrder) return;
-            if(!confirm("האם לארכב את ההזמנה ולשלוח ל-LOG?")) return;
-            
-            // 1. Move to Archive Collection
-            await addDoc(collection(db, "orders_archive"), {
-                ...currentOrder,
-                archivedAt: serverTimestamp(),
-                archivedBy: "Admin"
-            });
-
-            // 2. Update Active Order to Archived
-            await updateDoc(doc(db, "active_orders", currentOrder.id), { status: "archived" });
-            
-            // 3. Notify Chat
-            await addDoc(collection(db, `chat_sessions/${activeChatId}/messages`), { 
-                text: `✅ הזמנה ${currentOrder.id} סופקה ואורכבה בהצלחה.`, role: 'internal', createdAt: serverTimestamp() 
-            });
-
-            document.getElementById('activeOrderCard').classList.add('hidden');
-            SabanSounds.playMessage();
+        window.toggleSticky = () => {
+            const sn = document.getElementById('stickyNote');
+            sn.classList.toggle('visible');
         };
 
-        window.openHistoryForUser = async () => {
-            if(!activeChatId) return;
-            openArchive(activeChatId);
-        };
-
-        window.openArchive = async (filterUid = null) => {
-            const modal = document.getElementById('archiveModal');
-            const content = document.getElementById('archiveContent');
-            content.innerHTML = '<div class="text-center p-4">טוען נתונים...</div>';
-            modal.classList.add('open');
-
-            let q = query(collection(db, "orders_archive"), orderBy("archivedAt", "desc"));
-            if(filterUid) q = query(collection(db, "orders_archive"), where("clientUid", "==", filterUid), orderBy("archivedAt", "desc"));
-
-            try {
-                const snap = await getDocs(q);
-                if(snap.empty) { content.innerHTML = '<div class="text-center p-4 text-gray-500">אין היסטוריה זמינה</div>'; return; }
-                
-                content.innerHTML = snap.docs.map(d => {
-                    const o = d.data();
-                    return `<div class="bg-white p-3 rounded border border-gray-200 shadow-sm flex justify-between items-center">
-                        <div>
-                            <div class="font-bold text-sm">הזמנה #${d.id}</div>
-                            <div class="text-xs text-gray-500">${new Date(o.archivedAt?.seconds*1000).toLocaleDateString()} | ${o.clientName}</div>
-                        </div>
-                        <span class="text-green-600 font-bold text-xs bg-green-50 px-2 py-1 rounded">סופק</span>
-                    </div>`;
-                }).join('');
-            } catch(e) { content.innerHTML = `<div class="text-red-500 p-2">שגיאה בטעינה: ${e.message}</div>`; }
-        };
-
-        // Tab Switching
         window.switchTab = (t) => {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(`tab-${t}`).classList.add('active');
-            if(t==='chats') { document.getElementById('chatsList').classList.remove('hidden'); document.getElementById('tasksList').classList.add('hidden'); }
-            else { document.getElementById('chatsList').classList.add('hidden'); document.getElementById('tasksList').classList.remove('hidden'); }
+            document.getElementById('chatsList').style.display = t==='chats'?'block':'none';
+            document.getElementById('tasksList').style.display = t==='tasks'?'block':'none';
+            document.getElementById('logsList').style.display = t==='logs'?'block':'none';
+            
+            if(t==='logs') loadLogs();
         };
+
+        async function loadLogs() {
+            const list = document.getElementById('logsList');
+            list.innerHTML = '<div class="text-center p-4">טוען ארכיון...</div>';
+            const snap = await getDocs(query(collection(db, "orders_archive"), orderBy("archivedAt", "desc")));
+            list.innerHTML = snap.docs.map(d => {
+                const o = d.data();
+                return `<div class="bg-gray-50 border p-2 rounded">
+                    <div class="font-bold text-xs">הזמנה #${o.id}</div>
+                    <div class="text-xs text-gray-500">${o.clientName} | ${new Date(o.archivedAt.seconds*1000).toLocaleDateString()}</div>
+                </div>`;
+            }).join('');
+        }
 
         window.promptLinkOrder = async () => {
             const id = prompt("הזן מספר הזמנה מקומקס:");
             if(!id) return;
             await setDoc(doc(db, "active_orders", id), { clientUid: activeChatId, clientName: document.getElementById('activeName').innerText, status: "waiting", createdAt: serverTimestamp() });
             await addDoc(collection(db, `chat_sessions/${activeChatId}/messages`), { text: `⏳ ממתין למסמך הזמנה <b>${id}</b>...`, role: 'internal', createdAt: serverTimestamp() });
-            // Refresh to show card
+            updateDoc(doc(db, "chat_sessions", activeChatId), { lastMessage: `ממתין למסמך ${id}`, lastActivity: serverTimestamp() });
             openChat(activeChatId, document.getElementById('activeName').innerText, document.getElementById('activeAvatar').src);
         };
 
