@@ -1,9 +1,11 @@
-/* Saban Chatbot Engine v7.0 (Auto-Discovery)
-   פיצ'ר: זיהוי אוטומטי של המודל הזמין במפתח
+/* Saban Chatbot Engine v8.0 (Dual Core - Stability First)
+   מנגנון: מנסה Flash -> אם נכשל עובר ל-Pro.
+   תואם: Client App, Whatsapp Center, Admin Trainer.
 */
 
 import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+// המפתח שלך
 const GEMINI_API_KEY = "AIzaSyD9plWwyTESFm24c_OTunf4mFAsAmfrgj0";
 
 export class SabanChatbot {
@@ -11,108 +13,98 @@ export class SabanChatbot {
         this.db = db;
         this.user = userContext || { name: "אורח" };
         this.apiKey = GEMINI_API_KEY;
-        this.emergencyKeywords = ["דחוף", "עצור", "תעצור", "טעות", "סכנה", "פצוע"];
-        this.cachedModelName = null; // נשמור את השם שנמצא כדי לא לחפש כל פעם
+        // מילים שעוצרות את הבוט ומזעיקות אדם
+        this.emergencyKeywords = ["דחוף", "עצור", "תעצור", "טעות", "סכנה", "פצוע", "הצילו"];
     }
 
+    // --- הפונקציה הראשית שכולם קוראים לה ---
     async ask(question) {
         if (!question) return { text: "..." };
-        
-        // 1. חירום
+
+        // 1. בדיקת חירום (Rule Based)
         if (this.emergencyKeywords.some(k => question.includes(k))) {
-            return { text: "🛑 עצרתי הכל! דיווחתי להראל ולרמי.", action: "urgent_alert" };
+            return { 
+                text: "🛑 עצרתי הכל! דיווחתי להראל ולרמי על מקרה דחוף.", 
+                action: "urgent_alert" 
+            };
         }
 
-        // 2. AI
+        // 2. הכנת המוח (Context)
+        let inventory = "מלאי זמין: כל המוצרים הסטנדרטיים.";
         try {
-            // מלאי (דילוג שגיאות)
-            let inventory = "מלאי בבדיקה.";
-            try { if(this.db) inventory = await this.getInventoryContext(); } 
-            catch (e) { console.warn("Firebase skipped"); }
+            // מנסה לשלוף מלאי, אם נכשל - לא תוקע את הבוט
+            if (this.db) inventory = await this.getInventoryContext();
+        } catch (e) { 
+            console.warn("Inventory fetch skipped (Offline mode)", e); 
+        }
 
-            const aiResponse = await this.generateAIResponse(question, inventory);
-            return { text: aiResponse, action: "ai_reply" };
+        // 3. הפעלת המנוע הכפול (Dual Core AI)
+        try {
+            // נסיון ראשון: המודל המהיר (Flash)
+            const response = await this.callGoogleModel(question, inventory, "gemini-1.5-flash");
+            return { text: response, action: "ai_reply" };
 
-        } catch (error) {
-            console.error("Bot Error:", error);
-            return { text: "תקלה במוח (בדוק F12 לפרטים). 🔌" };
+        } catch (error1) {
+            console.warn("⚠️ Flash model failed, switching to Backup (Pro)...", error1);
+            
+            try {
+                // נסיון שני: המודל היציב (Pro) - גיבוי
+                const responseBackup = await this.callGoogleModel(question, inventory, "gemini-pro");
+                return { text: responseBackup, action: "ai_reply_backup" };
+            } catch (error2) {
+                console.error("❌ Critical AI Failure:", error2);
+                return { text: "המערכת באתחול תקשורת... (נסה שוב עוד רגע) 🔌" };
+            }
         }
     }
 
-    // --- איתור מודל אוטומטי ---
-    async findActiveModel() {
-        if (this.cachedModelName) return this.cachedModelName;
-
-        try {
-            // שואלים את גוגל: איזה מודלים יש לי?
-            const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${this.apiKey}`;
-            const res = await fetch(url);
-            const data = await res.json();
-            
-            if (!res.ok) throw new Error(data.error?.message || "ListModels Failed");
-
-            // מחפשים מודל שמכיל 'gemini' ותומך ב-generateContent
-            const model = data.models.find(m => 
-                m.name.includes("gemini") && 
-                m.supportedGenerationMethods.includes("generateContent")
-            );
-
-            if (!model) throw new Error("לא נמצא מודל Gemini פעיל במפתח זה");
-            
-            console.log("✅ מודל נבחר אוטומטית:", model.name);
-            this.cachedModelName = model.name; // שומרים לפעם הבאה (למשל: models/gemini-1.5-flash)
-            return model.name;
-
-        } catch (e) {
-            console.error("Auto-Discovery Failed:", e);
-            // ברירת מחדל אם הזיהוי נכשל
-            return "models/gemini-pro"; 
-        }
-    }
-
-    async generateAIResponse(userQ, inventoryList) {
-        // שלב 1: מצא את המודל הנכון
-        const modelName = await this.findActiveModel(); // מחזיר למשל 'models/gemini-1.5-flash'
+    // --- הפונקציה שפונה לגוגל (Generic Fetch) ---
+    async callGoogleModel(userQ, inventory, modelName) {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${this.apiKey}`;
         
-        // שלב 2: שלח את הבקשה
-        // שים לב: modelName כבר מכיל את ה-prefix 'models/' אז לא מוסיפים אותו ב-URL
-        // אבל ה-API דורש לפעמים מבנה ספציפי. הנה התיקון:
-        // אם modelName הוא "models/gemini-pro", ה-URL צריך להיות .../models/gemini-pro:generateContent
-        
-        const url = `https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${this.apiKey}`;
-
         const prompt = `
-        שמך צ'אט-סבן. מומחה חומרי בניין.
-        שאלה: "${userQ}"
-        מלאי: ${inventoryList}
-        הנחיות: ענה בעברית, קצר (2 משפטים), תמליץ אם יש במלאי. תהיה נחמד.
+        אתה העוזר החכם של "סבן חומרי בניין".
+        הלקוח (${this.user.name}) שואל: "${userQ}"
+        
+        מידע על המלאי שלנו:
+        ${inventory}
+        
+        הנחיות:
+        1. ענה בעברית, קצר (עד 2 משפטים) ומקצועי.
+        2. המלץ רק על מוצרים שיש במלאי.
+        3. אם משווים בין מוצרים - תן המלצה ברורה.
+        4. תהיה אדיב ומכירתי.
         `;
 
         const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }]
-            })
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
         });
 
         if (!response.ok) {
-            const errData = await response.json();
-            throw new Error(`Google API Error (${modelName}): ${JSON.stringify(errData)}`);
+            // זורק שגיאה כדי להפעיל את הגיבוי ב-catch למעלה
+            throw new Error(`Model ${modelName} Error: ${response.status}`);
         }
 
         const data = await response.json();
         
-        if (data.candidates && data.candidates.length > 0) {
+        if (data.candidates && data.candidates[0].content) {
             return data.candidates[0].content.parts[0].text;
         } else {
             return "לא הצלחתי לנסח תשובה.";
         }
     }
 
+    // --- שליפת מלאי חכמה ---
     async getInventoryContext() {
         const snap = await getDocs(collection(this.db, "products"));
-        if (snap.empty) return "אין מוצרים.";
-        return snap.docs.map(d => d.data().core.name).join(", ");
+        if (snap.empty) return "אין מידע מלאי כרגע.";
+        
+        // שולף שם, מחיר ומותג לכל מוצר כדי שהבוט ידע מה להציע
+        return snap.docs.map(d => {
+            const p = d.data().core;
+            return `${p.name} (${p.brand || 'כללי'}) - ${p.price}₪`;
+        }).join(", ");
     }
 }
