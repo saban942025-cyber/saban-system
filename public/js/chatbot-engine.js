@@ -1,6 +1,5 @@
-/* Saban Chatbot Engine v8.0 (Dual Core - Stability First)
-   מנגנון: מנסה Flash -> אם נכשל עובר ל-Pro.
-   תואם: Client App, Whatsapp Center, Admin Trainer.
+/* Saban Chatbot Engine - Dual Core v8.0
+   פיצ'ר: ניסיון ראשי (Flash) + גיבוי אוטומטי (Pro) במקרה של שגיאה
 */
 
 import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -13,67 +12,51 @@ export class SabanChatbot {
         this.db = db;
         this.user = userContext || { name: "אורח" };
         this.apiKey = GEMINI_API_KEY;
-        // מילים שעוצרות את הבוט ומזעיקות אדם
-        this.emergencyKeywords = ["דחוף", "עצור", "תעצור", "טעות", "סכנה", "פצוע", "הצילו"];
     }
 
-    // --- הפונקציה הראשית שכולם קוראים לה ---
+    // --- הפונקציה הראשית ---
     async ask(question) {
         if (!question) return { text: "..." };
 
-        // 1. בדיקת חירום (Rule Based)
-        if (this.emergencyKeywords.some(k => question.includes(k))) {
-            return { 
-                text: "🛑 עצרתי הכל! דיווחתי להראל ולרמי על מקרה דחוף.", 
-                action: "urgent_alert" 
-            };
-        }
-
-        // 2. הכנת המוח (Context)
-        let inventory = "מלאי זמין: כל המוצרים הסטנדרטיים.";
+        // 1. שליפת הקשר (מלאי) - לא עוצרת את הבוט אם נכשלת
+        let context = "מלאי זמין: כל המוצרים הסטנדרטיים.";
         try {
-            // מנסה לשלוף מלאי, אם נכשל - לא תוקע את הבוט
-            if (this.db) inventory = await this.getInventoryContext();
-        } catch (e) { 
-            console.warn("Inventory fetch skipped (Offline mode)", e); 
-        }
+            if (this.db) context = await this.getInventoryContext();
+        } catch (e) { console.warn("Context skip", e); }
 
-        // 3. הפעלת המנוע הכפול (Dual Core AI)
+        // 2. ניסיון שליחה כפול (Dual Try)
         try {
-            // נסיון ראשון: המודל המהיר (Flash)
-            const response = await this.callGoogleModel(question, inventory, "gemini-1.5-flash");
+            // ניסיון א': המודל המהיר
+            const response = await this.callGoogleModel(question, context, "gemini-1.5-flash");
             return { text: response, action: "ai_reply" };
 
         } catch (error1) {
-            console.warn("⚠️ Flash model failed, switching to Backup (Pro)...", error1);
+            console.warn("⚠️ Flash model failed, switching to backup...", error1);
             
             try {
-                // נסיון שני: המודל היציב (Pro) - גיבוי
-                const responseBackup = await this.callGoogleModel(question, inventory, "gemini-pro");
+                // ניסיון ב': המודל היציב (גיבוי)
+                const responseBackup = await this.callGoogleModel(question, context, "gemini-pro");
                 return { text: responseBackup, action: "ai_reply_backup" };
             } catch (error2) {
-                console.error("❌ Critical AI Failure:", error2);
-                return { text: "המערכת באתחול תקשורת... (נסה שוב עוד רגע) 🔌" };
+                console.error("❌ All models failed:", error2);
+                return { text: "יש לי תקלת תקשורת רגעית עם גוגל. נסה שוב עוד דקה. 🔌" };
             }
         }
     }
 
-    // --- הפונקציה שפונה לגוגל (Generic Fetch) ---
+    // --- הפונקציה שפונה לגוגל ---
     async callGoogleModel(userQ, inventory, modelName) {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${this.apiKey}`;
         
         const prompt = `
         אתה העוזר החכם של "סבן חומרי בניין".
-        הלקוח (${this.user.name}) שואל: "${userQ}"
-        
-        מידע על המלאי שלנו:
-        ${inventory}
+        הלקוח שואל: "${userQ}"
+        מלאי נוכחי בחנות: ${inventory}
         
         הנחיות:
         1. ענה בעברית, קצר (עד 2 משפטים) ומקצועי.
         2. המלץ רק על מוצרים שיש במלאי.
-        3. אם משווים בין מוצרים - תן המלצה ברורה.
-        4. תהיה אדיב ומכירתי.
+        3. אם חסר מידע, תשאל את הלקוח.
         `;
 
         const response = await fetch(url, {
@@ -83,7 +66,7 @@ export class SabanChatbot {
         });
 
         if (!response.ok) {
-            // זורק שגיאה כדי להפעיל את הגיבוי ב-catch למעלה
+            // זורק שגיאה כדי להפעיל את הגיבוי
             throw new Error(`Model ${modelName} Error: ${response.status}`);
         }
 
@@ -96,15 +79,14 @@ export class SabanChatbot {
         }
     }
 
-    // --- שליפת מלאי חכמה ---
+    // --- שליפת מלאי ---
     async getInventoryContext() {
         const snap = await getDocs(collection(this.db, "products"));
-        if (snap.empty) return "אין מידע מלאי כרגע.";
-        
-        // שולף שם, מחיר ומותג לכל מוצר כדי שהבוט ידע מה להציע
+        if (snap.empty) return "אין מידע מלאי.";
+        // שולף שמות מוצרים ומחירים
         return snap.docs.map(d => {
             const p = d.data().core;
-            return `${p.name} (${p.brand || 'כללי'}) - ${p.price}₪`;
+            return `${p.name} (${p.price}₪)`;
         }).join(", ");
     }
 }
