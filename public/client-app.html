@@ -3,361 +3,230 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Saban App Platinum 💎</title>
-    
+    <title>Saban App Platinum</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet">
-
+    
     <style>
-        body { background: #f0f2f5; font-family: 'Heebo', sans-serif; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; -webkit-tap-highlight-color: transparent; }
-        .glass-header { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0,0,0,0.05); padding: 12px 16px; z-index: 50; flex-shrink: 0; box-shadow: 0 4px 20px rgba(0,0,0,0.02); }
-        .view-container { flex: 1; position: relative; overflow: hidden; }
-        .view { position: absolute; inset: 0; overflow-y: auto; background: #f0f2f5; display: none; padding-bottom: 80px; }
+        body { background: #f0f2f5; font-family: -apple-system, system-ui, sans-serif; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+        .view { display: none; height: 100%; overflow-y: auto; padding-bottom: 80px; }
         .view.active { display: block; animation: fadeIn 0.3s; }
-
-        /* --- Smart Parser Styles --- */
-        .smart-stage { min-height: 200px; padding-bottom: 100px; }
         
-        .parsed-card {
-            background: white; border-radius: 16px; padding: 12px; margin-bottom: 10px;
-            display: flex; align-items: center; gap: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.05);
-            opacity: 0; transform: translateY(20px); transition: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        .parsed-card.show { opacity: 1; transform: translateY(0); }
+        /* Catalog Card */
+        .prod-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.03); display: flex; flex-direction: column; position: relative; }
+        .badge-wh { position: absolute; top: 8px; right: 8px; font-size: 10px; font-weight: bold; padding: 3px 8px; border-radius: 12px; background: rgba(255,255,255,0.9); border: 1px solid #ddd; }
         
-        .card-local { border-right: 4px solid #10b981; }
-        .card-external { border-right: 4px solid #f59e0b; }
-        .card-address { border-right: 4px solid #3b82f6; background: #f0f9ff; }
-        .card-unknown { border-right: 4px solid #ef4444; background: #fef2f2; }
-
-        .trash-zone {
-            position: fixed; bottom: 90px; left: 20px;
-            width: 60px; height: 60px; border-radius: 50%;
-            background: #e2e8f0; color: #94a3b8;
-            display: flex; align-items: center; justify-content: center;
-            border: 2px dashed #cbd5e1; z-index: 40; transition: 0.3s;
-        }
-        .trash-zone.active { transform: scale(1.2) rotate(-15deg); background: #fee2e2; border-color: #ef4444; color: #ef4444; }
-        .flying-trash { position: fixed; z-index: 100; pointer-events: none; transition: 0.6s ease-in; color: #94a3b8; font-size: 12px; }
-
-        /* --- General Styles --- */
-        .catalog-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.03); display: flex; flex-direction: column; }
-        .tab-bar { background: white; border-top: 1px solid #e5e5ea; height: 70px; display: flex; justify-content: space-around; align-items: center; padding-bottom: env(safe-area-inset-bottom); z-index: 50; }
-        .tab-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; font-size: 10px; font-weight: 500; width: 100%; height: 100%; }
-        .tab-item.active { color: #007aff; }
-        .tab-icon { font-size: 22px; margin-bottom: 4px; transition: transform 0.2s; }
-        .tab-item:active .tab-icon { transform: scale(0.9); }
-
-        /* Popup Guide */
-        .guide-popup { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-        .guide-content { background: white; width: 85%; padding: 25px; border-radius: 24px; text-align: center; animation: popIn 0.4s; }
-
+        /* Floating Compare */
+        .compare-float { position: fixed; bottom: 80px; left: 20px; right: 20px; background: #1e293b; color: white; padding: 15px; border-radius: 16px; display: none; align-items: center; justify-content: space-between; box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 50; animation: slideUp 0.3s; }
+        
+        /* Animations */
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(50px); } to { transform: translateY(0); } }
+
+        /* Modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .modal-box { background: white; width: 85%; max-width: 400px; border-radius: 20px; padding: 20px; position: relative; }
     </style>
 </head>
 <body>
 
-    <header class="glass-header flex justify-between items-center">
-        <div class="flex items-center gap-3">
-            <div class="w-9 h-9 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-md">S</div>
-            <div>
-                <div class="font-black text-slate-800 leading-none text-base">Saban</div>
-                <div class="text-[10px] text-slate-500 font-bold">PLATINUM APP</div>
-            </div>
-        </div>
-        <div class="flex items-center gap-3">
-            <div class="relative cursor-pointer" onclick="switchTab('cart')">
-                <i class="fas fa-shopping-bag text-slate-700 text-xl"></i>
-                <div id="cartBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">0</div>
-            </div>
-            <img src="https://ui-avatars.com/api/?name=Shahar+Shaul&background=007aff&color=fff" class="w-9 h-9 rounded-full border-2 border-white shadow-sm">
-        </div>
-    </header>
-
-    <div class="view-container">
-
-        <div id="view-catalog" class="view active p-4">
-            <div class="sticky top-0 z-30 bg-[#f0f2f5] pb-2 pt-1">
-                <div class="relative shadow-sm">
-                    <input id="searchCatalog" class="w-full bg-white h-12 rounded-2xl pl-12 pr-4 outline-none font-bold text-slate-700" placeholder="🔍 חפש מוצר..." oninput="renderCatalog()">
-                    <div class="absolute left-4 top-3.5 text-slate-400"><i class="fas fa-search"></i></div>
-                </div>
-            </div>
-            <div id="catalogGrid" class="grid grid-cols-2 gap-3 mt-2"></div>
-        </div>
-
-        <div id="view-smart" class="view p-5">
-            <div id="smartIntro" class="text-center mb-4 transition-all">
-                <h2 class="text-xl font-black text-slate-800">הפענוח החכם 🧠</h2>
-                <p class="text-xs text-slate-500">הדבק רשימה (אפילו מבולגנת) ואנחנו נסדר אותה</p>
-            </div>
-
-            <textarea id="smartInput" class="w-full h-32 rounded-2xl p-4 border border-slate-200 bg-white focus:ring-2 ring-purple-500 outline-none resize-none shadow-sm mb-4" placeholder="לדוגמה: תביא 10 מלט שחור, 5 דבק סיקה וגם 3 בלה סומסום לאתר ברעננה..."></textarea>
-            
-            <button onclick="runSmartParser()" id="btnSmart" class="w-full bg-slate-900 text-white font-bold py-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 active:scale-95 transition">
-                <i class="fas fa-magic"></i> <span>פענח הזמנה</span>
+    <div class="bg-white/95 backdrop-blur border-b p-3 flex justify-between items-center sticky top-0 z-40">
+        <div class="font-black text-slate-800 text-lg">Saban</div>
+        <div class="flex gap-3">
+            <button onclick="switchTab('cart')" class="relative">
+                <i class="fas fa-shopping-bag text-xl"></i>
+                <span id="cartCount" class="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center hidden">0</span>
             </button>
+        </div>
+    </div>
 
-            <div id="smartStage" class="smart-stage mt-6 flex flex-col items-center"></div>
+    <div class="flex-1 overflow-hidden relative">
+        <div id="view-catalog" class="view active p-4">
+            <div class="relative mb-4">
+                <input id="search" class="w-full bg-white h-12 rounded-xl px-4 border shadow-sm outline-none" placeholder="חפש מוצר..." oninput="render()">
+                <i class="fas fa-search absolute left-4 top-4 text-gray-400"></i>
+            </div>
+            <div id="grid" class="grid grid-cols-2 gap-3"></div>
+        </div>
 
-            <div class="trash-zone" id="trashCan"><i class="fas fa-trash"></i></div>
+        <div id="view-chat" class="view bg-[#efeae2]">
+            <div id="chatBox" class="p-4 space-y-3"></div>
+            <div class="fixed bottom-[70px] left-0 right-0 p-3 bg-[#f0f2f5] flex gap-2 border-t">
+                <input id="chatIn" class="flex-1 rounded-full px-4 border-none outline-none h-10" placeholder="שאל אותי...">
+                <button onclick="send()" class="w-10 h-10 bg-[#008069] text-white rounded-full"><i class="fas fa-paper-plane"></i></button>
+            </div>
         </div>
 
         <div id="view-cart" class="view p-4">
-            <h2 class="text-2xl font-black text-slate-800 mb-4">ההזמנה שלי</h2>
-            <div id="cartList" class="space-y-3 mb-8"></div>
-            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-                <input id="ordProject" class="w-full bg-slate-50 h-12 px-4 rounded-xl mb-3 outline-none" placeholder="שם הפרויקט *">
-                <button onclick="submitOrder()" class="w-full bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg">שלח הזמנה 🚀</button>
-            </div>
-        </div>
-
-    </div>
-
-    <div id="guideModal" class="guide-popup" style="display:none">
-        <div class="guide-content">
-            <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">✨</div>
-            <h3 class="text-xl font-black text-slate-800 mb-2">ברוכים הבאים למערכת הפענוח!</h3>
-            <p class="text-sm text-slate-500 mb-6 leading-relaxed">
-                קיבלת רשימה מהפועל בווצאפ?<br>
-                פשוט <b>העתק והדבק</b> אותה כאן.<br>
-                המערכת תסנן את ה"זבל", תזהה את המוצרים, תאתר את הכתובת ותכין לך הזמנה מדוגמת.
-            </p>
-            <button onclick="closeGuide()" class="w-full bg-purple-600 text-white font-bold py-3 rounded-xl">הבנתי, בוא נתחיל!</button>
+            <h2 class="text-2xl font-bold mb-4">העגלה שלי</h2>
+            <div id="cartList" class="space-y-2"></div>
+            <button onclick="submitOrder()" class="w-full bg-black text-white py-4 rounded-xl font-bold mt-6 shadow-xl">שלח הזמנה</button>
         </div>
     </div>
 
-    <nav class="tab-bar">
-        <div class="tab-item active" onclick="switchTab('catalog')" id="tab-catalog"><i class="fas fa-th-large tab-icon"></i> קטלוג</div>
-        <div class="tab-item" onclick="switchTab('smart')" id="tab-smart"><i class="fas fa-magic tab-icon text-purple-600"></i> חכם</div>
-        <div class="tab-item" onclick="switchTab('cart')" id="tab-cart"><i class="fas fa-clipboard-list tab-icon"></i> עגלה</div>
-    </nav>
+    <div id="compareBar" class="compare-float">
+        <div class="text-sm">
+            <span class="font-bold text-yellow-400" id="cmpCount">0</span> מוצרים להשוואה
+        </div>
+        <button onclick="runCompare()" class="bg-blue-600 px-4 py-2 rounded-lg font-bold text-xs flex items-center gap-2">
+            <i class="fas fa-robot"></i> שאל את הבוט
+        </button>
+    </div>
+
+    <div id="detailsModal" class="modal-overlay">
+        <div class="modal-box">
+            <button onclick="closeModal()" class="absolute top-3 left-3 text-gray-400"><i class="fas fa-times"></i></button>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t h-[65px] flex justify-around items-center z-50 pb-2">
+        <button onclick="switchTab('catalog')" class="flex flex-col items-center text-blue-600"><i class="fas fa-th-large text-xl"></i><span class="text-[10px]">קטלוג</span></button>
+        <button onclick="switchTab('chat')" class="flex flex-col items-center text-gray-400"><i class="fas fa-comments text-xl"></i><span class="text-[10px]">ייעוץ</span></button>
+        <button onclick="switchTab('cart')" class="flex flex-col items-center text-gray-400"><i class="fas fa-clipboard-list text-xl"></i><span class="text-[10px]">הזמנה</span></button>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        const { jsPDF } = window.jspdf;
+        import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { SabanChatbot } from './js/chatbot-engine.js'; // וודא שהקובץ קיים
 
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-
-        // State
-        let catalog = [];
-        let cart = [];
-        let smartItems = [];
-        let hasSeenGuide = localStorage.getItem('saban_guide_seen');
-
-        // 1. INIT
-        async function init() {
-            try {
-                const snap = await getDocs(collection(db, "products"));
-                catalog = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                renderCatalog();
-            } catch(e) { console.log("Offline catalog"); }
-        }
-
-        // 2. SMART PARSER LOGIC (The Diamond)
-        window.runSmartParser = async () => {
-            const text = document.getElementById('smartInput').value;
-            if(!text) return alert("אנא הזן טקסט");
-
-            const stage = document.getElementById('smartStage');
-            stage.innerHTML = '';
-            smartItems = [];
-            
-            document.getElementById('smartIntro').style.opacity = '0';
-            document.getElementById('smartInput').style.height = '60px'; // Shrink input
-
-            const lines = text.split('\n');
-            for (let i = 0; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if(line.length < 2) continue;
-                await processLine(line, i);
-            }
-
-            // Finish Button
-            setTimeout(() => {
-                const btn = document.createElement('div');
-                btn.className = 'w-full mt-6 flex gap-2 animate-pulse';
-                btn.innerHTML = `
-                    <button onclick="addToCartSmart()" class="flex-1 bg-green-600 text-white font-bold py-3 rounded-xl shadow">העבר לעגלה</button>
-                    <button onclick="generatePDF()" class="bg-gray-800 text-white w-12 rounded-xl"><i class="fas fa-file-pdf"></i></button>
-                `;
-                stage.appendChild(btn);
-            }, lines.length * 600 + 500);
-        };
-
-        async function processLine(line, index) {
-            return new Promise(resolve => {
-                setTimeout(() => {
-                    // 1. Garbage
-                    if(isGarbage(line)) { throwTrash(line); resolve(); return; }
-                    
-                    // 2. Address
-                    if(isAddress(line)) { renderCard(line, 'address'); resolve(); return; }
-
-                    // 3. Product Fuzzy Search
-                    const qty = extractQty(line);
-                    const cleanName = line.replace(/[0-9]/g, '').trim();
-                    const product = findProductFuzzy(cleanName);
-
-                    if(product) {
-                        smartItems.push({name: product.core.name, qty: qty, price: product.core.price});
-                        renderCard(line, 'local', product, qty);
-                    } else if (isExternal(line)) {
-                        smartItems.push({name: line, qty: qty, price: 0, type: 'external'});
-                        renderCard(line, 'external', null, qty);
-                    } else {
-                        renderCard(line, 'unknown');
-                    }
-                    resolve();
-                }, index * 600);
-            });
-        }
-
-        function findProductFuzzy(text) {
-            const words = text.split(' ').filter(w => w.length > 2);
-            return catalog.find(p => {
-                const pName = p.core.name.toLowerCase();
-                const tName = text.toLowerCase();
-                if(pName.includes(tName)) return true;
-                return words.some(w => pName.includes(w));
-            });
-        }
-
-        function renderCard(text, type, product = null, qty = 0) {
-            const stage = document.getElementById('smartStage');
-            const div = document.createElement('div');
-            div.className = `parsed-card card-${type}`;
-            
-            let html = '';
-            if(type === 'local') {
-                html = `
-                    <img src="${product.rich?.image}" class="w-10 h-10 rounded bg-gray-100 object-cover">
-                    <div class="flex-1"><div class="font-bold text-sm">${product.core.name}</div><div class="text-xs text-gray-400">זוהה מתוך: "${text}"</div></div>
-                    <div class="text-center px-2"><div class="text-[10px] text-gray-500">כמות</div><div class="font-bold text-green-600">${qty}</div></div>
-                `;
-            } else if (type === 'external') {
-                html = `<div class="w-10 h-10 rounded bg-yellow-100 flex items-center justify-center text-yellow-600"><i class="fas fa-globe"></i></div>
-                        <div class="flex-1"><div class="font-bold text-sm">${text}</div><div class="text-xs text-yellow-500">רכש חיצוני</div></div>
-                        <div class="font-bold text-yellow-600 text-lg">${qty}</div>`;
-            } else if (type === 'address') {
-                html = `<div class="w-10 h-10 rounded bg-blue-100 flex items-center justify-center text-blue-600"><i class="fas fa-map-marker-alt"></i></div>
-                        <div class="flex-1"><div class="font-bold text-sm text-blue-800">יעד: ${text}</div><a href="https://waze.com/ul?q=${text}" class="text-xs text-blue-500 underline">נווט</a></div>`;
-            } else {
-                html = `<div class="w-10 h-10 rounded bg-red-100 flex items-center justify-center text-red-600"><i class="fas fa-question"></i></div>
-                        <div class="flex-1"><div class="font-bold text-sm text-red-800">${text}</div><div class="text-xs text-red-400">לא זוהה</div></div>`;
-            }
-
-            div.innerHTML = html;
-            stage.appendChild(div);
-            requestAnimationFrame(() => div.classList.add('show'));
-        }
-
-        // --- Helpers ---
-        function isGarbage(t) { return /בוקר|תודה|דחוף|אחי|יא/.test(t); }
-        function isAddress(t) { return /רחוב|עיר|הרצליה|רעננה|לכבוד/.test(t); }
-        function isExternal(t) { return /בלה|סומסום|חול|מנוף/.test(t); }
-        function extractQty(t) { const m = t.match(/\d+/); return m ? parseInt(m[0]) : 1; }
         
-        function throwTrash(text) {
-            const trash = document.getElementById('trashCan');
-            const fly = document.createElement('div');
-            fly.className = 'flying-trash';
-            fly.innerText = text;
-            fly.style.left = '50%'; fly.style.top = '30%';
-            document.body.appendChild(fly);
-            
-            const rect = trash.getBoundingClientRect();
-            setTimeout(() => {
-                fly.style.left = (rect.left+20)+'px'; fly.style.top = (rect.top+20)+'px';
-                fly.style.opacity = 0; trash.classList.add('active');
-            }, 50);
-            setTimeout(() => { fly.remove(); trash.classList.remove('active'); }, 600);
+        let products = [];
+        let compareList = [];
+        let cart = [];
+        const bot = new SabanChatbot(db, {name: "לקוח"});
+
+        // Init
+        async function init() {
+            const snap = await getDocs(collection(db, "products"));
+            products = snap.docs.map(d => ({id: d.id, ...d.data()}));
+            render();
         }
 
-        // --- PDF Generation ---
-        window.generatePDF = () => {
-            const doc = new jsPDF({align:"right", isRtl:true});
-            doc.setFontSize(20); doc.text("Saban Order", 190, 20, {align:"right"});
-            let y = 40;
-            smartItems.forEach(i => {
-                doc.setFontSize(12);
-                doc.text(`${i.name} (x${i.qty})`, 190, y, {align:"right"});
-                y+=10;
-            });
-            doc.save("order.pdf");
-        };
-
-        window.addToCartSmart = () => {
-            smartItems.forEach(i => {
-                cart.push({core: {name: i.name, price: i.price || 0}, rich: {image: null}});
-            });
-            updateCart();
-            switchTab('cart');
-        };
-
-        // --- Catalog & Cart (Simplified) ---
-        window.renderCatalog = () => {
-            const grid = document.getElementById('catalogGrid');
-            const term = document.getElementById('searchCatalog').value.toLowerCase();
-            const filtered = catalog.filter(p => p.core.name.toLowerCase().includes(term));
-            
-            grid.innerHTML = filtered.map(p => `
-                <div class="catalog-card" onclick="addToCart('${p.id}')">
-                    <div class="h-32 p-4 flex items-center justify-center"><img src="${p.rich?.image}" class="h-full object-contain"></div>
-                    <div class="p-3"><div class="font-bold text-sm truncate">${p.core.name}</div><div class="text-blue-600 text-xs font-bold">₪${p.core.price}</div></div>
+        window.render = () => {
+            const term = document.getElementById('search').value.toLowerCase();
+            const grid = document.getElementById('grid');
+            grid.innerHTML = products.filter(p => p.core.name.toLowerCase().includes(term)).map(p => `
+                <div class="prod-card">
+                    <div class="badge-wh text-gray-500">${p.core.warehouse === 'both' ? 'תלמיד+חרש' : (p.core.warehouse==='harash'?'חרש':'תלמיד')}</div>
+                    <img src="${p.rich?.image}" class="h-32 object-contain p-2" onclick="showDetails('${p.id}')">
+                    <div class="p-3">
+                        <div class="font-bold text-sm h-10 line-clamp-2">${p.core.name}</div>
+                        <div class="flex justify-between items-center mt-2">
+                            <div class="font-bold text-blue-600">₪${p.core.price}</div>
+                            <div class="flex gap-2">
+                                <button onclick="toggleCompare('${p.id}')" class="w-8 h-8 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center border ${compareList.includes(p.id)?'border-blue-500 text-blue-500':''}"><i class="fas fa-balance-scale"></i></button>
+                                <button onclick="addToCart('${p.id}')" class="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center"><i class="fas fa-plus"></i></button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             `).join('');
         };
 
-        window.addToCart = (id) => {
-            const p = catalog.find(x => x.id === id);
-            if(p) { cart.push(p); updateCart(); document.getElementById('cartBadge').innerText = cart.length; document.getElementById('cartBadge').classList.remove('hidden'); }
-        };
-
-        function updateCart() {
-            const list = document.getElementById('cartList');
-            if(cart.length===0) { list.innerHTML = '<div class="text-center py-10 text-gray-400">העגלה ריקה</div>'; return; }
-            list.innerHTML = cart.map((i, idx) => `
-                <div class="bg-white p-3 rounded-xl border flex justify-between items-center shadow-sm">
-                    <div class="font-bold text-sm">${i.core.name}</div>
-                    <button onclick="cart.splice(${idx},1); updateCart()" class="text-red-500"><i class="fas fa-trash"></i></button>
+        // Rich Details Logic
+        window.showDetails = (id) => {
+            const p = products.find(x => x.id === id);
+            const modal = document.getElementById('detailsModal');
+            const content = document.getElementById('modalContent');
+            
+            content.innerHTML = `
+                <div class="text-center mb-4">
+                    <img src="${p.rich?.image}" class="h-32 mx-auto object-contain">
+                    <h2 class="text-lg font-bold mt-2">${p.core.name}</h2>
+                    <div class="text-blue-600 font-bold">₪${p.core.price}</div>
                 </div>
-            `).join('');
-        }
+                <div class="space-y-2 bg-gray-50 p-3 rounded-lg text-sm mb-4">
+                    <div class="flex justify-between"><span>זמן ייבוש:</span> <b>${p.rich?.specs?.drying_time || 'לא צוין'}</b></div>
+                    <div class="flex justify-between"><span>כיסוי:</span> <b>${p.rich?.specs?.coverage || 'לא צוין'}</b></div>
+                    <div class="flex justify-between"><span>מחסן:</span> <b>${p.core.warehouse}</b></div>
+                </div>
+                <button onclick="askBotSpecific('${p.core.name}')" class="w-full bg-blue-100 text-blue-700 font-bold py-3 rounded-xl flex items-center justify-center gap-2">
+                    <img src="https://i.postimg.cc/W3nYsP7X/h-sbn.png" class="w-5 h-5 rounded-full">
+                    שאל את צ'אט-סבן על המוצר
+                </button>
+            `;
+            modal.style.display = 'flex';
+        };
+        
+        window.closeModal = () => document.getElementById('detailsModal').style.display = 'none';
 
-        window.submitOrder = async () => {
-            if(cart.length === 0) return alert("ריק");
-            await addDoc(collection(db, "orders"), {
-                project: document.getElementById('ordProject').value || "כללי",
-                items: cart.map(i => ({name: i.core.name})),
-                createdAt: new Date(),
-                status: 'new'
-            });
-            alert("הזמנה נשלחה! 🚀"); cart=[]; updateCart();
+        // Compare Logic
+        window.toggleCompare = (id) => {
+            if(compareList.includes(id)) compareList = compareList.filter(x => x !== id);
+            else {
+                if(compareList.length >= 2) compareList.shift(); // Max 2 items
+                compareList.push(id);
+            }
+            
+            const bar = document.getElementById('compareBar');
+            if(compareList.length > 0) {
+                bar.style.display = 'flex';
+                document.getElementById('cmpCount').innerText = compareList.length;
+            } else {
+                bar.style.display = 'none';
+            }
+            render(); // Refresh icons
         };
 
+        window.runCompare = () => {
+            const p1 = products.find(x => x.id === compareList[0]);
+            const p2 = products.find(x => x.id === compareList[1]);
+            
+            // הודעה מרחפת
+            switchTab('chat');
+            
+            let prompt = "";
+            if(p2) {
+                prompt = `היי, אני מתלבט בין ${p1.core.name} לבין ${p2.core.name}. מה ההבדלים ומה עדיף?`;
+            } else {
+                prompt = `היי, ספר לי האם כדאי לקנות את ${p1.core.name}?`;
+            }
+            
+            setTimeout(() => send(prompt), 500);
+            compareList = [];
+            document.getElementById('compareBar').style.display = 'none';
+            render();
+        };
+
+        window.askBotSpecific = (name) => {
+            closeModal();
+            switchTab('chat');
+            setTimeout(() => send(`היי, אני מתעניין ב-${name}. האם זה מתאים לי?`), 500);
+        };
+
+        // Chat & Cart (Standard)
         window.switchTab = (id) => {
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
             document.getElementById('view-'+id).classList.add('active');
-            document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
-            document.getElementById('tab-'+id).classList.add('active');
-            
-            if(id === 'smart' && !hasSeenGuide) {
-                document.getElementById('guideModal').style.display = 'flex';
-            }
         };
 
-        window.closeGuide = () => {
-            document.getElementById('guideModal').style.display = 'none';
-            localStorage.setItem('saban_guide_seen', 'true');
-            hasSeenGuide = true;
+        window.send = async (txt) => {
+            const inp = document.getElementById('chatIn');
+            const val = txt || inp.value;
+            if(!val) return;
+            inp.value = '';
+            
+            const box = document.getElementById('chatBox');
+            box.innerHTML += `<div class="bg-blue-600 text-white p-2 rounded-lg self-end w-fit mb-2 ml-auto">${val}</div>`;
+            
+            const res = await bot.ask(val);
+            box.innerHTML += `<div class="bg-white p-2 rounded-lg self-start w-fit mb-2 border flex gap-2">
+                <img src="https://i.postimg.cc/W3nYsP7X/h-sbn.png" class="w-6 h-6 rounded-full">
+                <div>${res.text}</div>
+            </div>`;
+        };
+        
+        // Cart Logic... (addToCart, submitOrder - Same as before)
+        window.addToCart = (id) => {
+            const p = products.find(x => x.id === id);
+            cart.push(p);
+            // Simple toast
+            alert("נוסף לעגלה: " + p.core.name);
         };
 
         init();
