@@ -8,7 +8,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 
     <style>
         body { background-color: #d1d7db; font-family: -apple-system, system-ui, sans-serif; height: 100vh; display: flex; overflow: hidden; }
@@ -37,12 +36,12 @@
         /* צ'אט ראשי */
         .main-chat { flex: 1; display: flex; flex-direction: column; background: #efeae2 url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); position: relative; }
         
-        /* --- פתקים גרירים (משודרג) --- */
+        /* --- פתקים גרירים --- */
         .sticky-note { 
             position: absolute; width: 220px; min-height: 180px; padding: 15px; 
             box-shadow: 5px 5px 15px rgba(0,0,0,0.2); z-index: 50; 
             border-radius: 8px; display: none; flex-direction: column;
-            cursor: grab; transition: transform 0.1s;
+            cursor: grab; transition: transform 0.1s; top: 100px; left: 50px;
         }
         .sticky-note.visible { display: flex; }
         .sticky-note:active { cursor: grabbing; transform: scale(1.02); z-index: 60; }
@@ -51,8 +50,8 @@
         .color-dot { width: 12px; height: 12px; rounded-full; cursor: pointer; border: 1px solid rgba(0,0,0,0.1); }
         .sticky-textarea { background: transparent; border: none; outline: none; resize: none; width: 100%; flex: 1; font-family: 'Comic Sans MS', sans-serif; font-size: 14px; }
 
-        /* --- כפתורי שליטה --- */
-        .action-btn { transition: all 0.2s; }
+        /* כפתורים */
+        .action-btn { transition: all 0.2s; cursor: pointer; }
         .action-btn:active { transform: scale(0.95); }
 
         /* הודעות */
@@ -78,19 +77,24 @@
         
         .result-row { 
             background: white; padding: 10px; border-radius: 8px; display: flex; align-items: center; gap: 10px;
-            border: 1px solid #ddd; transition: 0.2s;
+            border: 1px solid #ddd; transition: 0.2s; position: relative;
         }
         .result-row.matched { border-right: 5px solid #10b981; }
         .result-row.unknown { border-right: 5px solid #ef4444; background: #fef2f2; }
-        .result-row.external { border-right: 5px solid #f59e0b; }
-
+        
+        /* תיבת חיפוש צפה */
         .search-dropdown {
-            position: absolute; background: white; border: 1px solid #ddd; 
-            width: 250px; max-height: 200px; overflow-y: auto; z-index: 50; 
-            border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            position: absolute; top: 100%; right: 0; left: 0;
+            background: white; border: 1px solid #ddd; 
+            max-height: 200px; overflow-y: auto; z-index: 50; 
+            border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
-        .search-item { padding: 8px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 13px; }
+        .search-item { padding: 8px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 13px; text-align: right; }
         .search-item:hover { background: #f0fdfa; }
+
+        /* חיווי אודיו */
+        .audio-btn.on { background: #dcfce7; color: #166534; }
+        .audio-btn.off { background: #fee2e2; color: #dc2626; }
 
     </style>
 </head>
@@ -106,14 +110,14 @@
                 <div class="font-bold text-gray-700">קבוצת הזמנות</div>
             </div>
             
-            <button id="soundToggle" onclick="toggleSound()" class="action-btn bg-gray-200 text-gray-600 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-2 shadow-sm">
-                <i class="fas fa-volume-mute" id="soundIcon"></i>
+            <button id="soundToggle" onclick="window.toggleSound()" class="action-btn audio-btn off px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-2 shadow-sm">
+                <i class="fas fa-volume-mute" id="soundIcon"></i> <span id="soundText">מושתק</span>
             </button>
         </div>
 
         <div class="flex border-b bg-white flex-shrink-0">
-            <div onclick="switchTab('chats')" class="tab-btn active" id="tab-chats">📦 הזמנות</div>
-            <div onclick="switchTab('saban')" class="tab-btn" id="tab-saban">
+            <div onclick="window.switchTab('chats')" class="tab-btn active" id="tab-chats">📦 הזמנות</div>
+            <div onclick="window.switchTab('saban')" class="tab-btn" id="tab-saban">
                 🧠 צ'אט-סבן
                 <span id="sabanAlert" class="hidden w-2 h-2 bg-red-500 rounded-full inline-block ml-1 animate-ping"></span>
             </div>
@@ -132,23 +136,23 @@
                 <div><div id="activeName" class="font-bold text-gray-800"></div><div class="text-xs text-green-600">מחובר</div></div>
             </div>
             <div class="flex gap-2">
-                <button onclick="toggleParser()" class="action-btn bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-3 py-1.5 rounded text-xs font-bold border border-indigo-700 shadow flex gap-2 items-center">
+                <button onclick="window.toggleParser()" class="action-btn bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-3 py-1.5 rounded text-xs font-bold border border-indigo-700 shadow flex gap-2 items-center hover:opacity-90">
                     <i class="fas fa-magic"></i> פענח הזמנה
                 </button>
                 
-                <button onclick="toggleSticky()" class="action-btn bg-yellow-100 text-yellow-700 px-3 py-1.5 rounded border border-yellow-200 text-xs font-bold flex gap-2 items-center">
+                <button onclick="window.toggleSticky()" class="action-btn bg-yellow-100 text-yellow-700 px-3 py-1.5 rounded border border-yellow-200 text-xs font-bold flex gap-2 items-center hover:bg-yellow-200">
                     <i class="fas fa-sticky-note"></i> פתק
                 </button>
             </div>
         </div>
 
         <div id="stickyNote" class="sticky-note bg-yellow-100 border border-yellow-300">
-            <div class="note-header" onmousedown="dragStart(event, this.parentElement)">
+            <div class="note-header" onmousedown="window.dragStart(event, this.parentElement)">
                 <i class="fas fa-thumbtack text-yellow-600/50"></i>
                 <div class="note-colors">
-                    <div class="color-dot bg-red-200" onclick="setNoteColor('#fecaca', '#fca5a5')"></div>
-                    <div class="color-dot bg-green-200" onclick="setNoteColor('#bbf7d0', '#86efac')"></div>
-                    <div class="color-dot bg-yellow-200" onclick="setNoteColor('#fef08a', '#fde047')"></div>
+                    <div class="color-dot bg-red-200" onclick="window.setNoteColor('#fecaca', '#fca5a5')"></div>
+                    <div class="color-dot bg-green-200" onclick="window.setNoteColor('#bbf7d0', '#86efac')"></div>
+                    <div class="color-dot bg-yellow-200" onclick="window.setNoteColor('#fef08a', '#fde047')"></div>
                 </div>
             </div>
             <textarea class="sticky-textarea" placeholder="רשום משימות כאן..."></textarea>
@@ -157,9 +161,9 @@
         <div id="messagesBox" class="flex-1 overflow-y-auto flex flex-col p-4 pb-2"></div>
 
         <div class="bg-[#f0f2f5] p-3 flex items-center gap-2 border-t z-20 flex-shrink-0">
-            <i onclick="toggleInternal()" id="internalBtn" class="fas fa-eye-slash text-gray-400 cursor-pointer text-xl p-2" title="פנימי"></i>
-            <input type="text" id="msgInput" class="flex-1 p-3 rounded-lg border-none outline-none shadow-sm bg-white" placeholder="הקלד..." onkeydown="if(event.key==='Enter') sendMessage()">
-            <button onclick="sendMessage()" class="text-[#008069] text-2xl hover:scale-110 transition"><i class="fas fa-paper-plane"></i></button>
+            <i onclick="window.toggleInternal()" id="internalBtn" class="fas fa-eye-slash text-gray-400 cursor-pointer text-xl p-2" title="פנימי"></i>
+            <input type="text" id="msgInput" class="flex-1 p-3 rounded-lg border-none outline-none shadow-sm bg-white" placeholder="הקלד..." onkeydown="if(event.key==='Enter') window.sendMessage()">
+            <button onclick="window.sendMessage()" class="text-[#008069] text-2xl hover:scale-110 transition"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
 
@@ -168,22 +172,16 @@
             <div class="parser-header">
                 <div class="flex items-center gap-2">
                     <i class="fas fa-robot text-2xl"></i>
-                    <div>
-                        <div class="font-bold text-lg">מפענח הזמנות חכם</div>
-                        <div class="text-xs opacity-80">ח.סבן חומרי בניין</div>
-                    </div>
+                    <div><div class="font-bold text-lg">מפענח הזמנות חכם</div><div class="text-xs opacity-80">ח.סבן חומרי בניין</div></div>
                 </div>
-                <button onclick="toggleParser()" class="text-white hover:text-red-200"><i class="fas fa-times text-xl"></i></button>
+                <button onclick="window.toggleParser()" class="text-white hover:text-red-200"><i class="fas fa-times text-xl"></i></button>
             </div>
 
             <div class="parser-body">
                 <div class="parser-input">
-                    <label class="text-xs font-bold text-gray-500 mb-2">הדבק טקסט מהווצאפ:</label>
-                    <textarea id="rawOrderInput" class="w-full flex-1 p-3 border rounded-xl bg-gray-50 resize-none outline-none focus:ring-2 ring-green-500 mb-4 font-mono text-sm" placeholder="לדוגמה: תביא 10 מלט ודבק סיקה..."></textarea>
-                    
-                    <button onclick="analyzeText()" class="w-full bg-slate-800 text-white font-bold py-3 rounded-xl flex justify-center items-center gap-2 hover:bg-slate-700 transition">
-                        <i class="fas fa-bolt"></i> פענח עכשיו
-                    </button>
+                    <label class="text-xs font-bold text-gray-500 mb-2">הדבק טקסט:</label>
+                    <textarea id="rawOrderInput" class="w-full flex-1 p-3 border rounded-xl bg-gray-50 resize-none outline-none focus:ring-2 ring-green-500 mb-4 font-mono text-sm" placeholder="לדוגמה: 10 מלט ודבק סיקה..."></textarea>
+                    <button onclick="window.analyzeText()" class="w-full bg-slate-800 text-white font-bold py-3 rounded-xl flex justify-center items-center gap-2 hover:bg-slate-700 transition"><i class="fas fa-bolt"></i> פענח עכשיו</button>
                 </div>
 
                 <div class="parser-results bg-gray-100 relative" id="resultsPane">
@@ -191,14 +189,14 @@
                         <i class="fas fa-list-ol text-4xl mb-4"></i>
                         <p>התוצאות יופיעו כאן...</p>
                     </div>
-                    </div>
+                </div>
             </div>
 
             <div class="bg-white p-4 border-t flex justify-between items-center">
-                <div class="text-xs text-gray-500 font-bold" id="itemsCount">0 פריטים זוהו</div>
+                <div class="text-xs text-gray-500 font-bold" id="itemsCount">0 פריטים</div>
                 <div class="flex gap-3">
-                    <button onclick="printOrder()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-bold text-sm hover:bg-gray-300"><i class="fas fa-print"></i> הדפס</button>
-                    <button onclick="exportPDF()" class="bg-red-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-red-700"><i class="fas fa-file-pdf"></i> הורד PDF</button>
+                    <button onclick="window.printParserOrder()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-bold text-sm hover:bg-gray-300"><i class="fas fa-print"></i> הדפס</button>
+                    <button onclick="window.exportPDF()" class="bg-red-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-red-700"><i class="fas fa-file-pdf"></i> PDF</button>
                 </div>
             </div>
         </div>
@@ -209,56 +207,62 @@
         import { getFirestore, collection, addDoc, doc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, setDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         const { jsPDF } = window.jspdf;
 
-        // --- Firebase Init ---
+        // --- Firebase Config ---
         const config = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
         const app = initializeApp(config);
         const db = getFirestore(app);
 
-        // --- GLOBAL STATE ---
-        window.activeChatId = null;
-        window.activeColl = 'chat_sessions';
-        window.catalog = [];
-        window.parsedItems = [];
+        // --- Global Variables ---
+        let activeChatId = null;
+        let activeColl = 'chat_sessions';
+        let internalMode = false;
+        let audioEnabled = false;
+        let catalog = [];
+        let parsedItems = [];
 
-        // --- 1. טעינת קטלוג ---
-        async function loadCatalog() {
-            try {
-                const snap = await getDocs(collection(db, "products"));
-                window.catalog = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                console.log("Catalog loaded:", window.catalog.length);
-            } catch(e) { console.error("Catalog load error", e); }
-        }
-        loadCatalog();
+        // --- 1. Sound Logic ---
+        window.toggleSound = () => {
+            const btn = document.getElementById('soundToggle');
+            const icon = document.getElementById('soundIcon');
+            const text = document.getElementById('soundText');
 
-        // --- 2. לוגיקת צ'אט (קיימת) ---
-        onSnapshot(query(collection(db, "chat_sessions"), orderBy("lastActivity", "desc")), (snap) => {
-            const list = document.getElementById('chatsList');
-            const stories = document.getElementById('storiesBar');
-            list.innerHTML = ""; stories.innerHTML = "";
-            snap.forEach(d => {
-                const c = d.data();
-                let img = c.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.userName)}&background=random&color=fff`;
-                
-                // רשימה
-                list.innerHTML += `<div onclick="openChat('${d.id}', '${c.userName}', '${img}', 'chat_sessions')" class="chat-item">
-                    <img src="${img}" class="w-10 h-10 rounded-full object-cover ml-3">
-                    <div class="flex-1"><div class="font-bold text-sm">${c.userName}</div><div class="text-xs text-gray-500 truncate">${c.lastMessage}</div></div>
-                </div>`;
-                
-                // סטורי
-                stories.innerHTML += `<div class="story-item" onclick="openChat('${d.id}', '${c.userName}', '${img}', 'chat_sessions')">
-                    <img src="${img}" class="story-ring ring-green">
-                    <span class="text-[10px] mt-1">${c.userName.split(' ')[0]}</span>
-                </div>`;
-            });
-        });
+            if (!audioEnabled) {
+                // מנסה לנגן צליל דמה כדי לשחרר חסימת דפדפן
+                const a = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAGZGF0YQQAAAAAAA==");
+                a.play().then(() => {
+                    audioEnabled = true;
+                    btn.classList.remove('off'); btn.classList.add('on');
+                    icon.className = "fas fa-volume-up";
+                    text.innerText = "פעיל";
+                }).catch(e => alert("נא ללחוץ שוב על הכפתור לאישור סאונד"));
+            } else {
+                audioEnabled = false;
+                btn.classList.remove('on'); btn.classList.add('off');
+                icon.className = "fas fa-volume-mute";
+                text.innerText = "מושתק";
+            }
+        };
+
+        // --- 2. Chat Logic ---
+        window.switchTab = (tab) => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            if (tab === 'chats') {
+                document.getElementById('chatsList').classList.remove('hidden');
+                document.getElementById('sabanList').classList.add('hidden');
+            } else {
+                document.getElementById('chatsList').classList.add('hidden');
+                document.getElementById('sabanList').classList.remove('hidden');
+                document.getElementById('sabanAlert').classList.add('hidden');
+            }
+        };
 
         window.openChat = (id, name, img, coll) => {
-            window.activeChatId = id; window.activeColl = coll;
+            activeChatId = id; activeColl = coll;
             document.getElementById('chatArea').classList.remove('hidden');
             document.getElementById('activeName').innerText = name;
             document.getElementById('activeAvatar').src = img;
-            
+
             onSnapshot(query(collection(db, `${coll}/${id}/messages`), orderBy("createdAt", "asc")), (snap) => {
                 const box = document.getElementById('messagesBox');
                 box.innerHTML = snap.docs.map(d => {
@@ -271,12 +275,67 @@
         };
 
         window.sendMessage = async () => {
-            const txt = document.getElementById('msgInput').value; if(!txt) return;
+            const txt = document.getElementById('msgInput').value; if(!txt || !activeChatId) return;
             document.getElementById('msgInput').value = '';
-            await addDoc(collection(db, `${window.activeColl}/${window.activeChatId}/messages`), { text: txt, role: window.internalMode?'internal':'staff', createdAt: serverTimestamp() });
+            await addDoc(collection(db, `${activeColl}/${activeChatId}/messages`), { text: txt, role: internalMode?'internal':'staff', createdAt: serverTimestamp() });
+            
+            if(!internalMode) {
+                const metaColl = activeColl === 'saban_chats' ? 'saban_chats_meta' : 'chat_sessions';
+                await setDoc(doc(db, metaColl, activeChatId), { lastMessage: `נציג: ${txt}`, lastActivity: serverTimestamp() }, { merge: true });
+            }
+            if(internalMode) window.toggleInternal();
         };
 
-        // --- 3. PARSER LOGIC (הלב החדש) ---
+        window.toggleInternal = () => {
+            internalMode = !internalMode;
+            const inp = document.getElementById('msgInput');
+            const btn = document.getElementById('internalBtn');
+            if(internalMode) {
+                inp.placeholder = "הערה פנימית..."; inp.classList.add('bg-yellow-100');
+                btn.className = "fas fa-eye-slash text-orange-500 text-xl p-2";
+            } else {
+                inp.placeholder = "הקלד..."; inp.classList.remove('bg-yellow-100');
+                btn.className = "fas fa-eye text-gray-400 text-xl p-2";
+            }
+        };
+
+        // --- 3. Sticky Notes Logic ---
+        window.toggleSticky = () => document.getElementById('stickyNote').classList.toggle('visible');
+        
+        window.setNoteColor = (bg, border) => {
+            const note = document.getElementById('stickyNote');
+            note.style.backgroundColor = bg; note.style.borderColor = border;
+        };
+
+        let dragItem = null;
+        let offsetX = 0, offsetY = 0;
+        window.dragStart = (e, item) => {
+            dragItem = item;
+            offsetX = e.clientX - item.offsetLeft;
+            offsetY = e.clientY - item.offsetTop;
+            document.addEventListener('mousemove', dragMove);
+            document.addEventListener('mouseup', dragEnd);
+        };
+        function dragMove(e) {
+            if(!dragItem) return;
+            dragItem.style.left = (e.clientX - offsetX) + 'px';
+            dragItem.style.top = (e.clientY - offsetY) + 'px';
+        }
+        function dragEnd() {
+            dragItem = null;
+            document.removeEventListener('mousemove', dragMove);
+            document.removeEventListener('mouseup', dragEnd);
+        }
+
+        // --- 4. Smart Parser Logic ---
+        async function loadCatalogData() {
+            try {
+                const snap = await getDocs(collection(db, "products"));
+                catalog = snap.docs.map(d => ({id: d.id, ...d.data()}));
+            } catch(e) { console.error("Catalog Error", e); }
+        }
+        loadCatalogData();
+
         window.toggleParser = () => {
             const modal = document.getElementById('parserModal');
             modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
@@ -285,156 +344,110 @@
         window.analyzeText = () => {
             const text = document.getElementById('rawOrderInput').value;
             if(!text) return;
-
             const lines = text.split('\n');
-            window.parsedItems = [];
-            const pane = document.getElementById('resultsPane');
-            pane.innerHTML = '';
+            parsedItems = [];
+            document.getElementById('resultsPane').innerHTML = '';
             document.getElementById('emptyParserState').style.display = 'none';
 
             lines.forEach((line, idx) => {
-                const cleanLine = line.trim();
-                if(cleanLine.length < 2) return;
+                const clean = line.trim();
+                if(clean.length < 2 || /בוקר|תודה|דחוף/.test(clean)) return;
 
-                // בדיקת זבל
-                if(/בוקר|תודה|דחוף|אחי|יא/.test(cleanLine)) return;
+                const qty = (clean.match(/\d+/) || [1])[0];
+                const cleanText = clean.replace(/[0-9]/g, '').trim();
+                const match = catalog.find(p => p.core.name.includes(cleanText));
 
-                const qty = (cleanLine.match(/\d+/) || [1])[0];
-                const textNoNum = cleanLine.replace(/[0-9]/g, '').trim();
-                
-                // חיפוש בקטלוג
-                const match = window.catalog.find(p => p.core.name.includes(textNoNum) || (p.core.brand && p.core.brand.includes(textNoNum)));
-                
-                let itemData = {
-                    original: cleanLine,
-                    qty: qty,
+                const item = {
+                    original: clean, qty: qty,
                     status: match ? 'matched' : 'unknown',
-                    name: match ? match.core.name : cleanLine,
-                    image: match?.rich?.image || null
+                    name: match ? match.core.name : clean,
+                    image: match?.rich?.image
                 };
-
-                window.parsedItems.push(itemData);
-                renderRow(itemData, idx);
+                parsedItems.push(item);
+                renderParserRow(item, idx);
             });
-            updateCount();
+            document.getElementById('itemsCount').innerText = `${parsedItems.length} פריטים`;
         };
 
-        function renderRow(item, idx) {
+        function renderParserRow(item, idx) {
             const pane = document.getElementById('resultsPane');
             const row = document.createElement('div');
             row.className = `result-row ${item.status}`;
-            
-            let icon = item.status === 'matched' ? '<i class="fas fa-check-circle text-green-500"></i>' : '<i class="fas fa-question-circle text-red-500"></i>';
-            let imgHtml = item.image ? `<img src="${item.image}" class="w-8 h-8 rounded bg-gray-200 object-cover">` : `<div class="w-8 h-8 rounded bg-gray-200 flex items-center justify-center text-gray-400"><i class="fas fa-box"></i></div>`;
+            const imgHtml = item.image ? `<img src="${item.image}" class="w-8 h-8 rounded">` : `<div class="w-8 h-8 bg-gray-200 rounded flex items-center justify-center"><i class="fas fa-box text-gray-400"></i></div>`;
+            const icon = item.status === 'matched' ? 'check-circle text-green-500' : 'question-circle text-red-500';
 
             row.innerHTML = `
-                ${icon}
-                ${imgHtml}
-                <div class="flex-1 cursor-pointer" onclick="enableEdit(${idx}, this)">
-                    <div class="font-bold text-sm text-gray-800">${item.name}</div>
+                <i class="fas fa-${icon}"></i> ${imgHtml}
+                <div class="flex-1 cursor-pointer" onclick="window.enableRowEdit(${idx}, this)">
+                    <div class="font-bold text-sm">${item.name}</div>
                     <div class="text-xs text-gray-400">מקור: ${item.original}</div>
                 </div>
-                <div class="text-center px-2 border-r">
-                    <div class="text-[10px] text-gray-500">כמות</div>
-                    <div class="font-bold">${item.qty}</div>
-                </div>
+                <div class="border-r px-2 text-center"><div class="text-[10px] text-gray-500">כמות</div><b>${item.qty}</b></div>
             `;
             pane.appendChild(row);
         }
 
-        window.enableEdit = (idx, el) => {
-            // הופך שורה לעריכה (חיפוש מוצר)
-            const currentName = window.parsedItems[idx].name;
+        window.enableRowEdit = (idx, el) => {
+            const val = parsedItems[idx].name;
             el.innerHTML = `
-                <input type="text" class="w-full p-1 border rounded text-sm" value="${currentName}" oninput="searchProduct(this, ${idx})" autofocus>
-                <div id="dropdown-${idx}" class="search-dropdown hidden"></div>
+                <input type="text" class="w-full border rounded p-1 text-sm" value="${val}" oninput="window.parserSearch(this, ${idx})" autofocus>
+                <div id="drop-${idx}" class="search-dropdown hidden"></div>
             `;
         };
 
-        window.searchProduct = (input, idx) => {
-            const val = input.value.toLowerCase();
-            const drop = document.getElementById(`dropdown-${idx}`);
+        window.parserSearch = (inp, idx) => {
+            const val = inp.value.toLowerCase();
+            const drop = document.getElementById(`drop-${idx}`);
             drop.classList.remove('hidden');
+            const found = catalog.filter(p => p.core.name.toLowerCase().includes(val)).slice(0,5);
             
-            const found = window.catalog.filter(p => p.core.name.toLowerCase().includes(val)).slice(0, 5);
-            
-            drop.innerHTML = found.map(p => `
-                <div class="search-item" onclick="selectProduct(${idx}, '${p.core.name.replace(/'/g, "\\'")}', '${p.rich?.image || ''}')">
+            drop.innerHTML = found.length ? found.map(p => `
+                <div class="search-item" onclick="window.selectParserItem(${idx}, '${p.core.name.replace(/'/g,"\\'")}', '${p.rich?.image||''}')">
                     <div class="font-bold">${p.core.name}</div>
-                    <div class="text-xs text-gray-500">מק"ט: ${p.id.substring(0,4)}</div>
-                </div>
-            `).join('');
-            
-            if(found.length === 0) drop.innerHTML = '<div class="p-2 text-xs text-gray-400">לא נמצא</div>';
+                </div>`).join('') : '<div class="p-2 text-gray-400 text-xs">לא נמצא</div>';
         };
 
-        window.selectProduct = (idx, name, img) => {
-            window.parsedItems[idx].name = name;
-            window.parsedItems[idx].image = img;
-            window.parsedItems[idx].status = 'matched';
-            
-            // Re-render all (lazy way) or just row. simple:
-            const pane = document.getElementById('resultsPane');
-            pane.innerHTML = '';
-            window.parsedItems.forEach((it, i) => renderRow(it, i));
+        window.selectParserItem = (idx, name, img) => {
+            parsedItems[idx].name = name;
+            parsedItems[idx].image = img;
+            parsedItems[idx].status = 'matched';
+            // Re-render
+            document.getElementById('resultsPane').innerHTML = '';
+            parsedItems.forEach((it, i) => renderParserRow(it, i));
         };
 
-        function updateCount() {
-            document.getElementById('itemsCount').innerText = `${window.parsedItems.length} פריטים זוהו`;
-        }
-
-        // --- 4. PRINT & PDF ---
-        window.printOrder = () => {
-            const w = window.open('', '', 'width=800,height=600');
-            let html = `<html dir="rtl"><body><h1>הזמנת עבודה - סבן</h1><ul>`;
-            window.parsedItems.forEach(i => html += `<li><b>${i.name}</b> (כמות: ${i.qty})</li>`);
-            html += `</ul><script>window.print()<\/script></body></html>`;
-            w.document.write(html);
+        window.printParserOrder = () => {
+            const w = window.open('','','width=600,height=800');
+            let h = `<html dir="rtl"><body style="font-family:sans-serif"><h2>הזמנה - ח.סבן</h2><ul>`;
+            parsedItems.forEach(i => h+=`<li><b>${i.name}</b> (כמות: ${i.qty})</li>`);
+            h+=`</ul><script>window.print()<\/script></body></html>`;
+            w.document.write(h);
         };
 
         window.exportPDF = () => {
             const doc = new jsPDF({align:"right", isRtl:true});
-            doc.text("Saban Order Export", 190, 20, {align:"right"});
-            let y = 30;
-            window.parsedItems.forEach(i => {
-                doc.text(`${i.name} [x${i.qty}]`, 190, y, {align:"right"});
+            doc.text("Saban Order", 190, 20, {align:"right"});
+            let y=30;
+            parsedItems.forEach(i => {
+                doc.text(`${i.name} (x${i.qty})`, 190, y, {align:"right"});
                 y+=10;
             });
             doc.save("order.pdf");
         };
 
-        // --- 5. STICKY NOTES (Draggable) ---
-        let dragItem = null;
-        let offsetX = 0, offsetY = 0;
+        // --- Load Chats ---
+        onSnapshot(query(collection(db, "chat_sessions"), orderBy("lastActivity", "desc")), (snap) => {
+            const list = document.getElementById('chatsList');
+            const stories = document.getElementById('storiesBar');
+            list.innerHTML = ""; stories.innerHTML = "";
+            snap.forEach(d => {
+                const c = d.data();
+                let img = c.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.userName)}&background=random&color=fff`;
+                list.innerHTML += `<div onclick="window.openChat('${d.id}', '${c.userName}', '${img}', 'chat_sessions')" class="chat-item"><img src="${img}" class="w-10 h-10 rounded-full ml-3"><div class="flex-1"><div class="font-bold text-sm">${c.userName}</div><div class="text-xs text-gray-500 truncate">${c.lastMessage}</div></div></div>`;
+                stories.innerHTML += `<div class="story-item" onclick="window.openChat('${d.id}', '${c.userName}', '${img}', 'chat_sessions')"><img src="${img}" class="story-ring ring-green"><span class="text-[10px]">${c.userName.split(' ')[0]}</span></div>`;
+            });
+        });
 
-        window.dragStart = (e, item) => {
-            dragItem = item;
-            offsetX = e.clientX - item.offsetLeft;
-            offsetY = e.clientY - item.offsetTop;
-            document.addEventListener('mousemove', dragMove);
-            document.addEventListener('mouseup', dragEnd);
-        };
-
-        function dragMove(e) {
-            if(!dragItem) return;
-            dragItem.style.left = (e.clientX - offsetX) + 'px';
-            dragItem.style.top = (e.clientY - offsetY) + 'px';
-        }
-
-        function dragEnd() {
-            dragItem = null;
-            document.removeEventListener('mousemove', dragMove);
-            document.removeEventListener('mouseup', dragEnd);
-        }
-
-        window.setNoteColor = (bg, border) => {
-            const note = document.getElementById('stickyNote');
-            note.style.backgroundColor = bg;
-            note.style.borderColor = border;
-        };
-        
-        // Expose helpers
-        window.toggleInternal = window.toggleInternal;
     </script>
 </body>
 </html>
