@@ -97,7 +97,7 @@
         </div>
     </div>
 
-    <script type="module">
+  <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
@@ -105,156 +105,195 @@
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        
+        // המפתח שלך
         const GEMINI_KEY = "AIzaSyD9plWwyTESFm24c_OTunf4mFAsAmfrgj0";
 
         // State
         let catalog = [];
+        let activeModelName = null; // נשמור כאן את שם המודל שימצא
         const logs = document.getElementById('logs');
 
-        // 1. טעינת קטלוג (המוח המקומי)
+        // 1. טעינת קטלוג
         async function loadCatalog() {
-            log("טוען קטלוג מוצרים...");
+            log("📚 טוען קטלוג מוצרים...");
             try {
                 const snap = await getDocs(collection(db, "products"));
                 catalog = snap.docs.map(d => d.data());
-                log(`✅ קטלוג נטען: ${catalog.length} מוצרים זמינים.`);
-            } catch(e) { log("❌ שגיאה בטעינת קטלוג"); console.error(e); }
+                log(`✅ קטלוג נטען: ${catalog.length} מוצרים.`);
+            } catch(e) { log("❌ שגיאה בטעינת קטלוג (Firebase)"); console.error(e); }
         }
 
-        // 2. הפונקציה הראשית (הבמאי)
+        // 2. מציאת מודל פעיל (התיקון החשוב)
+        async function findModel() {
+            if(activeModelName) return activeModelName;
+            log("🔍 מחפש מודל AI זמין...");
+            
+            try {
+                const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_KEY}`;
+                const res = await fetch(listUrl);
+                if(!res.ok) throw new Error(`Google Error: ${res.status}`);
+                
+                const data = await res.json();
+                // מחפש מודל שמתחיל ב-gemini ותומך ב-generateContent
+                const model = data.models.find(m => m.name.includes('gemini') && m.supportedGenerationMethods.includes('generateContent'));
+                
+                if(model) {
+                    activeModelName = model.name;
+                    log(`✅ מודל נבחר: ${model.name.replace('models/', '')}`);
+                    return model.name;
+                } else {
+                    throw new Error("לא נמצא מודל מתאים");
+                }
+            } catch(e) {
+                log(`⚠️ זיהוי אוטומטי נכשל (${e.message}). מנסה ברירת מחדל.`);
+                return "models/gemini-pro"; // ברירת מחדל
+            }
+        }
+
+        // 3. הפונקציה הראשית
         window.startTheShow = async () => {
             const rawText = document.getElementById('rawInput').value;
-            if(!rawText) return alert("אין טקסט!");
+            if(!rawText) return alert("הדבק טקסט קודם!");
 
-            document.getElementById('resultsArea').innerHTML = ''; // ניקוי במה
-            log("🚀 מתחיל פענוח...");
+            document.getElementById('resultsArea').innerHTML = ''; 
+            log("🚀 מתחיל תהליך...");
 
-            // שלב א': ג'מיני מנקה את הזבל ומחלץ פריטים
+            // שלב א': פענוח עם AI
             const cleanItems = await cleanTextWithAI(rawText);
             
-            // שלב ב': הצגה ויזואלית שורה אחר שורה
+            if(cleanItems.length === 0) {
+                log("🛑 לא זוהו פריטים או שהייתה תקלה.");
+                return;
+            }
+
+            // שלב ב': הצגה ויזואלית
             for (let i = 0; i < cleanItems.length; i++) {
                 await processLineVisual(cleanItems[i], i);
             }
 
-            log("🏁 סיימנו. ההזמנה מוכנה.");
+            log("🏁 סיימנו.");
         };
 
-        // 3. ג'מיני (המנקה)
+        // 4. ג'מיני (המנקה)
         async function cleanTextWithAI(text) {
-            log("🤖 ג'מיני מנתח טקסט...");
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`;
+            const model = await findModel(); // מוצא את המודל הנכון
+            log("🤖 שולח לניתוח...");
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/${model}:generateContent?key=${GEMINI_KEY}`;
+            
             const prompt = `
-            Analyze this construction order text (Hebrew/Arabic slang). 
+            Task: Parse this construction order (Hebrew/Arabic slang).
             Input: "${text}"
             
-            Tasks:
-            1. Identify waste words (greetings, urgency, unrelated) -> Throw them away.
-            2. Extract products.
-            3. Return JSON array: [{"originalText": "the text segment", "cleanName": "product name", "qty": number, "isWaste": boolean}]
+            Instructions:
+            1. Identify WASTE (greetings, urgency, chat talk) -> mark isWaste=true.
+            2. Identify PRODUCTS -> mark isWaste=false, extract name and qty.
+            3. Output JSON ARRAY ONLY: [{"originalText": "string", "cleanName": "string", "qty": number, "isWaste": boolean}]
             `;
 
             try {
-                const res = await fetch(url, { method: 'POST', body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
+                const res = await fetch(url, { 
+                    method: 'POST', 
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) 
+                });
+
+                if(!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error?.message || res.status);
+                }
+
                 const data = await res.json();
-                let json = data.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '').trim();
-                return JSON.parse(json);
+                let jsonStr = data.candidates[0].content.parts[0].text;
+                
+                // ניקוי הקוד שהבוט מחזיר
+                jsonStr = jsonStr.replace(/```json/g, '').replace(/```/g, '').trim();
+                
+                const items = JSON.parse(jsonStr);
+                log(`✅ זוהו ${items.length} שורות.`);
+                return items;
+
             } catch(e) {
-                log("❌ שגיאה ב-AI");
+                log(`❌ שגיאה קריטית ב-AI: ${e.message}`);
+                console.error(e);
                 return [];
             }
         }
 
-        // 4. המנוע הוויזואלי (האנימטור)
+        // 5. מנוע ויזואלי
         async function processLineVisual(item, index) {
             return new Promise(resolve => {
                 setTimeout(async () => {
-                    
-                    // אם זה זבל - זרוק לפח
                     if(item.isWaste) {
                         throwTrash(item.originalText);
-                        resolve();
-                        return;
+                    } else {
+                        const match = findInCatalog(item.cleanName);
+                        createProductRow(item, match);
                     }
-
-                    // אם זה מוצר - חפש בקטלוג והצג
-                    const match = findInCatalog(item.cleanName);
-                    createProductRow(item, match);
                     resolve();
-
-                }, index * 800); // דיליי בין שורות (הקלדה)
+                }, index * 800);
             });
         }
 
-        // 5. חיפוש בקטלוג (Fuzzy Match פשוט)
+        // 6. חיפוש בקטלוג
         function findInCatalog(name) {
-            // חיפוש טיפש: האם השם נמצא בתוך שם המוצר
-            const found = catalog.find(p => p.core.name.includes(name) || (p.core.brand && p.core.brand.includes(name)));
-            return found;
+            if(!name) return null;
+            // חיפוש חכם יותר: בודק אם השם נמצא במוצר או המותג במוצר
+            const term = name.toLowerCase();
+            return catalog.find(p => 
+                p.core.name.toLowerCase().includes(term) || 
+                (p.core.brand && p.core.brand.toLowerCase().includes(term))
+            );
         }
 
-        // 6. יצירת שורה ויזואלית
+        // 7. יצירת שורה
         function createProductRow(item, match) {
             const stage = document.getElementById('resultsArea');
             const el = document.createElement('div');
             el.className = 'parsed-line slide-in';
             
-            let statusClass = 'match-red';
-            let content = '';
-
+            let html = '';
             if (match) {
-                // זיהוי מושלם (או קרוב)
-                statusClass = 'match-green';
-                content = `
-                    <div class="status-dot ${statusClass}"></div>
+                html = `
+                    <div class="status-dot match-green"></div>
                     <img src="${match.rich?.image || 'https://via.placeholder.com/40'}" class="prod-img">
                     <div class="flex-1">
                         <div class="font-bold text-white text-sm">${match.core.name}</div>
-                        <div class="text-xs text-gray-400">זוהה: ${item.cleanName} | כמות: ${item.qty}</div>
+                        <div class="text-xs text-gray-400">כמות: ${item.qty}</div>
                     </div>
-                    <div class="text-green-400 font-bold text-xs"><i class="fas fa-check"></i> ננעל</div>
+                    <div class="text-green-400 font-bold text-xs"><i class="fas fa-check"></i> זוהה</div>
                 `;
             } else {
-                // לא זוהה
-                statusClass = 'match-red';
-                content = `
-                    <div class="status-dot ${statusClass}"></div>
-                    <div class="w-10 h-10 bg-red-900 rounded-lg flex items-center justify-center text-red-500"><i class="fas fa-question"></i></div>
+                html = `
+                    <div class="status-dot match-red"></div>
+                    <div class="w-10 h-10 bg-red-900/50 rounded-lg flex items-center justify-center text-red-500"><i class="fas fa-search"></i></div>
                     <div class="flex-1">
-                        <div class="font-bold text-white text-sm">לא זוהה: "${item.cleanName}"</div>
-                        <div class="text-xs text-red-400 cursor-pointer hover:underline">לחץ כאן לחיפוש בקטלוג</div>
+                        <div class="font-bold text-white text-sm">${item.cleanName} (לא נמצא)</div>
+                        <div class="text-xs text-red-400 cursor-pointer">לחץ לבחירה מקטלוג</div>
                     </div>
                 `;
             }
 
-            el.innerHTML = content;
+            el.innerHTML = html;
             stage.appendChild(el);
-            
-            // סאונד הקלדה עדין (אופציונלי)
-            // playTypeSound();
         }
 
-        // 7. אנימציית זריקת זבל
         function throwTrash(text) {
-            log(`🗑️ זורק לפח: "${text}"`);
+            log(`🗑️ זבל: "${text}"`);
             const trash = document.getElementById('trashCan');
             trash.classList.add('active');
-            
-            // יצירת אלמנט נייר מעופף (הדמיה)
-            // כאן אפשר להוסיף אנימציית CSS מורכבת של מעוף
-            
             setTimeout(() => trash.classList.remove('active'), 500);
         }
 
-        // לוגים למסך
         function log(msg) {
             const div = document.createElement('div');
-            div.innerText = `> ${msg}`;
+            div.innerText = msg;
             logs.appendChild(div);
             logs.scrollTop = logs.scrollHeight;
         }
 
-        // אתחול
+        // Init
         loadCatalog();
 
     </script>
