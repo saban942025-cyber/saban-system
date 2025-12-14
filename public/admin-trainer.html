@@ -46,10 +46,10 @@
             <div class="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center text-white text-xl shadow-lg">🧠</div>
             <div>
                 <h1 class="font-bold text-lg leading-none text-slate-800">Brain Trainer</h1>
-                <span class="text-xs text-purple-600 font-bold">אימון בוט (Flash 1.5)</span>
+                <span class="text-xs text-purple-600 font-bold">אימון בוט (Dual Core)</span>
             </div>
         </div>
-        <div class="text-xs text-gray-500 font-mono">v4.0 Fixed</div>
+        <div class="text-xs text-gray-500 font-mono">v5.0 Stable</div>
     </header>
 
     <div class="workspace">
@@ -121,13 +121,10 @@
         // API Key
         const GEMINI_KEY = "AIzaSyD9plWwyTESFm24c_OTunf4mFAsAmfrgj0";
         
-        // Hardcoded Model Name (Safe & Fast)
-        const MODEL_NAME = "gemini-1.5-flash";
-
         // State
         let knowledgeData = [];
 
-        // --- Logic: Ask Gemini ---
+        // --- Logic: Ask Gemini (Dual Core) ---
         window.askGemini = async () => {
             const question = document.getElementById('askInput').value;
             if(!question) return alert("אנא כתוב שאלה");
@@ -141,47 +138,53 @@
             saveBtn.disabled = true; saveBtn.classList.add('opacity-50', 'cursor-not-allowed');
 
             try {
-                // שימוש ישיר ב-1.5 Flash
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${GEMINI_KEY}`;
-                
-                const prompt = `
-                אתה יועץ טכני מומחה של "סבן חומרי בניין".
-                שאלה טכנית: "${question}"
-                
-                הנחיות לתשובה:
-                1. ענה בעברית מקצועית ומדויקת.
-                2. תהיה קצר ולעניין (עד 3 משפטים).
-                3. אם צריך, ציין מוצרים רלוונטיים.
-                `;
+                // ניסיון ראשון: Flash
+                let answer = await callModel(question, "gemini-1.5-flash");
+                out.value = answer;
+                enableSave();
 
-                const res = await fetch(url, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-
-                if(!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.error?.message || res.status);
-                }
-
-                const data = await res.json();
-                
-                if(data.candidates && data.candidates[0].content) {
-                    const answer = data.candidates[0].content.parts[0].text;
+            } catch (flashError) {
+                console.warn("Flash failed, switching to backup...", flashError);
+                try {
+                    // ניסיון שני: Pro (גיבוי)
+                    let answer = await callModel(question, "gemini-pro");
                     out.value = answer;
-                    saveBtn.disabled = false; saveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                } else {
-                    out.value = "לא התקבלה תשובה ברורה.";
+                    enableSave();
+                } catch (proError) {
+                    console.error("All models failed:", proError);
+                    out.value = "שגיאת תקשורת עם גוגל. נסה שוב.";
                 }
-
-            } catch(e) {
-                console.error(e);
-                out.value = "שגיאה: " + e.message;
             }
             
             btn.innerHTML = '<i class="fas fa-sparkles"></i> שאל את המומחה (Gemini)';
         };
+
+        // Helper to call Google
+        async function callModel(question, modelName) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${GEMINI_KEY}`;
+            const prompt = `
+            אתה יועץ טכני מומחה של "סבן חומרי בניין".
+            שאלה טכנית: "${question}"
+            הנחיות: ענה בעברית מקצועית ומדויקת. תהיה קצר ולעניין.
+            `;
+
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            });
+
+            if(!res.ok) throw new Error("API Error " + res.status);
+            
+            const data = await res.json();
+            return data.candidates[0].content.parts[0].text;
+        }
+
+        function enableSave() {
+            const saveBtn = document.getElementById('btnSave');
+            saveBtn.disabled = false; 
+            saveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
 
         // --- Logic: Save to Brain ---
         window.saveToBrain = async () => {
