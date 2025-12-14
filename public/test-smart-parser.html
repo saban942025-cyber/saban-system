@@ -3,104 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saban Magic Parser 🎩</title>
+    <title>Saban Hyper-Parser 🚀</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet">
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap');
-        body { font-family: 'Heebo', sans-serif; background: #1e1e24; color: white; height: 100vh; overflow: hidden; }
+        body { font-family: 'Heebo', sans-serif; background: #0f172a; color: white; height: 100vh; overflow: hidden; }
 
-        /* אזור העבודה */
+        /* --- אזורי עבודה --- */
         .workspace { display: flex; height: 100%; }
-        .input-zone { width: 35%; padding: 20px; border-left: 1px solid #333; background: #25252b; z-index: 10; display: flex; flex-direction: column; }
-        .visual-zone { flex: 1; padding: 40px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; overflow-y: auto; }
-
-        /* פח הזבל המרחף */
-        .trash-can-zone {
-            position: absolute; bottom: 30px; left: 30px;
-            width: 80px; height: 80px; border-radius: 50%;
-            background: #2a2a2a; border: 2px dashed #444;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 30px; color: #666; transition: 0.3s;
-            z-index: 50;
+        
+        .input-panel { 
+            width: 30%; padding: 25px; background: #1e293b; 
+            border-left: 1px solid #334155; display: flex; flex-direction: column; z-index: 20;
+            box-shadow: 5px 0 20px rgba(0,0,0,0.3);
         }
-        .trash-can-zone.active { transform: scale(1.2) rotate(-10deg); border-color: red; color: red; background: #300000; box-shadow: 0 0 20px rgba(255,0,0,0.2); }
+        
+        .stage-panel { 
+            flex: 1; padding: 40px; position: relative; overflow-y: auto; 
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            display: flex; flex-direction: column; align-items: center;
+        }
 
-        /* שורות הפענוח */
-        .parsed-line {
-            width: 100%; max-width: 650px;
-            background: #2a2a30; border-radius: 16px;
-            padding: 12px 20px; margin-bottom: 12px;
+        /* --- רכיבים ויזואליים --- */
+        .parsed-card {
+            width: 100%; max-width: 700px;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px; padding: 15px; margin-bottom: 12px;
             display: flex; align-items: center; gap: 15px;
             opacity: 0; transform: translateY(30px);
-            border: 1px solid #333;
-            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            position: relative; overflow: hidden;
+            transition: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
-        /* אנימציית כניסה */
-        .slide-in { opacity: 1; transform: translateY(0); }
+        .parsed-card.show { opacity: 1; transform: translateY(0); }
 
-        /* סטטוסים */
-        .status-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
-        .match-green { background: #10b981; box-shadow: 0 0 10px #10b981; } /* בול */
-        .match-yellow { background: #f59e0b; box-shadow: 0 0 10px #f59e0b; } /* בערך */
-        .match-red { background: #ef4444; box-shadow: 0 0 10px #ef4444; animation: pulseRed 2s infinite; } /* לא זוהה */
+        /* סוגי כרטיסים */
+        .card-product { border-right: 4px solid #10b981; }
+        .card-external { border-right: 4px solid #f59e0b; }
+        .card-address { border-right: 4px solid #3b82f6; background: rgba(59, 130, 246, 0.1); }
 
-        @keyframes pulseRed { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        /* תמונות ואיקונים */
+        .item-img { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; background: #333; border: 1px solid #555; }
+        .icon-box { width: 50px; height: 50px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
 
-        /* המוצר שנמצא */
-        .prod-img { width: 45px; height: 45px; border-radius: 8px; background: white; object-fit: cover; border: 1px solid #555; }
-
-        /* כפתור הקסם */
-        .magic-btn {
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            padding: 15px; border-radius: 15px; font-weight: bold; font-size: 18px;
-            margin-top: 20px; cursor: pointer; transition: 0.2s; text-align: center;
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4); user-select: none;
+        /* פח זבל */
+        .trash-zone {
+            position: fixed; bottom: 40px; left: 40px;
+            width: 70px; height: 70px; border-radius: 50%;
+            border: 2px dashed #64748b; color: #64748b;
+            display: flex; align-items: center; justify-content: center;
+            transition: 0.3s; z-index: 50;
         }
-        .magic-btn:active { transform: scale(0.95); }
+        .trash-zone.active { transform: scale(1.2) rotate(-15deg); border-color: #ef4444; color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+        .flying-trash { position: fixed; pointer-events: none; z-index: 100; transition: all 0.6s ease-in; color: #94a3b8; font-size: 14px; white-space: nowrap; }
 
-        /* אפקט זריקת זבל */
-        .trash-item {
-            position: fixed; z-index: 100; color: #888; font-size: 14px; pointer-events: none;
-            transition: all 0.6s ease-in; opacity: 1;
+        /* כפתור הפעלה */
+        .run-btn {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            padding: 16px; border-radius: 14px; font-weight: 900; letter-spacing: 1px;
+            text-align: center; cursor: pointer; transition: 0.2s;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+            margin-top: 20px;
         }
+        .run-btn:active { transform: scale(0.98); }
+
+        /* שדה טקסט */
+        textarea { 
+            background: #0f172a; border: 1px solid #334155; color: #cbd5e1;
+            font-family: monospace; line-height: 1.6;
+        }
+        textarea:focus { border-color: #8b5cf6; outline: none; }
     </style>
 </head>
 <body>
 
     <div class="workspace">
-        <div class="input-zone">
-            <h2 class="text-2xl font-black mb-1 flex items-center gap-2 text-white">
-                <i class="fas fa-brain text-purple-500"></i> המוח של סבן
-            </h2>
-            <p class="text-xs text-gray-400 mb-6 font-bold tracking-wide">מפענח הזמנות חכם v1.0</p>
-            
-            <label class="text-xs text-gray-500 mb-2 font-bold">הדבק רשימה מהשטח:</label>
-            <textarea id="rawInput" class="w-full h-64 bg-[#1a1a1e] border border-[#333] rounded-xl p-4 text-white text-right outline-none focus:border-purple-500 resize-none font-mono text-sm leading-relaxed" 
-            placeholder="דוגמה:
-יא אבו שחר תביא לי דחוףףף
-10 שק מלט
-5 דבק קרמיקה סיקה
-וגם רובה לבנה של טמבור"></textarea>
-            
-            <div onclick="startTheShow()" class="magic-btn">
-                <i class="fas fa-magic fa-spin" style="--fa-animation-duration: 3s;"></i> פענח הזמנה
+        <div class="input-panel">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center shadow-lg text-xl">🧠</div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight">Saban Parser</h1>
+                    <div class="text-xs text-purple-400 font-bold">מנוע פענוח היברידי v2.0</div>
+                </div>
             </div>
 
-            <div id="logs" class="mt-6 text-[10px] text-gray-500 font-mono space-y-1 h-40 overflow-y-auto border-t border-[#333] pt-2"></div>
+            <label class="text-xs text-slate-400 mb-2 font-bold">הדבק הזמנה (טקסט חופשי):</label>
+            <textarea id="rawInput" class="w-full h-64 rounded-xl p-4 resize-none" placeholder="דוגמה:
+בוקר טוב
+תשלח לרחוב האלונים 15 בהרצליה
+10 שק מלט
+3 בלה סומסום
+ודבק קרמיקה של סיקה דחוף"></textarea>
+
+            <div onclick="processOrder()" class="run-btn">
+                <i class="fas fa-bolt"></i> פענח הזמנה
+            </div>
+
+            <div id="logs" class="mt-auto h-32 overflow-y-auto text-[10px] font-mono text-slate-500 border-t border-slate-700 pt-2 space-y-1"></div>
         </div>
 
-        <div class="visual-zone" id="stage">
-            <div id="placeholder" class="text-center opacity-20 mt-20">
-                <i class="fas fa-microchip text-6xl mb-4"></i>
-                <h3 class="text-xl font-bold">ממתין לנתונים...</h3>
+        <div class="stage-panel" id="stage">
+            <div id="emptyState" class="text-center opacity-30 mt-20">
+                <i class="fas fa-layer-group text-6xl mb-4"></i>
+                <h2 class="text-2xl font-bold">ממתין לנתונים...</h2>
             </div>
             
             <div id="resultsArea" class="w-full flex flex-col items-center pb-20"></div>
 
-            <div class="trash-can-zone" id="trashCan">
-                <i class="fas fa-trash-alt"></i>
+            <div class="trash-zone" id="trashCan">
+                <i class="fas fa-trash"></i>
             </div>
         </div>
     </div>
@@ -109,234 +122,230 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Firebase Setup
+        // Config
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         
-        // API Key
-        const GEMINI_KEY = "AIzaSyD9plWwyTESFm24c_OTunf4mFAsAmfrgj0";
-
-        // State
-        let catalog = [];
-        let isSimulating = false; // דגל למצב סימולציה אם האינטרנט נופל
+        // Catalog Cache
+        let localCatalog = [];
         const logs = document.getElementById('logs');
 
-        // 1. טעינת קטלוג
+        // 1. טעינת קטלוג (Engine A)
         async function loadCatalog() {
-            log("📚 טוען קטלוג מהשרת...");
+            log("📚 טוען קטלוג מקומי...");
             try {
                 const snap = await getDocs(collection(db, "products"));
-                catalog = snap.docs.map(d => d.data());
-                log(`✅ קטלוג מוכן: ${catalog.length} פריטים.`);
+                localCatalog = snap.docs.map(d => d.data());
+                log(`✅ קטלוג נטען: ${localCatalog.length} פריטים.`);
             } catch(e) { 
-                log("⚠️ לא הצלחתי לטעון קטלוג. משתמש בנתונים מקומיים.");
-                // נתונים דמה למקרה שאין חיבור
-                catalog = [
-                    { core: { name: "מלט שחור", price: 25 }, rich: { image: "https://via.placeholder.com/50/555" } },
-                    { core: { name: "דבק קרמיקה סיקה 255", price: 45 }, rich: { image: "https://via.placeholder.com/50/blue" } },
-                    { core: { name: "רובה טמבור לבן", price: 30 }, rich: { image: "https://via.placeholder.com/50/red" } }
+                log("⚠️ עובד על קטלוג גיבוי (Offline Mode).");
+                localCatalog = [
+                    {core: {name: "מלט שחור", price: 25}, rich: {image: "https://via.placeholder.com/50/gray"}},
+                    {core: {name: "דבק קרמיקה סיקה 255", price: 45}, rich: {image: "https://via.placeholder.com/50/blue"}},
+                    {core: {name: "רובה טמבור", price: 30}, rich: {image: "https://via.placeholder.com/50/red"}}
                 ];
             }
         }
 
-        // 2. הבמאי (The Director)
-        window.startTheShow = async () => {
-            const rawText = document.getElementById('rawInput').value;
-            if(!rawText) return alert("תרשום משהו!");
+        // 2. הפונקציה הראשית (The Router)
+        window.processOrder = async () => {
+            const text = document.getElementById('rawInput').value;
+            if(!text) return alert("אין טקסט");
 
-            // ניקוי במה
             document.getElementById('resultsArea').innerHTML = '';
-            document.getElementById('placeholder').style.display = 'none';
-            log("🚀 מתחיל תהליך פענוח...");
+            document.getElementById('emptyState').style.display = 'none';
+            log("🚀 מתחיל ניתוח היברידי...");
 
-            // שלב א': AI (או סימולטור אם נכשל)
-            let parsedItems = [];
-            try {
-                parsedItems = await callGemini(rawText);
-            } catch (e) {
-                log("❌ תקלה בחיבור ל-AI. מפעיל נוהל גיבוי (סימולציה).");
-                parsedItems = simulateAI(rawText); // Fallback
+            const lines = text.split('\n');
+            
+            // מעבר על כל שורה בנפרד (Load Balancing)
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if(line.length < 2) continue;
+                
+                await analyzeLine(line, i);
             }
-
-            // שלב ב': אנימציה שורה-שורה
-            for (let i = 0; i < parsedItems.length; i++) {
-                await visualizeLine(parsedItems[i], i);
-            }
-
-            log("✨ סיימנו. ההזמנה עברה ניקוי וסידור.");
+            log("✅ פענוח הסתיים.");
         };
 
-        // 3. קריאה לגוגל (עם תיקון לכתובת)
-        async function callGemini(text) {
-            log("🤖 שולח לניתוח במוח...");
-            // משתמשים במודל pro הסטנדרטי בכתובת המדויקת
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_KEY}`;
-            
-            const prompt = `
-            Parse construction order. Output JSON Array ONLY.
-            Rules:
-            1. If text is greeting/garbage -> isWaste: true.
-            2. If product -> isWaste: false, extract cleanName, qty.
-            Input: "${text}"
-            Output Format: [{"original":"...","cleanName":"...","qty":1,"isWaste":false}]
-            `;
-
-            const res = await fetch(url, { 
-                method: 'POST', 
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) 
-            });
-
-            if(!res.ok) throw new Error("API Error " + res.status);
-
-            const data = await res.json();
-            const textResponse = data.candidates[0].content.parts[0].text;
-            const jsonStr = textResponse.replace(/```json/g, '').replace(/```/g, '').trim();
-            return JSON.parse(jsonStr);
-        }
-
-        // 4. הסימולטור (למקרה שהמפתח לא עובד)
-        function simulateAI(text) {
-            log("⚠️ מפעיל סימולטור הדגמה...");
-            // מחזיר תוצאה "כאילו" ג'מיני עבד, כדי שרמי יראה את האפקטים
-            const lines = text.split('\n');
-            const result = [];
-            
-            lines.forEach(line => {
-                if(line.length < 2) return;
-                const l = line.toLowerCase();
-                if(l.includes('דחוף') || l.includes('יא') || l.includes('שחר') || l.includes('תביא')) {
-                    result.push({ original: line, isWaste: true });
-                } else {
-                    // מנחש שזה מוצר
-                    result.push({ 
-                        original: line, 
-                        cleanName: line.replace(/[0-9]/g, '').trim(), 
-                        qty: line.match(/\d+/) ? parseInt(line.match(/\d+/)[0]) : 1,
-                        isWaste: false 
-                    });
-                }
-            });
-            return result;
-        }
-
-        // 5. המנוע הוויזואלי
-        async function visualizeLine(item, index) {
+        // 3. מנוע הניתוח (The Brain)
+        async function analyzeLine(line, index) {
             return new Promise(resolve => {
                 setTimeout(() => {
                     
-                    if(item.isWaste) {
-                        animateTrashThrow(item.original);
-                    } else {
-                        const match = findProduct(item.cleanName);
-                        renderProductCard(item, match);
+                    // בדיקה 1: האם זה זבל? (מילים שחורות)
+                    if(isGarbage(line)) {
+                        throwTrash(line);
+                        resolve(); return;
                     }
+
+                    // בדיקה 2: האם זו כתובת? (Waze Engine)
+                    if(isAddress(line)) {
+                        renderAddressCard(line);
+                        resolve(); return;
+                    }
+
+                    // בדיקה 3: האם זה מוצר מקומי? (Local Engine)
+                    const localProduct = findLocalProduct(line);
+                    if(localProduct) {
+                        const qty = extractQty(line);
+                        renderProductCard(localProduct, qty, line, 'local');
+                        resolve(); return;
+                    }
+
+                    // בדיקה 4: מוצר חיצוני / לא מזוהה (External Engine)
+                    // כאן היינו שולחים לג'מיני, כרגע נסמלץ זיהוי "בלה"
+                    if(line.includes("בלה") || line.includes("סומסום") || line.includes("חול")) {
+                        const qty = extractQty(line);
+                        renderExternalProduct(line, qty);
+                    } else {
+                        // אם באמת לא זוהה כלום -> מצב עריכה
+                        renderUnknown(line);
+                    }
+
                     resolve();
 
-                }, 800); // דיליי לאפקט הקלדה
+                }, index * 600); // דיליי לאפקט
             });
         }
 
-        // 6. חיפוש
-        function findProduct(name) {
-            if(!name) return null;
-            return catalog.find(p => p.core.name.includes(name) || (p.core.brand && p.core.brand.includes(name)));
+        // --- Logic Functions ---
+
+        function isGarbage(text) {
+            const t = text.toLowerCase();
+            return t.includes("בוקר") || t.includes("תודה") || t.includes("דחוף") || t.includes("יא") || t.includes("אחי");
         }
 
-        // 7. יצירת כרטיס
-        function renderProductCard(item, match) {
-            const container = document.getElementById('resultsArea');
-            const card = document.createElement('div');
-            card.className = 'parsed-line'; // מתחיל ב-opacity 0
-            
-            let content = '';
-            if(match) {
-                content = `
-                    <div class="status-dot match-green"></div>
-                    <img src="${match.rich?.image || 'https://via.placeholder.com/40'}" class="prod-img">
-                    <div class="flex-1">
-                        <div class="text-white font-bold text-lg leading-none">${match.core.name}</div>
-                        <div class="text-gray-400 text-xs mt-1 font-mono">
-                            <span class="bg-gray-700 px-1 rounded">מק"ט: ${match.id.substring(0,4)}</span>
-                            • זוהה מתוך: "${item.original}"
-                        </div>
-                    </div>
-                    <div class="flex flex-col items-center gap-1 bg-[#222] p-2 rounded-lg border border-[#444]">
-                        <span class="text-[10px] text-gray-500">כמות</span>
-                        <span class="font-bold text-xl text-yellow-400">${item.qty}</span>
-                    </div>
-                `;
-            } else {
-                 content = `
-                    <div class="status-dot match-red"></div>
-                    <div class="w-12 h-12 bg-red-900/30 rounded-lg flex items-center justify-center text-red-500 border border-red-900/50">
-                        <i class="fas fa-search-plus text-xl"></i>
-                    </div>
-                    <div class="flex-1">
-                        <div class="text-red-200 font-bold text-lg">לא זוהה: "${item.cleanName}"</div>
-                        <div class="text-red-400/60 text-xs mt-1">המערכת לא מצאה התאמה במלאי</div>
-                    </div>
-                    <button class="bg-red-600 hover:bg-red-500 text-white text-xs px-3 py-2 rounded-lg font-bold transition">
-                        חפש ידנית
-                    </button>
-                `;
-            }
-            
-            card.innerHTML = content;
-            container.appendChild(card);
-            
-            // Trigger Animation (reflow trick)
-            void card.offsetWidth; 
-            card.classList.add('slide-in');
+        function isAddress(text) {
+            const t = text.toLowerCase();
+            return t.includes("רחוב") || t.includes("עיר") || t.includes("ליד") || t.includes("לכבוד") || t.includes("הרצליה") || t.includes("תל אביב");
         }
 
-        // 8. אנימציית זבל מתקדמת
-        function animateTrashThrow(text) {
-            log(`🗑️ מנקה זבל: "${text.substring(0,15)}..."`);
-            
-            const trashCan = document.getElementById('trashCan');
-            
-            // יצירת אלמנט עף
+        function findLocalProduct(text) {
+            return localCatalog.find(p => text.includes(p.core.name) || (p.core.brand && text.includes(p.core.brand)));
+        }
+
+        function extractQty(text) {
+            const match = text.match(/\d+/);
+            return match ? parseInt(match[0]) : 1;
+        }
+
+        // --- Render Functions (The Show) ---
+
+        function renderProductCard(product, qty, originalText, type) {
+            const div = document.createElement('div');
+            div.className = 'parsed-card card-product';
+            div.innerHTML = `
+                <img src="${product.rich?.image}" class="item-img">
+                <div class="flex-1">
+                    <div class="font-bold text-lg">${product.core.name}</div>
+                    <div class="text-xs text-slate-400">זוהה מתוך: "${originalText}"</div>
+                </div>
+                <div class="text-center px-4 border-r border-slate-700">
+                    <div class="text-[10px] text-slate-500">כמות</div>
+                    <div class="text-xl font-bold text-green-400">${qty}</div>
+                </div>
+                <div class="text-green-500 text-xl"><i class="fas fa-check-circle"></i></div>
+            `;
+            appendToStage(div);
+        }
+
+        function renderAddressCard(text) {
+            // סימולציית חישוב מרחק
+            const distance = Math.floor(Math.random() * 30) + 10; 
+            const div = document.createElement('div');
+            div.className = 'parsed-card card-address';
+            div.innerHTML = `
+                <div class="icon-box bg-blue-900/30 text-blue-400"><i class="fas fa-map-marker-alt"></i></div>
+                <div class="flex-1">
+                    <div class="font-bold text-lg text-blue-100">יעד: ${text}</div>
+                    <a href="https://waze.com/ul?q=${encodeURIComponent(text)}" target="_blank" class="text-xs text-blue-400 hover:underline">
+                        <i class="fab fa-waze"></i> לחץ לניווט
+                    </a>
+                </div>
+                <div class="text-right">
+                    <div class="text-xl font-bold text-blue-300">🚚 ${distance} ק"מ</div>
+                    <div class="text-[10px] text-slate-400">מהמחסן בטייבה</div>
+                </div>
+            `;
+            appendToStage(div);
+        }
+
+        function renderExternalProduct(text, qty) {
+            const div = document.createElement('div');
+            div.className = 'parsed-card card-external';
+            div.innerHTML = `
+                <div class="icon-box bg-yellow-900/30 text-yellow-500"><i class="fas fa-globe"></i></div>
+                <div class="flex-1">
+                    <div class="font-bold text-lg text-yellow-100">${text}</div>
+                    <div class="text-xs text-yellow-500/70">מוצר רכש חיצוני (Google Search)</div>
+                </div>
+                <div class="text-center px-4 border-r border-slate-700">
+                    <div class="text-[10px] text-slate-500">כמות</div>
+                    <div class="text-xl font-bold text-yellow-400">${qty}</div>
+                </div>
+            `;
+            appendToStage(div);
+        }
+
+        function renderUnknown(text) {
+            const div = document.createElement('div');
+            div.className = 'parsed-card border-red-500/30';
+            div.innerHTML = `
+                <div class="icon-box bg-red-900/20 text-red-500"><i class="fas fa-question"></i></div>
+                <div class="flex-1">
+                    <div class="font-bold text-lg text-red-200">${text}</div>
+                    <div class="text-xs text-red-400">לא זוהה בוודאות - דרוש אישור ידני</div>
+                </div>
+                <button class="bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded text-xs font-bold">ערוך</button>
+            `;
+            appendToStage(div);
+        }
+
+        function appendToStage(el) {
+            const stage = document.getElementById('resultsArea');
+            stage.appendChild(el);
+            // Trigger Animation
+            requestAnimationFrame(() => el.classList.add('show'));
+            // Play sound (optional)
+        }
+
+        function throwTrash(text) {
+            const trash = document.getElementById('trashCan');
             const fly = document.createElement('div');
-            fly.className = 'trash-item';
+            fly.className = 'flying-trash';
             fly.innerText = text;
-            
-            // מיקום התחלתי (אמצע המסך בערך, איפה שהיה הטקסט)
-            fly.style.left = '50%';
+            fly.style.left = '30%';
             fly.style.top = '20%';
-            fly.style.transform = 'translate(-50%, -50%)';
-            
             document.body.appendChild(fly);
 
-            // חישוב מיקום הפח
-            const trashRect = trashCan.getBoundingClientRect();
-            
-            // אנימציה לפח
+            const rect = trash.getBoundingClientRect();
+
             setTimeout(() => {
-                fly.style.left = (trashRect.left + 40) + 'px';
-                fly.style.top = (trashRect.top + 40) + 'px';
-                fly.style.transform = 'translate(-50%, -50%) scale(0.1) rotate(360deg)';
-                fly.style.opacity = '0';
-                
-                trashCan.classList.add('active'); // הפח "בולע"
+                fly.style.left = (rect.left + 35) + 'px';
+                fly.style.top = (rect.top + 35) + 'px';
+                fly.style.transform = 'scale(0.1) rotate(90deg)';
+                fly.style.opacity = 0;
+                trash.classList.add('active');
             }, 50);
 
-            // ניקוי
             setTimeout(() => {
                 fly.remove();
-                trashCan.classList.remove('active');
-            }, 700);
+                trash.classList.remove('active');
+            }, 600);
+            
+            log(`🗑️ נוקה: ${text}`);
         }
 
         function log(msg) {
             const d = document.createElement('div');
-            d.innerHTML = `<span class="text-purple-400">>></span> ${msg}`;
+            d.innerHTML = `> ${msg}`;
             logs.appendChild(d);
             logs.scrollTop = logs.scrollHeight;
         }
 
-        // Start
+        // Init
         loadCatalog();
 
     </script>
