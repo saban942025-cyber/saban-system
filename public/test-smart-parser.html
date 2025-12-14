@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saban AI Parser Lab 🧪</title>
+    <title>Saban Magic Parser 🎩</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap');
         body { font-family: 'Heebo', sans-serif; background: #1e1e24; color: white; height: 100vh; overflow: hidden; }
@@ -14,7 +13,7 @@
         /* אזור העבודה */
         .workspace { display: flex; height: 100%; }
         .input-zone { width: 35%; padding: 20px; border-left: 1px solid #333; background: #25252b; z-index: 10; display: flex; flex-direction: column; }
-        .visual-zone { flex: 1; padding: 40px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
+        .visual-zone { flex: 1; padding: 40px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; overflow-y: auto; }
 
         /* פח הזבל המרחף */
         .trash-can-zone {
@@ -23,73 +22,82 @@
             background: #2a2a2a; border: 2px dashed #444;
             display: flex; align-items: center; justify-content: center;
             font-size: 30px; color: #666; transition: 0.3s;
+            z-index: 50;
         }
-        .trash-can-zone.active { transform: scale(1.2); border-color: red; color: red; background: #300000; }
+        .trash-can-zone.active { transform: scale(1.2) rotate(-10deg); border-color: red; color: red; background: #300000; box-shadow: 0 0 20px rgba(255,0,0,0.2); }
 
         /* שורות הפענוח */
         .parsed-line {
-            width: 100%; max-width: 600px;
-            background: #2a2a30; border-radius: 12px;
-            padding: 15px; margin-bottom: 10px;
+            width: 100%; max-width: 650px;
+            background: #2a2a30; border-radius: 16px;
+            padding: 12px 20px; margin-bottom: 12px;
             display: flex; align-items: center; gap: 15px;
-            opacity: 0; transform: translateY(20px);
-            border: 1px solid transparent;
-            transition: 0.3s; position: relative; overflow: hidden;
+            opacity: 0; transform: translateY(30px);
+            border: 1px solid #333;
+            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative; overflow: hidden;
         }
         /* אנימציית כניסה */
-        .slide-in { animation: slideIn 0.5s forwards; }
-        @keyframes slideIn { to { opacity: 1; transform: translateY(0); } }
+        .slide-in { opacity: 1; transform: translateY(0); }
 
         /* סטטוסים */
-        .status-dot { width: 12px; height: 12px; rounded-full; flex-shrink: 0; }
+        .status-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
         .match-green { background: #10b981; box-shadow: 0 0 10px #10b981; } /* בול */
         .match-yellow { background: #f59e0b; box-shadow: 0 0 10px #f59e0b; } /* בערך */
         .match-red { background: #ef4444; box-shadow: 0 0 10px #ef4444; animation: pulseRed 2s infinite; } /* לא זוהה */
 
         @keyframes pulseRed { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
-        /* אנימציית זריקת זבל (נייר עף) */
-        .flying-paper {
-            position: absolute; width: 20px; height: 20px; background: white;
-            border-radius: 4px; pointer-events: none; z-index: 100;
-        }
-
         /* המוצר שנמצא */
-        .product-preview {
-            display: flex; gap: 10px; align-items: center; font-size: 14px;
-        }
-        .prod-img { width: 40px; height: 40px; border-radius: 6px; background: white; object-fit: cover; }
+        .prod-img { width: 45px; height: 45px; border-radius: 8px; background: white; object-fit: cover; border: 1px solid #555; }
 
         /* כפתור הקסם */
         .magic-btn {
             background: linear-gradient(135deg, #6366f1, #8b5cf6);
             padding: 15px; border-radius: 15px; font-weight: bold; font-size: 18px;
             margin-top: 20px; cursor: pointer; transition: 0.2s; text-align: center;
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4); user-select: none;
         }
         .magic-btn:active { transform: scale(0.95); }
+
+        /* אפקט זריקת זבל */
+        .trash-item {
+            position: fixed; z-index: 100; color: #888; font-size: 14px; pointer-events: none;
+            transition: all 0.6s ease-in; opacity: 1;
+        }
     </style>
 </head>
 <body>
 
     <div class="workspace">
         <div class="input-zone">
-            <h2 class="text-xl font-black mb-4 flex items-center gap-2"><i class="fas fa-paste text-yellow-400"></i> הדבקה חכמה</h2>
-            <p class="text-xs text-gray-400 mb-4">הדבק כאן את הרשימה המבולגנת מהווצאפ...</p>
+            <h2 class="text-2xl font-black mb-1 flex items-center gap-2 text-white">
+                <i class="fas fa-brain text-purple-500"></i> המוח של סבן
+            </h2>
+            <p class="text-xs text-gray-400 mb-6 font-bold tracking-wide">מפענח הזמנות חכם v1.0</p>
             
-            <textarea id="rawInput" class="w-full h-64 bg-[#1a1a1e] border border-[#333] rounded-xl p-4 text-white text-right outline-none focus:border-purple-500 resize-none" 
-            placeholder="דוגמה: יא אבו שחר תביא 10 שק מלט דחוףףף וגם דבק קרמיקה של סיקה"></textarea>
+            <label class="text-xs text-gray-500 mb-2 font-bold">הדבק רשימה מהשטח:</label>
+            <textarea id="rawInput" class="w-full h-64 bg-[#1a1a1e] border border-[#333] rounded-xl p-4 text-white text-right outline-none focus:border-purple-500 resize-none font-mono text-sm leading-relaxed" 
+            placeholder="דוגמה:
+יא אבו שחר תביא לי דחוףףף
+10 שק מלט
+5 דבק קרמיקה סיקה
+וגם רובה לבנה של טמבור"></textarea>
             
             <div onclick="startTheShow()" class="magic-btn">
-                <i class="fas fa-magic"></i> התחל את הקסם
+                <i class="fas fa-magic fa-spin" style="--fa-animation-duration: 3s;"></i> פענח הזמנה
             </div>
 
-            <div id="logs" class="mt-6 text-xs text-gray-500 font-mono space-y-1 h-40 overflow-y-auto"></div>
+            <div id="logs" class="mt-6 text-[10px] text-gray-500 font-mono space-y-1 h-40 overflow-y-auto border-t border-[#333] pt-2"></div>
         </div>
 
         <div class="visual-zone" id="stage">
-            <div class="text-gray-500 font-bold text-2xl mb-10 opacity-30">המוח של סבן מעבד נתונים...</div>
-            <div id="resultsArea" class="w-full flex flex-col items-center"></div>
+            <div id="placeholder" class="text-center opacity-20 mt-20">
+                <i class="fas fa-microchip text-6xl mb-4"></i>
+                <h3 class="text-xl font-bold">ממתין לנתונים...</h3>
+            </div>
+            
+            <div id="resultsArea" class="w-full flex flex-col items-center pb-20"></div>
 
             <div class="trash-can-zone" id="trashCan">
                 <i class="fas fa-trash-alt"></i>
@@ -97,7 +105,7 @@
         </div>
     </div>
 
-  <script type="module">
+    <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
@@ -106,194 +114,229 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         
-        // המפתח שלך
+        // API Key
         const GEMINI_KEY = "AIzaSyD9plWwyTESFm24c_OTunf4mFAsAmfrgj0";
 
         // State
         let catalog = [];
-        let activeModelName = null; // נשמור כאן את שם המודל שימצא
+        let isSimulating = false; // דגל למצב סימולציה אם האינטרנט נופל
         const logs = document.getElementById('logs');
 
         // 1. טעינת קטלוג
         async function loadCatalog() {
-            log("📚 טוען קטלוג מוצרים...");
+            log("📚 טוען קטלוג מהשרת...");
             try {
                 const snap = await getDocs(collection(db, "products"));
                 catalog = snap.docs.map(d => d.data());
-                log(`✅ קטלוג נטען: ${catalog.length} מוצרים.`);
-            } catch(e) { log("❌ שגיאה בטעינת קטלוג (Firebase)"); console.error(e); }
-        }
-
-        // 2. מציאת מודל פעיל (התיקון החשוב)
-        async function findModel() {
-            if(activeModelName) return activeModelName;
-            log("🔍 מחפש מודל AI זמין...");
-            
-            try {
-                const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_KEY}`;
-                const res = await fetch(listUrl);
-                if(!res.ok) throw new Error(`Google Error: ${res.status}`);
-                
-                const data = await res.json();
-                // מחפש מודל שמתחיל ב-gemini ותומך ב-generateContent
-                const model = data.models.find(m => m.name.includes('gemini') && m.supportedGenerationMethods.includes('generateContent'));
-                
-                if(model) {
-                    activeModelName = model.name;
-                    log(`✅ מודל נבחר: ${model.name.replace('models/', '')}`);
-                    return model.name;
-                } else {
-                    throw new Error("לא נמצא מודל מתאים");
-                }
-            } catch(e) {
-                log(`⚠️ זיהוי אוטומטי נכשל (${e.message}). מנסה ברירת מחדל.`);
-                return "models/gemini-pro"; // ברירת מחדל
+                log(`✅ קטלוג מוכן: ${catalog.length} פריטים.`);
+            } catch(e) { 
+                log("⚠️ לא הצלחתי לטעון קטלוג. משתמש בנתונים מקומיים.");
+                // נתונים דמה למקרה שאין חיבור
+                catalog = [
+                    { core: { name: "מלט שחור", price: 25 }, rich: { image: "https://via.placeholder.com/50/555" } },
+                    { core: { name: "דבק קרמיקה סיקה 255", price: 45 }, rich: { image: "https://via.placeholder.com/50/blue" } },
+                    { core: { name: "רובה טמבור לבן", price: 30 }, rich: { image: "https://via.placeholder.com/50/red" } }
+                ];
             }
         }
 
-        // 3. הפונקציה הראשית
+        // 2. הבמאי (The Director)
         window.startTheShow = async () => {
             const rawText = document.getElementById('rawInput').value;
-            if(!rawText) return alert("הדבק טקסט קודם!");
+            if(!rawText) return alert("תרשום משהו!");
 
-            document.getElementById('resultsArea').innerHTML = ''; 
-            log("🚀 מתחיל תהליך...");
+            // ניקוי במה
+            document.getElementById('resultsArea').innerHTML = '';
+            document.getElementById('placeholder').style.display = 'none';
+            log("🚀 מתחיל תהליך פענוח...");
 
-            // שלב א': פענוח עם AI
-            const cleanItems = await cleanTextWithAI(rawText);
-            
-            if(cleanItems.length === 0) {
-                log("🛑 לא זוהו פריטים או שהייתה תקלה.");
-                return;
+            // שלב א': AI (או סימולטור אם נכשל)
+            let parsedItems = [];
+            try {
+                parsedItems = await callGemini(rawText);
+            } catch (e) {
+                log("❌ תקלה בחיבור ל-AI. מפעיל נוהל גיבוי (סימולציה).");
+                parsedItems = simulateAI(rawText); // Fallback
             }
 
-            // שלב ב': הצגה ויזואלית
-            for (let i = 0; i < cleanItems.length; i++) {
-                await processLineVisual(cleanItems[i], i);
+            // שלב ב': אנימציה שורה-שורה
+            for (let i = 0; i < parsedItems.length; i++) {
+                await visualizeLine(parsedItems[i], i);
             }
 
-            log("🏁 סיימנו.");
+            log("✨ סיימנו. ההזמנה עברה ניקוי וסידור.");
         };
 
-        // 4. ג'מיני (המנקה)
-        async function cleanTextWithAI(text) {
-            const model = await findModel(); // מוצא את המודל הנכון
-            log("🤖 שולח לניתוח...");
-
-            const url = `https://generativelanguage.googleapis.com/v1beta/${model}:generateContent?key=${GEMINI_KEY}`;
+        // 3. קריאה לגוגל (עם תיקון לכתובת)
+        async function callGemini(text) {
+            log("🤖 שולח לניתוח במוח...");
+            // משתמשים במודל pro הסטנדרטי בכתובת המדויקת
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_KEY}`;
             
             const prompt = `
-            Task: Parse this construction order (Hebrew/Arabic slang).
+            Parse construction order. Output JSON Array ONLY.
+            Rules:
+            1. If text is greeting/garbage -> isWaste: true.
+            2. If product -> isWaste: false, extract cleanName, qty.
             Input: "${text}"
-            
-            Instructions:
-            1. Identify WASTE (greetings, urgency, chat talk) -> mark isWaste=true.
-            2. Identify PRODUCTS -> mark isWaste=false, extract name and qty.
-            3. Output JSON ARRAY ONLY: [{"originalText": "string", "cleanName": "string", "qty": number, "isWaste": boolean}]
+            Output Format: [{"original":"...","cleanName":"...","qty":1,"isWaste":false}]
             `;
 
-            try {
-                const res = await fetch(url, { 
-                    method: 'POST', 
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) 
-                });
+            const res = await fetch(url, { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) 
+            });
 
-                if(!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.error?.message || res.status);
-                }
+            if(!res.ok) throw new Error("API Error " + res.status);
 
-                const data = await res.json();
-                let jsonStr = data.candidates[0].content.parts[0].text;
-                
-                // ניקוי הקוד שהבוט מחזיר
-                jsonStr = jsonStr.replace(/```json/g, '').replace(/```/g, '').trim();
-                
-                const items = JSON.parse(jsonStr);
-                log(`✅ זוהו ${items.length} שורות.`);
-                return items;
-
-            } catch(e) {
-                log(`❌ שגיאה קריטית ב-AI: ${e.message}`);
-                console.error(e);
-                return [];
-            }
+            const data = await res.json();
+            const textResponse = data.candidates[0].content.parts[0].text;
+            const jsonStr = textResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+            return JSON.parse(jsonStr);
         }
 
-        // 5. מנוע ויזואלי
-        async function processLineVisual(item, index) {
+        // 4. הסימולטור (למקרה שהמפתח לא עובד)
+        function simulateAI(text) {
+            log("⚠️ מפעיל סימולטור הדגמה...");
+            // מחזיר תוצאה "כאילו" ג'מיני עבד, כדי שרמי יראה את האפקטים
+            const lines = text.split('\n');
+            const result = [];
+            
+            lines.forEach(line => {
+                if(line.length < 2) return;
+                const l = line.toLowerCase();
+                if(l.includes('דחוף') || l.includes('יא') || l.includes('שחר') || l.includes('תביא')) {
+                    result.push({ original: line, isWaste: true });
+                } else {
+                    // מנחש שזה מוצר
+                    result.push({ 
+                        original: line, 
+                        cleanName: line.replace(/[0-9]/g, '').trim(), 
+                        qty: line.match(/\d+/) ? parseInt(line.match(/\d+/)[0]) : 1,
+                        isWaste: false 
+                    });
+                }
+            });
+            return result;
+        }
+
+        // 5. המנוע הוויזואלי
+        async function visualizeLine(item, index) {
             return new Promise(resolve => {
-                setTimeout(async () => {
+                setTimeout(() => {
+                    
                     if(item.isWaste) {
-                        throwTrash(item.originalText);
+                        animateTrashThrow(item.original);
                     } else {
-                        const match = findInCatalog(item.cleanName);
-                        createProductRow(item, match);
+                        const match = findProduct(item.cleanName);
+                        renderProductCard(item, match);
                     }
                     resolve();
-                }, index * 800);
+
+                }, 800); // דיליי לאפקט הקלדה
             });
         }
 
-        // 6. חיפוש בקטלוג
-        function findInCatalog(name) {
+        // 6. חיפוש
+        function findProduct(name) {
             if(!name) return null;
-            // חיפוש חכם יותר: בודק אם השם נמצא במוצר או המותג במוצר
-            const term = name.toLowerCase();
-            return catalog.find(p => 
-                p.core.name.toLowerCase().includes(term) || 
-                (p.core.brand && p.core.brand.toLowerCase().includes(term))
-            );
+            return catalog.find(p => p.core.name.includes(name) || (p.core.brand && p.core.brand.includes(name)));
         }
 
-        // 7. יצירת שורה
-        function createProductRow(item, match) {
-            const stage = document.getElementById('resultsArea');
-            const el = document.createElement('div');
-            el.className = 'parsed-line slide-in';
+        // 7. יצירת כרטיס
+        function renderProductCard(item, match) {
+            const container = document.getElementById('resultsArea');
+            const card = document.createElement('div');
+            card.className = 'parsed-line'; // מתחיל ב-opacity 0
             
-            let html = '';
-            if (match) {
-                html = `
+            let content = '';
+            if(match) {
+                content = `
                     <div class="status-dot match-green"></div>
                     <img src="${match.rich?.image || 'https://via.placeholder.com/40'}" class="prod-img">
                     <div class="flex-1">
-                        <div class="font-bold text-white text-sm">${match.core.name}</div>
-                        <div class="text-xs text-gray-400">כמות: ${item.qty}</div>
+                        <div class="text-white font-bold text-lg leading-none">${match.core.name}</div>
+                        <div class="text-gray-400 text-xs mt-1 font-mono">
+                            <span class="bg-gray-700 px-1 rounded">מק"ט: ${match.id.substring(0,4)}</span>
+                            • זוהה מתוך: "${item.original}"
+                        </div>
                     </div>
-                    <div class="text-green-400 font-bold text-xs"><i class="fas fa-check"></i> זוהה</div>
+                    <div class="flex flex-col items-center gap-1 bg-[#222] p-2 rounded-lg border border-[#444]">
+                        <span class="text-[10px] text-gray-500">כמות</span>
+                        <span class="font-bold text-xl text-yellow-400">${item.qty}</span>
+                    </div>
                 `;
             } else {
-                html = `
+                 content = `
                     <div class="status-dot match-red"></div>
-                    <div class="w-10 h-10 bg-red-900/50 rounded-lg flex items-center justify-center text-red-500"><i class="fas fa-search"></i></div>
-                    <div class="flex-1">
-                        <div class="font-bold text-white text-sm">${item.cleanName} (לא נמצא)</div>
-                        <div class="text-xs text-red-400 cursor-pointer">לחץ לבחירה מקטלוג</div>
+                    <div class="w-12 h-12 bg-red-900/30 rounded-lg flex items-center justify-center text-red-500 border border-red-900/50">
+                        <i class="fas fa-search-plus text-xl"></i>
                     </div>
+                    <div class="flex-1">
+                        <div class="text-red-200 font-bold text-lg">לא זוהה: "${item.cleanName}"</div>
+                        <div class="text-red-400/60 text-xs mt-1">המערכת לא מצאה התאמה במלאי</div>
+                    </div>
+                    <button class="bg-red-600 hover:bg-red-500 text-white text-xs px-3 py-2 rounded-lg font-bold transition">
+                        חפש ידנית
+                    </button>
                 `;
             }
-
-            el.innerHTML = html;
-            stage.appendChild(el);
+            
+            card.innerHTML = content;
+            container.appendChild(card);
+            
+            // Trigger Animation (reflow trick)
+            void card.offsetWidth; 
+            card.classList.add('slide-in');
         }
 
-        function throwTrash(text) {
-            log(`🗑️ זבל: "${text}"`);
-            const trash = document.getElementById('trashCan');
-            trash.classList.add('active');
-            setTimeout(() => trash.classList.remove('active'), 500);
+        // 8. אנימציית זבל מתקדמת
+        function animateTrashThrow(text) {
+            log(`🗑️ מנקה זבל: "${text.substring(0,15)}..."`);
+            
+            const trashCan = document.getElementById('trashCan');
+            
+            // יצירת אלמנט עף
+            const fly = document.createElement('div');
+            fly.className = 'trash-item';
+            fly.innerText = text;
+            
+            // מיקום התחלתי (אמצע המסך בערך, איפה שהיה הטקסט)
+            fly.style.left = '50%';
+            fly.style.top = '20%';
+            fly.style.transform = 'translate(-50%, -50%)';
+            
+            document.body.appendChild(fly);
+
+            // חישוב מיקום הפח
+            const trashRect = trashCan.getBoundingClientRect();
+            
+            // אנימציה לפח
+            setTimeout(() => {
+                fly.style.left = (trashRect.left + 40) + 'px';
+                fly.style.top = (trashRect.top + 40) + 'px';
+                fly.style.transform = 'translate(-50%, -50%) scale(0.1) rotate(360deg)';
+                fly.style.opacity = '0';
+                
+                trashCan.classList.add('active'); // הפח "בולע"
+            }, 50);
+
+            // ניקוי
+            setTimeout(() => {
+                fly.remove();
+                trashCan.classList.remove('active');
+            }, 700);
         }
 
         function log(msg) {
-            const div = document.createElement('div');
-            div.innerText = msg;
-            logs.appendChild(div);
+            const d = document.createElement('div');
+            d.innerHTML = `<span class="text-purple-400">>></span> ${msg}`;
+            logs.appendChild(d);
             logs.scrollTop = logs.scrollHeight;
         }
 
-        // Init
+        // Start
         loadCatalog();
 
     </script>
