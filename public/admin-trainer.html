@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saban Brain Trainer v3.0 🧠</title>
+    <title>Saban Brain Trainer 🧠</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -46,10 +46,10 @@
             <div class="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center text-white text-xl shadow-lg">🧠</div>
             <div>
                 <h1 class="font-bold text-lg leading-none text-slate-800">Brain Trainer</h1>
-                <span class="text-xs text-purple-600 font-bold">אימון בוט (Auto-Discovery)</span>
+                <span class="text-xs text-purple-600 font-bold">אימון בוט (Flash 1.5)</span>
             </div>
         </div>
-        <div class="text-xs text-gray-500 font-mono">v3.0 Stable</div>
+        <div class="text-xs text-gray-500 font-mono">v4.0 Fixed</div>
     </header>
 
     <div class="workspace">
@@ -118,40 +118,14 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // API Key & Model Cache
+        // API Key
         const GEMINI_KEY = "AIzaSyD9plWwyTESFm24c_OTunf4mFAsAmfrgj0";
-        let cachedModelName = null;
+        
+        // Hardcoded Model Name (Safe & Fast)
+        const MODEL_NAME = "gemini-1.5-flash";
 
         // State
         let knowledgeData = [];
-
-        // --- Logic: Auto Discovery Model ---
-        async function findActiveModel() {
-            if (cachedModelName) return cachedModelName;
-            try {
-                // שואלים את גוגל אילו מודלים פתוחים במפתח הזה
-                const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_KEY}`;
-                const res = await fetch(url);
-                const data = await res.json();
-                
-                if (!res.ok) throw new Error("Failed to list models");
-
-                // מחפשים מודל Gemini שתומך ב-generateContent
-                const model = data.models.find(m => 
-                    m.name.includes("gemini") && 
-                    m.supportedGenerationMethods.includes("generateContent")
-                );
-
-                if (!model) throw new Error("No Gemini model found");
-                
-                console.log("Trainer found model:", model.name);
-                cachedModelName = model.name;
-                return model.name;
-            } catch (e) {
-                console.warn("Auto-discovery failed, defaulting to pro:", e);
-                return "models/gemini-pro"; // Fallback
-            }
-        }
 
         // --- Logic: Ask Gemini ---
         window.askGemini = async () => {
@@ -162,17 +136,13 @@
             const out = document.getElementById('answerOutput');
             const saveBtn = document.getElementById('btnSave');
 
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> מאתר מודל AI...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> מנסח תשובה...';
             out.value = "";
             saveBtn.disabled = true; saveBtn.classList.add('opacity-50', 'cursor-not-allowed');
 
             try {
-                // שלב 1: מציאת המודל
-                const modelName = await findActiveModel();
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ג\'מיני חושב...';
-
-                // שלב 2: שליחת השאלה
-                const url = `https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${GEMINI_KEY}`;
+                // שימוש ישיר ב-1.5 Flash
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${GEMINI_KEY}`;
                 
                 const prompt = `
                 אתה יועץ טכני מומחה של "סבן חומרי בניין".
@@ -190,7 +160,10 @@
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                 });
 
-                if(!res.ok) throw new Error("Google Error: " + res.status);
+                if(!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error?.message || res.status);
+                }
 
                 const data = await res.json();
                 
