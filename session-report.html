@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>דוח סיכום מערכת סבן - סשן פיתוח</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: #f8fafc; font-family: system-ui; color: #1e293b; padding: 20px; }
+        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-bottom: 20px; border: 1px solid #e2e8f0; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+        .badge-green { background: #dcfce7; color: #166534; }
+        .badge-blue { background: #dbeafe; color: #1e40af; }
+        .badge-red { background: #fee2e2; color: #991b1b; }
+        
+        .code-block { direction: ltr; background: #1e293b; color: #e2e8f0; padding: 15px; border-radius: 8px; font-family: monospace; overflow-x: auto; margin-top: 10px; font-size: 13px; }
+        .copy-btn { background: #f59e0b; color: black; font-weight: bold; padding: 10px 20px; border-radius: 8px; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+        .copy-btn:hover { background: #d97706; }
+    </style>
+</head>
+<body>
+
+    <div class="max-w-4xl mx-auto">
+        
+        <div class="flex items-center gap-4 mb-8">
+            <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-3xl shadow-lg">💎</div>
+            <div>
+                <h1 class="text-3xl font-black text-slate-800">דוח מסירת משמרת - מערכת סבן</h1>
+                <p class="text-slate-500">סיכום סטטוס קבצים, לוגיקה והנחיות להמשך פיתוח</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><i class="fas fa-folder-open text-blue-500"></i> סטטוס קבצים נוכחי (Files State)</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-right">
+                    <thead class="bg-slate-50 border-b">
+                        <tr>
+                            <th class="p-3">שם הקובץ</th>
+                            <th class="p-3">תפקיד</th>
+                            <th class="p-3">סטטוס לוגיקה</th>
+                            <th class="p-3">הערות טכניות</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b">
+                            <td class="p-3 font-bold font-mono">client-app.html</td>
+                            <td class="p-3">אפליקציית לקוח</td>
+                            <td class="p-3"><span class="badge badge-green">מושלם V8</span></td>
+                            <td class="p-3">מכיל Embedded Chatbot (Dual Core), השוואת מוצרים, פענוח חכם, עיצוב יוקרתי.</td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="p-3 font-bold font-mono">whatsapp-center.html</td>
+                            <td class="p-3">חמ"ל הזמנות</td>
+                            <td class="p-3"><span class="badge badge-green">מושלם V8</span></td>
+                            <td class="p-3">מכיל מודל פענוח שלא חוסם הדפסה, PDF, פתקים גרירים, סאונד מתוקן.</td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="p-3 font-bold font-mono">admin-trainer.html</td>
+                            <td class="p-3">מאמן בוט</td>
+                            <td class="p-3"><span class="badge badge-green">יציב V5</span></td>
+                            <td class="p-3">תוקן באג 403 (Auto-Discovery בוטל) -> עבר ל-Fixed Dual Core.</td>
+                        </tr>
+                        <tr>
+                            <td class="p-3 font-bold font-mono">chatbot-engine.js</td>
+                            <td class="p-3">מוח חיצוני</td>
+                            <td class="p-3"><span class="badge badge-blue">מודולרי</span></td>
+                            <td class="p-3">קובץ המוח. *הערה:* בקבצי ה-HTML הטמענו את המוח ישירות למניעת תלות.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card bg-slate-900 text-white border-none">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><i class="fas fa-microchip text-purple-400"></i> המנוע החדש: Dual-Core AI</h2>
+            <p class="text-sm text-slate-300 mb-4">
+                במהלך הסשן נתקלנו בשגיאות 403/404 מצד גוגל (שינויי שמות מודלים).<br>
+                פיתחנו מנוע עמיד בפני תקלות שעובד בשיטה הבאה:
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                <div class="bg-slate-800 p-4 rounded-lg border border-slate-700">
+                    <div class="text-yellow-400 font-bold mb-1">1. ניסיון ראשי</div>
+                    <div class="text-xs">gemini-1.5-flash</div>
+                    <div class="text-[10px] text-slate-400">מהיר וזול</div>
+                </div>
+                <div class="flex items-center justify-center text-2xl text-slate-600"><i class="fas fa-arrow-left"></i></div>
+                <div class="bg-slate-800 p-4 rounded-lg border border-slate-700">
+                    <div class="text-green-400 font-bold mb-1">2. גיבוי (Failover)</div>
+                    <div class="text-xs">gemini-pro</div>
+                    <div class="text-[10px] text-slate-400">יציב ואמין</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-yellow-400 border-2 bg-yellow-50">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h2 class="text-xl font-black text-slate-800 mb-1">🔥 פקודת הזהב (The Golden Prompt)</h2>
+                    <p class="text-sm text-slate-600 mb-4">העתק את הטקסט הזה והדבק אותו בתחילת הסשן הבא כדי להמשיך בדיוק מאיפה שעצרנו.</p>
+                </div>
+                <button onclick="copyToClipboard()" class="copy-btn">
+                    <i class="fas fa-copy"></i> העתק פקודה
+                </button>
+            </div>
+
+            <div class="code-block" id="goldenPrompt">
+**CONTEXT RESTORE: SABAN SYSTEM V8.0**
+
+Hello Gemini. We are continuing development on the "Saban Building Materials" system.
+Current State: STABLE / PRODUCTION READY.
+
+**Architecture Overview:**
+1. **Core Logic:** We are using a "Dual-Core AI Engine" logic.
+   - Primary: `gemini-1.5-flash`
+   - Backup (Catch Block): `gemini-pro`
+   - Reasoning: To prevent 404/403 errors when Google changes model names. NEVER revert to single-model logic or "Auto-Discovery" without approval.
+
+2. **Key Files & Status:**
+   - `client-app.html`: Customer App. Contains embedded Chatbot class, Fuzzy Search, Smart Parser (Hebrew NLP), Comparison Tool (Scales), and Rich Product Details.
+   - `whatsapp-center.html`: Admin Dashboard. Contains Live Feed, Draggable Sticky Notes, Sound/Alerts, and a non-blocking Smart Parser for PDF/Print generation.
+   - `admin-trainer.html`: Knowledge Base manager with the Dual-Core logic applied.
+
+3. **Critical Guidelines for Next Session:**
+   - **Do NOT separate the JS:** Keep the logic embedded within the HTML files for portability (Single File Component style) unless checking `chatbot-engine.js` specifically.
+   - **Parser Logic:** The parser must NEVER block the user. If AI fails -> Show raw text -> Allow manual edit -> Print/PDF.
+   - **Design:** Keep the "Saban Platinum" look (Glassmorphism, Tailwind, Heebo font).
+
+**My Goal for this session:**
+[כאן תכתוב מה אתה רוצה לעשות בסשן הבא...]
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function copyToClipboard() {
+            const text = document.getElementById('goldenPrompt').innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                alert("הפקודה הועתקה! \nעכשיו פתח צ'אט חדש והדבק אותה.");
+            });
+        }
+    </script>
+</body>
+</html>
