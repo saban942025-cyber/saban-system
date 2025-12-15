@@ -120,6 +120,7 @@
         .menu-item { padding: 12px 20px; cursor: pointer; font-size: 14px; color: #3b4a54; display: flex; align-items: center; gap: 10px; }
         .menu-item:hover { background: #f5f6f6; }
         .menu-item.danger { color: #ea0038; }
+        .hidden-item { display: none !important; }
         
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -130,9 +131,9 @@
         
         <div class="sidebar" id="sidebar">
             <div class="wa-header">
-                <div class="flex items-center gap-3 cursor-pointer" onclick="alert('פרופיל מנהל: ראמי סבן')">
-                    <img src="https://ui-avatars.com/api/?name=Rami+Saban&background=00a884&color=fff" class="w-10 h-10 rounded-full">
-                    <span class="font-bold text-gray-700">חמ"ל סבן</span>
+                <div class="flex items-center gap-3 cursor-pointer">
+                    <img id="currentUserImg" src="" class="w-10 h-10 rounded-full bg-gray-300">
+                    <span id="currentUserName" class="font-bold text-gray-700">טוען...</span>
                 </div>
                 <div class="flex gap-5 text-gray-500 relative">
                     <i class="fas fa-circle-notch cursor-pointer" title="סטטוס"></i>
@@ -141,14 +142,17 @@
                     
                     <div id="adminMenu" class="context-menu">
                         <div class="menu-item" onclick="toggleMenu()">
-                            <i class="fas fa-cog"></i> הגדרות מערכת
+                            <i class="fas fa-cog"></i> הגדרות אישיות
                         </div>
                         <div class="menu-item" onclick="toggleSound()">
                             <i class="fas fa-volume-up"></i> בדיקת סאונד
                         </div>
                         <div class="h-px bg-gray-200 my-1"></div>
-                        <div class="menu-item danger" onclick="clearAllData()">
+                        <div id="btnCleanAll" class="menu-item danger hidden-item" onclick="clearAllData()">
                             <i class="fas fa-trash-alt"></i> ניקיון פסח (מחק הכל)
+                        </div>
+                        <div class="menu-item" onclick="logout()">
+                            <i class="fas fa-sign-out-alt"></i> התנתק
                         </div>
                     </div>
                 </div>
@@ -225,10 +229,29 @@
         // STATE
         let activeTab = 'orders';
         let currentChatId = null;
-        let audioContext = null;
+        let currentUser = { name: 'אורח', role: 'guest' };
 
-        // --- 1. SYSTEM LOGIC ---
-        
+        // --- 1. SYSTEM INITIALIZATION & IDENTITY ---
+        (function initIdentity() {
+            // שליפת נתונים שנשמרו בכניסה
+            const stored = localStorage.getItem('saban_user');
+            if (stored) {
+                const u = JSON.parse(stored);
+                currentUser.name = u.name || 'משתמש';
+                currentUser.role = u.role || 'staff';
+                currentUser.uid = u.uid;
+            }
+
+            // עדכון ממשק משתמש
+            document.getElementById('currentUserName').innerText = currentUser.name;
+            document.getElementById('currentUserImg').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=00a884&color=fff`;
+
+            // חשיפת כפתורי מנהל רק למורשים
+            if (currentUser.role === 'admin' || currentUser.role === 'ops') {
+                document.getElementById('btnCleanAll').classList.remove('hidden-item');
+            }
+        })();
+
         window.toggleMenu = () => {
             const menu = document.getElementById('adminMenu');
             menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
@@ -240,29 +263,27 @@
             window.toggleMenu();
         };
 
+        window.logout = () => {
+            if(confirm("להתנתק מהמערכת?")) {
+                localStorage.removeItem('saban_user');
+                window.parent.location.href = 'index.html'; // חזרה למסך לוגין ראשי
+            }
+        };
+
         // --- PASSOVER CLEANING (DELETE ALL) ---
         window.clearAllData = async () => {
             if(!confirm("⚠️ אזהרה חמורה!\nפעולה זו תמחק את כל ההזמנות וההעברות לצמיתות.\nהאם אתה בטוח שברצונך לבצע ניקיון פסח?")) return;
             
-            const btn = document.querySelector('.menu-item.danger');
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> מוחק...';
-            
             try {
-                // מחיקת הזמנות
                 const ordersSnap = await getDocs(collection(db, "orders"));
                 const deletePromises = ordersSnap.docs.map(d => deleteDoc(doc(db, "orders", d.id)));
                 
-                // מחיקת העברות
                 const transfersSnap = await getDocs(collection(db, "transfers"));
                 transfersSnap.docs.forEach(d => deletePromises.push(deleteDoc(doc(db, "transfers", d.id))));
 
                 await Promise.all(deletePromises);
-                
-                alert("🧹 המערכת נוקתה בהצלחה!\nדף חלק לעבודה.");
-                window.location.reload();
-            } catch(e) {
-                alert("שגיאה במחיקה: " + e.message);
-            }
+                alert("🧹 המערכת נוקתה בהצלחה!");
+            } catch(e) { alert("שגיאה: " + e.message); }
         };
 
         // --- 2. TABS & LISTS ---
@@ -344,7 +365,6 @@
         window.openChat = (id, title, type) => {
             currentChatId = id;
             document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
-            // Highlight current (Visual only until rerender)
             
             document.getElementById('emptyState').classList.add('hidden');
             document.getElementById('activeChatContent').classList.remove('hidden');
@@ -363,20 +383,17 @@
             onSnapshot(q, (snap) => {
                 messagesArea.innerHTML = "";
                 
-                // הודעת מערכת (System Message) להתחלה
                 if(type === 'order') {
                     messagesArea.innerHTML += `
                     <div class="sys-msg">
                         <i class="fas fa-lock text-[10px]"></i> ההודעות והשיחות בשיחה זו מוצפנות מקצה לקצה.
-                    </div>
-                    <div class="sys-msg bg-blue-50 text-blue-800 border border-blue-200">
-                        <i class="fas fa-info-circle"></i> הזמנה חדשה התקבלה. יש לוודא מלאי לפני אישור.
                     </div>`;
                 }
 
                 snap.forEach(doc => {
                     const m = doc.data();
-                    const isMe = m.sender === 'אני' || m.sender === 'ראמי'; // דמו
+                    // בדיקה אם ההודעה נשלחה על ידי המשתמש הנוכחי
+                    const isMe = m.sender === currentUser.name || m.sender === 'אני';
                     const isSys = m.type === 'warning' || m.type === 'info';
 
                     if (isSys) {
@@ -409,7 +426,7 @@
             
             await addDoc(collection(db, coll), {
                 text: txt,
-                sender: "אני", 
+                sender: currentUser.name, // שימוש בשם האמיתי של המשתמש
                 createdAt: serverTimestamp()
             });
         };
@@ -428,7 +445,6 @@
             }
         };
 
-        // --- MASTER APP LISTENER ---
         window.addEventListener('message', (event) => {
             if (event.data.action === 'switchTab') {
                 const map = {'orders': 'orders', 'transfers': 'transfers'};
@@ -436,7 +452,6 @@
             }
         });
 
-        // Init
         loadOrders();
 
     </script>
