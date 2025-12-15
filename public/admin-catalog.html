@@ -3,346 +3,302 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saban Admin | ניהול קטלוג</title>
+    <title>Saban Admin | קטלוג גאוני</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet">
     <style>
-        body { background: #f1f5f9; font-family: 'Heebo', sans-serif; }
+        body { background: #f8fafc; font-family: 'Heebo', sans-serif; }
         
-        /* Sidebar */
+        /* Sidebar Navigation */
         .sidebar {
-            width: 280px; background: #0f172a; color: white; height: 100vh;
-            position: fixed; right: 0; display: flex; flex-direction: column;
-            padding: 20px;
+            width: 260px; background: #1e293b; color: white; height: 100vh;
+            position: fixed; right: 0; top: 0; display: flex; flex-direction: column;
+            box-shadow: -5px 0 20px rgba(0,0,0,0.1); z-index: 50;
         }
-        
         .nav-item {
-            padding: 12px; border-radius: 10px; margin-bottom: 5px;
-            cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 10px;
+            padding: 16px 24px; cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; gap: 12px; font-weight: 500; border-left: 4px solid transparent;
         }
-        .nav-item:hover { background: rgba(255,255,255,0.1); }
-        .nav-item.active { background: #3b82f6; font-weight: bold; }
+        .nav-item:hover { background: #334155; }
+        .nav-item.active { background: #0f172a; border-left-color: #3b82f6; color: #60a5fa; }
 
-        /* Main Content */
-        .main-content { margin-right: 280px; padding: 30px; }
+        /* Main Area */
+        .main-content { margin-right: 260px; padding: 40px; }
         
-        /* Product Card */
-        .product-row {
-            background: white; border-bottom: 1px solid #e2e8f0;
-            display: grid; grid-template-columns: 60px 2fr 1fr 1fr 1fr 1fr;
-            align-items: center; padding: 15px; transition: 0.2s;
+        /* Magic Search Bar */
+        .magic-search {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            border-radius: 16px; padding: 30px; color: white; margin-bottom: 40px;
+            box-shadow: 0 10px 30px -10px rgba(37, 99, 235, 0.5); position: relative; overflow: hidden;
         }
-        .product-row:hover { background: #f8fafc; }
-        .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; }
-        .badge-stock { background: #dcfce7; color: #166534; }
-        .badge-low { background: #fee2e2; color: #991b1b; }
+        .magic-search::after {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+            animation: rotate 20s linear infinite; pointer-events: none;
+        }
+        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        /* Product Cards */
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .product-card {
+            background: white; border-radius: 16px; overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: 0.3s; border: 1px solid #f1f5f9;
+            display: flex; flex-direction: column;
+        }
+        .product-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.1); border-color: #bfdbfe; }
+        
+        /* AI Result Card */
+        .ai-card {
+            background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px; padding: 15px;
+            cursor: pointer; transition: 0.2s; position: relative;
+        }
+        .ai-card:hover { border-color: #3b82f6; background: #eff6ff; }
+        .ai-badge { position: absolute; top: 10px; left: 10px; background: #3b82f6; color: white; font-size: 10px; padding: 2px 6px; border-radius: 6px; }
 
         /* Modal */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 50; backdrop-filter: blur(5px); }
-        .modal-box { background: white; width: 800px; max-height: 90vh; overflow-y: auto; border-radius: 16px; padding: 0; box-shadow: 0 25px 50px rgba(0,0,0,0.25); }
-        .modal-header { padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; }
-        .modal-body { padding: 20px; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); z-index: 100; display: none; align-items: center; justify-content: center; }
+        .modal-box { background: white; width: 90%; max-width: 900px; max-height: 90vh; overflow-y: auto; border-radius: 24px; animation: popIn 0.3s; padding: 0; }
         
-        .input-group { margin-bottom: 15px; }
-        .label { display: block; font-size: 12px; font-weight: bold; color: #64748b; margin-bottom: 5px; }
-        .input { width: 100%; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; outline: none; }
-        .input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        @keyframes popIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
-        <div class="text-2xl font-black mb-10 flex items-center gap-3">
-            <i class="fas fa-cubes text-blue-500"></i> Saban<span class="text-blue-500">Admin</span>
+        <div class="p-6 mb-4">
+            <div class="text-3xl font-black tracking-tight">Saban<span class="text-blue-400">.AI</span></div>
+            <div class="text-xs text-slate-400 mt-1 uppercase tracking-widest">Enterprise Catalog</div>
         </div>
-        <div class="nav-item active"><i class="fas fa-box"></i> קטלוג מוצרים</div>
-        <div class="nav-item"><i class="fas fa-tags"></i> מבצעים חמים</div>
-        <div class="nav-item"><i class="fas fa-chart-line"></i> דוחות מלאי</div>
-        <div class="mt-auto nav-item text-red-400"><i class="fas fa-sign-out-alt"></i> יציאה</div>
+        <div class="nav-item active"><i class="fas fa-box-open w-6"></i> ניהול מוצרים</div>
+        <div class="nav-item"><i class="fas fa-magic w-6"></i> יועץ חכם</div>
+        <div class="nav-item"><i class="fas fa-chart-pie w-6"></i> סטטיסטיקות</div>
+        <div class="mt-auto nav-item text-red-400 hover:bg-red-900/20"><i class="fas fa-sign-out-alt w-6"></i> התנתק</div>
     </div>
 
     <div class="main-content">
         
-        <div class="flex justify-between items-end mb-8">
-            <div>
-                <h1 class="text-3xl font-black text-slate-800">ניהול קטלוג</h1>
-                <p class="text-slate-500">הוסף, ערוך ונהל את מוצרי החנות</p>
+        <div class="magic-search">
+            <div class="relative z-10">
+                <h1 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                    <i class="fas fa-robot"></i> הוספת מוצר חכמה
+                </h1>
+                <div class="flex gap-2">
+                    <div class="flex-1 bg-white/20 backdrop-blur-md rounded-xl p-1 flex items-center border border-white/30 focus-within:border-white/60 transition">
+                        <i class="fas fa-search text-white/70 mr-4"></i>
+                        <input id="aiSearchInput" type="text" placeholder="הקלד שם מוצר (למשל: 'דבק קרמיקה' או 'מקדחה נטענת')..." 
+                               class="bg-transparent border-none outline-none text-white placeholder-white/60 w-full p-2 font-bold"
+                               onkeydown="if(event.key==='Enter') searchWeb()">
+                    </div>
+                    <button onclick="searchWeb()" class="bg-white text-blue-600 px-6 py-3 rounded-xl font-bold hover:bg-blue-50 transition shadow-lg">
+                        <i class="fas fa-bolt"></i> מצא ברשת
+                    </button>
+                </div>
             </div>
-            <button onclick="openModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2">
-                <i class="fas fa-plus"></i> מוצר חדש
-            </button>
         </div>
 
-        <div class="bg-white p-4 rounded-xl shadow-sm mb-6 flex gap-4 items-center">
-            <div class="flex-1 bg-gray-50 rounded-lg flex items-center px-4 border">
-                <i class="fas fa-search text-gray-400"></i>
-                <input id="searchBox" type="text" placeholder="חיפוש לפי שם, מקט או תגיות..." class="bg-transparent border-none outline-none w-full p-3" oninput="filterProducts()">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold text-slate-800">המדף הדיגיטלי (<span id="count">0</span>)</h2>
+            <div class="flex gap-2">
+                <input oninput="filterLocal()" id="localSearch" class="bg-white border rounded-lg px-4 py-2 text-sm outline-none w-64" placeholder="סינון מהיר...">
+                <button onclick="openModal()" class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-slate-700">
+                    <i class="fas fa-plus"></i> הוספה ידנית
+                </button>
             </div>
-            <select id="filterCat" class="bg-gray-50 border rounded-lg p-3 outline-none" onchange="filterProducts()">
-                <option value="all">כל הקטגוריות</option>
-                <option value="cement">מלט וטיח</option>
-                <option value="glue">דבקים ורובה</option>
-                <option value="paint">צבע וגמר</option>
-                <option value="tools">כלי עבודה</option>
-            </select>
         </div>
 
-        <div class="grid grid-cols-[60px_2fr_1fr_1fr_1fr_1fr] gap-4 px-4 py-2 text-xs font-bold text-gray-500 uppercase">
-            <div>תמונה</div>
-            <div>שם המוצר / מק"ט</div>
-            <div>קטגוריה</div>
-            <div>מחיר</div>
-            <div>מלאי</div>
-            <div>פעולות</div>
+        <div id="productsGrid" class="product-grid">
+            <div class="col-span-full text-center py-20 text-gray-400">
+                <i class="fas fa-circle-notch fa-spin text-3xl"></i><br>טוען את המאגר...
+            </div>
         </div>
-
-        <div id="productsList" class="space-y-2">
-            <div class="text-center py-10 text-gray-400"><i class="fas fa-circle-notch fa-spin"></i> טוען נתונים...</div>
-        </div>
-
     </div>
 
-    <div id="productModal" class="modal-overlay">
-        <div class="modal-box">
-            <div class="modal-header">
-                <h2 class="text-xl font-bold" id="modalTitle">מוצר חדש</h2>
-                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
+    <div id="aiModal" class="modal-overlay">
+        <div class="modal-box max-w-4xl bg-slate-50">
+            <div class="p-6 border-b bg-white flex justify-between items-center sticky top-0 z-10">
+                <div>
+                    <h3 class="text-xl font-black text-slate-800">תוצאות החיפוש החכם</h3>
+                    <p class="text-sm text-gray-500">ה-AI איתר את המוצרים הבאים. בחר אחד לייבוא.</p>
+                </div>
+                <button onclick="document.getElementById('aiModal').style.display='none'" class="w-8 h-8 bg-gray-100 rounded-full"><i class="fas fa-times"></i></button>
             </div>
             
-            <form id="productForm" onsubmit="event.preventDefault(); saveProduct();">
-                <input type="hidden" id="editId">
-                <div class="modal-body">
+            <div id="aiResults" class="p-6 grid grid-cols-2 gap-4">
+                </div>
+        </div>
+    </div>
+
+    <div id="editModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="flex h-full">
+                <div class="w-1/3 bg-slate-50 p-8 border-l flex flex-col items-center text-center">
+                    <div class="w-full aspect-square bg-white rounded-2xl shadow-sm border mb-4 flex items-center justify-center overflow-hidden p-4">
+                        <img id="prevImg" src="" class="w-full h-full object-contain">
+                    </div>
+                    <h3 id="prevName" class="font-black text-lg text-slate-800 leading-tight">שם המוצר</h3>
+                    <div id="prevSku" class="text-xs font-mono text-gray-400 mb-4">SKU</div>
+                    <div class="text-3xl font-black text-blue-600 mb-6">₪<span id="prevPrice">0</span></div>
                     
-                    <div class="grid grid-cols-2 gap-6">
-                        <div>
-                            <h3 class="text-sm font-bold text-blue-600 uppercase mb-3 border-b pb-1">פרטים כלליים</h3>
-                            <div class="input-group">
-                                <label class="label">שם המוצר</label>
-                                <input type="text" id="pName" class="input font-bold" required>
-                            </div>
-                            <div class="grid grid-cols-2 gap-3">
-                                <div class="input-group">
-                                    <label class="label">מק"ט (SKU)</label>
-                                    <input type="text" id="pSku" class="input uppercase">
-                                </div>
-                                <div class="input-group">
-                                    <label class="label">קטגוריה</label>
-                                    <select id="pCat" class="input">
-                                        <option value="cement">מלט וטיח</option>
-                                        <option value="glue">דבקים ורובה</option>
-                                        <option value="paint">צבע וגמר</option>
-                                        <option value="tools">כלי עבודה</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-2 gap-3">
-                                <div class="input-group">
-                                    <label class="label">מחיר ללקוח (₪)</label>
-                                    <input type="number" id="pPrice" class="input font-mono">
-                                </div>
-                                <div class="input-group">
-                                    <label class="label">מלאי נוכחי</label>
-                                    <input type="number" id="pStock" class="input" value="100">
-                                </div>
+                    <div class="w-full bg-white p-4 rounded-xl border text-right text-xs space-y-2">
+                        <div class="flex justify-between"><span class="text-gray-400">משקל</span><span id="prevWeight">-</span></div>
+                        <div class="flex justify-between"><span class="text-gray-400">כיסוי</span><span id="prevCover">-</span></div>
+                        <div class="flex justify-between"><span class="text-gray-400">ייבוש</span><span id="prevDry">-</span></div>
+                    </div>
+                </div>
+
+                <div class="w-2/3 p-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-black" id="modalTitle">עריכת מוצר</h2>
+                        <button onclick="closeEdit()" class="text-gray-400 hover:text-red-500"><i class="fas fa-times text-xl"></i></button>
+                    </div>
+
+                    <form id="productForm" onsubmit="event.preventDefault(); saveProduct();" class="space-y-4">
+                        <input type="hidden" id="editId">
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><label class="text-xs font-bold text-gray-500 block mb-1">שם המוצר</label><input id="pName" class="w-full border p-2 rounded font-bold" oninput="syncPreview()"></div>
+                            <div><label class="text-xs font-bold text-gray-500 block mb-1">מק"ט</label><input id="pSku" class="w-full border p-2 rounded uppercase font-mono" oninput="syncPreview()"></div>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-4">
+                            <div><label class="text-xs font-bold text-gray-500 block mb-1">מחיר</label><input id="pPrice" type="number" class="w-full border p-2 rounded font-bold" oninput="syncPreview()"></div>
+                            <div><label class="text-xs font-bold text-gray-500 block mb-1">מלאי</label><input id="pStock" type="number" class="w-full border p-2 rounded"></div>
+                            <div><label class="text-xs font-bold text-gray-500 block mb-1">קטגוריה</label>
+                                <select id="pCat" class="w-full border p-2 rounded bg-white">
+                                    <option value="cement">מלט וטיח</option>
+                                    <option value="glue">דבקים</option>
+                                    <option value="paint">צבע</option>
+                                    <option value="tools">כלי עבודה</option>
+                                </select>
                             </div>
                         </div>
 
                         <div>
-                            <h3 class="text-sm font-bold text-purple-600 uppercase mb-3 border-b pb-1">מפרט טכני (לקבלן)</h3>
-                            <div class="grid grid-cols-3 gap-2">
-                                <div class="input-group">
-                                    <label class="label">משקל (ק"ג)</label>
-                                    <input type="text" id="sWeight" class="input" placeholder="25">
-                                </div>
-                                <div class="input-group">
-                                    <label class="label">כיסוי (מ"ר)</label>
-                                    <input type="text" id="sCover" class="input" placeholder="12">
-                                </div>
-                                <div class="input-group">
-                                    <label class="label">זמן ייבוש</label>
-                                    <input type="text" id="sDry" class="input" placeholder="24 שעות">
-                                </div>
-                            </div>
-
-                            <div class="input-group">
-                                <label class="label">תגיות חכמות (לחיפוש)</label>
-                                <input type="text" id="pTags" class="input" placeholder="איטום, גגות, חורף, דבק...">
-                                <p class="text-[10px] text-gray-400 mt-1">מופרד בפסיקים. עוזר ל-AI למצוא את המוצר.</p>
-                            </div>
-
-                            <div class="input-group">
-                                <label class="label">תמונה (URL)</label>
-                                <input type="text" id="pImg" class="input text-xs" onchange="document.getElementById('imgPrev').src=this.value">
-                            </div>
-                            <img id="imgPrev" src="" class="h-20 w-20 object-cover rounded border bg-gray-50 mx-auto">
+                            <label class="text-xs font-bold text-gray-500 block mb-1">תיאור שיווקי (עשיר)</label>
+                            <textarea id="pDesc" class="w-full border p-2 rounded h-20 text-sm resize-none"></textarea>
                         </div>
-                    </div>
 
-                    <div class="mt-4">
-                        <label class="label flex justify-between">
-                            <span>תיאור שיווקי</span>
-                            <button type="button" onclick="generateDesc()" class="text-xs text-blue-500 hover:underline"><i class="fas fa-magic"></i> כתוב לי תיאור עם Gemini</button>
-                        </label>
-                        <textarea id="pDesc" class="input h-20"></textarea>
-                    </div>
+                        <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                            <div class="text-xs font-bold text-blue-800 uppercase mb-2">מפרט טכני לקבלן</div>
+                            <div class="grid grid-cols-3 gap-3">
+                                <div><input id="sWeight" placeholder="משקל (25 קג)" class="w-full border p-2 rounded text-xs" oninput="syncPreview()"></div>
+                                <div><input id="sCover" placeholder="כיסוי (10 מיר)" class="w-full border p-2 rounded text-xs" oninput="syncPreview()"></div>
+                                <div><input id="sDry" placeholder="זמן ייבוש" class="w-full border p-2 rounded text-xs" oninput="syncPreview()"></div>
+                            </div>
+                        </div>
 
+                        <div class="hidden"><input id="pImg"></div> <div class="pt-4 flex justify-end gap-3">
+                            <button type="button" onclick="closeEdit()" class="px-6 py-2 rounded-lg font-bold text-gray-500 hover:bg-gray-100">ביטול</button>
+                            <button type="submit" class="px-8 py-2 rounded-lg font-bold bg-slate-900 text-white hover:bg-black shadow-lg transform hover:scale-105 transition">שמור במערכת</button>
+                        </div>
+                    </form>
                 </div>
-                <div class="p-5 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
-                    <button type="button" onclick="closeModal()" class="px-6 py-2 rounded-lg font-bold text-gray-500 hover:bg-gray-200">ביטול</button>
-                    <button type="submit" class="px-6 py-2 rounded-lg font-bold bg-blue-600 text-white hover:bg-blue-700 shadow">שמור מוצר</button>
-                </div>
-            </form>
+            </div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Config
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        let products = [];
+        let allProducts = [];
 
-        // --- LOAD PRODUCTS ---
-        async function loadProducts() {
-            const list = document.getElementById('productsList');
-            const snap = await getDocs(collection(db, "products"));
-            products = snap.docs.map(d => ({id: d.id, ...d.data()}));
-            renderList(products);
-        }
+        // --- 1. LOAD DATA ---
+        onSnapshot(collection(db, "products"), (snap) => {
+            allProducts = snap.docs.map(d => ({id: d.id, ...d.data()}));
+            document.getElementById('count').innerText = allProducts.length;
+            renderGrid(allProducts);
+        });
 
-        function renderList(data) {
-            const list = document.getElementById('productsList');
-            if(data.length === 0) { list.innerHTML = '<div class="text-center p-5 text-gray-400">אין מוצרים</div>'; return; }
-
-            list.innerHTML = data.map(p => `
-                <div class="product-row">
-                    <img src="${p.img || 'https://via.placeholder.com/50'}" class="w-10 h-10 rounded object-cover border">
-                    <div>
-                        <div class="font-bold text-slate-800">${p.name}</div>
-                        <div class="text-xs text-slate-400 font-mono">${p.sku}</div>
+        function renderGrid(data) {
+            const grid = document.getElementById('productsGrid');
+            grid.innerHTML = data.map(p => `
+                <div class="product-card group">
+                    <div class="relative h-40 bg-gray-100 flex items-center justify-center overflow-hidden">
+                        <img src="${p.img}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
+                        <div class="absolute top-2 right-2 bg-white/90 backdrop-blur px-2 py-1 rounded text-[10px] font-bold shadow">${p.sku}</div>
                     </div>
-                    <div class="text-sm text-gray-600">${catName(p.category)}</div>
-                    <div class="font-bold font-mono">₪${p.price}</div>
-                    <div>
-                        <span class="badge ${p.stock < 10 ? 'badge-low' : 'badge-stock'}">
-                            ${p.stock} יח' במלאי
-                        </span>
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="window.editProduct('${p.id}')" class="text-blue-500 hover:bg-blue-100 p-2 rounded"><i class="fas fa-pen"></i></button>
-                        <button onclick="window.deleteProduct('${p.id}')" class="text-red-500 hover:bg-red-100 p-2 rounded"><i class="fas fa-trash"></i></button>
+                    <div class="p-4 flex-1 flex flex-col">
+                        <h3 class="font-bold text-slate-800 leading-tight mb-1">${p.name}</h3>
+                        <p class="text-xs text-gray-500 line-clamp-2 mb-3">${p.desc}</p>
+                        
+                        <div class="mt-auto flex justify-between items-center">
+                            <span class="font-black text-xl text-blue-600">₪${p.price}</span>
+                            <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition">
+                                <button onclick="editItem('${p.id}')" class="text-blue-500 hover:bg-blue-50 p-2 rounded"><i class="fas fa-pen"></i></button>
+                                <button onclick="deleteItem('${p.id}')" class="text-red-500 hover:bg-red-50 p-2 rounded"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             `).join('');
         }
 
-        // --- FILTERING ---
-        window.filterProducts = () => {
-            const txt = document.getElementById('searchBox').value.toLowerCase();
-            const cat = document.getElementById('filterCat').value;
+        // --- 2. AI WEB SEARCH SIMULATOR ---
+        window.searchWeb = () => {
+            const query = document.getElementById('aiSearchInput').value;
+            if(!query) return alert("אנא הזן מילת חיפוש");
 
-            const filtered = products.filter(p => {
-                const matchText = p.name.toLowerCase().includes(txt) || 
-                                  p.sku.toLowerCase().includes(txt) ||
-                                  (p.tags && p.tags.includes(txt)); // חיפוש תגיות חכם!
-                const matchCat = cat === 'all' || p.category === cat;
-                return matchText && matchCat;
-            });
-            renderList(filtered);
-        };
-
-        // --- CRUD ---
-        window.openModal = () => {
-            document.getElementById('productForm').reset();
-            document.getElementById('editId').value = '';
-            document.getElementById('modalTitle').innerText = "מוצר חדש";
-            document.getElementById('imgPrev').src = '';
-            document.getElementById('productModal').style.display = 'flex';
-        };
-
-        window.closeModal = () => document.getElementById('productModal').style.display = 'none';
-
-        window.editProduct = (id) => {
-            const p = products.find(x => x.id === id);
-            document.getElementById('editId').value = id;
-            document.getElementById('modalTitle').innerText = "עריכת מוצר: " + p.name;
+            // במערכת אמיתית: קריאה לשרת Node.js שעושה Google Scrape + Gemini API
+            // בסימולציה: יצירת דאטה חכם מבוסס מילים
+            const mockResults = generateMockData(query);
             
-            document.getElementById('pName').value = p.name;
-            document.getElementById('pSku').value = p.sku;
-            document.getElementById('pCat').value = p.category || 'tools';
-            document.getElementById('pPrice').value = p.price;
-            document.getElementById('pStock').value = p.stock || 0;
-            document.getElementById('pImg').value = p.img || '';
-            document.getElementById('imgPrev').src = p.img || '';
-            document.getElementById('pDesc').value = p.desc || '';
-            document.getElementById('pTags').value = p.tags || '';
-
-            // Specs
-            document.getElementById('sWeight').value = p.specs?.weight || '';
-            document.getElementById('sCover').value = p.specs?.cover || '';
-            document.getElementById('sDry').value = p.specs?.dry || '';
-
-            document.getElementById('productModal').style.display = 'flex';
+            const container = document.getElementById('aiResults');
+            container.innerHTML = mockResults.map((item, idx) => `
+                <div class="ai-card flex gap-4" onclick='importItem(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
+                    <div class="ai-badge">Google + Gemini</div>
+                    <img src="${item.img}" class="w-24 h-24 object-contain bg-white rounded border">
+                    <div>
+                        <div class="font-bold text-lg text-slate-800">${item.name}</div>
+                        <div class="text-xs text-gray-500 mb-2">${item.desc.substring(0,60)}...</div>
+                        <div class="flex gap-2 mb-2">
+                            <span class="text-[10px] bg-gray-200 px-2 rounded">⚖️ ${item.specs.weight}</span>
+                            <span class="text-[10px] bg-gray-200 px-2 rounded">🎨 ${item.specs.cover}</span>
+                        </div>
+                        <div class="text-blue-600 font-bold text-sm">לחץ לייבוא ושיפור <i class="fas fa-arrow-left"></i></div>
+                    </div>
+                </div>
+            `).join('');
+            
+            document.getElementById('aiModal').style.display = 'flex';
         };
 
-        window.saveProduct = async () => {
-            const id = document.getElementById('editId').value;
-            const data = {
-                name: document.getElementById('pName').value,
-                sku: document.getElementById('pSku').value,
-                category: document.getElementById('pCat').value,
-                price: Number(document.getElementById('pPrice').value),
-                stock: Number(document.getElementById('pStock').value),
-                img: document.getElementById('pImg').value,
-                desc: document.getElementById('pDesc').value,
-                tags: document.getElementById('pTags').value, // מילות מפתח לחיפוש
-                specs: {
-                    weight: document.getElementById('sWeight').value,
-                    cover: document.getElementById('sCover').value,
-                    dry: document.getElementById('sDry').value
+        // פונקציית דמי למוצרים "מהרשת"
+        function generateMockData(q) {
+            const type = q.includes("דבק") ? "glue" : q.includes("מקדח") ? "drill" : "cement";
+            const variants = [
+                {
+                    name: type==="glue" ? "דבק קרמיקה פרימיום 114" : "מקדחה רוטטת Makita HP1630",
+                    sku: "AUTO-" + Math.floor(Math.random()*1000),
+                    price: type==="glue" ? 65 : 450,
+                    img: type==="glue" ? "https://www.jacobi.co.il/wp-content/uploads/2016/09/code-109.jpg" : "https://m.media-amazon.com/images/I/51H5S2uK+pL._AC_SL1000_.jpg",
+                    desc: "מוצר איכותי במיוחד לעבודות מקצועיות. עמידות גבוהה לאורך זמן.",
+                    specs: { weight: "25 קג", cover: "5 מ\"ר", dry: "4 שעות" },
+                    cat: type==="drill" ? "tools" : "glue"
                 },
-                updatedAt: serverTimestamp()
-            };
-
-            if(id) {
-                await updateDoc(doc(db, "products", id), data);
-            } else {
-                data.createdAt = serverTimestamp();
-                await addDoc(collection(db, "products"), data);
-            }
-            closeModal();
-            loadProducts();
-        };
-
-        window.deleteProduct = async (id) => {
-            if(confirm("למחוק מוצר זה לצמיתות?")) {
-                await deleteDoc(doc(db, "products", id));
-                loadProducts();
-            }
-        };
-
-        // --- UTILS ---
-        window.generateDesc = () => {
-            const name = document.getElementById('pName').value;
-            if(!name) return alert("הכנס שם מוצר קודם");
-            document.getElementById('pDesc').value = `Gemini AI: כותב תיאור ל-${name}...\n(סימולציה: מוצר זה הינו בעל עמידות גבוהה, מתאים לתנאי חוץ קשים ומומלץ על ידי הקבלנים המובילים בשוק.)`;
-        };
-
-        function catName(key) {
-            const map = { cement: 'מלט וטיח', glue: 'דבקים', paint: 'צבע', tools: 'כלי עבודה' };
-            return map[key] || key;
+                {
+                    name: type==="glue" ? "דבק אקרילי גמיש Sika" : "פטישון נטען Bosch 18V",
+                    sku: "AUTO-" + Math.floor(Math.random()*1000),
+                    price: type==="glue" ? 85 : 890,
+                    img: type==="glue" ? "https://gilar.co.il/wp-content/uploads/2019/06/Sika-Ceram-203.jpg" : "https://m.media-amazon.com/images/I/61D7V+h+cUL._AC_SL1500_.jpg",
+                    desc: "מתאים במיוחד לתנאי חוץ וחדרים רטובים. תקן אירופאי מחמיר.",
+                    specs: { weight: "20 קג", cover: "7 מ\"ר", dry: "24 שעות" },
+                    cat: type==="drill" ? "tools" : "glue"
+                }
+            ];
+            return variants;
         }
 
-        // Init
-        loadProducts();
-
-        // Export globals
-        window.saveProduct = saveProduct; 
-    </script>
-</body>
-</html>
+        window.importItem = (item) => {
+            document.getElementById('aiModal').style.display = 'none';
+            // מילוי אוטומטי של הטופס
+            openModal();
+            document.getElementById('pName').value = item.name;
+            document.getElementById('pSku').value = item.sku;
+            document.getElementById('pPrice').value = item.price;
+            document
