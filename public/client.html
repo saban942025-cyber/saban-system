@@ -174,9 +174,8 @@
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
         const GEMINI_KEY = "AIzaSyAdfGVrmr90Mp9ZhNMItD81iaE8OipKwz0";
         
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
+        let db;
+        
         // BRANCHES
         const BRANCHES = [
             { id: 'harash', name: 'סניף החרש', lat: 32.1462, lng: 34.8951 },
@@ -191,13 +190,23 @@
         let activeSwapIndex = -1;
         let cart = [];
 
-        // --- INIT ---
+        // --- INIT & ROBUST LOADER ---
         (async () => {
             try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
                 const snap = await getDocs(collection(db, "products"));
                 catalog = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                renderCatalog(catalog);
-            } catch(e) { console.log("Offline mode"); }
+            } catch(e) { 
+                console.log("Offline mode / Fallback active"); 
+                // דאטה בסיסי למקרה של תקלה
+                catalog = [
+                    {id:'1', core:{name:'מלט שחור', price:25}, rich:{image:'https://via.placeholder.com/100'}},
+                    {id:'2', core:{name:'דבק קרמיקה 114', price:45}, rich:{image:'https://via.placeholder.com/100'}},
+                    {id:'3', core:{name:'טיח גבס', price:30}, rich:{image:'https://via.placeholder.com/100'}}
+                ];
+            }
+            renderCatalog(catalog);
         })();
 
         // --- 1. AI SCANNER LOGIC ---
@@ -299,7 +308,7 @@
                         <div class="font-bold text-sm text-slate-800">${item.name}</div>
                         <div class="text-xs text-blue-500 font-bold">לחץ להחלפה <i class="fas fa-exchange-alt"></i></div>
                     </div>
-                    <input type="number" class="w-12 text-center bg-slate-50 border rounded p-1 font-bold outline-none focus:border-blue-500" value="${item.qty}" onchange="parsedData[${i}].qty=this.value">
+                    <input type="number" class="w-12 text-center bg-slate-50 border rounded p-1 font-bold outline-none focus:border-blue-500" value="${item.qty}" onchange="updateParsedQty(${i}, this.value)">
                     <i class="fas fa-times text-slate-300 px-2" onclick="removeItem(${i})"></i>
                 </div>`;
             });
@@ -368,4 +377,101 @@
 
         // --- 4. FINALIZE & PDF ---
         window.finalizeOrder = async () => {
-            if
+            if(parsedData.length === 0) return;
+
+            // PDF Generation
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ align: 'right', direction: 'rtl' }); // תמיכה בסיסית
+            
+            doc.setFontSize(20);
+            doc.text("Saban Order Request", 105, 20, { align: "center" });
+            
+            let y = 40;
+            parsedData.forEach((item, i) => {
+                doc.setFontSize(12);
+                doc.text(`${i+1}. ${item.name} (x${item.qty})`, 180, y, { align: "right" });
+                y += 10;
+            });
+
+            if(contactInfo) {
+                doc.text(`Contact: ${contactInfo.name} - ${contactInfo.phone}`, 180, y+10, { align: "right" });
+            }
+
+            doc.save("Saban_Order.pdf");
+
+            // Firebase Save
+            try {
+                if(db) {
+                    await addDoc(collection(db, "orders"), {
+                        clientName: contactInfo?.name || "לקוח אפליקציה",
+                        phone: contactInfo?.phone || "",
+                        address: addressInfo?.text || "",
+                        branch: addressInfo?.branch || "TBD",
+                        items: parsedData,
+                        status: "new",
+                        createdAt: serverTimestamp(),
+                        source: "xray_scanner"
+                    });
+                }
+                
+                // Clear & Switch
+                alert("ההזמנה נשלחה בהצלחה! 🚀\nהחמ\"ל קיבל את ההודעה.");
+                window.location.reload(); // רענון נקי
+            } catch(e) { alert("שגיאת רשת"); }
+        }
+
+        // --- HELPER: GEO ---
+        async function getCoordinatesByAI(addr) {
+            try {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`;
+                const prompt = `Return JSON only: { "lat": number, "lng": number } for address: "${addr}, Israel".`;
+                const res = await fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
+                const d = await res.json();
+                return JSON.parse(d.candidates[0].content.parts[0].text.replace(/```json|```/g, '').trim());
+            } catch(e) { return null; }
+        }
+
+        function calcBranchDistances() {
+            if(!addressInfo.lat) return;
+            const dist0 = calcDist(addressInfo.lat, addressInfo.lng, BRANCHES[0].lat, BRANCHES[0].lng);
+            const dist1 = calcDist(addressInfo.lat, addressInfo.lng, BRANCHES[1].lat, BRANCHES[1].lng);
+            addressInfo.branch = (dist0 < dist1) ? 'החרש' : 'התלמיד';
+            addressInfo.dist = Math.min(dist0, dist1);
+        }
+
+        function calcDist(lat1, lon1, lat2, lon2) {
+            const R = 6371; 
+            const dLat = (lat2-lat1)*Math.PI/180; const dLon = (lon2-lon1)*Math.PI/180;
+            const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)*Math.sin(dLon/2);
+            return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))).toFixed(1);
+        }
+
+        // --- UI HELPERS & EXPORTS ---
+        window.switchTab = (id) => {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById('view-'+id).classList.add('active');
+            document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-'+id).classList.add('active');
+        };
+        window.clearScan = () => { parsedData=[]; contactInfo=null; addressInfo=null; renderParsedResults(); };
+        window.removeItem = (i) => { parsedData.splice(i, 1); renderParsedResults(); };
+        window.updateParsedQty = (i, val) => parsedData[i].qty = parseInt(val);
+        
+        window.filterCatalog = () => {
+            const q = document.getElementById('searchMain').value.toLowerCase();
+            renderCatalog(catalog.filter(p => p.core.name.toLowerCase().includes(q)));
+        };
+
+        function renderCatalog(items) {
+            document.getElementById('catalogGrid').innerHTML = items.map(p => `
+                <div class="bg-white rounded-xl p-3 shadow-sm text-center">
+                    <img src="${p.rich?.image || 'https://via.placeholder.com/80'}" class="mx-auto h-20 object-contain mb-2">
+                    <div class="font-bold text-xs text-slate-800 h-8 line-clamp-2">${p.core.name}</div>
+                    <div class="text-blue-600 font-bold text-sm">₪${p.core.price}</div>
+                </div>
+            `).join('');
+        }
+
+    </script>
+</body>
+</html>
