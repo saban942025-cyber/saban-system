@@ -10,60 +10,19 @@
     
     <style>
         body { background: #f1f5f9; font-family: 'Heebo', sans-serif; padding-bottom: 90px; }
-        
-        /* Header Profile */
-        .profile-card {
-            background: linear-gradient(135deg, #1e293b, #0f172a); color: white;
-            padding: 20px; border-radius: 0 0 25px 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-        
-        /* Catalog Grid */
-        .product-card {
-            background: white; border-radius: 16px; overflow: hidden;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: 0.2s; position: relative;
-            display: flex; flex-direction: column; justify-content: space-between;
-        }
-        
-        /* Specs Tags */
+        .profile-card { background: linear-gradient(135deg, #1e293b, #0f172a); color: white; padding: 20px; border-radius: 0 0 25px 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .product-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: 0.2s; position: relative; display: flex; flex-direction: column; justify-content: space-between; }
         .spec-tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #f1f5f9; color: #64748b; font-weight: bold; }
-
-        /* Bottom Nav */
-        .bottom-nav {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            background: white; height: 70px;
-            display: flex; justify-content: space-around; align-items: center;
-            border-top: 1px solid #e2e8f0; box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
-            z-index: 50; padding-bottom: env(safe-area-inset-bottom);
-        }
-        .nav-btn {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            color: #94a3b8; font-size: 10px; font-weight: bold; width: 60px; transition: 0.2s;
-        }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; height: 70px; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #e2e8f0; box-shadow: 0 -4px 20px rgba(0,0,0,0.05); z-index: 50; padding-bottom: env(safe-area-inset-bottom); }
+        .nav-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; font-size: 10px; font-weight: bold; width: 60px; transition: 0.2s; }
         .nav-btn i { font-size: 20px; margin-bottom: 4px; }
         .nav-btn.active { color: #2563eb; }
-        
-        /* Cart Badge */
-        .cart-badge {
-            position: absolute; top: -5px; right: 10px;
-            background: #ef4444; color: white; border-radius: 50%;
-            width: 18px; height: 18px; font-size: 10px;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: bold; opacity: 0; transition: 0.2s;
-        }
+        .cart-badge { position: absolute; top: -5px; right: 10px; background: #ef4444; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center; font-weight: bold; opacity: 0; transition: 0.2s; }
         .cart-badge.show { opacity: 1; transform: scale(1); }
-
-        /* Modals */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
         .modal-box { background: white; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; border-radius: 20px; animation: slideUp 0.3s; }
-        
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-
-        /* AI Input */
-        .ai-input-box {
-            background: white; border: 2px solid #3b82f6; border-radius: 12px;
-            padding: 15px; display: flex; gap: 10px; margin-top: -25px; margin-bottom: 20px;
-            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.15); width: 90%; margin-left: auto; margin-right: auto;
-        }
+        .ai-input-box { background: white; border: 2px solid #3b82f6; border-radius: 12px; padding: 15px; display: flex; gap: 10px; margin-top: -25px; margin-bottom: 20px; box-shadow: 0 10px 20px rgba(59, 130, 246, 0.15); width: 90%; margin-left: auto; margin-right: auto; }
     </style>
 </head>
 <body>
@@ -77,11 +36,8 @@
                     <i class="fas fa-id-card"></i> לקוח: <span id="userClientNum" class="font-mono font-bold">---</span>
                 </div>
             </div>
-            <button onclick="toggleHistory()" class="mr-auto bg-white/10 p-2 rounded-xl backdrop-blur-sm hover:bg-white/20">
-                <i class="fas fa-history text-xl"></i>
-            </button>
+            <button onclick="toggleHistory()" class="mr-auto bg-white/10 p-2 rounded-xl backdrop-blur-sm hover:bg-white/20"><i class="fas fa-history text-xl"></i></button>
         </div>
-        
         <div class="flex items-center gap-2 bg-white/10 p-2 rounded-lg">
             <i class="fas fa-hard-hat text-yellow-400"></i>
             <select id="projectSelect" class="bg-transparent text-white font-bold w-full outline-none text-sm">
@@ -102,9 +58,7 @@
     </div>
 
     <div class="px-4 pb-4">
-        <h2 class="text-lg font-black text-slate-800 mb-3 flex items-center gap-2">
-            <i class="fas fa-th-large text-gray-400"></i> קטלוג מוצרים
-        </h2>
+        <h2 class="text-lg font-black text-slate-800 mb-3 flex items-center gap-2"><i class="fas fa-th-large text-gray-400"></i> קטלוג מוצרים</h2>
         <div id="loader" class="text-center py-10 text-gray-400"><i class="fas fa-circle-notch fa-spin text-2xl"></i><br>טוען קטלוג...</div>
         <div id="catalogGrid" class="grid grid-cols-2 gap-4"></div>
     </div>
@@ -128,25 +82,11 @@
             <div class="p-6">
                 <h2 id="modalTitle" class="text-2xl font-black text-slate-800 mb-1"></h2>
                 <div id="modalSku" class="text-xs text-gray-400 font-mono mb-4"></div>
-                
                 <div class="grid grid-cols-3 gap-2 mb-6 text-center">
-                    <div class="bg-slate-50 p-2 rounded-lg border">
-                        <i class="fas fa-weight-hanging text-blue-500 mb-1"></i>
-                        <div class="text-[10px] text-gray-500">משקל</div>
-                        <div id="specWeight" class="font-bold text-sm"></div>
-                    </div>
-                    <div class="bg-slate-50 p-2 rounded-lg border">
-                        <i class="fas fa-paint-roller text-blue-500 mb-1"></i>
-                        <div class="text-[10px] text-gray-500">כיסוי</div>
-                        <div id="specCover" class="font-bold text-sm"></div>
-                    </div>
-                    <div class="bg-slate-50 p-2 rounded-lg border">
-                        <i class="fas fa-clock text-blue-500 mb-1"></i>
-                        <div class="text-[10px] text-gray-500">ייבוש</div>
-                        <div id="specDry" class="font-bold text-sm"></div>
-                    </div>
+                    <div class="bg-slate-50 p-2 rounded-lg border"><div class="text-[10px] text-gray-500">משקל</div><div id="specWeight" class="font-bold text-sm"></div></div>
+                    <div class="bg-slate-50 p-2 rounded-lg border"><div class="text-[10px] text-gray-500">כיסוי</div><div id="specCover" class="font-bold text-sm"></div></div>
+                    <div class="bg-slate-50 p-2 rounded-lg border"><div class="text-[10px] text-gray-500">ייבוש</div><div id="specDry" class="font-bold text-sm"></div></div>
                 </div>
-
                 <div class="flex gap-3">
                     <input id="modalQty" type="number" class="w-20 text-center border rounded-xl font-bold text-lg" value="1">
                     <button onclick="addToCartFromModal()" class="flex-1 bg-slate-900 text-white py-3 rounded-xl font-bold shadow-lg">הוסף להזמנה</button>
@@ -178,12 +118,24 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // State
         let products = [];
         let cart = [];
         let compareList = [];
         let currentUser = { name: "אורח", clientNumber: "---", uid: null };
         let currentProduct = null;
+
+        // --- 🔴 BI LOGGER FUNCTION ---
+        async function logAction(action, details = "", type = "regular") {
+            try {
+                await addDoc(collection(db, "system_logs"), {
+                    user: currentUser.name || "אורח",
+                    action: action,
+                    details: details,
+                    type: type,
+                    timestamp: serverTimestamp()
+                });
+            } catch (e) { console.error("Log error", e); }
+        }
 
         // --- INIT ---
         window.onload = async () => {
@@ -217,110 +169,27 @@
 
         function renderCatalog() {
             const grid = document.getElementById('catalogGrid');
-            if(products.length === 0) {
-                // Seed if empty (Simulate initial load)
-                seedProducts();
-                return;
-            }
-
+            if(products.length === 0) { seedProducts(); return; }
             grid.innerHTML = products.map(p => `
                 <div class="product-card">
                     <div onclick="openProductModal('${p.fireId}')">
-                        <div class="h-32 bg-gray-100 flex items-center justify-center overflow-hidden">
-                            <img src="${p.img || 'https://via.placeholder.com/150'}" class="w-full h-full object-cover">
-                        </div>
+                        <div class="h-32 bg-gray-100 flex items-center justify-center overflow-hidden"><img src="${p.img || 'https://via.placeholder.com/150'}" class="w-full h-full object-cover"></div>
                         <div class="p-3">
                             <div class="text-[10px] text-gray-400 font-bold mb-1">${p.sku || 'N/A'}</div>
                             <h3 class="font-bold text-slate-800 text-sm mb-2 leading-tight h-10 overflow-hidden">${p.name}</h3>
-                            <div class="flex justify-between items-center mt-2 mb-2">
-                                <span class="font-black text-blue-600">₪${p.price}</span>
-                                <button class="bg-slate-900 text-white w-8 h-8 rounded-full shadow"><i class="fas fa-plus"></i></button>
-                            </div>
+                            <div class="flex justify-between items-center mt-2 mb-2"><span class="font-black text-blue-600">₪${p.price}</span><button class="bg-slate-900 text-white w-8 h-8 rounded-full shadow"><i class="fas fa-plus"></i></button></div>
                         </div>
                     </div>
-                    
                     <div class="flex border-t border-gray-100">
-                        <button onclick="compareProduct('${p.fireId}')" class="flex-1 py-3 text-xs font-bold text-gray-500 hover:bg-gray-50 border-l">
-                            <i class="fas fa-balance-scale"></i> השוואה
-                        </button>
-                        <button onclick="askGemini('${p.name}')" class="flex-1 py-3 text-xs font-bold text-purple-600 hover:bg-purple-50">
-                            <i class="fas fa-sparkles"></i> התייעץ
-                        </button>
+                        <button onclick="compareProduct('${p.fireId}')" class="flex-1 py-3 text-xs font-bold text-gray-500 hover:bg-gray-50 border-l"><i class="fas fa-balance-scale"></i> השוואה</button>
+                        <button onclick="askGemini('${p.name}')" class="flex-1 py-3 text-xs font-bold text-purple-600 hover:bg-purple-50"><i class="fas fa-sparkles"></i> התייעץ</button>
                     </div>
-                </div>
-            `).join('');
+                </div>`).join('');
         }
 
-        // --- COMPARISON LOGIC (מוזניים) ---
-        window.compareProduct = (id) => {
-            const p = products.find(x => x.fireId === id);
-            if(compareList.find(x => x.fireId === id)) return alert("המוצר כבר בהשוואה");
-            
-            compareList.push(p);
-            
-            if(compareList.length < 2) {
-                const btn = document.querySelector(`button[onclick="compareProduct('${id}')"]`);
-                btn.innerHTML = `<i class="fas fa-check"></i> נבחר (1/2)`;
-                btn.classList.add("text-green-600");
-                alert(`הוספת את ${p.name}. בחר מוצר נוסף להשוואה.`);
-            } else {
-                showComparisonModal();
-            }
-        };
-
-        function showComparisonModal() {
-            let html = `<div class="grid grid-cols-${compareList.length} gap-4 min-w-[300px]">`;
-            
-            compareList.forEach(p => {
-                html += `
-                <div class="border p-2 rounded-xl text-center bg-gray-50">
-                    <img src="${p.img}" class="h-20 mx-auto object-contain mb-2 mix-blend-multiply">
-                    <div class="font-bold text-sm h-10 overflow-hidden leading-tight">${p.name}</div>
-                    <div class="text-blue-600 font-black text-lg my-2">₪${p.price}</div>
-                    
-                    <div class="space-y-2 text-xs text-right mt-4 bg-white p-2 rounded-lg border">
-                        <div class="flex justify-between border-b pb-1">
-                            <span class="text-gray-400">משקל</span>
-                            <span class="font-bold">${p.specs?.weight || '-'}</span>
-                        </div>
-                        <div class="flex justify-between border-b pb-1">
-                            <span class="text-gray-400">כיסוי</span>
-                            <span class="font-bold">${p.specs?.cover || '-'}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-400">ייבוש</span>
-                            <span class="font-bold">${p.specs?.dry || '-'}</span>
-                        </div>
-                    </div>
-                </div>`;
-            });
-            html += `</div>`;
-            
-            document.getElementById('compareContent').innerHTML = html;
-            document.getElementById('compareModal').style.display = 'flex';
-            
-            // Reset UI buttons
-            document.querySelectorAll('button').forEach(b => {
-                if(b.innerHTML.includes('נבחר')) b.innerHTML = '<i class="fas fa-balance-scale"></i> השוואה';
-            });
-        }
-
-        // --- GEMINI CONSULTATION ---
-        window.askGemini = (productName) => {
-            const question = prompt(`התייעצות לגבי ${productName}:\nמה תרצה לשאול את ה-AI?`, "האם זה מתאים לחדר רטוב?");
-            if(question) {
-                // סימולציה של תשובה חכמה
-                setTimeout(() => {
-                    alert(`🤖 Gemini AI:\n\n"בדקתי את המפרט של ${productName}.\nלגבי שאלתך: '${question}'...\n\nהתשובה היא חיובית. המוצר מכיל פולימרים שמגבירים את העמידות למים ולכן הוא מצוין לחדרים רטובים, בתנאי שמבצעים איטום תחתיו."`);
-                }, 1000);
-            }
-        };
-
-        // --- CART & MODALS ---
         window.openProductModal = (fireId) => {
             currentProduct = products.find(p => p.fireId === fireId);
             if(!currentProduct) return;
-
             document.getElementById('modalTitle').innerText = currentProduct.name;
             document.getElementById('modalSku').innerText = `מק"ט: ${currentProduct.sku}`;
             document.getElementById('modalImg').src = currentProduct.img;
@@ -332,101 +201,99 @@
         };
 
         window.closeProductModal = () => document.getElementById('productModal').style.display = 'none';
+        window.addToCartFromModal = () => { const qty = parseInt(document.getElementById('modalQty').value); addToCart(currentProduct, qty); closeProductModal(); };
+        function addToCart(prod, qty) { const existing = cart.find(i => i.fireId === prod.fireId); if(existing) existing.qty += qty; else cart.push({ ...prod, qty }); updateCartUI(); }
+        function updateCartUI() { const count = cart.reduce((a,b) => a + b.qty, 0); const badge = document.getElementById('navCartBadge'); badge.innerText = count; if(count > 0) badge.classList.add('show'); else badge.classList.remove('show'); }
 
-        window.addToCartFromModal = () => {
-            const qty = parseInt(document.getElementById('modalQty').value);
-            addToCart(currentProduct, qty);
-            closeProductModal();
-        };
-
-        function addToCart(prod, qty) {
-            const existing = cart.find(i => i.fireId === prod.fireId);
-            if(existing) existing.qty += qty;
-            else cart.push({ ...prod, qty });
-            updateCartUI();
-        }
-
-        function updateCartUI() {
-            const count = cart.reduce((a,b) => a + b.qty, 0);
-            const badge = document.getElementById('navCartBadge');
-            badge.innerText = count;
-            if(count > 0) badge.classList.add('show'); else badge.classList.remove('show');
-        }
-
-        // --- AI & CHECKOUT ---
         window.parseSmartOrder = () => {
             const text = document.getElementById('smartInput').value;
             if(!text) return;
             let added = false;
             products.forEach(p => {
                 if(text.includes(p.name.split(' ')[0]) || (p.tags && p.tags.includes(text.split(' ')[0]))) {
-                     const qty = parseInt((text.match(/\d+/) || [1])[0]);
-                     addToCart(p, qty);
-                     added = true;
+                     const qty = parseInt((text.match(/\d+/) || [1])[0]); addToCart(p, qty); added = true;
                 }
             });
             if(added) {
                 alert("🤖 ה-AI פענח את ההזמנה והוסיף לעגלה!");
+                // LOG
+                logAction("שימוש ב-AI", `חיפוש חופשי: "${text}"`, "regular");
                 document.getElementById('smartInput').value = '';
-            } else {
-                alert("לא זוהה מוצר. נסה מילות מפתח כמו 'מלט', 'דבק'.");
-            }
+            } else { alert("לא זוהה מוצר. נסה מילות מפתח כמו 'מלט', 'דבק'."); }
         };
 
         window.openCheckout = async () => {
             if(cart.length === 0) return alert("העגלה ריקה");
             if(!confirm("לשלוח הזמנה?")) return;
-
             const orderData = {
-                clientName: currentUser.name,
-                clientNumber: currentUser.clientNumber || '99999',
+                clientName: currentUser.name, clientNumber: currentUser.clientNumber || '99999',
                 project: document.getElementById('projectSelect').value,
-                items: cart,
-                totalItems: cart.reduce((a,b)=>a+b.qty,0),
-                status: 'new',
-                location: { lat: 32.166, lng: 34.833 },
-                phone: "050-0000000",
-                createdAt: serverTimestamp()
+                items: cart, totalItems: cart.reduce((a,b)=>a+b.qty,0),
+                status: 'new', location: { lat: 32.166, lng: 34.833 },
+                phone: "050-0000000", createdAt: serverTimestamp()
             };
-
             await addDoc(collection(db, "orders"), orderData);
+            
+            // LOG
+            logAction("הזמנה חדשה", `הלקוח הזמין ${orderData.totalItems} פריטים`, "urgent");
+
             alert("ההזמנה נשלחה לחמ'ל בהצלחה!");
-            cart = [];
-            updateCartUI();
+            cart = []; updateCartUI();
         };
 
-        // --- HISTORY ---
+        window.askGemini = (productName) => {
+            const question = prompt(`התייעצות לגבי ${productName}:\nמה תרצה לשאול את ה-AI?`, "האם זה מתאים לחדר רטוב?");
+            if(question) {
+                // LOG
+                logAction("התייעצות מוצר", `מוצר: ${productName} | שאלה: ${question}`, "regular");
+                setTimeout(() => { alert(`🤖 Gemini AI:\n\n"בדקתי את המפרט של ${productName}.\nלגבי שאלתך: '${question}'...\n\nהתשובה היא חיובית."`); }, 1000);
+            }
+        };
+
+        window.compareProduct = (id) => {
+            const p = products.find(x => x.fireId === id);
+            if(compareList.find(x => x.fireId === id)) return alert("המוצר כבר בהשוואה");
+            compareList.push(p);
+            if(compareList.length < 2) {
+                const btn = document.querySelector(`button[onclick="compareProduct('${id}')"]`);
+                btn.innerHTML = `<i class="fas fa-check"></i> נבחר (1/2)`; btn.classList.add("text-green-600");
+                alert(`הוספת את ${p.name}. בחר מוצר נוסף להשוואה.`);
+            } else { showComparisonModal(); }
+        };
+
+        function showComparisonModal() {
+            let html = `<div class="grid grid-cols-${compareList.length} gap-4 min-w-[300px]">`;
+            compareList.forEach(p => {
+                html += `<div class="border p-2 rounded-xl text-center bg-gray-50"><img src="${p.img}" class="h-20 mx-auto object-contain mb-2 mix-blend-multiply"><div class="font-bold text-sm h-10 overflow-hidden leading-tight">${p.name}</div><div class="text-blue-600 font-black text-lg my-2">₪${p.price}</div><div class="space-y-2 text-xs text-right mt-4 bg-white p-2 rounded-lg border"><div class="flex justify-between border-b pb-1"><span class="text-gray-400">משקל</span><span class="font-bold">${p.specs?.weight || '-'}</span></div><div class="flex justify-between border-b pb-1"><span class="text-gray-400">כיסוי</span><span class="font-bold">${p.specs?.cover || '-'}</span></div><div class="flex justify-between"><span class="text-gray-400">ייבוש</span><span class="font-bold">${p.specs?.dry || '-'}</span></div></div></div>`;
+            });
+            html += `</div>`;
+            document.getElementById('compareContent').innerHTML = html;
+            document.getElementById('compareModal').style.display = 'flex';
+            document.querySelectorAll('button').forEach(b => { if(b.innerHTML.includes('נבחר')) b.innerHTML = '<i class="fas fa-balance-scale"></i> השוואה'; });
+            
+            // LOG
+            logAction("השוואת מוצרים", `השוואה בין ${compareList[0].name} ל-${compareList[1].name}`, "regular");
+        }
+
         window.toggleHistory = () => document.getElementById('historyModal').style.display = 'flex';
-        
         async function loadHistory() {
             const list = document.getElementById('historyList');
             const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
             const snap = await getDocs(q);
-            list.innerHTML = "";
-            let found = false;
+            list.innerHTML = ""; let found = false;
             snap.forEach(d => {
                 const o = d.data();
                 if(o.clientName === currentUser.name || !currentUser.uid) {
                     found = true;
                     const date = o.createdAt ? new Date(o.createdAt.seconds*1000).toLocaleDateString() : '-';
-                    list.innerHTML += `
-                    <div class="bg-slate-50 p-3 rounded-lg border flex justify-between items-center">
-                        <div><div class="font-bold text-sm">הזמנה: ${o.totalItems} פריטים</div><div class="text-xs text-gray-500">${date} | ${o.status}</div></div>
-                        <i class="fas fa-check-circle text-green-500"></i>
-                    </div>`;
+                    list.innerHTML += `<div class="bg-slate-50 p-3 rounded-lg border flex justify-between items-center"><div><div class="font-bold text-sm">הזמנה: ${o.totalItems} פריטים</div><div class="text-xs text-gray-500">${date} | ${o.status}</div></div><i class="fas fa-check-circle text-green-500"></i></div>`;
                 }
             });
             if(!found) list.innerHTML = '<div class="text-center text-gray-400">אין הזמנות קודמות</div>';
         }
 
-        // --- SEEDER (Only runs once if empty) ---
         async function seedProducts() {
-            const seedData = [
-                { name: "מלט לבן פורטלנד", sku: "CM-001", price: 45, img: "https://taasiya.co.il/content/images/thumbs/0008544_-_550.jpeg", specs: { weight: "25 קג", cover: "12 מ\"ר", dry: "24 שעות" }, tags: "מלט, בנייה" },
-                { name: "דבק קרמיקה 109", sku: "GL-109", price: 60, img: "https://www.jacobi.co.il/wp-content/uploads/2016/09/code-109.jpg", specs: { weight: "20 קג", cover: "5 מ\"ר", dry: "4 שעות" }, tags: "דבק, קרמיקה" },
-                { name: "שליכט צבעוני", sku: "PN-500", price: 180, img: "https://nirlat.com/wp-content/uploads/2018/12/M200_pack_shot.jpg", specs: { weight: "24 קג", cover: "8 מ\"ר", dry: "48 שעות" }, tags: "צבע, שליכט" },
-                { name: "טיח גבס", sku: "PL-200", price: 35, img: "https://res.cloudinary.com/rgl/image/upload/v1612769064/upload/pro-img/big/169.jpg", specs: { weight: "30 קג", cover: "10 מ\"ר", dry: "3 שעות" }, tags: "טיח, גבס" }
-            ];
+            const seedData = [{ name: "מלט לבן", sku: "CM-001", price: 45, img: "https://taasiya.co.il/content/images/thumbs/0008544_-_550.jpeg", specs: { weight: "25 קג", cover: "12 מ\"ר", dry: "24 שעות" }, tags: "מלט" }];
             for (const p of seedData) { await setDoc(doc(db, "products", "prod_" + Math.floor(Math.random()*1000)), { ...p, createdAt: serverTimestamp() }); }
             window.location.reload();
         }
