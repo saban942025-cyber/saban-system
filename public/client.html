@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Saban App Platinum 💎</title>
+    <title>Saban App Platinum 💎 | AI Scanner</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -11,85 +11,75 @@
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet">
 
     <style>
-        /* --- CORE STYLES --- */
-        body { 
-            background: #f0f2f5; 
-            font-family: 'Heebo', sans-serif; 
-            height: 100dvh; display: flex; flex-direction: column; overflow: hidden; 
-            -webkit-tap-highlight-color: transparent;
-        }
+        /* --- CORE --- */
+        body { background: #f0f2f5; font-family: 'Heebo', sans-serif; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; -webkit-tap-highlight-color: transparent; }
 
         /* --- X-RAY SCANNER ANIMATION --- */
         .scanner-container {
             position: relative; overflow: hidden; border-radius: 20px;
-            background: #1e293b; color: #0ea5e9; padding: 20px; margin-bottom: 20px;
-            min-height: 150px; display: flex; flex-direction: column; justify-content: center; align-items: center;
-            box-shadow: 0 10px 30px -10px rgba(14, 165, 233, 0.3);
+            background: #0f172a; color: #0ea5e9; padding: 20px; margin-bottom: 20px;
+            min-height: 180px; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            box-shadow: 0 10px 30px -10px rgba(14, 165, 233, 0.4); border: 1px solid #1e293b;
         }
         .scan-line {
             position: absolute; top: 0; left: 0; width: 100%; height: 4px;
-            background: #0ea5e9; box-shadow: 0 0 15px #0ea5e9;
-            animation: scanMove 2s linear infinite; z-index: 10;
-            display: none;
+            background: #0ea5e9; box-shadow: 0 0 20px #0ea5e9;
+            animation: scanMove 2s linear infinite; z-index: 10; display: none;
         }
-        .scan-text { font-family: monospace; opacity: 0.7; z-index: 5; text-align: center; white-space: pre-wrap; width: 100%; }
-        .scan-active .scan-line { display: block; }
-        .scan-active .scan-text { color: #86efac; text-shadow: 0 0 5px #22c55e; }
+        .scan-grid {
+            position: absolute; inset: 0; background-image: radial-gradient(#1e293b 1px, transparent 1px);
+            background-size: 20px 20px; opacity: 0.3; z-index: 1;
+        }
+        .scan-textarea {
+            width: 100%; height: 100%; background: transparent; border: none; outline: none;
+            color: #e2e8f0; font-family: monospace; font-size: 14px; resize: none; z-index: 5; text-align: center;
+        }
+        .scanner-container.active .scan-line { display: block; }
+        .scanner-container.active { border-color: #0ea5e9; }
 
         @keyframes scanMove { 0% { top: 0; } 50% { top: 100%; } 100% { top: 0; } }
 
-        /* --- PARSED ITEM CARD --- */
-        .parsed-item {
+        /* --- PARSED ITEM CARDS --- */
+        .parsed-card {
             background: white; border-radius: 16px; padding: 12px; margin-bottom: 10px;
             display: flex; align-items: center; gap: 12px; border: 1px solid #e2e8f0;
-            box-shadow: 0 4px 6px -2px rgba(0,0,0,0.05);
-            animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 4px 6px -2px rgba(0,0,0,0.05); transition: 0.2s;
+            animation: slideUp 0.3s ease-out; position: relative; overflow: hidden;
         }
-        .item-img { width: 48px; height: 48px; border-radius: 10px; background: #f1f5f9; object-fit: cover; }
-        .item-qty-box {
-            background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px;
-            width: 50px; text-align: center; padding: 5px; font-weight: bold;
-        }
-        .edit-btn { color: #3b82f6; font-size: 12px; font-weight: bold; cursor: pointer; }
+        .parsed-card:active { transform: scale(0.98); background: #f8fafc; }
+        
+        .card-type-product { border-right: 4px solid #10b981; }
+        .card-type-address { border-right: 4px solid #3b82f6; background: #eff6ff; }
+        .card-type-contact { border-right: 4px solid #8b5cf6; background: #f5f3ff; }
 
-        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .edit-badge { position: absolute; top: 5px; left: 5px; font-size: 10px; color: #94a3b8; }
 
-        /* --- PRODUCT SEARCH MODAL --- */
-        .search-modal {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100;
-            display: none; flex-direction: column; justify-content: flex-end;
+        /* --- MINI MAP --- */
+        .mini-map-card {
+            background: white; border-radius: 16px; overflow: hidden; margin: 10px 0;
+            border: 1px solid #e2e8f0; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
-        .search-sheet {
-            background: white; border-radius: 24px 24px 0 0; height: 80vh;
-            display: flex; flex-direction: column; padding: 20px;
-            animation: slideUp 0.3s ease-out;
+        .map-visual {
+            height: 100px; background: #e0e7ff url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); 
+            display: flex; align-items: center; justify-content: center; position: relative;
         }
-        .search-result-row {
-            display: flex; align-items: center; gap: 10px; padding: 12px;
-            border-bottom: 1px solid #f1f5f9; cursor: pointer;
-        }
-        .search-result-row:active { background: #eff6ff; }
+        .map-pin { font-size: 30px; color: #ef4444; filter: drop-shadow(0 5px 5px rgba(0,0,0,0.3)); animation: bounce 1s infinite; }
 
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-
-        /* --- UI COMPONENTS --- */
-        .glass-header {
-            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(0,0,0,0.05); padding: 12px 16px; z-index: 50;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .tab-bar {
-            background: white; border-top: 1px solid #e5e5ea; height: 70px;
-            display: flex; justify-content: space-around; align-items: center;
-            padding-bottom: env(safe-area-inset-bottom); z-index: 50;
-        }
-        .tab-item { color: #94a3b8; font-size: 10px; display: flex; flex-direction: column; align-items: center; }
+        /* --- UI UTILS --- */
+        .glass-header { background: rgba(255,255,255,0.95); backdrop-filter: blur(12px); padding: 12px 16px; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .tab-bar { background: white; border-top: 1px solid #e5e5ea; height: 70px; display: flex; justify-content: space-around; padding-bottom: env(safe-area-inset-bottom); }
+        .tab-item { color: #94a3b8; font-size: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; }
         .tab-item.active { color: #007aff; }
-        .view-container { flex: 1; position: relative; overflow: hidden; }
-        .view { position: absolute; inset: 0; overflow-y: auto; display: none; padding: 16px; padding-bottom: 80px; }
+        
+        .view { display: none; padding: 16px; padding-bottom: 90px; height: 100%; overflow-y: auto; }
         .view.active { display: block; }
-        .catalog-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .catalog-card { background: white; border-radius: 16px; padding: 10px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+
+        /* --- MODAL --- */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; display: none; align-items: flex-end; }
+        .modal-sheet { background: white; width: 100%; height: 80vh; border-radius: 20px 20px 0 0; display: flex; flex-direction: column; animation: slideUpBig 0.3s; }
+        @keyframes slideUpBig { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -99,308 +89,283 @@
             <div class="w-9 h-9 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-md">S</div>
             <div>
                 <div class="font-black text-slate-800 leading-none text-base">Saban App</div>
-                <div class="text-[10px] text-slate-500 font-bold">X-RAY EDITION ☢️</div>
+                <div class="text-[10px] text-slate-500 font-bold">PLATINUM AI 💎</div>
             </div>
         </div>
         <div class="relative cursor-pointer" onclick="switchTab('cart')">
-            <div class="w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-100">
-                <i class="fas fa-shopping-bag text-slate-700"></i>
-            </div>
+            <div class="w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-100"><i class="fas fa-shopping-bag text-slate-700"></i></div>
             <div id="cartBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm border border-white">0</div>
         </div>
     </header>
 
-    <div class="view-container">
+    <div class="flex-1 relative overflow-hidden">
         
-        <div id="view-catalog" class="view active">
-            <div class="sticky top-0 z-30 bg-[#f0f2f5] pb-4 pt-1">
-                <input id="searchMain" class="w-full bg-white h-12 rounded-2xl pl-10 pr-4 font-bold shadow-sm outline-none" placeholder="🔍 חפש מוצר..." oninput="filterCatalog()">
-            </div>
-            <div id="catalogGrid" class="catalog-grid"></div>
-        </div>
-
-        <div id="view-smart" class="view">
-            <div class="text-center mb-6">
-                <h2 class="text-2xl font-black text-slate-800">הדבקה חכמה</h2>
-                <p class="text-sm text-slate-500">הדבק רשימה והמערכת תהפוך אותה להזמנה</p>
+        <div id="view-smart" class="view active">
+            
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-6 text-center">
+                <h2 class="text-xl font-black text-slate-800 mb-1">שולחן עבודה חכם</h2>
+                <p class="text-xs text-slate-500">הדבק רשימה, כתובת ואיש קשר - אני אסדר הכל.</p>
             </div>
 
             <div id="scannerBox" class="scanner-container">
+                <div class="scan-grid"></div>
                 <div class="scan-line"></div>
-                <div id="scanContent" class="scan-text text-sm">הדבק כאן טקסט...</div>
-                <textarea id="smartInput" class="absolute inset-0 opacity-0 cursor-text" oninput="updateScanText()"></textarea>
+                <textarea id="smartInput" class="scan-textarea" placeholder="הדבק כאן את ההודעה מהווצאפ...&#10;לדוגמה:&#10;תשלח לרחוב ויצמן 44 רעננה&#10;10 שק מלט ודבק קרמיקה"></textarea>
             </div>
 
-            <button onclick="startXRayScan()" id="btnScan" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-4 rounded-2xl shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-transform text-lg">
-                <i class="fas fa-magic"></i> סרוק ופענח
+            <button onclick="startAIScan()" id="btnScan" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-4 rounded-2xl shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-transform text-lg">
+                <i class="fas fa-microchip"></i> סרוק ופענח (AI)
             </button>
 
-            <div id="scanResults" class="mt-8 hidden">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-bold text-slate-700">תוצאות סריקה</h3>
-                    <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-bold">זוהו <span id="scanCount">0</span> פריטים</span>
+            <div id="scanResults" class="mt-6 hidden pb-20">
+                <div class="flex justify-between items-center mb-3 px-1">
+                    <span class="text-xs font-bold text-slate-400 uppercase">תוצאות הפענוח</span>
+                    <button onclick="clearScan()" class="text-xs text-red-500 font-bold">נקה הכל</button>
                 </div>
-                <div id="parsedList"></div>
-                <button onclick="finalizeOrder()" class="w-full mt-4 bg-green-600 text-white font-bold py-3 rounded-xl shadow-lg">
-                    <i class="fas fa-check"></i> אשר והפק הזמנה (PDF)
+                
+                <div id="parsedList" class="space-y-2"></div>
+
+                <div id="geoBox"></div>
+
+                <button onclick="finalizeOrder()" class="w-full mt-6 bg-green-600 text-white font-bold py-3.5 rounded-xl shadow-lg flex items-center justify-center gap-2 active:scale-95 transition">
+                    <span>אשר והפק הזמנה</span> <i class="fas fa-file-pdf"></i>
                 </button>
             </div>
         </div>
 
+        <div id="view-catalog" class="view">
+            <div class="sticky top-0 z-10 bg-[#f0f2f5] pb-2">
+                <input id="searchMain" class="w-full bg-white h-12 rounded-2xl pl-4 pr-4 font-bold shadow-sm outline-none border border-transparent focus:border-blue-500" placeholder="🔍 חפש מוצר..." oninput="filterCatalog()">
+            </div>
+            <div id="catalogGrid" class="grid grid-cols-2 gap-3 mt-2"></div>
+        </div>
+
         <div id="view-cart" class="view">
-            <h2 class="text-2xl font-black mb-4">סיכום הזמנה</h2>
-            <div id="cartItems" class="space-y-3"></div>
-            <button onclick="sendToOffice()" class="w-full mt-6 bg-slate-900 text-white font-bold py-4 rounded-xl shadow-xl">
-                שלח לחמ"ל 🚀
-            </button>
+            <h2 class="text-2xl font-black mb-4">העגלה שלי</h2>
+            <div id="cartItems" class="space-y-3">
+                <div class="text-center text-gray-400 mt-10">העגלה ריקה</div>
+            </div>
         </div>
 
     </div>
 
-    <div id="swapModal" class="search-modal" onclick="closeSwap(event)">
-        <div class="search-sheet" onclick="event.stopPropagation()">
+    <div id="swapModal" class="modal-overlay" onclick="closeSwap(event)">
+        <div class="modal-sheet p-5" onclick="event.stopPropagation()">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="font-bold text-lg">החלפת מוצר</h3>
-                <button onclick="document.getElementById('swapModal').style.display='none'" class="text-gray-400"><i class="fas fa-times"></i></button>
+                <h3 class="font-bold text-lg text-slate-800">החלפת מוצר</h3>
+                <button onclick="closeSwap()" class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-500"><i class="fas fa-times"></i></button>
             </div>
-            <input id="swapSearch" class="w-full bg-slate-100 p-3 rounded-xl mb-4 font-bold outline-none border border-transparent focus:border-blue-500 transition" placeholder="הקלד שם מוצר להחלפה..." oninput="searchSwap()">
-            <div id="swapResults" class="flex-1 overflow-y-auto custom-scroll"></div>
+            <input id="swapSearch" class="w-full bg-slate-50 border border-slate-200 h-12 rounded-xl px-4 font-bold mb-4 outline-none focus:border-blue-500" placeholder="הקלד שם מוצר..." oninput="searchSwap()">
+            <div id="swapResults" class="flex-1 overflow-y-auto space-y-2"></div>
         </div>
     </div>
 
     <nav class="tab-bar">
-        <div class="tab-item active" onclick="switchTab('catalog')" id="tab-catalog"><i class="fas fa-th-large text-xl mb-1"></i> קטלוג</div>
-        <div class="tab-item" onclick="switchTab('smart')" id="tab-smart"><i class="fas fa-magic text-xl mb-1"></i> סורק</div>
+        <div class="tab-item active" onclick="switchTab('smart')" id="tab-smart"><i class="fas fa-magic text-xl mb-1"></i> סורק</div>
+        <div class="tab-item" onclick="switchTab('catalog')" id="tab-catalog"><i class="fas fa-th-large text-xl mb-1"></i> קטלוג</div>
         <div class="tab-item" onclick="switchTab('cart')" id="tab-cart"><i class="fas fa-shopping-bag text-xl mb-1"></i> עגלה</div>
     </nav>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // CONFIG
+        // CONFIG & KEYS
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
+        const GEMINI_KEY = "AIzaSyAdfGVrmr90Mp9ZhNMItD81iaE8OipKwz0";
+        
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // BRANCHES
+        const BRANCHES = [
+            { id: 'harash', name: 'סניף החרש', lat: 32.1462, lng: 34.8951 },
+            { id: 'talmid', name: 'סניף התלמיד', lat: 32.1554, lng: 34.8872 }
+        ];
+
         // STATE
         let catalog = [];
-        let parsedItems = []; // הפריטים שפוענחו
-        let activeEditIndex = -1;
+        let parsedData = [];
+        let addressInfo = null;
+        let contactInfo = null;
+        let activeSwapIndex = -1;
         let cart = [];
 
         // --- INIT ---
         (async () => {
             try {
                 const snap = await getDocs(collection(db, "products"));
-                catalog = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                catalog = snap.docs.map(d => ({id: d.id, ...d.data()}));
                 renderCatalog(catalog);
-            } catch(e) { console.warn("Offline Catalog"); }
+            } catch(e) { console.log("Offline mode"); }
         })();
 
-        // --- CATALOG LOGIC ---
-        function renderCatalog(items) {
-            const grid = document.getElementById('catalogGrid');
-            grid.innerHTML = items.map(p => `
-                <div class="catalog-card" onclick="addToCart('${p.id}')">
-                    <img src="${p.rich?.image || 'https://via.placeholder.com/100'}" class="mx-auto h-24 object-contain mb-2">
-                    <div class="font-bold text-sm text-slate-800 line-clamp-2 h-10">${p.core.name}</div>
-                    <div class="text-blue-600 font-bold mt-1">₪${p.core.price}</div>
-                </div>
-            `).join('');
-        }
-
-        window.filterCatalog = () => {
-            const q = document.getElementById('searchMain').value.toLowerCase();
-            renderCatalog(catalog.filter(p => p.core.name.toLowerCase().includes(q)));
-        };
-
-        // --- X-RAY SCANNER LOGIC ---
-        window.updateScanText = () => {
-            const txt = document.getElementById('smartInput').value;
-            document.getElementById('scanContent').innerText = txt || "הדבק כאן טקסט...";
-        };
-
-        window.startXRayScan = async () => {
+        // --- 1. AI SCANNER LOGIC ---
+        window.startAIScan = async () => {
             const text = document.getElementById('smartInput').value;
             if(!text) return alert("אנא הדבק טקסט");
 
-            // 1. אפקט ויזואלי
+            // UI Animation
             const box = document.getElementById('scannerBox');
-            box.classList.add('scan-active');
-            document.getElementById('btnScan').innerHTML = '<i class="fas fa-spinner fa-spin"></i> מפענח...';
+            box.classList.add('active');
+            document.getElementById('btnScan').innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> מפענח נתונים...';
             
-            // 2. השהייה דרמטית
-            await new Promise(r => setTimeout(r, 1500));
+            // Reset
+            parsedData = []; addressInfo = null; contactInfo = null;
 
-            // 3. לוגיקה של פענוח (Regex)
-            parsedItems = [];
+            // Process Lines
             const lines = text.split('\n');
-            
-            lines.forEach(line => {
+            let potentialAddress = "";
+
+            for(let line of lines) {
                 const clean = line.trim();
-                if(clean.length < 2) return;
-                
-                // חילוץ כמות
+                if(clean.length < 2) continue;
+                if(/בוקר|תודה|דחוף|שלום/.test(clean)) continue;
+
+                // A. איש קשר (טלפון)
+                const phoneMatch = clean.match(/(?:05|0\d)-?\d{7,8}/);
+                if(phoneMatch) {
+                    const phone = phoneMatch[0];
+                    const name = clean.replace(phone, '').replace(/[-:]/g,'').trim() || "לקוח";
+                    contactInfo = { name, phone };
+                    continue;
+                }
+
+                // B. כתובת
+                if(/רחוב|עיר|לכבוד|הגעה/.test(clean) && !/\d{3,}/.test(clean)) {
+                    potentialAddress = clean;
+                    continue;
+                }
+
+                // C. מוצר
                 const qtyMatch = clean.match(/^(\d+)/) || clean.match(/(\d+)$/);
                 let qty = qtyMatch ? parseInt(qtyMatch[0]) : 1;
+                let textOnly = clean.replace(/\d+/g, '').replace(/שקים|יח|מארז/g, '').trim();
                 
-                // ניקוי שם
-                let name = clean.replace(/\d+/g, '').replace(/שקים|יח|חבילה/g, '').trim();
+                // חיפוש בקטלוג
+                let match = catalog.find(p => p.core.name.includes(textOnly));
                 
-                // זיהוי מוצר בקטלוג
-                let match = catalog.find(p => p.core.name.includes(name));
-                
-                parsedItems.push({
-                    tempId: Date.now() + Math.random(),
-                    name: match ? match.core.name : name,
-                    image: match?.rich?.image || 'https://via.placeholder.com/50?text=?',
+                parsedData.push({
+                    type: 'product',
+                    name: match ? match.core.name : textOnly,
                     qty: qty,
                     price: match?.core?.price || 0,
-                    catalogId: match?.id || null
+                    img: match?.rich?.image,
+                    status: match ? 'found' : 'unknown'
                 });
-            });
+            }
 
-            // 4. סיום
-            box.classList.remove('scan-active');
+            // AI Geo (אם יש כתובת)
+            if(potentialAddress) {
+                addressInfo = { text: potentialAddress };
+                const coords = await getCoordinatesByAI(potentialAddress);
+                if(coords) {
+                    addressInfo.lat = coords.lat;
+                    addressInfo.lng = coords.lng;
+                    calcBranchDistances();
+                }
+            }
+
+            // Finish
+            box.classList.remove('active');
             document.getElementById('btnScan').innerHTML = '<i class="fas fa-magic"></i> סרוק שוב';
             document.getElementById('scanResults').classList.remove('hidden');
-            renderParsedList();
+            renderParsedResults();
         };
 
-        function renderParsedList() {
+        // --- 2. RENDER RESULTS ---
+        function renderParsedResults() {
             const list = document.getElementById('parsedList');
-            document.getElementById('scanCount').innerText = parsedItems.length;
-            
-            list.innerHTML = parsedItems.map((item, i) => `
-                <div class="parsed-item">
-                    <img src="${item.image}" class="item-img">
+            list.innerHTML = '';
+
+            // כרטיס איש קשר
+            if(contactInfo) {
+                list.innerHTML += `
+                <div class="parsed-card card-type-contact">
+                    <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-purple-600"><i class="fas fa-user"></i></div>
                     <div class="flex-1">
-                        <div class="font-bold text-sm text-slate-800" onclick="openSwap(${i})">${item.name}</div>
-                        <div class="edit-btn" onclick="openSwap(${i})">החלף מוצר <i class="fas fa-exchange-alt"></i></div>
+                        <div class="font-bold text-slate-800">${contactInfo.name}</div>
+                        <div class="text-xs text-slate-500">${contactInfo.phone}</div>
                     </div>
-                    <input type="number" class="item-qty-box outline-none" value="${item.qty}" onchange="updateParsedQty(${i}, this.value)">
-                    <i class="fas fa-times text-gray-300 px-2" onclick="removeParsed(${i})"></i>
-                </div>
-            `).join('');
+                </div>`;
+            }
+
+            // מוצרים
+            parsedData.forEach((item, i) => {
+                list.innerHTML += `
+                <div class="parsed-card card-type-product">
+                    <img src="${item.img || 'https://via.placeholder.com/50'}" class="w-12 h-12 rounded bg-slate-100 object-cover border">
+                    <div class="flex-1" onclick="openSwap(${i})">
+                        <div class="font-bold text-sm text-slate-800">${item.name}</div>
+                        <div class="text-xs text-blue-500 font-bold">לחץ להחלפה <i class="fas fa-exchange-alt"></i></div>
+                    </div>
+                    <input type="number" class="w-12 text-center bg-slate-50 border rounded p-1 font-bold outline-none focus:border-blue-500" value="${item.qty}" onchange="parsedData[${i}].qty=this.value">
+                    <i class="fas fa-times text-slate-300 px-2" onclick="removeItem(${i})"></i>
+                </div>`;
+            });
+
+            // מפת סניף
+            const geoBox = document.getElementById('geoBox');
+            if(addressInfo && addressInfo.branch) {
+                geoBox.innerHTML = `
+                <div class="mini-map-card">
+                    <div class="map-visual">
+                        <div class="map-pin"><i class="fas fa-map-marker-alt"></i></div>
+                        <div class="absolute bottom-2 bg-white/90 px-3 py-1 rounded-full text-xs font-bold shadow text-slate-800">
+                            ${addressInfo.text}
+                        </div>
+                    </div>
+                    <div class="p-3 flex justify-between items-center">
+                        <div>
+                            <div class="text-[10px] text-slate-400 font-bold uppercase">סניף מומלץ</div>
+                            <div class="font-bold text-green-600">${addressInfo.branch} (${addressInfo.dist} ק"מ)</div>
+                        </div>
+                        <a href="https://waze.com/ul?ll=${addressInfo.lat},${addressInfo.lng}&navigate=yes" target="_blank" class="bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg"><i class="fab fa-waze text-xl"></i></a>
+                    </div>
+                </div>`;
+            } else { geoBox.innerHTML = ''; }
         }
 
-        window.updateParsedQty = (i, val) => parsedItems[i].qty = parseInt(val);
-        window.removeParsed = (i) => { parsedItems.splice(i, 1); renderParsedList(); };
-
-        // --- LIVE SWAP (עריכה חכמה) ---
-        window.openSwap = (index) => {
-            activeEditIndex = index;
+        // --- 3. SWAP LOGIC (HAMBURGER) ---
+        window.openSwap = (i) => {
+            activeSwapIndex = i;
             document.getElementById('swapModal').style.display = 'flex';
             document.getElementById('swapSearch').value = '';
             document.getElementById('swapSearch').focus();
-            searchSwap(); // Show all initially
-        };
+            searchSwap();
+        }
+        
+        window.closeSwap = (e) => {
+            if(!e || e.target.id === 'swapModal' || !e.target) document.getElementById('swapModal').style.display = 'none';
+        }
 
         window.searchSwap = () => {
             const q = document.getElementById('swapSearch').value.toLowerCase();
             const res = document.getElementById('swapResults');
-            
-            const matches = catalog.filter(p => p.core.name.toLowerCase().includes(q)).slice(0, 20);
+            const matches = catalog.filter(p => p.core.name.toLowerCase().includes(q)).slice(0, 15);
             
             res.innerHTML = matches.map(p => `
-                <div class="search-result-row" onclick="performSwap('${p.id}')">
-                    <img src="${p.rich?.image}" class="w-10 h-10 rounded bg-slate-50 object-cover">
-                    <div class="flex-1 font-bold text-sm">${p.core.name}</div>
-                    <div class="text-green-600 font-bold text-xs">₪${p.core.price}</div>
-                </div>
-            `).join('');
-        };
-
-        window.performSwap = (catId) => {
-            const product = catalog.find(p => p.id === catId);
-            if(product && activeEditIndex > -1) {
-                parsedItems[activeEditIndex].name = product.core.name;
-                parsedItems[activeEditIndex].image = product.rich?.image;
-                parsedItems[activeEditIndex].price = product.core.price;
-                parsedItems[activeEditIndex].catalogId = product.id;
-                renderParsedList();
-                document.getElementById('swapModal').style.display = 'none';
-            }
-        };
-
-        window.closeSwap = (e) => {
-            if(e.target.id === 'swapModal') document.getElementById('swapModal').style.display = 'none';
-        };
-
-        // --- ORDER FINALIZATION ---
-        window.finalizeOrder = () => {
-            // העברת הפריטים לעגלה
-            parsedItems.forEach(i => cart.push(i));
-            updateCartUI();
-            switchTab('cart');
-            document.getElementById('scanResults').classList.add('hidden'); // Clear scan
-            parsedItems = [];
-        };
-
-        function updateCartUI() {
-            const el = document.getElementById('cartItems');
-            document.getElementById('cartBadge').innerText = cart.length;
-            document.getElementById('cartBadge').classList.toggle('hidden', cart.length === 0);
-            
-            if(cart.length === 0) el.innerHTML = '<div class="text-center text-gray-400 mt-10">העגלה ריקה</div>';
-            else el.innerHTML = cart.map(i => `
-                <div class="bg-white p-3 rounded-xl border flex justify-between items-center shadow-sm">
-                    <span class="font-bold text-sm">${i.name}</span>
-                    <span class="bg-slate-100 px-2 py-1 rounded text-xs font-bold">x${i.qty}</span>
+                <div class="flex items-center gap-3 p-3 border-b border-slate-100 active:bg-slate-50" onclick="performSwap('${p.id}')">
+                    <img src="${p.rich?.image}" class="w-10 h-10 rounded bg-white border object-contain">
+                    <div class="flex-1">
+                        <div class="font-bold text-sm text-slate-800">${p.core.name}</div>
+                        <div class="text-xs text-green-600 font-bold">₪${p.core.price}</div>
+                    </div>
                 </div>
             `).join('');
         }
 
-        window.sendToOffice = async () => {
-            if(cart.length === 0) return alert("אין פריטים");
-            
-            try {
-                // 1. יצירת PDF
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
-                
-                // הוספת גופן עברית (דרוש Base64 מלא, כאן נשתמש באנגלית לדמו)
-                doc.setFontSize(22);
-                doc.text("Saban Order #" + Math.floor(Math.random()*1000), 20, 20);
-                
-                let y = 40;
-                cart.forEach((item, i) => {
-                    doc.setFontSize(14);
-                    doc.text(`${i+1}. ${item.name} - Qty: ${item.qty}`, 20, y);
-                    y += 10;
-                });
-                
-                doc.save("Saban_Order.pdf"); // הורדה ללקוח
-
-                // 2. שליחה ל-Firebase (חמ"ל)
-                await addDoc(collection(db, "orders"), {
-                    clientName: "לקוח אפליקציה",
-                    items: cart,
-                    status: "new",
-                    createdAt: serverTimestamp(),
-                    source: "app_scanner"
-                });
-
-                alert("ההזמנה נשלחה בהצלחה לחמ\"ל! 🚀");
-                cart = []; updateCartUI(); switchTab('catalog');
-
-            } catch(e) { console.error(e); alert("שגיאה בשליחה"); }
-        };
-
-        window.switchTab = (id) => {
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            document.getElementById('view-'+id).classList.add('active');
-            document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
-            document.getElementById('tab-'+id).classList.add('active');
-        };
-
-        window.addToCart = (id) => {
+        window.performSwap = (id) => {
             const p = catalog.find(x => x.id === id);
-            cart.push({ name: p.core.name, qty: 1, price: p.core.price });
-            updateCartUI();
-        };
+            if(p && activeSwapIndex > -1) {
+                parsedData[activeSwapIndex].name = p.core.name;
+                parsedData[activeSwapIndex].price = p.core.price;
+                parsedData[activeSwapIndex].img = p.rich?.image;
+                renderParsedResults();
+                closeSwap();
+            }
+        }
 
-    </script>
-</body>
-</html>
+        // --- 4. FINALIZE & PDF ---
+        window.finalizeOrder = async () => {
+            if
