@@ -2,106 +2,341 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>חמ"ל הזמנות סבן PRO</title>
+    <title>חמ"ל הזמנות סבן PRO | Logistics Warfare</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;700&display=swap" rel="stylesheet">
+    
     <style>
-        body { background: #d1d7db; font-family: system-ui; height: 100vh; display: flex; }
-        .sidebar { width: 350px; background: white; border-left: 1px solid #ddd; display: flex; flex-direction: column; }
-        .main { flex: 1; background: #efeae2; display: flex; align-items: center; justify-content: center; }
-        .order-item { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; }
-        .order-item:hover { background: #f5f5f5; }
-        .order-item.new { border-right: 4px solid #25d366; background: #e8f5e9; }
+        body { background-color: #e2e8f0; font-family: 'Rubik', sans-serif; height: 100vh; display: flex; overflow: hidden; }
         
-        /* Print Area */
-        @media print { body * { visibility: hidden; } #printArea, #printArea * { visibility: visible; } #printArea { position: absolute; top:0; left:0; width:100%; } }
+        /* Layout */
+        .sidebar { width: 380px; background: white; border-left: 1px solid #cbd5e1; display: flex; flex-direction: column; z-index: 20; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
+        .main-area { flex: 1; background: #f1f5f9; position: relative; display: flex; flex-direction: column; }
+
+        /* Story Bar */
+        .story-bar { display: flex; gap: 10px; padding: 12px; overflow-x: auto; border-bottom: 1px solid #f1f5f9; background: #fff; }
+        .story-circle { 
+            width: 50px; height: 50px; border-radius: 50%; border: 2px solid #ddd; padding: 2px; cursor: pointer; transition: transform 0.2s; position: relative;
+        }
+        .story-circle img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+        .story-circle:hover { transform: scale(1.1); }
+        .story-active { border-color: #2563eb; }
+        .story-alert { border-color: #ef4444; animation: pulseRed 1.5s infinite; }
+        .story-label { font-size: 10px; text-align: center; margin-top: 2px; font-weight: bold; color: #64748b; }
+
+        @keyframes pulseRed { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+
+        /* Tabs */
+        .nav-tabs { display: flex; background: #1e293b; color: white; }
+        .nav-item { flex: 1; padding: 15px; text-align: center; cursor: pointer; font-size: 14px; font-weight: bold; opacity: 0.7; transition: 0.2s; border-bottom: 4px solid transparent; }
+        .nav-item:hover { opacity: 1; background: rgba(255,255,255,0.1); }
+        .nav-item.active { opacity: 1; border-bottom-color: #fbbf24; background: #0f172a; }
+
+        /* Transfer Card */
+        .transfer-card { 
+            background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; 
+            border-right: 5px solid #cbd5e1; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative;
+            transition: transform 0.2s;
+        }
+        .transfer-card:hover { transform: translateX(-5px); }
+        .prio-high { border-right-color: #ef4444; background: #fef2f2; }
+        .prio-med { border-right-color: #f59e0b; background: #fffbeb; }
+        .prio-low { border-right-color: #10b981; background: #f0fdf4; }
+
+        /* Modal Wizard */
+        .wizard-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .wizard-box { background: white; width: 500px; border-radius: 20px; padding: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); position: relative; animation: slideUp 0.3s; }
+        
+        .wiz-step { display: none; }
+        .wiz-step.active { display: block; }
+        
+        .big-btn { 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            padding: 20px; border: 2px solid #e2e8f0; border-radius: 15px; cursor: pointer; 
+            transition: 0.2s; font-weight: bold; color: #475569; width: 100%;
+        }
+        .big-btn:hover { border-color: #3b82f6; background: #eff6ff; color: #3b82f6; }
+        .big-btn.selected { border-color: #2563eb; background: #dbeafe; color: #1e40af; }
+
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
-        <div class="h-16 bg-gray-100 flex items-center px-4 font-bold border-b">📥 הזמנות נכנסות</div>
-        <div id="ordersList" class="flex-1 overflow-y-auto"></div>
-    </div>
+        <div class="story-bar" id="storyBar">
+            </div>
 
-    <div class="main" id="mainArea">
-        <div class="text-center text-gray-400">
-            <i class="fas fa-inbox text-6xl mb-4"></i>
-            <h2 class="text-xl">בחר הזמנה מהרשימה</h2>
+        <div class="nav-tabs">
+            <div class="nav-item active" onclick="switchView('orders')">📦 הזמנות</div>
+            <div class="nav-item" onclick="promptPassword('transfers')">🚚 העברות</div>
+        </div>
+
+        <div id="list-orders" class="flex-1 overflow-y-auto p-2 bg-slate-50">
+            </div>
+        
+        <div id="list-transfers" class="flex-1 overflow-y-auto p-2 bg-slate-100 hidden">
+            <div class="p-4">
+                <button onclick="openWizard()" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-slate-700 flex items-center justify-center gap-2">
+                    <i class="fas fa-plus-square text-yellow-400"></i> פתח משימת העברה
+                </button>
+            </div>
+            <div id="transfersContainer"></div>
         </div>
     </div>
 
-    <div id="printArea" class="hidden bg-white p-10 text-black">
-        <h1 class="text-2xl font-bold text-center border-b pb-4 mb-4">הזמנת עבודה - ח.סבן</h1>
-        <div id="printContent"></div>
+    <div class="main-area" id="workspace">
+        <div class="flex flex-col items-center justify-center h-full text-slate-400">
+            <i class="fas fa-network-wired text-6xl mb-4"></i>
+            <h2 class="text-2xl font-bold">חמ"ל לוגיסטי סבן</h2>
+            <p>בחר לשונית להתחלת עבודה</p>
+        </div>
+    </div>
+
+    <div id="wizardModal" class="wizard-overlay">
+        <div class="wizard-box">
+            <button onclick="closeWizard()" class="absolute top-4 left-4 text-gray-400 hover:text-red-500"><i class="fas fa-times text-xl"></i></button>
+            
+            <div id="step1" class="wiz-step active">
+                <h2 class="text-xl font-bold mb-6 text-center">מה המשימה?</h2>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="big-btn" onclick="setWizData('type', 'transfer'); nextStep(2)">
+                        <i class="fas fa-truck-loading text-3xl mb-2 text-blue-500"></i>
+                        העברה בין סניפים
+                    </div>
+                    <div class="big-btn" onclick="setWizData('type', 'order'); nextStep(2)">
+                        <i class="fas fa-file-invoice text-3xl mb-2 text-green-500"></i>
+                        הזמנת לקוח
+                    </div>
+                </div>
+            </div>
+
+            <div id="step2" class="wiz-step">
+                <h2 class="text-xl font-bold mb-4 text-center">האם הופקה תעודה בקומקס?</h2>
+                <div class="flex flex-col gap-4">
+                    <button onclick="setWizData('hasComax', true); document.getElementById('comaxInputDiv').classList.remove('hidden')" class="bg-blue-50 text-blue-700 py-3 rounded-lg font-bold border border-blue-200">
+                        ✅ כן, יש לי מספר
+                    </button>
+                    
+                    <div id="comaxInputDiv" class="hidden">
+                        <input id="wizComaxNum" type="number" class="w-full border-2 border-blue-500 rounded-lg p-3 text-center text-xl font-mono font-bold" placeholder="הקלד מספר תעודה (למשל 47128)">
+                        <button onclick="nextStep(3)" class="w-full mt-2 bg-blue-600 text-white py-2 rounded-lg font-bold">המשך</button>
+                    </div>
+
+                    <button onclick="setWizData('hasComax', false); nextStep(3)" class="bg-gray-100 text-gray-600 py-3 rounded-lg font-bold border border-gray-300">
+                        ❌ לא, פתח ללא מספר (טיוטה)
+                    </button>
+                </div>
+            </div>
+
+            <div id="step3" class="wiz-step">
+                <h2 class="text-xl font-bold mb-4 text-center">פרטי העברה</h2>
+                
+                <div class="grid grid-cols-2 gap-2 mb-4">
+                    <div class="big-btn p-2" id="btnHarashToTalmid" onclick="selectDirection('harash_to_talmid')">
+                        <span class="text-xs">החרש ➡ תלמיד</span>
+                    </div>
+                    <div class="big-btn p-2" id="btnTalmidToHarash" onclick="selectDirection('talmid_to_harash')">
+                        <span class="text-xs">תלמיד ➡ החרש</span>
+                    </div>
+                </div>
+
+                <textarea id="wizDesc" class="w-full border p-3 rounded-lg bg-slate-50 text-sm mb-3 h-20" placeholder="מה מעבירים? (למשל: משטח מלט לבן)"></textarea>
+                
+                <div class="flex gap-2 mb-4">
+                    <select id="wizAssignee" class="flex-1 border p-2 rounded text-sm">
+                        <option value="">בחר איש צוות (@)</option>
+                        <option value="ali">עלי (נהג)</option>
+                        <option value="oren">אורן (מחסן)</option>
+                        <option value="rami">רמי (מנהל)</option>
+                    </select>
+                    <select id="wizPrio" class="flex-1 border p-2 rounded text-sm">
+                        <option value="low">רגיל</option>
+                        <option value="high">🔥 דחוף אש</option>
+                    </select>
+                </div>
+
+                <button onclick="finishWizard()" class="w-full bg-slate-900 text-white py-3 rounded-xl font-bold shadow-lg">
+                    🚀 שגר משימה
+                </button>
+            </div>
+        </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Listen to Orders
-        const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
-        onSnapshot(q, (snap) => {
-            const list = document.getElementById('ordersList');
-            list.innerHTML = "";
+        // State
+        let wizardData = {};
+        let activeView = 'orders';
+
+        // --- 1. Story Logic ---
+        function renderStories(transfers) {
+            const bar = document.getElementById('storyBar');
+            const urgentCount = transfers.filter(t => t.priority === 'high' && t.status !== 'done').length;
             
-            snap.forEach(doc => {
-                const o = doc.data();
-                const div = document.createElement('div');
-                div.className = `order-item ${o.status === 'new' ? 'new' : ''}`;
-                div.innerHTML = `
+            let html = `
+            <div class="flex flex-col items-center gap-1" onclick="switchView('orders')">
+                <div class="story-circle ring-green border-green-500"><img src="https://ui-avatars.com/api/?name=Lobby&background=10b981&color=fff"></div>
+                <div class="story-label">לובי הזמנות</div>
+            </div>`;
+
+            // הסטורי המיוחד של ההעברות
+            const alertClass = urgentCount > 0 ? 'story-alert' : '';
+            html += `
+            <div class="flex flex-col items-center gap-1" onclick="promptPassword('transfers')">
+                <div class="story-circle ${alertClass} border-orange-500">
+                    <img src="https://ui-avatars.com/api/?name=Transfers&background=f59e0b&color=fff">
+                    ${urgentCount > 0 ? `<div class="absolute -top-1 -right-1 bg-red-600 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold animate-bounce">${urgentCount}</div>` : ''}
+                </div>
+                <div class="story-label">העברות</div>
+            </div>`;
+
+            bar.innerHTML = html;
+        }
+
+        // --- 2. Navigation & Security ---
+        window.switchView = (view) => {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            if(view === 'orders') {
+                document.getElementById('list-orders').classList.remove('hidden');
+                document.getElementById('list-transfers').classList.add('hidden');
+                document.querySelectorAll('.nav-item')[0].classList.add('active');
+            } else {
+                document.getElementById('list-orders').classList.add('hidden');
+                document.getElementById('list-transfers').classList.remove('hidden');
+                document.querySelectorAll('.nav-item')[1].classList.add('active');
+            }
+            activeView = view;
+        };
+
+        window.promptPassword = (target) => {
+            if(target === 'transfers') {
+                // בדיקה פשוטה, במציאות אפשר לשמור סשן
+                const pass = prompt("🔒 אזור מוגבל! הזמן סיסמת מנהל:");
+                if(pass === "1125") {
+                    switchView('transfers');
+                } else {
+                    alert("⛔ סיסמה שגויה. הגישה נחסמה.");
+                }
+            }
+        };
+
+        // --- 3. Wizard Logic ---
+        window.openWizard = () => {
+            wizardData = {};
+            document.getElementById('wizardModal').style.display = 'flex';
+            showStep(1);
+        };
+        window.closeWizard = () => document.getElementById('wizardModal').style.display = 'none';
+        
+        window.nextStep = (n) => showStep(n);
+        
+        function showStep(n) {
+            document.querySelectorAll('.wiz-step').forEach(el => el.classList.remove('active'));
+            document.getElementById(`step${n}`).classList.add('active');
+        }
+
+        window.setWizData = (key, val) => wizardData[key] = val;
+        
+        window.selectDirection = (dir) => {
+            wizardData.direction = dir;
+            document.querySelectorAll('#step3 .big-btn').forEach(b => b.classList.remove('selected'));
+            if(dir === 'harash_to_talmid') document.getElementById('btnHarashToTalmid').classList.add('selected');
+            else document.getElementById('btnTalmidToHarash').classList.add('selected');
+        };
+
+        window.finishWizard = async () => {
+            const comax = document.getElementById('wizComaxNum').value;
+            const desc = document.getElementById('wizDesc').value;
+            const assignee = document.getElementById('wizAssignee').value;
+            const prio = document.getElementById('wizPrio').value;
+
+            if(!desc) return alert("חובה למלא תיאור!");
+
+            const task = {
+                type: wizardData.type,
+                hasComax: wizardData.hasComax,
+                comaxNum: wizardData.hasComax ? comax : "ממתין למספר",
+                direction: wizardData.direction || "general",
+                desc: desc,
+                assignee: assignee,
+                priority: prio,
+                status: 'open',
+                createdAt: serverTimestamp(),
+                createdBy: "Admin"
+            };
+
+            await addDoc(collection(db, "transfers"), task);
+            closeWizard();
+            alert("WOW! המשימה נפתחה בהצלחה 🎉");
+        };
+
+        // --- 4. Listeners ---
+        
+        // Transfers Listener
+        const qTransfers = query(collection(db, "transfers"), orderBy("createdAt", "desc"));
+        onSnapshot(qTransfers, (snap) => {
+            const list = document.getElementById('transfersContainer');
+            list.innerHTML = "";
+            let items = [];
+            
+            snap.forEach(docSnap => {
+                const t = docSnap.data();
+                items.push(t);
+                
+                const prioClass = t.priority === 'high' ? 'prio-high' : (t.priority === 'medium' ? 'prio-med' : 'prio-low');
+                const icon = t.type === 'transfer' ? '<i class="fas fa-exchange-alt"></i>' : '<i class="fas fa-box"></i>';
+                
+                list.innerHTML += `
+                <div class="transfer-card ${prioClass}">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-xs font-bold text-gray-500 flex items-center gap-1">${icon} ${t.comaxNum}</span>
+                        ${t.priority==='high' ? '<span class="text-[10px] bg-red-500 text-white px-2 py-0.5 rounded-full animate-pulse">דחוף!</span>' : ''}
+                    </div>
+                    <div class="font-bold text-slate-800 text-sm mb-1">${t.direction === 'harash_to_talmid' ? 'החרש ➡ תלמיד' : (t.direction === 'talmid_to_harash' ? 'תלמיד ➡ החרש' : 'כללי')}</div>
+                    <div class="text-sm text-slate-600 mb-3">${t.desc}</div>
+                    
+                    <div class="flex justify-between items-center border-t pt-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs bg-slate-200 px-2 py-1 rounded">@${t.assignee || 'צוות'}</span>
+                        </div>
+                        <button onclick="closeTask('${docSnap.id}')" class="text-xs text-blue-600 font-bold hover:underline">סגור משימה ✓</button>
+                    </div>
+                </div>`;
+            });
+
+            // Update Story Bar based on transfers
+            renderStories(items);
+        });
+
+        // Orders Listener (Existing)
+        const qOrders = query(collection(db, "orders"), orderBy("createdAt", "desc"));
+        onSnapshot(qOrders, (snap) => {
+            const list = document.getElementById('list-orders');
+            list.innerHTML = "";
+            snap.forEach(docSnap => {
+                const o = docSnap.data();
+                list.innerHTML += `
+                <div class="bg-white p-3 border-b cursor-pointer hover:bg-gray-50" onclick="alert('פתח הזמנה ${docSnap.id}')">
                     <div class="font-bold text-sm">${o.clientName}</div>
-                    <div class="text-xs text-gray-500">${new Date(o.createdAt?.seconds*1000).toLocaleTimeString()} | ${o.items?.length} פריטים</div>
-                `;
-                div.onclick = () => showOrder(o);
-                list.appendChild(div);
+                    <div class="text-xs text-gray-500">${new Date(o.createdAt?.seconds*1000).toLocaleTimeString()}</div>
+                </div>`;
             });
         });
 
-        window.showOrder = (o) => {
-            const main = document.getElementById('mainArea');
-            const wazeBtn = o.wazeLink ? `<a href="${o.wazeLink}" target="_blank" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2"><i class="fab fa-waze"></i> נווט</a>` : '';
-            
-            main.innerHTML = `
-                <div class="bg-white p-8 rounded-xl shadow-xl w-[600px]">
-                    <div class="flex justify-between items-start mb-6 border-b pb-4">
-                        <div>
-                            <h2 class="text-2xl font-bold">${o.clientName}</h2>
-                            <p class="text-gray-500">${o.phone} | ${o.address}</p>
-                        </div>
-                        <div class="flex gap-2">
-                            ${wazeBtn}
-                            <button onclick="printCurrentOrder()" class="bg-gray-800 text-white px-4 py-2 rounded-lg font-bold"><i class="fas fa-print"></i> הדפס</button>
-                        </div>
-                    </div>
-                    
-                    <table class="w-full text-right border-collapse">
-                        <tr class="bg-gray-100"><th class="p-2">מוצר</th><th class="p-2 text-center">כמות</th></tr>
-                        ${o.items.map(i => `<tr class="border-b"><td class="p-2">${i.name}</td><td class="p-2 text-center font-bold">${i.qty}</td></tr>`).join('')}
-                    </table>
-                </div>
-            `;
-
-            // Prepare Print
-            document.getElementById('printContent').innerHTML = `
-                <div style="text-align:right; margin-bottom:20px;">
-                    <strong>לקוח:</strong> ${o.clientName}<br>
-                    <strong>כתובת:</strong> ${o.address}<br>
-                    <strong>טלפון:</strong> ${o.phone}
-                </div>
-                <table style="width:100%; border-collapse:collapse; margin-top:20px;">
-                    <thead><tr style="background:#eee;"><th style="border:1px solid #000; padding:5px;">מוצר</th><th style="border:1px solid #000; padding:5px;">כמות</th></tr></thead>
-                    <tbody>${o.items.map(i => `<tr><td style="border:1px solid #000; padding:5px;">${i.name}</td><td style="border:1px solid #000; padding:5px; text-align:center;">${i.qty}</td></tr>`).join('')}</tbody>
-                </table>
-            `;
+        window.closeTask = async (id) => {
+            if(confirm("לסגור משימה?")) {
+                await updateDoc(doc(db, "transfers", id), { status: 'done' });
+            }
         };
 
-        window.printCurrentOrder = () => window.print();
     </script>
 </body>
 </html>
