@@ -1,22 +1,60 @@
-import { SabanBrain } from './services/saban-brain.js';
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Saban Client | חנות חכמה</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>body { background: #f3f4f6; font-family: system-ui; padding-bottom: 80px; }</style>
+</head>
+<body>
 
-window.askGemini = async (productName) => {
-    const question = prompt(`התייעצות לגבי ${productName}:\nמה תרצה לשאול את ה-AI?`, "האם זה מתאים לחדר רטוב?");
-    
-    if(question) {
-        // חיווי ויזואלי ללקוח
-        const btn = event.target; // תפוס את הכפתור שנלחץ
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> בודק...';
-        
-        // שאילתה למוח
-        const answer = await SabanBrain.ask(question, `הלקוח שואל לגבי המוצר: ${productName}. המפרט הטכני ידוע לך.`);
-        
-        // החזרת מצב
-        btn.innerHTML = originalText;
-        alert(`🤖 תשובת המומחה (AI):\n\n"${answer}"`);
-        
-        // תיעוד לוג (אם יש לך את פונקציית הלוג)
-        // logAction("התייעצות AI", productName + ": " + question);
-    }
-};
+    <div class="bg-slate-900 text-white p-6 rounded-b-3xl shadow-lg mb-4">
+        <h1 class="text-2xl font-bold">שלום, לקוח יקר 👋</h1>
+        <p class="text-sm opacity-80">במה אפשר לעזור היום?</p>
+    </div>
+
+    <div id="grid" class="grid grid-cols-2 gap-4 px-4"></div>
+
+    <script type="module">
+        import { SabanBrain } from './services/saban-brain.js'; // ייבוא המוח
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const app = initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" });
+        const db = getFirestore(app);
+
+        onSnapshot(collection(db, "products"), (snap) => {
+            document.getElementById('grid').innerHTML = snap.docs.map(d => {
+                const p = d.data();
+                return `
+                <div class="bg-white rounded-xl overflow-hidden shadow-sm">
+                    <div class="h-32 bg-gray-100 flex items-center justify-center">
+                        <img src="${p.img}" class="h-full object-cover">
+                    </div>
+                    <div class="p-3">
+                        <div class="font-bold text-sm h-10 overflow-hidden">${p.name}</div>
+                        <div class="flex justify-between items-center mt-2">
+                            <span class="text-blue-600 font-bold">₪${p.price}</span>
+                            <button onclick="ask('${p.name}')" class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded border border-purple-200">
+                                <i class="fas fa-sparkles"></i> התייעץ
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        });
+
+        // פונקציית התייעצות ללקוח
+        window.ask = async (productName) => {
+            const q = prompt(`מה תרצה לשאול לגבי ${productName}?`, "האם זה מתאים לחדר רטוב?");
+            if(q) {
+                alert("🤖 בודק לך את זה...");
+                const ans = await SabanBrain.ask(q, `הלקוח שואל לגבי המוצר: ${productName}. ידוע לך המפרט הטכני.`);
+                alert(`תשובת המומחה:\n\n${ans}`);
+            }
+        };
+    </script>
+</body>
+</html>
