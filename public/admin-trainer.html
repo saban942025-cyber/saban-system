@@ -2,12 +2,15 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Saban Brain Trainer 🧠 | V8.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         body { background: #f0f2f5; font-family: system-ui; }
         .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
 </head>
 <body class="p-6">
@@ -35,16 +38,16 @@
                         <textarea id="inpAnswer" class="w-full border p-3 rounded-lg bg-slate-50 focus:bg-white h-32 resize-none" placeholder="התשובה המקצועית..."></textarea>
                     </div>
 
-                    <button onclick="trainBrain()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-lg shadow-lg flex items-center justify-center gap-2">
+                    <button onclick="trainBrain()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-lg shadow-lg flex items-center justify-center gap-2 transition active:scale-95">
                         <i class="fas fa-microchip"></i> צרוב לזיכרון
                     </button>
                 </div>
             </div>
 
             <div class="card bg-slate-800 text-white h-[500px] flex flex-col">
-                <h2 class="font-bold mb-4 border-b border-slate-700 pb-2 flex justify-between">
+                <h2 class="font-bold mb-4 border-b border-slate-700 pb-2 flex justify-between items-center">
                     <span>מאגר הידע הקיים</span>
-                    <button onclick="loadKnowledge()" class="text-xs text-blue-300 hover:text-white"><i class="fas fa-sync"></i> רענן</button>
+                    <button onclick="loadKnowledge()" class="text-xs text-blue-300 hover:text-white transition"><i class="fas fa-sync"></i> רענן</button>
                 </h2>
                 <div id="memoryList" class="flex-1 overflow-y-auto space-y-2 pr-2 custom-scroll">
                     <div class="text-center text-slate-500 mt-20">טוען נתונים...</div>
@@ -62,6 +65,9 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // API Key (For future AI tests within this page if needed)
+        const GEMINI_KEY = "AIzaSyD9plWwyTESFm24c_OTunf4mFAsAmfrgj0";
+
         // 1. צריבת ידע (Training)
         window.trainBrain = async () => {
             const q = document.getElementById('inpQuestion').value;
@@ -74,7 +80,8 @@
                 await addDoc(collection(db, "faq"), {
                     question: q,
                     answer: a,
-                    keywords: q.split(' ').filter(w => w.length > 2), // יצירת מילות מפתח אוטומטית
+                    // יצירת מילות מפתח בסיסית (מילים באורך מעל 2 תווים)
+                    keywords: q.split(' ').filter(w => w.length > 2),
                     createdAt: new Date(),
                     type: 'hard_rule' // סימון שזה חוק ברזל
                 });
@@ -93,19 +100,28 @@
             list.innerHTML = '';
             
             try {
+                // שאיבה מקולקשיין FAQ (במקום qa_knowledge הישן)
                 const q = query(collection(db, "faq"), orderBy("createdAt", "desc"));
                 const snap = await getDocs(q);
                 
+                if(snap.empty) {
+                    list.innerHTML = '<div class="text-center text-slate-500 mt-10">הזיכרון ריק</div>';
+                    return;
+                }
+
                 snap.forEach(d => {
                     const item = d.data();
                     list.innerHTML += `
-                    <div class="bg-slate-700 p-3 rounded border border-slate-600 relative group">
+                    <div class="bg-slate-700 p-3 rounded border border-slate-600 relative group transition hover:bg-slate-600">
                         <div class="font-bold text-purple-300 text-sm mb-1">Q: ${item.question}</div>
-                        <div class="text-slate-300 text-xs">A: ${item.answer}</div>
-                        <button onclick="deleteItem('${d.id}')" class="absolute top-2 left-2 text-red-400 opacity-0 group-hover:opacity-100 hover:scale-110 transition"><i class="fas fa-trash"></i></button>
+                        <div class="text-slate-300 text-xs leading-relaxed">A: ${item.answer}</div>
+                        <button onclick="deleteItem('${d.id}')" class="absolute top-2 left-2 text-red-400 opacity-0 group-hover:opacity-100 hover:scale-110 transition bg-slate-800 rounded-full p-1 w-6 h-6 flex items-center justify-center"><i class="fas fa-trash text-[10px]"></i></button>
                     </div>`;
                 });
-            } catch(e) { list.innerHTML = '<div class="text-red-400">שגיאה בטעינה</div>'; }
+            } catch(e) { 
+                console.error(e);
+                list.innerHTML = '<div class="text-red-400 text-center mt-10">שגיאה בטעינה</div>'; 
+            }
         };
 
         window.deleteItem = async (id) => {
@@ -115,7 +131,11 @@
             }
         }
 
+        // טעינה ראשונית
         loadKnowledge();
+        window.trainBrain = window.trainBrain;
+        window.loadKnowledge = window.loadKnowledge;
+        window.deleteItem = window.deleteItem;
     </script>
 </body>
 </html>
