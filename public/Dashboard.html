@@ -32,34 +32,40 @@
             border-radius: 12px; padding: 0; overflow: hidden;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
-        .custom-popup .leaflet-popup-content { margin: 0; width: 240px !important; }
+        .custom-popup .leaflet-popup-content { margin: 0; width: 260px !important; }
         
-        .popup-header { background: #0f172a; color: white; padding: 10px; font-weight: bold; font-size: 14px; }
-        .popup-body { padding: 12px; font-size: 13px; color: #334155; }
+        .popup-header { background: #0f172a; color: white; padding: 12px; font-weight: bold; font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
+        .popup-body { padding: 15px; font-size: 13px; color: #334155; line-height: 1.5; }
         .popup-footer { 
-            background: #f1f5f9; padding: 8px; text-align: center; 
-            border-top: 1px solid #e2e8f0; 
+            background: #f8fafc; padding: 10px; text-align: center; 
+            border-top: 1px solid #e2e8f0; display: flex; gap: 5px;
         }
-        .waze-btn {
-            background: #2563eb; color: white; padding: 6px 12px; 
-            border-radius: 20px; font-size: 12px; font-weight: bold; 
-            display: inline-flex; align-items: center; gap: 5px; text-decoration: none;
+        
+        .action-btn {
+            flex: 1; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: bold; 
+            display: inline-flex; align-items: center; justify-content: center; gap: 5px; 
+            text-decoration: none; transition: 0.2s;
         }
+        .btn-waze { background: #3b82f6; color: white; }
+        .btn-waze:hover { background: #2563eb; }
+        .btn-call { background: #10b981; color: white; }
+        .btn-call:hover { background: #059669; }
         
         /* Pulse Animation for Drivers */
-        .driver-icon { filter: drop-shadow(0 0 5px rgba(37, 99, 235, 0.5)); }
+        .driver-icon { filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.6)); transition: transform 0.3s; }
+        .driver-icon:hover { transform: scale(1.2); }
     </style>
 </head>
 <body>
 
     <div class="controls">
-        <div class="ctrl-btn active" onclick="toggleLayer('all')">
+        <div class="ctrl-btn active" id="btn-all" onclick="toggleLayer('all')">
             <i class="fas fa-layer-group"></i> הכל
         </div>
-        <div class="ctrl-btn" onclick="toggleLayer('drivers')">
+        <div class="ctrl-btn" id="btn-drivers" onclick="toggleLayer('drivers')">
             <i class="fas fa-truck text-blue-600"></i> נהגים
         </div>
-        <div class="ctrl-btn" onclick="toggleLayer('orders')">
+        <div class="ctrl-btn" id="btn-orders" onclick="toggleLayer('orders')">
             <i class="fas fa-box text-red-500"></i> הזמנות
         </div>
     </div>
@@ -78,121 +84,142 @@
         const db = getFirestore(app);
 
         // --- MAP INIT ---
-        // מרכז המפה (ישראל / השרון)
-        const map = L.map('map', { zoomControl: false }).setView([32.1848, 34.8707], 13);
+        // מרכז המפה (השרון / טייבה)
+        const map = L.map('map', { zoomControl: false }).setView([32.2600, 34.9700], 12);
         
+        // מפת בסיס (עיצוב נקי ובהיר שמשתלב עם החמ"ל)
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: 'SabanOS',
-            maxZoom: 19
+            attribution: 'SabanOS Map',
+            maxZoom: 20
         }).addTo(map);
 
-        // Icons
+        // --- ICONS ---
         const icons = {
             truck: L.icon({
                 iconUrl: 'https://cdn-icons-png.flaticon.com/512/713/713311.png',
-                iconSize: [36, 36], iconAnchor: [18, 18], popupAnchor: [0, -20],
+                iconSize: [40, 40], iconAnchor: [20, 20], popupAnchor: [0, -20],
                 className: 'driver-icon'
             }),
             box: L.icon({
-                iconUrl: 'https://cdn-icons-png.flaticon.com/512/2897/2897785.png', // Red box
-                iconSize: [30, 30], iconAnchor: [15, 15], popupAnchor: [0, -15]
+                iconUrl: 'https://cdn-icons-png.flaticon.com/512/679/679720.png', // קופסה חומה
+                iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -30]
             }),
             store: L.icon({
-                iconUrl: 'https://cdn-icons-png.flaticon.com/512/869/869636.png',
-                iconSize: [40, 40], iconAnchor: [20, 20]
+                iconUrl: 'https://cdn-icons-png.flaticon.com/512/869/869636.png', // חנות
+                iconSize: [45, 45], iconAnchor: [22, 45], popupAnchor: [0, -40]
             })
         };
 
-        // Layers
+        // --- LAYERS ---
         const layers = {
             drivers: L.layerGroup().addTo(map),
             orders: L.layerGroup().addTo(map),
             stores: L.layerGroup().addTo(map)
         };
 
-        // --- DATA LISTENERS ---
-
-        // 1. נהגים
+        // --- 1. האזנה לנהגים (Drivers Listener) ---
         onSnapshot(query(collection(db, "users"), where("role", "==", "driver")), (snap) => {
             layers.drivers.clearLayers();
             snap.forEach(doc => {
                 const d = doc.data();
-                if (d.location) {
+                // אם יש מיקום - הצג על המפה
+                if (d.location && d.location.lat) {
                     const marker = L.marker([d.location.lat, d.location.lng], {icon: icons.truck});
-                    marker.bindPopup(createPopup(d.name, "נהג משאית", "בתנועה", d.phone, d.location));
+                    
+                    const content = `
+                        <div class="font-bold text-gray-700">נהג: ${d.name}</div>
+                        <div class="text-green-600 text-xs mt-1">● בתנועה</div>
+                    `;
+                    
+                    marker.bindPopup(createPopup(d.name, "נהג הפצה", "סטטוס: פעיל", d.phone, d.location));
                     layers.drivers.addLayer(marker);
                 }
             });
         });
 
-        // 2. הזמנות פתוחות (רק כאלה עם מיקום)
-        onSnapshot(query(collection(db, "orders"), where("status", "in", ["new", "picking", "shipping"])), (snap) => {
+        // --- 2. האזנה להזמנות פתוחות (Orders Listener) ---
+        // מציג רק הזמנות שאינן "נמסרו" ושיש להן מיקום
+        onSnapshot(query(collection(db, "orders"), where("status", "in", ["new", "picking", "shipping", "active"])), (snap) => {
             layers.orders.clearLayers();
             snap.forEach(doc => {
                 const o = doc.data();
-                if (o.location) {
+                if (o.location && o.location.lat) {
                     const marker = L.marker([o.location.lat, o.location.lng], {icon: icons.box});
-                    const statusText = o.status === 'new' ? 'חדש' : (o.status==='picking'?'בליקוט':'בדרך');
-                    marker.bindPopup(createPopup(o.clientName, `הזמנה: ${statusText}`, o.items.length + " פריטים", o.phone, o.location));
+                    
+                    let statusText = "הזמנה חדשה";
+                    if(o.status === 'picking') statusText = "בליקוט (מחסן)";
+                    if(o.status === 'shipping') statusText = "בדרך ללקוח";
+
+                    const desc = `${o.items ? o.items.length : 0} פריטים<br>סטטוס: <b>${statusText}</b>`;
+                    
+                    marker.bindPopup(createPopup(o.clientName, "הזמנת רכש", desc, o.phone, o.location));
                     layers.orders.addLayer(marker);
                 }
             });
         });
 
-        // 3. סניפים קבועים
+        // --- 3. סניפים קבועים (Static Branches) ---
         const branches = [
-            {lat: 32.1462, lng: 34.8951, name: "סניף החרש"},
-            {lat: 32.1554, lng: 34.8872, name: "סניף התלמיד"}
+            {lat: 32.2630, lng: 34.9750, name: "סניף החרש (ראשי)"}, // מיקום משוער בטייבה
+            {lat: 32.2700, lng: 34.9800, name: "סניף התלמיד"}
         ];
+        
         branches.forEach(b => {
-            L.marker([b.lat, b.lng], {icon: icons.store}).addTo(layers.stores)
-             .bindPopup(`<b>${b.name}</b><br>מחסן ראשי`);
+            const m = L.marker([b.lat, b.lng], {icon: icons.store});
+            m.bindPopup(createPopup(b.name, "מחסן לוגיסטי", "נקודת יציאה", "09-1234567", {lat: b.lat, lng: b.lng}));
+            layers.stores.addLayer(m);
         });
 
-        // --- UTILS ---
-
-        function createPopup(title, sub, desc, phone, loc) {
+        // --- UTILS: Popup Generator ---
+        function createPopup(title, subtitle, desc, phone, loc) {
             const wazeLink = `https://waze.com/ul?ll=${loc.lat},${loc.lng}&navigate=yes`;
+            const phoneLink = phone ? `tel:${phone}` : '#';
+            
             return `
             <div class="custom-popup">
-                <div class="popup-header">${title}</div>
+                <div class="popup-header">
+                    <span>${title}</span>
+                    <i class="fas fa-info-circle opacity-50"></i>
+                </div>
                 <div class="popup-body">
-                    <div class="font-bold text-gray-700">${sub}</div>
-                    <div class="text-gray-500 mb-2">${desc}</div>
-                    ${phone ? `<div class="text-xs"><i class="fas fa-phone"></i> ${phone}</div>` : ''}
+                    <div class="text-gray-500 text-xs uppercase font-bold mb-1">${subtitle}</div>
+                    <div class="text-slate-800 mb-2">${desc}</div>
                 </div>
                 <div class="popup-footer">
-                    <a href="${wazeLink}" target="_blank" class="waze-btn">
-                        <i class="fab fa-waze"></i> נווט ליעד
+                    <a href="${wazeLink}" target="_blank" class="action-btn btn-waze">
+                        <i class="fab fa-waze"></i> נווט
                     </a>
+                    ${phone ? `<a href="${phoneLink}" class="action-btn btn-call"><i class="fas fa-phone"></i> חייג</a>` : ''}
                 </div>
             </div>`;
         }
 
+        // --- FILTER LOGIC ---
         window.toggleLayer = (type) => {
-            // UI Toggle
+            // UI Update
             document.querySelectorAll('.ctrl-btn').forEach(b => b.classList.remove('active'));
-            event.currentTarget.classList.add('active');
+            document.getElementById(`btn-${type}`).classList.add('active');
 
-            // Map Logic
+            // Layer Logic
             if(type === 'all') {
-                map.addLayer(layers.drivers);
-                map.addLayer(layers.orders);
+                if(!map.hasLayer(layers.drivers)) map.addLayer(layers.drivers);
+                if(!map.hasLayer(layers.orders)) map.addLayer(layers.orders);
             } else if (type === 'drivers') {
-                map.addLayer(layers.drivers);
-                map.removeLayer(layers.orders);
-            } else {
-                map.removeLayer(layers.drivers);
-                map.addLayer(layers.orders);
+                if(!map.hasLayer(layers.drivers)) map.addLayer(layers.drivers);
+                if(map.hasLayer(layers.orders)) map.removeLayer(layers.orders);
+            } else if (type === 'orders') {
+                if(map.hasLayer(layers.drivers)) map.removeLayer(layers.drivers);
+                if(!map.hasLayer(layers.orders)) map.addLayer(layers.orders);
             }
         };
 
-        // --- DEMO MODE (אם אין נתונים) ---
-        // הוספת נהג דמו לצורך תצוגה
+        // --- DEMO DRIVER (אם אין נתונים) ---
+        // שים לב: זה רק ויזואלי כדי שתראה שהמפה עובדת
         setTimeout(() => {
             if (layers.drivers.getLayers().length === 0) {
-                const demoDriver = L.marker([32.180, 34.860], {icon: icons.truck}).addTo(layers.drivers);
-                demoDriver.bindPopup(createPopup("עלי (דמו)", "נהג תורן", "בדרך ללקוח", "050...", {lat:32.18, lng:34.86}));
+                const demoLoc = {lat: 32.2650, lng: 34.9600};
+                const m = L.marker([demoLoc.lat, demoLoc.lng], {icon: icons.truck}).addTo(layers.drivers);
+                m.bindPopup(createPopup("רכב הדגמה", "משאית מנוף", "בבדיקת מערכת", "", demoLoc));
             }
         }, 2000);
 
