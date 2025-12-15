@@ -1,4 +1,230 @@
-// --- NAVIGATION CONTROLLER ---
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>SabanOS Ultimate</title>
+    <link rel="manifest" href="manifest.json">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- עיצוב היברידי (iOS / Windows) --- */
+        :root {
+            --app-bg: #f2f2f7;
+            --glass: rgba(255, 255, 255, 0.85);
+            --blur: blur(20px);
+            --primary: #007aff;
+            --safe-bottom: env(safe-area-inset-bottom);
+        }
+
+        body { 
+            background-color: #000; 
+            font-family: 'Heebo', -apple-system, sans-serif; 
+            height: 100dvh; overflow: hidden; 
+            display: flex; justify-content: center; align-items: center;
+            color: #1c1c1e;
+        }
+
+        /* --- המעטפת הראשית --- */
+        #os-shell {
+            width: 100%; height: 100%;
+            background: var(--app-bg);
+            position: relative; overflow: hidden;
+            display: flex; flex-direction: column;
+            transition: all 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+        }
+
+        /* התאמה למחשב (דמוי חלונות) */
+        @media (min-width: 1024px) {
+            #os-shell {
+                max-width: 1400px; height: 95vh;
+                border-radius: 18px;
+                box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+                border: 1px solid rgba(255,255,255,0.1);
+            }
+            body { background: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop') no-repeat center center/cover; }
+        }
+
+        /* --- מסך טעינה (Splash) --- */
+        #splash {
+            position: absolute; inset: 0; z-index: 100;
+            background: #0f172a; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center;
+            transition: opacity 0.6s ease-out;
+        }
+        .logo-anim { animation: breathe 3s infinite ease-in-out; }
+        @keyframes breathe { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.8; } }
+
+        /* --- שער כניסה (Permission Gate) --- */
+        #permission-gate {
+            position: absolute; inset: 0; z-index: 90;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(10px);
+            display: none; align-items: center; justify-content: center;
+        }
+        .gate-card {
+            background: white; width: 90%; max-width: 320px;
+            border-radius: 24px; padding: 30px; text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            animation: popUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        /* --- סרגל ניווט תחתון --- */
+        .glass-nav {
+            height: calc(60px + var(--safe-bottom));
+            background: var(--glass); backdrop-filter: var(--blur);
+            -webkit-backdrop-filter: var(--blur);
+            border-top: 1px solid rgba(0,0,0,0.1);
+            position: absolute; bottom: 0; width: 100%;
+            display: flex; justify-content: space-around; align-items: flex-start;
+            padding-top: 10px; z-index: 50;
+        }
+        .nav-item {
+            display: flex; flex-direction: column; align-items: center;
+            color: #999; font-size: 10px; font-weight: 500;
+            transition: transform 0.1s; cursor: pointer;
+        }
+        .nav-item.active { color: var(--primary); }
+        .nav-item:active { transform: scale(0.9); }
+        .nav-icon { font-size: 24px; margin-bottom: 4px; }
+
+        /* --- מסגרת התוכן (Iframe) --- */
+        #app-frame {
+            flex: 1; border: none; width: 100%; height: 100%;
+            background: white; padding-bottom: 60px; /* מקום לניווט */
+        }
+
+        /* --- התקנת PWA --- */
+        #pwa-install {
+            position: absolute; top: 10px; right: 10px; z-index: 80;
+            background: white; color: black; padding: 8px 16px;
+            border-radius: 20px; font-size: 12px; font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2); display: none; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="splash">
+        <div class="w-28 h-28 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-[2rem] flex items-center justify-center shadow-2xl logo-anim mb-6 border-4 border-white/10">
+            <i class="fas fa-cubes text-white text-5xl drop-shadow-md"></i>
+        </div>
+        <h1 class="text-3xl font-black text-white tracking-wider">SabanOS</h1>
+        <p class="text-blue-300 text-sm font-mono mt-2" id="loading-text">טוען מערכת...</p>
+    </div>
+
+    <div id="os-shell">
+        <div id="pwa-install" onclick="installPWA()"><i class="fas fa-download"></i> התקן</div>
+        
+        <iframe id="app-frame" name="content"></iframe>
+
+        <nav class="glass-nav" id="main-nav">
+            <div class="nav-item active" onclick="navTo('orders')">
+                <i class="fas fa-inbox nav-icon"></i>
+                <span>הזמנות</span>
+            </div>
+            <div class="nav-item" onclick="navTo('transfers')">
+                <i class="fas fa-truck-loading nav-icon"></i>
+                <span>העברות</span>
+            </div>
+            <div class="nav-item" onclick="navTo('map')">
+                <i class="fas fa-map-marked-alt nav-icon"></i>
+                <span>מפה חיה</span>
+            </div>
+            <div class="nav-item" onclick="navTo('settings')">
+                <i class="fas fa-cog nav-icon"></i>
+                <span>הגדרות</span>
+            </div>
+        </nav>
+    </div>
+
+    <div id="permission-gate">
+        <div class="gate-card">
+            <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                <i class="fas fa-bell"></i>
+            </div>
+            <h2 class="text-xl font-black text-slate-800 mb-2">ברוכים הבאים</h2>
+            <p class="text-sm text-slate-500 mb-6 leading-relaxed">
+                לחץ לאישור התראות וסאונד והתחל עבודה.
+            </p>
+            <button onclick="unlockApp()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-lg shadow-lg active:scale-95 transition-transform">
+                התחל עבודה 🚀
+            </button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { initPresence } from './js/presence.js'; // הפעלת מנגנון "מחובר/מנותק"
+
+        // Config
+        const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // הפעלת מעקב נוכחות (כדי שהמנהל יראה שאני מחובר)
+        initPresence(app);
+
+        let deferredPrompt;
+
+        // --- 1. טעינה ראשונית ---
+        window.onload = async () => {
+            const params = new URLSearchParams(window.location.search);
+            const uid = params.get('uid');
+            const statusText = document.getElementById('loading-text');
+
+            if(uid) {
+                statusText.innerText = "מאמת משתמש...";
+                try {
+                    const snap = await getDoc(doc(db, "users", uid));
+                    if(snap.exists()) {
+                        const user = snap.data();
+                        
+                        // שמירת נתונים לשימוש האפליקציות הפנימיות
+                        localStorage.setItem('saban_user', JSON.stringify({uid, ...user}));
+                        
+                        // אם זה לקוח - מפנים לאפליקציית לקוח (יוצאים מהמעטפת הזו)
+                        if(user.role === 'client') {
+                            window.location.href = `client-app.html?uid=${uid}`;
+                            return; 
+                        }
+                    }
+                } catch(e) { console.error("Login Check Error:", e); }
+            }
+
+            // סיום טעינה והצגת מסך פתיחה
+            setTimeout(() => {
+                document.getElementById('splash').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('splash').remove();
+                    document.getElementById('permission-gate').style.display = 'flex';
+                }, 600);
+            }, 1200);
+        };
+
+        // --- 2. שחרור חסימות וטעינת החמ"ל ---
+        window.unlockApp = () => {
+            const loadApp = () => {
+                document.getElementById('permission-gate').style.display = 'none';
+                // טעינת החמ"ל בתוך ה-iframe עם פרמטר שמסתיר את הסרגל הצידי שלו במובייל
+                document.getElementById('app-frame').src = "whatsapp-center2.html?embed=true";
+            };
+
+            // ניסיון לנגן סאונד (כדי לפתוח את ה-AudioContext)
+            const a = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAGZGF0YQQAAAAAAA==");
+            
+            // שימוש ב-Promise כדי לא להיתקע אם יש שגיאה
+            a.play()
+                .then(() => { console.log("Audio Unlocked"); loadApp(); })
+                .catch((e) => { console.warn("Audio blocked, continuing anyway", e); loadApp(); });
+        };
+
+        // --- 3. ניווט (טאבים) ---
         window.navTo = (section) => {
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             event.currentTarget.classList.add('active');
@@ -6,24 +232,45 @@
             const frame = document.getElementById('app-frame');
             
             if (section === 'map') {
-                // טעינת מודול המפה
+                // מעבר למפה חיה
                 frame.src = "Dashboard.html?embed=true";
             } 
             else if (section === 'settings') {
-                // טעינת מודול הגדרות (אם קיים)
+                // מעבר להגדרות (setup.html)
                 frame.src = "setup.html"; 
             }
             else {
-                // חזרה לחמ"ל ושינוי טאב פנימי
-                // בדיקה אם החמ"ל כבר טעון כדי למנוע טעינה מחדש
+                // חזרה לחמ"ל והחלפת טאב פנימי
                 if (frame.contentWindow.location.pathname.includes('whatsapp-center2.html')) {
+                    // אם כבר בחמ"ל, רק שלח פקודה
                     frame.contentWindow.postMessage({ action: 'switchTab', tab: section }, '*');
                 } else {
+                    // אם היינו במפה, טען מחדש את החמ"ל ואז שלח פקודה
                     frame.src = "whatsapp-center2.html?embed=true";
-                    // נחכה שהטעינה תסתיים ואז נחליף טאב
                     frame.onload = () => {
                         frame.contentWindow.postMessage({ action: 'switchTab', tab: section }, '*');
                     };
                 }
             }
         };
+
+        // --- 4. התקנת אפליקציה (PWA) ---
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('pwa-install').style.display = 'block';
+        });
+
+        window.installPWA = async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    document.getElementById('pwa-install').style.display = 'none';
+                }
+                deferredPrompt = null;
+            }
+        };
+    </script>
+</body>
+</html>
