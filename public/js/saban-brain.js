@@ -3,7 +3,7 @@
 const CONFIG = {
     keys: {
         // המפתח שלך (ודא שהוא פעיל ב-Google AI Studio)
-        gemini: "AIzaSyAdfGVrmr90Mp9ZhNMItD81iaE8OipKwz0", 
+        gemini: "AIzaSyD9plWwyTESFm24c_OTunf4mFAsAmfrgj0", 
         googleSearch: "AIzaSyDLkShn6lBBew-PJJWtzvAe_14UF9Kv-QI",
         googleCX: "56qt2qgr7up25uvi5yjnmgqr3" 
     },
@@ -129,3 +129,4 @@ export const SabanBrain = {
         }
     }
 };
+
