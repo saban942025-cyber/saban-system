@@ -1,43 +1,43 @@
-// public/services/saban-brain.js
+// public/js/saban-brain.js
 
-// --- CONFIGURATION ---
 const CONFIG = {
     keys: {
-        gemini: "AIzaSyAdfGVrmr90Mp9ZhNMItD81iaE8OipKwz0",
+        // שימוש במודל החדש והיציב יותר
+        gemini: "AIzaSyAdfGVrmr90Mp9ZhNMItD81iaE8OipKwz0", 
         googleSearch: "AIzaSyDLkShn6lBBew-PJJWtzvAe_14UF9Kv-QI",
-        // שים לב: לחיפוש גוגל צריך גם "Search Engine ID" (cx). 
-        // אם אין לך, ה-AI יסתמך על הידע הפנימי שלו.
-        googleCX: "YOUR_SEARCH_ENGINE_ID_HERE" 
+        googleCX: "56qt2qgr7up25uvi5yjnmgqr3" 
     },
     oneSignalAppId: "07b81f2e-e812-424f-beca-36584b12ccf2"
 };
 
-// --- ONESIGNAL INIT ---
+// --- אתחול OneSignal (עם הגנה מקריסות) ---
 window.OneSignalDeferred = window.OneSignalDeferred || [];
-OneSignalDeferred.push(async function(OneSignal) {
-    await OneSignal.init({
-        appId: CONFIG.oneSignalAppId,
-        safari_web_id: "web.onesignal.auto.88888888-8888-8888-8888-888888888888",
-        notifyButton: { enable: true },
+try {
+    OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({
+            appId: CONFIG.oneSignalAppId,
+            safari_web_id: "web.onesignal.auto.88888888-8888-8888-8888-888888888888",
+            notifyButton: { enable: true },
+            allowLocalhostAsSecureOrigin: true, // מאפשר עבודה בלוקאל
+        });
     });
-});
+} catch (e) {
+    console.warn("OneSignal Warning: מערכת ההתראות לא נטענה (דורש HTTPS או Localhost).");
+}
 
-// --- THE BRAIN CLASS ---
 export const SabanBrain = {
 
-    /**
-     * התייעצות כללית או חישוב (לחמ"ל וללקוח)
-     */
-    async ask(prompt, context = "") {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${CONFIG.keys.gemini}`;
+    // 1. שאילתה ל-Gemini (מחשבון, צ'אט)
+    async ask(prompt, context = "אתה עוזר לוגיסטי חכם בחברת סבן.") {
+        // תיקון: שימוש במודל gemini-1.5-flash היציב יותר
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${CONFIG.keys.gemini}`;
         
         const payload = {
             contents: [{
                 parts: [{
-                    text: `אתה יועץ מומחה לחומרי בניין בחברת "סבן לוגיסטיקה".
-                    הקשר: ${context}
+                    text: `הקשר: ${context}
                     שאלה: ${prompt}
-                    ענה בעברית, קצר ולעניין (מקסימום 3 משפטים). אם זה חישוב, תן תשובה מספרית מדויקת.`
+                    הנחיות: ענה בעברית בלבד. היה קצר, מקצועי ותכליתי.`
                 }]
             }]
         };
@@ -48,49 +48,72 @@ export const SabanBrain = {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
+
             const data = await response.json();
-            return data.candidates[0].content.parts[0].text;
+
+            // --- מנגנון הגנה משגיאות ---
+            if (!response.ok) {
+                console.error("Gemini API Error:", data);
+                return "שגיאה בתקשורת עם ה-AI. אנא נסה שנית.";
+            }
+
+            // חילוץ בטוח של התשובה (מונע את ה-TypeError)
+            const answer = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            return answer || "לא התקבלה תשובה ברורה מהמוח.";
+
         } catch (error) {
-            console.error("Brain Error:", error);
-            return "מצטער, ה-AI לא זמין כרגע. נסה שוב.";
+            console.error("Network Error:", error);
+            return "שגיאת רשת. בדוק חיבור לאינטרנט.";
         }
     },
 
-    /**
-     * חיפוש מוצרים ומידע מהרשת (לקטלוג)
-     */
+    // 2. חיפוש מידע על מוצר (לקטלוג)
     async searchProductInfo(productName) {
-        // שלב 1: ננסה להביא מידע מובנה מ-Gemini שמדמה חיפוש
-        const prompt = `תן לי מידע טכני בפורמט JSON בלבד עבור המוצר: "${productName}".
-        אני צריך: שם מלא, תיאור שיווקי קצר, משקל (ק"ג), כיסוי (מ"ר), זמן ייבוש.
-        דוגמה לפורמט: {"name": "...", "desc": "...", "specs": {"weight": "25", "cover": "10", "dry": "24"}}`;
+        // שימוש במודל החדש גם כאן
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${CONFIG.keys.gemini}`;
+
+        const prompt = `
+        אני צריך מידע טכני על המוצר: "${productName}" לחנות חומרי בניין.
+        החזר תשובה בפורמט JSON בלבד (ללא טקסט נוסף, ללא markdown) במבנה הבא:
+        {
+            "name": "שם מלא ומקצועי",
+            "desc": "תיאור שיווקי קצר",
+            "specs": {
+                "weight": "משקל בק'ג (מספר בלבד)",
+                "cover": "כושר כיסוי במ'ר (מספר בלבד)",
+                "dry": "זמן ייבוש"
+            },
+            "category": "cement, glue, paint או tools"
+        }`;
 
         try {
-            const text = await this.ask(prompt, "בניית קטלוג מוצרים");
-            // ניקוי ה-JSON מהתשובה
-            const cleanJson = text.replace(/```json|```/g, '').trim();
-            const productData = JSON.parse(cleanJson);
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            });
+
+            if (!response.ok) throw new Error("API Error");
+
+            const data = await response.json();
+            let text = data.candidates?.[0]?.content?.parts?.[0]?.text;
             
-            // שלב 2: הוספת תמונה (סימולציה או חיפוש אמיתי אם יש CX)
-            // אם היה לנו CX פעיל היינו משתמשים ב-Google Custom Search API כאן.
-            // כרגע נשתמש בתמונת פלייסהולדר חכמה
-            productData.img = `https://source.unsplash.com/400x400/?construction,${encodeURIComponent(productName)}`;
-            productData.price = Math.floor(Math.random() * 200) + 50; // מחיר משוער לדוגמה
+            if (!text) return null;
+
+            // ניקוי JSON למניעת שגיאות פרסור
+            text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+            const productData = JSON.parse(text);
+            
+            // יצירת תמונה ו-SKU
+            productData.img = `https://source.unsplash.com/400x400/?construction,${encodeURIComponent(productData.category || 'tool')}`;
+            productData.price = Math.floor(Math.random() * 200) + 50; 
+            productData.sku = "AI-" + Math.floor(Math.random() * 9999);
             
             return productData;
+
         } catch (e) {
-            console.error("Search Error", e);
+            console.error("Parsing Error or API Fail", e);
             return null;
         }
-    },
-
-    /**
-     * שליחת התראה (OneSignal)
-     */
-    async sendNotification(title, message) {
-        // בשימוש צד-לקוח אנחנו מוגבלים, בדרך כלל זה נעשה דרך השרת (Node.js)
-        // אבל נשתמש ב-OneSignal SDK המקומי להצגת הודעה למשתמש עצמו
-        console.log(`🔔 התראה נשלחה: ${title} - ${message}`);
-        // כאן ניתן להוסיף קריאה ל-Cloud Function שתשלח לכולם
     }
 };
