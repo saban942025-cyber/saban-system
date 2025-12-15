@@ -11,9 +11,12 @@
     <style>
         :root {
             --wa-green: #008069;
-            --wa-bg: #efeae2;
+            --wa-teal: #00a884;
+            --wa-light: #f0f2f5;
+            --wa-chat-bg: #efeae2;
             --wa-white: #ffffff;
             --wa-border: #e9edef;
+            --internal-bg: #fff9c4; /* צהוב למודעות פנימיות */
         }
 
         body { 
@@ -23,7 +26,7 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* --- Layout System (Windows vs iPhone) --- */
+        /* --- Layout --- */
         .app-container {
             display: flex; width: 100%; height: 100%; max-width: 1700px; margin: 0 auto;
             background: var(--wa-white); box-shadow: 0 4px 20px rgba(0,0,0,0.1);
@@ -37,11 +40,10 @@
 
         .main-chat {
             flex: 1; display: flex; flex-direction: column; 
-            background: var(--wa-bg); position: relative;
+            background: var(--wa-chat-bg); position: relative;
             background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png");
         }
 
-        /* Mobile Logic */
         @media (max-width: 768px) {
             .sidebar { width: 100%; position: absolute; inset: 0; }
             .main-chat { 
@@ -53,7 +55,7 @@
 
         /* --- Components --- */
         .wa-header {
-            height: 60px; background: #f0f2f5; padding: 10px 16px;
+            height: 65px; background: var(--wa-light); padding: 0 16px;
             display: flex; align-items: center; justify-content: space-between;
             border-bottom: 1px solid var(--wa-border); flex-shrink: 0;
         }
@@ -63,97 +65,87 @@
             flex: 1; text-align: center; padding: 14px; cursor: pointer; color: #54656f; font-weight: 500; 
             border-bottom: 3px solid transparent; transition: 0.2s; 
         }
-        .wa-tab.active { color: var(--wa-green); border-bottom-color: var(--wa-green); background: #f0fdfa; }
+        .wa-tab.active { color: var(--wa-green); border-bottom-color: var(--wa-green); }
 
         .chat-list { overflow-y: auto; flex: 1; }
         .chat-item {
             display: flex; align-items: center; padding: 12px 15px; cursor: pointer;
-            border-bottom: 1px solid #f5f6f6; transition: 0.1s; background: var(--wa-white); position: relative;
+            border-bottom: 1px solid #f5f6f6; transition: 0.1s; background: var(--wa-white);
         }
         .chat-item:hover { background: #f5f6f6; }
         .chat-item.active { background: #f0f2f5; border-right: 4px solid var(--wa-green); }
         
         .avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; flex-shrink: 0; margin-left: 15px; }
         
-        /* Badges & Indicators */
-        .badge-new { background: #25d366; color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px; font-weight: bold; animation: pulse 2s infinite; }
-        .badge-urgent { background: #ef4444; color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px; font-weight: bold; animation: flash 1s infinite; }
-        
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
-        @keyframes flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-
-        /* Chat Bubbles */
+        /* --- Chat Bubbles --- */
         .msg-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
+        
         .msg-bubble {
             max-width: 75%; padding: 8px 12px; border-radius: 8px; font-size: 14.2px; line-height: 19px;
             position: relative; box-shadow: 0 1px 0.5px rgba(0,0,0,0.13); word-wrap: break-word;
         }
         .msg-in { align-self: flex-start; background: var(--wa-white); border-top-right-radius: 0; }
         .msg-out { align-self: flex-end; background: #d9fdd3; border-top-left-radius: 0; }
+        
+        /* הודעה פנימית (סמויה) */
+        .msg-internal {
+            align-self: flex-end; background: var(--internal-bg); border: 1px dashed #f59e0b;
+            max-width: 85%; opacity: 0.95;
+        }
+        .internal-badge {
+            font-size: 10px; font-weight: bold; color: #92400e; display: block; margin-bottom: 4px;
+            border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 2px;
+        }
+
         .sys-msg { 
             align-self: center; background: #fff5c4; color: #5c4b08; font-size: 12px; 
             padding: 5px 12px; border-radius: 8px; margin: 10px 0; box-shadow: 0 1px 2px rgba(0,0,0,0.1); 
         }
 
-        /* FAB & Menus */
+        /* --- Footer & Ghost Toggle --- */
+        .chat-footer {
+            min-height: 62px; background: #f0f2f5; px-4 py-2; display: flex; items-center; gap-2;
+            border-top: 1px solid var(--wa-border); padding: 10px;
+        }
+        
+        .input-wrapper {
+            flex: 1; background: white; border-radius: 8px; display: flex; align-items: center; padding: 0 10px;
+            transition: 0.3s;
+        }
+        .input-wrapper.ghost-mode {
+            background: #fffbeb; border: 2px solid #f59e0b;
+        }
+
+        .ghost-btn {
+            width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; cursor: pointer; color: #54656f; transition: 0.2s;
+        }
+        .ghost-btn.active { background: #fef3c7; color: #d97706; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
+
+        /* --- FAB & Menu --- */
         .fab {
             position: absolute; bottom: 20px; left: 20px; 
             width: 54px; height: 54px; background: var(--wa-green); color: white;
             border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer; transition: transform 0.2s; z-index: 25;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer; z-index: 25;
         }
-        .fab:hover { transform: scale(1.05); }
-
-        .context-menu {
-            position: absolute; top: 50px; left: 20px; width: 220px;
-            background: white; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            display: none; flex-direction: column; z-index: 50; overflow: hidden; animation: fadeIn 0.1s ease;
-        }
-        .menu-item { padding: 12px 20px; cursor: pointer; font-size: 14px; color: #3b4a54; display: flex; align-items: center; gap: 10px; }
-        .menu-item:hover { background: #f5f6f6; }
-        .menu-item.danger { color: #ea0038; }
-        
-        /* Wizard Modal */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
-        .modal-box { background: white; width: 90%; max-width: 450px; max-height: 85vh; overflow-y: auto; border-radius: 16px; padding: 24px; box-shadow: 0 25px 50px rgba(0,0,0,0.4); animation: slideUp 0.3s; }
-        .wiz-btn { padding: 15px; border: 2px solid #e2e8f0; border-radius: 12px; cursor: pointer; text-align: center; font-weight: bold; color: #475569; transition: 0.2s; background: #f8fafc; }
-        .wiz-btn.selected { border-color: var(--wa-green); background: #dcfce7; color: #064e3b; ring: 2px solid var(--wa-green); }
-
-        /* STOP ALARM BUTTON */
-        #stopAlarmBtn {
-            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-            background: #ef4444; color: white; padding: 10px 20px; border-radius: 30px;
-            font-weight: bold; box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
-            z-index: 9999; cursor: pointer; display: none; animation: flash 0.5s infinite;
-        }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
-
-    <div id="stopAlarmBtn" onclick="SoundManager.stopAlarm()">🔕 עצור הזעקה</div>
 
     <div class="app-container">
         
         <div class="sidebar" id="sidebar">
             <div class="wa-header">
-                <div class="flex items-center gap-3 cursor-pointer">
+                <div class="flex items-center gap-3">
                     <img id="currentUserImg" src="" class="w-10 h-10 rounded-full bg-gray-300">
                     <div>
                         <span id="currentUserName" class="font-bold text-gray-700 block leading-tight">טוען...</span>
                         <span class="text-[10px] text-green-600 font-bold">🟢 מחובר</span>
                     </div>
                 </div>
-                <div class="flex gap-5 text-gray-500 relative">
-                    <i class="fas fa-ellipsis-v cursor-pointer px-2" onclick="toggleMenu()"></i>
-                    <div id="adminMenu" class="context-menu">
-                        <div class="menu-item" onclick="toggleMenu()"><i class="fas fa-cog"></i> הגדרות</div>
-                        <div class="menu-item" onclick="SoundManager.test()"><i class="fas fa-volume-up"></i> בדיקת רמקולים</div>
-                        <div class="menu-item danger hidden" id="btnCleanAll" onclick="clearAllData()"><i class="fas fa-trash-alt"></i> ניקיון פסח</div>
-                        <div class="menu-item" onclick="logout()"><i class="fas fa-sign-out-alt"></i> התנתק</div>
-                    </div>
+                <div class="flex gap-4 text-gray-500">
+                    <i class="fas fa-ellipsis-v cursor-pointer" onclick="logout()"></i>
                 </div>
             </div>
 
@@ -163,67 +155,55 @@
             </div>
 
             <div id="list-container" class="chat-list bg-white"></div>
-
-            <div onclick="openWizard()" class="fab" title="משימה חדשה"><i class="fas fa-plus text-xl"></i></div>
+            <div onclick="alert('פתיחת הזמנה חדשה')" class="fab"><i class="fas fa-plus text-xl"></i></div>
         </div>
 
         <div class="main-chat" id="mainChat">
             <div id="emptyState" class="flex flex-col items-center justify-center h-full text-center p-10 select-none">
                 <div class="w-64 h-64 bg-contain bg-no-repeat bg-center opacity-40 mb-6" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg');"></div>
                 <h2 class="text-3xl font-light text-gray-600 mb-2">Saban Web</h2>
-                <p class="text-sm text-gray-500">חמ"ל לוגיסטי חכם.<br>מערכת התראות בזמן אמת.</p>
+                <p class="text-sm text-gray-500">חמ"ל לוגיסטי חכם.<br>לחץ על עין 👁️ לשיחה סמויה בין אנשי צוות.</p>
             </div>
 
             <div id="activeChatContent" class="flex flex-col h-full hidden">
                 <div class="wa-header bg-[#f0f2f5] border-l border-gray-200">
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-3 w-full">
                         <i onclick="closeMobileChat()" class="fas fa-arrow-right text-gray-500 text-xl md:hidden cursor-pointer mr-2"></i>
-                        <img id="chatAvatar" src="" class="w-10 h-10 rounded-full cursor-pointer">
-                        <div class="flex flex-col cursor-pointer">
-                            <span id="chatTitle" class="font-bold text-gray-800 text-sm"></span>
-                            <span id="chatSubtitle" class="text-xs text-gray-500"></span>
+                        <img id="chatAvatar" src="" class="w-10 h-10 rounded-full cursor-pointer border border-gray-300">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2">
+                                <span id="chatTitle" class="font-bold text-gray-800 text-sm"></span>
+                                <span class="bg-blue-100 text-blue-800 text-[10px] px-2 py-0.5 rounded font-bold" id="clientBadge">לקוח</span>
+                            </div>
+                            <span id="clientComax" class="text-xs text-gray-500 font-mono"></span>
                         </div>
+                        
+                        <div class="flex -space-x-2 rtl:space-x-reverse" id="staffAvatars">
+                            </div>
                     </div>
                 </div>
 
                 <div id="messagesArea" class="msg-container custom-scroll"></div>
 
-                <div class="h-16 bg-[#f0f2f5] px-4 py-2 flex items-center gap-3 border-t border-gray-200">
-                    <input id="msgInput" type="text" class="flex-1 bg-white rounded-lg h-10 px-4 text-sm border-none outline-none" placeholder="הקלד הודעה" onkeydown="if(event.key==='Enter') sendMessage()">
-                    <i onclick="sendMessage()" class="fas fa-paper-plane text-2xl text-gray-500 cursor-pointer hover:text-[#008069]"></i>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <div id="wizardModal" class="modal-overlay" onclick="if(event.target===this) closeWizard()">
-        <div class="modal-box">
-            <h3 class="text-xl font-black mb-6 text-slate-800 text-center border-b pb-2">פתיחת משימת העברה</h3>
-            <div class="space-y-5">
-                <div>
-                    <label class="text-xs font-bold text-gray-500 block mb-1 uppercase">תיאור תכולה</label>
-                    <input id="wizTitle" class="w-full bg-gray-50 border border-gray-300 p-3 rounded-xl font-bold focus:border-green-600 outline-none" placeholder="לדוגמה: 50 מלט לבן">
-                </div>
-                <div>
-                    <label class="text-xs font-bold text-gray-500 block mb-2 uppercase">בחר מסלול</label>
-                    <div class="grid grid-cols-1 gap-3">
-                        <div class="wiz-btn flex items-center justify-center gap-2" id="btnHarash" onclick="selectRoute('harash_to_talmid')"><i class="fas fa-warehouse text-gray-400"></i> החרש ⬅️ תלמיד</div>
-                        <div class="wiz-btn flex items-center justify-center gap-2" id="btnTalmid" onclick="selectRoute('talmid_to_harash')"><i class="fas fa-warehouse text-gray-400"></i> תלמיד ⬅️ החרש</div>
+                <div class="chat-footer">
+                    <div class="ghost-btn" id="ghostToggle" onclick="toggleGhostMode()" title="מצב סמוי לצוות בלבד">
+                        <i class="fas fa-eye" id="ghostIcon"></i>
                     </div>
+
+                    <div class="input-wrapper" id="inputWrapper">
+                        <input id="msgInput" type="text" class="flex-1 bg-transparent h-10 text-sm border-none outline-none" placeholder="הקלד הודעה ללקוח..." onkeydown="if(event.key==='Enter') sendMessage()">
+                    </div>
+                    
+                    <i onclick="sendMessage()" class="fas fa-paper-plane text-2xl text-gray-500 cursor-pointer hover:text-[#008069] mr-2"></i>
                 </div>
-                <div>
-                    <label class="text-xs font-bold text-gray-500 block mb-1 uppercase">רמת דחיפות</label>
-                    <select id="wizPrio" class="w-full bg-white border border-gray-300 p-3 rounded-xl"><option value="low">רגיל 🚛</option><option value="high">דחוף אש 🔥</option></select>
-                </div>
-                <button onclick="submitTask()" class="w-full bg-[#008069] hover:bg-[#006d59] text-white py-3.5 rounded-xl font-bold shadow-lg mt-4 flex justify-center items-center gap-2"><i class="fas fa-paper-plane"></i> שגר משימה לנהג</button>
             </div>
         </div>
+
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
         const app = initializeApp(firebaseConfig);
@@ -232,68 +212,7 @@
         let activeTab = 'orders';
         let currentChatId = null;
         let currentUser = { name: 'אורח', role: 'guest' };
-        let wizardData = { route: 'general' };
-
-        // --- SOUND SYSTEM (SOUNDSCAPE) ---
-        const SoundManager = {
-            sounds: {
-                drop: new Audio("data:audio/mp3;base64,SUQzBAAAAAABAFRYWFgAAAASAAADbWFqb3JfYnJhbmQAbXA0MgBUWFhYAAAAEQAAA21pbm9yX3ZlcnNpb24AMABUWFhYAAAAHAAAA2NvbXBhdGlibZVfYnJhbmRzAGlzb21tcDQyAFRTU0UAAAAPAAADTGF2ZjU3LjU2LjEwMAAAAAAAAAAAAAAA//uQZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAAEAAABIwAHCxISFhYeHiIkJCQqKi0tMzM3Nzw8QkJDQ0tLTU1SUllZXFxiYmZmamptbXJydXV5eX19hISEhIqKjo6SkpaWnZ2goKWlqaqrrbCwsLS0uLm5vb3AwMPE"), // Short blip
-                ding: new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU"), // Placeholder for Ding
-                alarm: new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU") // Placeholder for Alarm
-            },
-            interval: null,
-            
-            play(type) {
-                // Simplified beeps for demo without external files
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-
-                if (type === 'drop') {
-                    osc.frequency.value = 800;
-                    gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.1);
-                    osc.start(); osc.stop(ctx.currentTime + 0.1);
-                } 
-                else if (type === 'ding') {
-                    osc.frequency.value = 1200;
-                    gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.5);
-                    osc.start(); osc.stop(ctx.currentTime + 0.5);
-                }
-                else if (type === 'alarm') {
-                    this.startAlarmLoop(ctx);
-                }
-            },
-
-            startAlarmLoop(ctx) {
-                if (this.interval) return; // Already running
-                document.getElementById('stopAlarmBtn').style.display = 'block';
-                
-                this.interval = setInterval(() => {
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    osc.connect(gain);
-                    gain.connect(ctx.destination);
-                    osc.frequency.value = 900;
-                    osc.type = 'square';
-                    gain.gain.value = 0.2;
-                    osc.start();
-                    setTimeout(() => osc.stop(), 200);
-                }, 500); // Beep every 500ms
-            },
-
-            stopAlarm() {
-                if (this.interval) {
-                    clearInterval(this.interval);
-                    this.interval = null;
-                    document.getElementById('stopAlarmBtn').style.display = 'none';
-                }
-            },
-            
-            test() { this.play('ding'); }
-        };
-        window.SoundManager = SoundManager;
+        let isGhostMode = false;
 
         // --- INIT ---
         (function initIdentity() {
@@ -305,125 +224,9 @@
             }
             document.getElementById('currentUserName').innerText = currentUser.name;
             document.getElementById('currentUserImg').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=00a884&color=fff`;
-            if (currentUser.role === 'admin' || currentUser.role === 'ops') document.getElementById('btnCleanAll').classList.remove('hidden');
         })();
 
-        // --- DATA LISTENERS ---
-        function loadOrders() {
-            const list = document.getElementById('list-container');
-            const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
-            
-            onSnapshot(q, (snap) => {
-                // Sound Trigger for New Orders
-                snap.docChanges().forEach((change) => {
-                    if (change.type === "added" && !snap.metadata.fromCache) {
-                        SoundManager.play('ding');
-                    }
-                });
-
-                list.innerHTML = "";
-                snap.forEach(docSnap => {
-                    const o = docSnap.data();
-                    const time = o.createdAt ? new Date(o.createdAt.seconds*1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
-                    const isNew = o.status === 'new';
-                    
-                    list.innerHTML += `
-                    <div class="chat-item ${currentChatId===docSnap.id ? 'active' : ''}" onclick="openChat('${docSnap.id}', '${o.clientName}', 'order')">
-                        <img src="https://ui-avatars.com/api/?name=${o.clientName}&background=random" class="avatar">
-                        <div class="flex-1 mr-3 border-b border-gray-100 pb-3 h-full min-w-0">
-                            <div class="flex justify-between items-center mb-1">
-                                <span class="font-bold text-gray-800 text-sm truncate">${o.clientName}</span>
-                                <span class="text-xs text-gray-400 flex-shrink-0">${time}</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <div class="text-xs text-gray-500 truncate w-40 flex items-center gap-1">
-                                    ${isNew ? '<span class="badge-new">NEW</span>' : '<i class="fas fa-check-double text-blue-500 text-[10px]"></i>'}
-                                    ${o.items ? o.items.length + ' פריטים' : 'הודעה חדשה'}
-                                </div>
-                            </div>
-                        </div>
-                    </div>`;
-                });
-            });
-        }
-
-        function loadTransfers() {
-            const list = document.getElementById('list-container');
-            const q = query(collection(db, "transfers"), orderBy("createdAt", "desc"));
-            
-            onSnapshot(q, (snap) => {
-                // Urgent Alarm Trigger
-                snap.docChanges().forEach((change) => {
-                    if (change.type === "added" && !snap.metadata.fromCache) {
-                        const data = change.doc.data();
-                        if (data.priority === 'high') SoundManager.play('alarm');
-                        else SoundManager.play('drop');
-                    }
-                });
-
-                list.innerHTML = "";
-                snap.forEach(docSnap => {
-                    const t = docSnap.data();
-                    const isHigh = t.priority === 'high';
-                    
-                    list.innerHTML += `
-                    <div class="chat-item ${currentChatId===docSnap.id ? 'active' : ''} ${isHigh ? 'bg-red-50' : ''}" onclick="openChat('${docSnap.id}', '${t.comaxNum}', 'transfer')">
-                        <div class="avatar bg-yellow-100 flex items-center justify-center text-yellow-600 rounded-full text-xl">
-                            ${isHigh ? '🔥' : '🚛'}
-                        </div>
-                        <div class="flex-1 mr-3 border-b border-gray-100 pb-3">
-                            <div class="flex justify-between">
-                                <span class="font-bold text-gray-800 text-sm">העברה: ${t.comaxNum}</span>
-                                ${isHigh ? '<span class="badge-urgent">דחוף!</span>' : ''}
-                            </div>
-                            <div class="text-xs text-gray-500 truncate w-48">
-                                ${t.direction === 'harash_to_talmid' ? 'החרש ⬅️ תלמיד' : 'תלמיד ⬅️ החרש'}
-                            </div>
-                        </div>
-                    </div>`;
-                });
-            });
-        }
-
-        // --- CHAT LOGIC ---
-        window.openChat = (id, title, type) => {
-            currentChatId = id;
-            document.querySelectorAll('.chat-item').forEach(e=>e.classList.remove('active'));
-            document.getElementById('emptyState').classList.add('hidden');
-            document.getElementById('activeChatContent').classList.remove('hidden');
-            document.getElementById('mainChat').classList.add('open');
-            
-            document.getElementById('chatTitle').innerText = title;
-            document.getElementById('chatSubtitle').innerText = type === 'order' ? 'הזמנת לקוח' : 'משימת העברה';
-            document.getElementById('chatAvatar').src = type === 'order' ? `https://ui-avatars.com/api/?name=${title}&background=random` : 'https://cdn-icons-png.flaticon.com/512/713/713311.png';
-
-            const box = document.getElementById('messagesArea');
-            const coll = type === 'order' ? `orders/${id}/internal_chat` : `transfers/${id}/chat`;
-            
-            // Message Sound Logic
-            onSnapshot(query(collection(db, coll), orderBy("createdAt", "asc")), (snap) => {
-                box.innerHTML = "";
-                
-                // Play sound on new message (if not me)
-                snap.docChanges().forEach((change) => {
-                    if (change.type === "added" && !snap.metadata.fromCache) {
-                        const m = change.doc.data();
-                        if (m.sender !== currentUser.name) SoundManager.play('drop');
-                    }
-                });
-
-                if(type === 'transfer') box.innerHTML = `<div class="sys-msg">🚚 משימת העברה נפתחה. נא לעדכן סטטוס.</div>`;
-                
-                snap.forEach(d => {
-                    const m = d.data();
-                    const isMe = m.sender === currentUser.name;
-                    box.innerHTML += `<div class="msg-bubble ${isMe ? 'msg-out' : 'msg-in'}"><div class="text-[10px] font-bold text-purple-600">${m.sender}</div>${m.text}</div>`;
-                });
-                box.scrollTop = box.scrollHeight;
-            });
-        };
-
-        // --- ACTIONS ---
+        // --- LOGIC ---
         window.switchTab = (tab) => {
             activeTab = tab;
             document.querySelectorAll('.wa-tab').forEach(t => t.classList.remove('active'));
@@ -431,55 +234,137 @@
             tab === 'orders' ? loadOrders() : loadTransfers();
         };
 
-        window.openWizard = () => { if(activeTab !== 'transfers') switchTab('transfers'); document.getElementById('wizardModal').style.display = 'flex'; };
-        window.closeWizard = () => document.getElementById('wizardModal').style.display = 'none';
-        
-        window.selectRoute = (r) => {
-            wizardData.route = r;
-            document.querySelectorAll('.wiz-btn').forEach(b => b.classList.remove('selected'));
-            if(r === 'harash_to_talmid') document.getElementById('btnHarash').classList.add('selected');
-            else document.getElementById('btnTalmid').classList.add('selected');
-        };
-
-        window.submitTask = async () => {
-            const title = document.getElementById('wizTitle').value;
-            const prio = document.getElementById('wizPrio').value;
-            if(!title) return alert("חסר שם למשימה");
-
-            await addDoc(collection(db, "transfers"), {
-                comaxNum: title, 
-                direction: wizardData.route,
-                desc: "נוצר ע\"י " + currentUser.name,
-                priority: prio,
-                status: 'open',
-                createdAt: serverTimestamp()
+        function loadOrders() {
+            const list = document.getElementById('list-container');
+            const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
+            onSnapshot(q, (snap) => {
+                list.innerHTML = "";
+                snap.forEach(docSnap => {
+                    const o = docSnap.data();
+                    const isNew = o.status === 'new';
+                    
+                    list.innerHTML += `
+                    <div class="chat-item" onclick="openChat('${docSnap.id}', '${o.clientName}', 'order', '${o.clientNumber || '9999'}')">
+                        <img src="https://ui-avatars.com/api/?name=${o.clientName}&background=random" class="avatar">
+                        <div class="flex-1 mr-3 border-b border-gray-100 pb-3 h-full min-w-0">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="font-bold text-gray-800 text-sm truncate">${o.clientName}</span>
+                                <span class="text-xs text-gray-400">היום</span>
+                            </div>
+                            <div class="text-xs text-gray-500 truncate flex items-center gap-1">
+                                ${isNew ? '<span class="text-green-600 font-bold">● הזמנה חדשה</span>' : 'בטיפול'}
+                            </div>
+                        </div>
+                    </div>`;
+                });
             });
-            closeWizard();
-            document.getElementById('wizTitle').value = '';
+        }
+
+        // --- CHAT & GHOST MODE ---
+        window.openChat = async (id, title, type, clientNum) => {
+            currentChatId = id;
+            isGhostMode = false;
+            updateGhostUI(); // Reset UI
+
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('activeChatContent').classList.remove('hidden');
+            document.getElementById('mainChat').classList.add('open');
+            
+            // Header Info
+            document.getElementById('chatTitle').innerText = title;
+            document.getElementById('clientComax').innerText = clientNum ? `לקוח #${clientNum}` : 'לקוח מזדמן';
+            document.getElementById('chatAvatar').src = `https://ui-avatars.com/api/?name=${title}&background=random`;
+
+            // Fake Staff Avatars (Simulated Presence)
+            const staffHtml = `
+                <img class="w-6 h-6 rounded-full border border-white" src="https://ui-avatars.com/api/?name=Rami&background=0f172a&color=fff" title="ראמי">
+                <img class="w-6 h-6 rounded-full border border-white" src="https://ui-avatars.com/api/?name=Yoav&background=3b82f6&color=fff" title="יואב">
+            `;
+            document.getElementById('staffAvatars').innerHTML = staffHtml;
+
+            // Auto Reply Logic (רק אם זו פעם ראשונה)
+            // בפועל נבדוק אם יש הודעות, אם אין -> נשלח בוט
+            // כאן נדלג על בדיקה ונשים הודעה ב-UI למעלה
+            
+            const box = document.getElementById('messagesArea');
+            const coll = `orders/${id}/internal_chat`;
+            const q = query(collection(db, coll), orderBy("createdAt", "asc"));
+            
+            onSnapshot(q, (snap) => {
+                box.innerHTML = `
+                <div class="sys-msg bg-white shadow-sm border">
+                    🤖 <b>מענה אוטומטי:</b> היי ${title}, ההזמנה התקבלה. אנו בודקים מלאי כעת.
+                </div>`;
+                
+                snap.forEach(doc => {
+                    const m = doc.data();
+                    const isMe = m.sender === currentUser.name;
+                    const isInternal = m.visibility === 'internal'; // הבדיקה החשובה!
+
+                    // אם זה סמוי, רק צוות רואה (אצל לקוח היינו מסננים את זה)
+                    // כאן בחמ"ל מראים את הכל, אבל בעיצוב שונה
+                    
+                    let bubbleClass = isMe ? 'msg-out' : 'msg-in';
+                    if (isInternal) bubbleClass = 'msg-internal';
+
+                    box.innerHTML += `
+                    <div class="msg-bubble ${bubbleClass}">
+                        ${isInternal ? '<span class="internal-badge"><i class="fas fa-lock"></i> סמוי לצוות בלבד</span>' : ''}
+                        <div class="text-[10px] font-bold text-purple-600 mb-0.5">${m.sender}</div>
+                        ${m.text}
+                        <div class="text-[9px] text-gray-400 text-left mt-1">
+                            ${new Date(m.createdAt?.seconds*1000).toLocaleTimeString([],{hour:'2-digit', minute:'2-digit'})}
+                        </div>
+                    </div>`;
+                });
+                box.scrollTop = box.scrollHeight;
+            });
         };
+
+        window.toggleGhostMode = () => {
+            isGhostMode = !isGhostMode;
+            updateGhostUI();
+        };
+
+        function updateGhostUI() {
+            const wrap = document.getElementById('inputWrapper');
+            const btn = document.getElementById('ghostToggle');
+            const icon = document.getElementById('ghostIcon');
+            const input = document.getElementById('msgInput');
+
+            if (isGhostMode) {
+                wrap.classList.add('ghost-mode');
+                btn.classList.add('active');
+                icon.className = "fas fa-eye-slash";
+                input.placeholder = "הקלד הודעה פנימית לצוות (הלקוח לא יראה)...";
+            } else {
+                wrap.classList.remove('ghost-mode');
+                btn.classList.remove('active');
+                icon.className = "fas fa-eye";
+                input.placeholder = "הקלד הודעה ללקוח...";
+            }
+        }
 
         window.sendMessage = async () => {
             const txt = document.getElementById('msgInput').value;
             if(!txt || !currentChatId) return;
             document.getElementById('msgInput').value = '';
-            const coll = activeTab === 'orders' ? `orders/${currentChatId}/internal_chat` : `transfers/${currentChatId}/chat`;
-            await addDoc(collection(db, coll), { text: txt, sender: currentUser.name, createdAt: serverTimestamp() });
+            
+            const coll = `orders/${currentChatId}/internal_chat`;
+            
+            await addDoc(collection(db, coll), {
+                text: txt,
+                sender: currentUser.name,
+                visibility: isGhostMode ? 'internal' : 'public', // המפתח להפרדה
+                createdAt: serverTimestamp()
+            });
+
+            // אם היה במצב סמוי, נשארים בסמוי לדיון המשך
         };
 
         window.closeMobileChat = () => document.getElementById('mainChat').classList.remove('open');
-        window.toggleMenu = () => { const m = document.getElementById('adminMenu'); m.style.display = m.style.display==='flex'?'none':'flex'; };
         window.logout = () => { localStorage.removeItem('saban_user'); window.parent.location.href='index.html'; };
-        
-        window.clearAllData = async () => {
-            if(!confirm("מחיקת הכל?")) return;
-            const o = await getDocs(collection(db, "orders")); o.forEach(d=>deleteDoc(doc(db,"orders",d.id)));
-            const t = await getDocs(collection(db, "transfers")); t.forEach(d=>deleteDoc(doc(db,"transfers",d.id)));
-            alert("נוקה!");
-        };
 
-        window.addEventListener('message', (e) => { if(e.data.action==='switchTab') switchTab(e.data.tab); });
-
-        // Init
         loadOrders();
     </script>
 </body>
