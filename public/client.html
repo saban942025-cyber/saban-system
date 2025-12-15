@@ -7,7 +7,6 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet">
 
     <style>
@@ -51,8 +50,6 @@
         .card-type-product { border-right: 4px solid #10b981; }
         .card-type-address { border-right: 4px solid #3b82f6; background: #eff6ff; }
         .card-type-contact { border-right: 4px solid #8b5cf6; background: #f5f3ff; }
-
-        .edit-badge { position: absolute; top: 5px; left: 5px; font-size: 10px; color: #94a3b8; }
 
         /* --- MINI MAP --- */
         .mini-map-card {
@@ -113,29 +110,28 @@
                 <textarea id="smartInput" class="scan-textarea" placeholder="הדבק כאן את ההודעה מהווצאפ...&#10;לדוגמה:&#10;תשלח לרחוב ויצמן 44 רעננה&#10;10 שק מלט ודבק קרמיקה"></textarea>
             </div>
 
-            <button onclick="startAIScan()" id="btnScan" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-4 rounded-2xl shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-transform text-lg">
+            <button onclick="window.startAIScan()" id="btnScan" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-4 rounded-2xl shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-transform text-lg">
                 <i class="fas fa-microchip"></i> סרוק ופענח (AI)
             </button>
 
             <div id="scanResults" class="mt-6 hidden pb-20">
                 <div class="flex justify-between items-center mb-3 px-1">
                     <span class="text-xs font-bold text-slate-400 uppercase">תוצאות הפענוח</span>
-                    <button onclick="clearScan()" class="text-xs text-red-500 font-bold">נקה הכל</button>
+                    <button onclick="window.clearScan()" class="text-xs text-red-500 font-bold">נקה הכל</button>
                 </div>
                 
                 <div id="parsedList" class="space-y-2"></div>
-
                 <div id="geoBox"></div>
 
-                <button onclick="finalizeOrder()" class="w-full mt-6 bg-green-600 text-white font-bold py-3.5 rounded-xl shadow-lg flex items-center justify-center gap-2 active:scale-95 transition">
-                    <span>אשר והפק הזמנה</span> <i class="fas fa-file-pdf"></i>
+                <button onclick="window.finalizeOrder()" class="w-full mt-6 bg-green-600 text-white font-bold py-3.5 rounded-xl shadow-lg flex items-center justify-center gap-2 active:scale-95 transition">
+                    <span>אשר והפק הזמנה</span> <i class="fas fa-file-invoice"></i>
                 </button>
             </div>
         </div>
 
         <div id="view-catalog" class="view">
             <div class="sticky top-0 z-10 bg-[#f0f2f5] pb-2">
-                <input id="searchMain" class="w-full bg-white h-12 rounded-2xl pl-4 pr-4 font-bold shadow-sm outline-none border border-transparent focus:border-blue-500" placeholder="🔍 חפש מוצר..." oninput="filterCatalog()">
+                <input id="searchMain" class="w-full bg-white h-12 rounded-2xl pl-4 pr-4 font-bold shadow-sm outline-none border border-transparent focus:border-blue-500" placeholder="🔍 חפש מוצר..." oninput="window.filterCatalog()">
             </div>
             <div id="catalogGrid" class="grid grid-cols-2 gap-3 mt-2"></div>
         </div>
@@ -149,40 +145,31 @@
 
     </div>
 
-    <div id="swapModal" class="modal-overlay" onclick="closeSwap(event)">
+    <div id="swapModal" class="modal-overlay" onclick="window.closeSwap(event)">
         <div class="modal-sheet p-5" onclick="event.stopPropagation()">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="font-bold text-lg text-slate-800">החלפת מוצר</h3>
-                <button onclick="closeSwap()" class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-500"><i class="fas fa-times"></i></button>
+                <button onclick="window.closeSwap()" class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-500"><i class="fas fa-times"></i></button>
             </div>
-            <input id="swapSearch" class="w-full bg-slate-50 border border-slate-200 h-12 rounded-xl px-4 font-bold mb-4 outline-none focus:border-blue-500" placeholder="הקלד שם מוצר..." oninput="searchSwap()">
+            <input id="swapSearch" class="w-full bg-slate-50 border border-slate-200 h-12 rounded-xl px-4 font-bold mb-4 outline-none focus:border-blue-500" placeholder="הקלד שם מוצר..." oninput="window.searchSwap()">
             <div id="swapResults" class="flex-1 overflow-y-auto space-y-2"></div>
         </div>
     </div>
 
     <nav class="tab-bar">
-        <div class="tab-item active" onclick="switchTab('smart')" id="tab-smart"><i class="fas fa-magic text-xl mb-1"></i> סורק</div>
-        <div class="tab-item" onclick="switchTab('catalog')" id="tab-catalog"><i class="fas fa-th-large text-xl mb-1"></i> קטלוג</div>
-        <div class="tab-item" onclick="switchTab('cart')" id="tab-cart"><i class="fas fa-shopping-bag text-xl mb-1"></i> עגלה</div>
+        <div class="tab-item active" onclick="window.switchTab('smart')" id="tab-smart"><i class="fas fa-magic text-xl mb-1"></i> סורק</div>
+        <div class="tab-item" onclick="window.switchTab('catalog')" id="tab-catalog"><i class="fas fa-th-large text-xl mb-1"></i> קטלוג</div>
+        <div class="tab-item" onclick="window.switchTab('cart')" id="tab-cart"><i class="fas fa-shopping-bag text-xl mb-1"></i> עגלה</div>
     </nav>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // CONFIG & KEYS
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
         const GEMINI_KEY = "AIzaSyAdfGVrmr90Mp9ZhNMItD81iaE8OipKwz0";
         
         let db;
-        
-        // BRANCHES
-        const BRANCHES = [
-            { id: 'harash', name: 'סניף החרש', lat: 32.1462, lng: 34.8951 },
-            { id: 'talmid', name: 'סניף התלמיד', lat: 32.1554, lng: 34.8872 }
-        ];
-
-        // STATE
         let catalog = [];
         let parsedData = [];
         let addressInfo = null;
@@ -190,7 +177,7 @@
         let activeSwapIndex = -1;
         let cart = [];
 
-        // --- INIT & ROBUST LOADER ---
+        // INIT
         (async () => {
             try {
                 const app = initializeApp(firebaseConfig);
@@ -198,40 +185,52 @@
                 const snap = await getDocs(collection(db, "products"));
                 catalog = snap.docs.map(d => ({id: d.id, ...d.data()}));
             } catch(e) { 
-                console.log("Offline mode / Fallback active"); 
-                // דאטה בסיסי למקרה של תקלה
-                catalog = [
-                    {id:'1', core:{name:'מלט שחור', price:25}, rich:{image:'https://via.placeholder.com/100'}},
-                    {id:'2', core:{name:'דבק קרמיקה 114', price:45}, rich:{image:'https://via.placeholder.com/100'}},
-                    {id:'3', core:{name:'טיח גבס', price:30}, rich:{image:'https://via.placeholder.com/100'}}
-                ];
+                console.log("Offline mode"); 
+                catalog = [{id:'1', core:{name:'מלט שחור', price:25}}, {id:'2', core:{name:'דבק קרמיקה 114', price:45}}];
             }
-            renderCatalog(catalog);
+            window.renderCatalog(catalog);
         })();
 
-        // --- 1. AI SCANNER LOGIC ---
+        // --- GLOBAL FUNCTIONS ---
+        window.switchTab = (id) => {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById('view-'+id).classList.add('active');
+            document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-'+id).classList.add('active');
+        };
+
+        window.renderCatalog = (items) => {
+            document.getElementById('catalogGrid').innerHTML = items.map(p => `
+                <div class="bg-white rounded-xl p-3 shadow-sm text-center">
+                    <img src="${p.rich?.image || 'https://via.placeholder.com/80'}" class="mx-auto h-20 object-contain mb-2">
+                    <div class="font-bold text-xs text-slate-800 h-8 line-clamp-2">${p.core.name}</div>
+                    <div class="text-blue-600 font-bold text-sm">₪${p.core.price}</div>
+                </div>`).join('');
+        };
+
+        window.filterCatalog = () => {
+            const q = document.getElementById('searchMain').value.toLowerCase();
+            window.renderCatalog(catalog.filter(p => p.core.name.toLowerCase().includes(q)));
+        };
+
         window.startAIScan = async () => {
             const text = document.getElementById('smartInput').value;
             if(!text) return alert("אנא הדבק טקסט");
 
-            // UI Animation
             const box = document.getElementById('scannerBox');
             box.classList.add('active');
-            document.getElementById('btnScan').innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> מפענח נתונים...';
+            document.getElementById('btnScan').innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> מפענח...';
             
-            // Reset
+            // Logic
             parsedData = []; addressInfo = null; contactInfo = null;
-
-            // Process Lines
             const lines = text.split('\n');
             let potentialAddress = "";
 
             for(let line of lines) {
                 const clean = line.trim();
                 if(clean.length < 2) continue;
-                if(/בוקר|תודה|דחוף|שלום/.test(clean)) continue;
-
-                // A. איש קשר (טלפון)
+                
+                // Contact
                 const phoneMatch = clean.match(/(?:05|0\d)-?\d{7,8}/);
                 if(phoneMatch) {
                     const phone = phoneMatch[0];
@@ -239,19 +238,17 @@
                     contactInfo = { name, phone };
                     continue;
                 }
-
-                // B. כתובת
+                
+                // Address
                 if(/רחוב|עיר|לכבוד|הגעה/.test(clean) && !/\d{3,}/.test(clean)) {
                     potentialAddress = clean;
                     continue;
                 }
 
-                // C. מוצר
+                // Product
                 const qtyMatch = clean.match(/^(\d+)/) || clean.match(/(\d+)$/);
                 let qty = qtyMatch ? parseInt(qtyMatch[0]) : 1;
-                let textOnly = clean.replace(/\d+/g, '').replace(/שקים|יח|מארז/g, '').trim();
-                
-                // חיפוש בקטלוג
+                let textOnly = clean.replace(/\d+/g, '').replace(/שקים|יח/g, '').trim();
                 let match = catalog.find(p => p.core.name.includes(textOnly));
                 
                 parsedData.push({
@@ -259,229 +256,136 @@
                     name: match ? match.core.name : textOnly,
                     qty: qty,
                     price: match?.core?.price || 0,
-                    img: match?.rich?.image,
-                    status: match ? 'found' : 'unknown'
+                    img: match?.rich?.image
                 });
             }
 
-            // AI Geo (אם יש כתובת)
+            // AI Geo
             if(potentialAddress) {
                 addressInfo = { text: potentialAddress };
                 const coords = await getCoordinatesByAI(potentialAddress);
-                if(coords) {
-                    addressInfo.lat = coords.lat;
-                    addressInfo.lng = coords.lng;
-                    calcBranchDistances();
-                }
+                if(coords) { addressInfo.lat = coords.lat; addressInfo.lng = coords.lng; }
             }
 
-            // Finish
             box.classList.remove('active');
             document.getElementById('btnScan').innerHTML = '<i class="fas fa-magic"></i> סרוק שוב';
             document.getElementById('scanResults').classList.remove('hidden');
             renderParsedResults();
         };
 
-        // --- 2. RENDER RESULTS ---
         function renderParsedResults() {
             const list = document.getElementById('parsedList');
             list.innerHTML = '';
 
-            // כרטיס איש קשר
             if(contactInfo) {
-                list.innerHTML += `
-                <div class="parsed-card card-type-contact">
-                    <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-purple-600"><i class="fas fa-user"></i></div>
-                    <div class="flex-1">
-                        <div class="font-bold text-slate-800">${contactInfo.name}</div>
-                        <div class="text-xs text-slate-500">${contactInfo.phone}</div>
-                    </div>
-                </div>`;
+                list.innerHTML += `<div class="parsed-card card-type-contact"><div class="flex-1 font-bold text-slate-800">${contactInfo.name} <span class="text-xs font-normal">${contactInfo.phone}</span></div></div>`;
             }
 
-            // מוצרים
             parsedData.forEach((item, i) => {
                 list.innerHTML += `
                 <div class="parsed-card card-type-product">
                     <img src="${item.img || 'https://via.placeholder.com/50'}" class="w-12 h-12 rounded bg-slate-100 object-cover border">
-                    <div class="flex-1" onclick="openSwap(${i})">
+                    <div class="flex-1" onclick="window.openSwap(${i})">
                         <div class="font-bold text-sm text-slate-800">${item.name}</div>
-                        <div class="text-xs text-blue-500 font-bold">לחץ להחלפה <i class="fas fa-exchange-alt"></i></div>
+                        <div class="text-xs text-blue-500 font-bold">לחץ להחלפה</div>
                     </div>
-                    <input type="number" class="w-12 text-center bg-slate-50 border rounded p-1 font-bold outline-none focus:border-blue-500" value="${item.qty}" onchange="updateParsedQty(${i}, this.value)">
-                    <i class="fas fa-times text-slate-300 px-2" onclick="removeItem(${i})"></i>
+                    <input type="number" class="w-12 text-center bg-slate-50 border rounded p-1 font-bold outline-none" value="${item.qty}" onchange="parsedData[${i}].qty=this.value">
+                    <i class="fas fa-times text-slate-300 px-2" onclick="window.removeItem(${i})"></i>
                 </div>`;
             });
 
-            // מפת סניף
             const geoBox = document.getElementById('geoBox');
-            if(addressInfo && addressInfo.branch) {
+            if(addressInfo && addressInfo.lat) {
                 geoBox.innerHTML = `
                 <div class="mini-map-card">
-                    <div class="map-visual">
-                        <div class="map-pin"><i class="fas fa-map-marker-alt"></i></div>
-                        <div class="absolute bottom-2 bg-white/90 px-3 py-1 rounded-full text-xs font-bold shadow text-slate-800">
-                            ${addressInfo.text}
-                        </div>
-                    </div>
+                    <div class="map-visual"><div class="map-pin"><i class="fas fa-map-marker-alt"></i></div></div>
                     <div class="p-3 flex justify-between items-center">
-                        <div>
-                            <div class="text-[10px] text-slate-400 font-bold uppercase">סניף מומלץ</div>
-                            <div class="font-bold text-green-600">${addressInfo.branch} (${addressInfo.dist} ק"מ)</div>
-                        </div>
+                        <div class="font-bold text-slate-800">${addressInfo.text}</div>
                         <a href="https://waze.com/ul?ll=${addressInfo.lat},${addressInfo.lng}&navigate=yes" target="_blank" class="bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg"><i class="fab fa-waze text-xl"></i></a>
                     </div>
                 </div>`;
             } else { geoBox.innerHTML = ''; }
         }
 
-        // --- 3. SWAP LOGIC (HAMBURGER) ---
-        window.openSwap = (i) => {
-            activeSwapIndex = i;
-            document.getElementById('swapModal').style.display = 'flex';
-            document.getElementById('swapSearch').value = '';
-            document.getElementById('swapSearch').focus();
-            searchSwap();
-        }
-        
-        window.closeSwap = (e) => {
-            if(!e || e.target.id === 'swapModal' || !e.target) document.getElementById('swapModal').style.display = 'none';
-        }
-
-        window.searchSwap = () => {
-            const q = document.getElementById('swapSearch').value.toLowerCase();
-            const res = document.getElementById('swapResults');
-            const matches = catalog.filter(p => p.core.name.toLowerCase().includes(q)).slice(0, 15);
-            
-            res.innerHTML = matches.map(p => `
-                <div class="flex items-center gap-3 p-3 border-b border-slate-100 active:bg-slate-50" onclick="performSwap('${p.id}')">
-                    <img src="${p.rich?.image}" class="w-10 h-10 rounded bg-white border object-contain">
-                    <div class="flex-1">
-                        <div class="font-bold text-sm text-slate-800">${p.core.name}</div>
-                        <div class="text-xs text-green-600 font-bold">₪${p.core.price}</div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        window.performSwap = (id) => {
-            const p = catalog.find(x => x.id === id);
-            if(p && activeSwapIndex > -1) {
-                parsedData[activeSwapIndex].name = p.core.name;
-                parsedData[activeSwapIndex].price = p.core.price;
-                parsedData[activeSwapIndex].img = p.rich?.image;
-                renderParsedResults();
-                closeSwap();
-            }
-        }
-
-        // --- 4. FINALIZE & PDF & SAVE ---
+        // --- INVOICE GENERATOR (FIX GIBBERISH) ---
         window.finalizeOrder = async () => {
-            if(parsedData.length === 0) return;
+            if(parsedData.length === 0) return alert("אין פריטים");
 
-            // PDF Generation
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ align: 'right', direction: 'rtl' }); 
-            doc.setFontSize(20);
-            doc.text("Saban Order Request", 105, 20, { align: "center" });
-            
-            let y = 40;
-            parsedData.forEach((item, i) => {
-                doc.setFontSize(12);
-                doc.text(`${i+1}. ${item.name} (x${item.qty})`, 180, y, { align: "right" });
-                y += 10;
-            });
-
-            if(contactInfo) {
-                doc.text(`Contact: ${contactInfo.name} - ${contactInfo.phone}`, 180, y+10, { align: "right" });
-            }
-
-            doc.save("Saban_Order.pdf");
-
-            // Firebase Save
+            // 1. שמירה ל-DB
             try {
                 if(db) {
-                    // Generate Waze Link for persistence
-                    let wazeLink = "";
-                    if (addressInfo && addressInfo.lat) {
-                        wazeLink = `https://waze.com/ul?ll=${addressInfo.lat},${addressInfo.lng}&navigate=yes`;
-                    }
-
                     await addDoc(collection(db, "orders"), {
-                        clientName: contactInfo?.name || "לקוח אפליקציה",
+                        clientName: contactInfo?.name || "אפליקציה",
                         phone: contactInfo?.phone || "",
                         address: addressInfo?.text || "",
-                        wazeLink: wazeLink, // <--- שמירת הלינק להזמנה
-                        location: addressInfo ? { lat: addressInfo.lat, lng: addressInfo.lng } : null,
-                        branch: addressInfo?.branch || "TBD",
                         items: parsedData,
                         status: "new",
                         createdAt: serverTimestamp(),
-                        source: "xray_scanner"
+                        source: "app_scanner"
                     });
                 }
-                
-                alert("ההזמנה נשלחה בהצלחה! 🚀\nהחמ\"ל קיבל את ההודעה.");
-                window.location.reload(); 
-            } catch(e) { alert("שגיאת רשת"); }
-        }
+            } catch(e) { console.error("Save error", e); }
 
-        // --- HELPER: GEO ---
+            // 2. יצירת חשבונית HTML להדפסה (פותר את בעיית הג'יבריש ב-PDF)
+            const invoiceHTML = `
+            <html dir="rtl">
+            <head><title>הזמנה חדשה</title><style>body{font-family:sans-serif;padding:20px;text-align:center;}table{width:100%;border-collapse:collapse;margin-top:20px;}th,td{border:1px solid #ddd;padding:8px;}th{background:#f0f0f0;}</style></head>
+            <body>
+                <h1>ח.סבן חומרי בניין בע"מ</h1>
+                <h3>הזמנת עבודה / הצעת מחיר</h3>
+                <div style="text-align:right;margin:20px 0;background:#f9f9f9;padding:10px;">
+                    <strong>לקוח:</strong> ${contactInfo?.name || '-'}<br>
+                    <strong>טלפון:</strong> ${contactInfo?.phone || '-'}<br>
+                    <strong>כתובת:</strong> ${addressInfo?.text || '-'}
+                </div>
+                <table>
+                    <thead><tr><th>#</th><th>מוצר</th><th>כמות</th></tr></thead>
+                    <tbody>
+                        ${parsedData.map((it,i)=>`<tr><td>${i+1}</td><td>${it.name}</td><td>${it.qty}</td></tr>`).join('')}
+                    </tbody>
+                </table>
+                <br><br>
+                <button onclick="window.print()" style="padding:10px 20px;background:blue;color:white;border:none;cursor:pointer;font-size:16px;">הדפס / שמור כ-PDF</button>
+            </body>
+            </html>`;
+
+            const win = window.open("", "_blank");
+            win.document.write(invoiceHTML);
+            win.document.close();
+            
+            // ניקוי
+            window.clearScan();
+        };
+
+        // --- UTILS ---
+        window.clearScan = () => { parsedData=[]; contactInfo=null; addressInfo=null; renderParsedResults(); };
+        window.removeItem = (i) => { parsedData.splice(i, 1); renderParsedResults(); };
+        
         async function getCoordinatesByAI(addr) {
             try {
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`;
-                const prompt = `Return JSON only: { "lat": number, "lng": number } for address: "${addr}, Israel".`;
-                const res = await fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`, { 
+                    method: 'POST', headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify({ contents: [{ parts: [{ text: `Return JSON only: { "lat": number, "lng": number } for address: "${addr}, Israel"` }] }] }) 
+                });
                 const d = await res.json();
                 return JSON.parse(d.candidates[0].content.parts[0].text.replace(/```json|```/g, '').trim());
             } catch(e) { return null; }
         }
 
-        function calcBranchDistances() {
-            if(!addressInfo.lat) return;
-            const dist0 = calcDist(addressInfo.lat, addressInfo.lng, BRANCHES[0].lat, BRANCHES[0].lng);
-            const dist1 = calcDist(addressInfo.lat, addressInfo.lng, BRANCHES[1].lat, BRANCHES[1].lng);
-            addressInfo.branch = (dist0 < dist1) ? 'החרש' : 'התלמיד';
-            addressInfo.dist = Math.min(dist0, dist1);
-        }
-
-        function calcDist(lat1, lon1, lat2, lon2) {
-            const R = 6371; 
-            const dLat = (lat2-lat1)*Math.PI/180; const dLon = (lon2-lon1)*Math.PI/180;
-            const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)*Math.sin(dLon/2);
-            return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))).toFixed(1);
-        }
-
-        // --- UI HELPERS & EXPORTS ---
-        window.switchTab = (id) => {
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            document.getElementById('view-'+id).classList.add('active');
-            document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
-            document.getElementById('tab-'+id).classList.add('active');
+        // Swap Utils
+        window.openSwap = (i) => { activeSwapIndex = i; document.getElementById('swapModal').style.display='flex'; };
+        window.closeSwap = () => document.getElementById('swapModal').style.display='none';
+        window.searchSwap = () => {
+            const q = document.getElementById('swapSearch').value;
+            const res = document.getElementById('swapResults');
+            res.innerHTML = catalog.filter(p=>p.core.name.includes(q)).map(p=>`<div class="p-3 border-b" onclick="window.performSwap('${p.id}')">${p.core.name}</div>`).join('');
         };
-        window.clearScan = () => { parsedData=[]; contactInfo=null; addressInfo=null; renderParsedResults(); };
-        window.removeItem = (i) => { parsedData.splice(i, 1); renderParsedResults(); };
-        window.updateParsedQty = (i, val) => parsedData[i].qty = parseInt(val);
-        
-        window.filterCatalog = () => {
-            const q = document.getElementById('searchMain').value.toLowerCase();
-            renderCatalog(catalog.filter(p => p.core.name.toLowerCase().includes(q)));
-        };
-
-        function renderCatalog(items) {
-            document.getElementById('catalogGrid').innerHTML = items.map(p => `
-                <div class="bg-white rounded-xl p-3 shadow-sm text-center" onclick="addToCart('${p.id}')">
-                    <img src="${p.rich?.image || 'https://via.placeholder.com/80'}" class="mx-auto h-20 object-contain mb-2">
-                    <div class="font-bold text-xs text-slate-800 h-8 line-clamp-2">${p.core.name}</div>
-                    <div class="text-blue-600 font-bold text-sm">₪${p.core.price}</div>
-                </div>
-            `).join('');
-        }
-
-        // Fix addToCart not being available globally
-        window.addToCart = (id) => {
-             // Basic cart add implementation for catalog clicks
-             alert("פריט נוסף לעגלה (לוגיקה מלאה תתווסף בנפרד)");
+        window.performSwap = (id) => {
+            const p = catalog.find(x=>x.id===id);
+            parsedData[activeSwapIndex].name = p.core.name;
+            parsedData[activeSwapIndex].price = p.core.price;
+            parsedData[activeSwapIndex].img = p.rich?.image;
+            renderParsedResults(); window.closeSwap();
         };
 
     </script>
