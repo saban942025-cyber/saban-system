@@ -2,82 +2,128 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Saban Admin | ניהול קטלוג</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📦</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <style>body { background: #f8fafc; direction: rtl; }</style>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { background: #f8fafc; font-family: 'Heebo', sans-serif; }
+        .ai-card { cursor: pointer; transition: 0.2s; border: 2px solid transparent; }
+        .ai-card:hover { border-color: #22c55e; background: #f0fdf4; }
+    </style>
 </head>
-<body class="p-10 font-sans">
+<body class="p-10">
 
     <div class="max-w-6xl mx-auto">
-        <h1 class="text-3xl font-bold mb-6">ניהול קטלוג (מחובר ל-Gemini)</h1>
+        <h1 class="text-3xl font-black text-slate-800 mb-6">ניהול קטלוג (מחובר ל-SabanBrain 🧠)</h1>
         
-        <div class="bg-white p-4 rounded-xl shadow mb-8 flex gap-2 items-center border border-blue-100">
-            <i class="fas fa-robot text-blue-500 text-2xl"></i>
-            <input id="aiInput" type="text" placeholder="הקלד שם מוצר לייבוא חכם (למשל: מקדחה מקיטה)..." class="flex-1 outline-none text-lg font-bold text-gray-700">
-            <button onclick="window.searchAI()" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition">חפש וייבא</button>
+        <div class="bg-white p-6 rounded-2xl shadow-lg mb-8 border border-blue-100 flex gap-4 items-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-2 h-full bg-blue-600"></div>
+            <i class="fas fa-robot text-blue-600 text-3xl animate-pulse"></i>
+            <div class="flex-1">
+                <label class="text-xs font-bold text-gray-400 uppercase">הוספה חכמה</label>
+                <input id="aiInput" type="text" placeholder="הקלד שם מוצר (למשל: 'מקדחה מקיטה' או 'דבק קרמיקה')..." 
+                       class="w-full bg-transparent outline-none text-xl font-bold text-gray-800 placeholder-gray-300"
+                       onkeydown="if(event.key==='Enter') window.searchAI()">
+            </div>
+            <button onclick="window.searchAI()" class="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg flex items-center gap-2">
+                <i class="fas fa-search"></i> חפש וייבא
+            </button>
         </div>
 
-        <div id="loading" class="hidden text-center py-10 text-gray-500"><i class="fas fa-spinner fa-spin text-3xl"></i><br>המוח חושב...</div>
+        <div id="loading" class="hidden text-center py-10">
+            <i class="fas fa-circle-notch fa-spin text-4xl text-blue-500 mb-2"></i>
+            <div class="text-gray-500 font-bold">המוח של סבן סורק את הרשת...</div>
+        </div>
+
+        <div id="aiPreview" class="hidden bg-green-50 p-6 rounded-2xl border border-green-200 mb-8">
+            <h3 class="text-green-800 font-bold mb-4 flex items-center gap-2"><i class="fas fa-check-circle"></i> נמצא מוצר!</h3>
+            <div id="aiContent"></div>
+        </div>
         
-        <table class="w-full bg-white rounded-xl shadow overflow-hidden">
-            <thead class="bg-slate-100 border-b">
-                <tr><th class="p-3 text-right">תמונה</th><th class="p-3 text-right">שם</th><th class="p-3 text-right">מפרט טכני</th><th class="p-3 text-right">מחיר</th></tr>
-            </thead>
-            <tbody id="grid"></tbody>
-        </table>
+        <div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
+            <table class="w-full text-right">
+                <thead class="bg-slate-50 text-slate-500 text-sm border-b">
+                    <tr><th class="p-4 w-20">תמונה</th><th class="p-4">שם המוצר</th><th class="p-4">מפרט טכני</th><th class="p-4">מחיר</th><th class="p-4 w-20"></th></tr>
+                </thead>
+                <tbody id="grid" class="divide-y"></tbody>
+            </table>
+        </div>
     </div>
 
     <script type="module">
-        import { SabanBrain } from './services/saban-brain.js';
+        // תיקון הנתיב ל-JS
+        import { SabanBrain } from './js/saban-brain.js';
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        const app = initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" });
+        const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
+        const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Load Products
         onSnapshot(collection(db, "products"), (snap) => {
             const grid = document.getElementById('grid');
+            if(snap.empty) { grid.innerHTML = '<tr><td colspan="5" class="text-center p-10 text-gray-400">אין מוצרים</td></tr>'; return; }
+            
             grid.innerHTML = snap.docs.map(d => {
                 const p = d.data();
-                return `<tr class="border-b">
-                    <td class="p-3"><img src="${p.img}" class="w-12 h-12 object-contain"></td>
-                    <td class="p-3">
-                        <div class="font-bold">${p.name}</div>
-                        <div class="text-xs text-gray-500">${p.desc}</div>
-                    </td>
-                    <td class="p-3 text-xs">
-                        <span class="bg-gray-100 px-2 rounded">משקל: ${p.specs?.weight}</span>
-                        <span class="bg-gray-100 px-2 rounded">כיסוי: ${p.specs?.cover}</span>
-                    </td>
-                    <td class="p-3 font-bold text-blue-600">₪${p.price}</td>
+                return `<tr class="hover:bg-gray-50 transition">
+                    <td class="p-4"><img src="${p.img}" class="w-12 h-12 object-cover rounded-lg border bg-white"></td>
+                    <td class="p-4"><div class="font-bold text-gray-800">${p.name}</div><div class="text-xs text-gray-500">${p.desc || ''}</div></td>
+                    <td class="p-4 text-xs space-y-1"><div class="bg-gray-100 inline-block px-2 py-1 rounded">⚖️ ${p.specs?.weight || '-'}</div><div class="bg-gray-100 inline-block px-2 py-1 rounded">🎨 ${p.specs?.cover || '-'}</div></td>
+                    <td class="p-4 font-black text-blue-600">₪${p.price}</td>
+                    <td class="p-4"><button onclick="window.deleteProduct('${d.id}')" class="text-red-400 hover:text-red-600 bg-red-50 p-2 rounded-lg"><i class="fas fa-trash"></i></button></td>
                 </tr>`;
             }).join('');
         });
 
-        // AI Search Function
-        window.searchAI = async () => {
+        async function searchAI() {
             const txt = document.getElementById('aiInput').value;
-            if(!txt) return;
+            if(!txt) return alert("אנא הזן שם מוצר");
             
             document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('aiPreview').classList.add('hidden');
             
-            // קריאה למוח המרכזי
             const data = await SabanBrain.searchProductInfo(txt);
-            
             document.getElementById('loading').classList.add('hidden');
             
             if(data) {
-                if(confirm(`נמצא מוצר!\nשם: ${data.name}\nתיאור: ${data.desc}\n\nלהוסיף לקטלוג?`)) {
+                const preview = document.getElementById('aiPreview');
+                const content = document.getElementById('aiContent');
+                preview.classList.remove('hidden');
+                
+                content.innerHTML = `
+                    <div class="flex gap-6 items-center">
+                        <img src="${data.img}" class="w-32 h-32 object-contain bg-white rounded-xl border p-2">
+                        <div class="flex-1">
+                            <div class="text-xl font-black text-slate-800">${data.name}</div>
+                            <div class="text-gray-600 mb-2">${data.desc}</div>
+                            <div class="flex gap-2 text-sm font-bold text-gray-500">
+                                <span>🏷️ ${data.category}</span>
+                                <span>⚖️ ${data.specs.weight}</span>
+                            </div>
+                        </div>
+                        <button id="confirmBtn" class="bg-green-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-green-700 animate-bounce">
+                            <i class="fas fa-plus"></i> אשר והוסף לקטלוג
+                        </button>
+                    </div>
+                `;
+
+                document.getElementById('confirmBtn').onclick = async () => {
                     await addDoc(collection(db, "products"), { ...data, createdAt: serverTimestamp() });
-                    alert("נוסף בהצלחה!");
+                    alert("המוצר נוסף בהצלחה!");
+                    preview.classList.add('hidden');
                     document.getElementById('aiInput').value = '';
-                }
-            } else {
-                alert("לא נמצא מידע. נסה שוב.");
+                };
             }
         };
+
+        async function deleteProduct(id) { if(confirm("למחוק?")) await deleteDoc(doc(db, "products", id)); }
+
+        window.searchAI = searchAI;
+        window.deleteProduct = deleteProduct;
     </script>
 </body>
 </html>
