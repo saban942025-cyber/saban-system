@@ -11,10 +11,16 @@
         @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap');
         body { font-family: 'Rubik', sans-serif; background-color: #0f172a; height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         .login-card { background: white; border-radius: 20px; width: 100%; max-width: 400px; padding: 40px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); text-align: center; }
-        .input-field { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; background: #f8fafc; margin-bottom: 15px; outline: none; }
+        .input-field { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; background: #f8fafc; margin-bottom: 15px; outline: none; transition: 0.2s; }
         .input-field:focus { border-color: #008069; background: white; }
-        .btn-login { width: 100%; background: #008069; color: white; padding: 12px; border-radius: 10px; font-weight: bold; transition: 0.2s; }
+        .btn-login { width: 100%; background: #008069; color: white; padding: 12px; border-radius: 10px; font-weight: bold; transition: 0.2s; cursor: pointer; }
         .btn-login:hover { background: #006d59; }
+        
+        /* Checkbox Style */
+        .checkbox-wrapper { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; justify-content: start; }
+        .checkbox-wrapper input { width: 16px; height: 16px; accent-color: #008069; cursor: pointer; }
+        .checkbox-wrapper label { font-size: 13px; color: #64748b; cursor: pointer; }
+
         .loader { width: 20px; height: 20px; border: 3px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; display: none; margin: 0 auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
@@ -30,6 +36,11 @@
             <input type="email" id="email" class="input-field" placeholder="אימייל" required>
             <input type="password" id="password" class="input-field" placeholder="סיסמה" required>
             
+            <div class="checkbox-wrapper">
+                <input type="checkbox" id="rememberMe">
+                <label for="rememberMe">זכור אותי (שמור סיסמה)</label>
+            </div>
+            
             <button type="submit" id="submitBtn" class="btn-login">
                 <span id="btnText">כניסה</span>
                 <div id="btnLoader" class="loader"></div>
@@ -38,14 +49,15 @@
         </form>
         
         <div class="mt-4 text-xs text-gray-400">
-            <a href="#" onclick="localStorage.clear(); location.reload()" class="underline">נקה זיכרון מקומי (אם נתקע)</a>
+            <a href="#" onclick="localStorage.clear(); location.reload()" class="underline">נקה נתונים</a>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { initPresence } from './js/presence.js'; // הפעלת המנוע
 
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
         
@@ -53,49 +65,41 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // 1. בדיקת לינק קסם (Magic Link)
+        // הפעלת מעקב נוכחות מיד בעלייה (אם המשתמש כבר מחובר)
+        initPresence(app);
+
+        // 1. בדיקת זכור אותי (מילוי אוטומטי)
         window.onload = async () => {
+            const savedEmail = localStorage.getItem('saban_saved_email');
+            if (savedEmail) {
+                document.getElementById('email').value = savedEmail;
+                document.getElementById('rememberMe').checked = true;
+            }
+
+            // בדיקת לינק קסם
             const params = new URLSearchParams(window.location.search);
             const uid = params.get('uid');
-            if (uid) {
-                // אם נכנס עם לינק - בודק בשרת מה התפקיד שלו
-                try {
-                    const snap = await getDoc(doc(db, "users", uid));
-                    if (snap.exists()) {
-                        const d = snap.data();
-                        forceRedirect(d.role, uid);
-                    }
-                } catch(e) { console.error(e); }
-            }
+            if (uid) checkUserRole(uid);
         };
 
-        // 2. התחברות עם אימות תפקיד בזמן אמת
+        // 2. התחברות
         window.handleLogin = async (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
+            const remember = document.getElementById('rememberMe').checked;
             
             setLoading(true);
 
             try {
-                // התחברות
-                const cred = await signInWithEmailAndPassword(auth, email, password);
-                const uid = cred.user.uid;
-
-                // משיכת נתונים עדכניים מהשרת (עוקף את הזיכרון המקומי)
-                const docSnap = await getDoc(doc(db, "users", uid));
+                // הגדרת שמירת סשן לפי הצ'ק-בוקס
+                await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
                 
-                if (docSnap.exists()) {
-                    const userData = docSnap.data();
-                    
-                    // עדכון הזיכרון המקומי בנתונים החדשים
-                    const cleanUser = { uid, role: userData.role, name: userData.name };
-                    localStorage.setItem('saban_user', JSON.stringify(cleanUser));
-                    
-                    forceRedirect(userData.role, uid);
-                } else {
-                    throw new Error("משתמש לא קיים במסד הנתונים");
-                }
+                if(remember) localStorage.setItem('saban_saved_email', email);
+                else localStorage.removeItem('saban_saved_email');
+
+                const cred = await signInWithEmailAndPassword(auth, email, password);
+                await checkUserRole(cred.user.uid);
 
             } catch (err) {
                 console.error(err);
@@ -105,15 +109,23 @@
             }
         };
 
+        async function checkUserRole(uid) {
+            try {
+                const docSnap = await getDoc(doc(db, "users", uid));
+                if (docSnap.exists()) {
+                    const userData = docSnap.data();
+                    localStorage.setItem('saban_user', JSON.stringify({ uid, role: userData.role, name: userData.name }));
+                    forceRedirect(userData.role, uid);
+                } else {
+                    throw new Error("משתמש לא קיים");
+                }
+            } catch(e) { console.error(e); setLoading(false); }
+        }
+
         function forceRedirect(role, uid) {
-            // ניתוב קשיח לפי תפקיד
-            if (['admin', 'ops', 'manager'].includes(role)) {
-                window.location.href = 'whatsapp-center.html';
-            } else if (role === 'driver') {
-                window.location.href = 'driver.html';
-            } else {
-                window.location.href = `client.html?uid=${uid}`; // לקוח רגיל
-            }
+            if (['admin', 'ops', 'manager'].includes(role)) window.location.href = 'master-app.html';
+            else if (role === 'driver') window.location.href = 'master-app.html?view=driver'; // אפשר להתאים
+            else window.location.href = `client-app.html?uid=${uid}`;
         }
 
         function setLoading(state) {
