@@ -2,7 +2,7 @@
 
 const CONFIG = {
     keys: {
-        // שימוש במודל החדש והיציב יותר
+        // המפתחות שלך
         gemini: "AIzaSyAdfGVrmr90Mp9ZhNMItD81iaE8OipKwz0", 
         googleSearch: "AIzaSyDLkShn6lBBew-PJJWtzvAe_14UF9Kv-QI",
         googleCX: "56qt2qgr7up25uvi5yjnmgqr3" 
@@ -10,27 +10,34 @@ const CONFIG = {
     oneSignalAppId: "07b81f2e-e812-424f-beca-36584b12ccf2"
 };
 
-// --- אתחול OneSignal (עם הגנה מקריסות) ---
+// --- אתחול OneSignal (מוגן מקריסות) ---
 window.OneSignalDeferred = window.OneSignalDeferred || [];
 try {
     OneSignalDeferred.push(async function(OneSignal) {
-        await OneSignal.init({
-            appId: CONFIG.oneSignalAppId,
-            safari_web_id: "web.onesignal.auto.88888888-8888-8888-8888-888888888888",
-            notifyButton: { enable: true },
-            allowLocalhostAsSecureOrigin: true, // מאפשר עבודה בלוקאל
-        });
+        // בדיקה אם אנחנו בסביבה מאובטחת למניעת שגיאות SW
+        const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
+        
+        if (isSecure) {
+            await OneSignal.init({
+                appId: CONFIG.oneSignalAppId,
+                safari_web_id: "web.onesignal.auto.88888888-8888-8888-8888-888888888888",
+                notifyButton: { enable: true },
+                allowLocalhostAsSecureOrigin: true,
+            });
+        } else {
+            console.warn("OneSignal: התראות מושבתות (נדרש HTTPS או Localhost).");
+        }
     });
 } catch (e) {
-    console.warn("OneSignal Warning: מערכת ההתראות לא נטענה (דורש HTTPS או Localhost).");
+    console.warn("OneSignal Error:", e);
 }
 
 export const SabanBrain = {
 
-    // 1. שאילתה ל-Gemini (מחשבון, צ'אט)
+    // 1. שאילתה ל-Gemini (מודל יציב: gemini-pro)
     async ask(prompt, context = "אתה עוזר לוגיסטי חכם בחברת סבן.") {
-        // תיקון: שימוש במודל gemini-1.5-flash היציב יותר
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${CONFIG.keys.gemini}`;
+        // תיקון קריטי: מעבר למודל gemini-pro היציב למניעת שגיאות 404
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${CONFIG.keys.gemini}`;
         
         const payload = {
             contents: [{
@@ -51,39 +58,39 @@ export const SabanBrain = {
 
             const data = await response.json();
 
-            // --- מנגנון הגנה משגיאות ---
+            // בדיקת שגיאות מה-API
             if (!response.ok) {
-                console.error("Gemini API Error:", data);
-                return "שגיאה בתקשורת עם ה-AI. אנא נסה שנית.";
+                console.error("Gemini API Error Detail:", data);
+                return "שגיאה בגישה ל-AI. נסה שנית מאוחר יותר.";
             }
 
-            // חילוץ בטוח של התשובה (מונע את ה-TypeError)
+            // חילוץ תשובה
             const answer = data.candidates?.[0]?.content?.parts?.[0]?.text;
-            return answer || "לא התקבלה תשובה ברורה מהמוח.";
+            return answer || "המוח לא החזיר תשובה ברורה.";
 
         } catch (error) {
-            console.error("Network Error:", error);
-            return "שגיאת רשת. בדוק חיבור לאינטרנט.";
+            console.error("Network/Brain Error:", error);
+            return "שגיאת תקשורת. בדוק את החיבור לרשת.";
         }
     },
 
-    // 2. חיפוש מידע על מוצר (לקטלוג)
+    // 2. חיפוש מידע על מוצר
     async searchProductInfo(productName) {
-        // שימוש במודל החדש גם כאן
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${CONFIG.keys.gemini}`;
+        // שימוש באותו מודל יציב
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${CONFIG.keys.gemini}`;
 
         const prompt = `
-        אני צריך מידע טכני על המוצר: "${productName}" לחנות חומרי בניין.
-        החזר תשובה בפורמט JSON בלבד (ללא טקסט נוסף, ללא markdown) במבנה הבא:
+        פעל כבוט טכני. אני צריך מידע על המוצר: "${productName}".
+        החזר אך ורק אובייקט JSON תקין (בלי markdown, בלי backticks) בפורמט הזה:
         {
-            "name": "שם מלא ומקצועי",
-            "desc": "תיאור שיווקי קצר",
+            "name": "שם מוצר מלא",
+            "desc": "תיאור קצר (עד 15 מילים)",
             "specs": {
-                "weight": "משקל בק'ג (מספר בלבד)",
-                "cover": "כושר כיסוי במ'ר (מספר בלבד)",
+                "weight": "משקל בק'ג (מספר)",
+                "cover": "כיסוי במ'ר (מספר)",
                 "dry": "זמן ייבוש"
             },
-            "category": "cement, glue, paint או tools"
+            "category": "cement או glue או paint או tools"
         }`;
 
         try {
@@ -100,11 +107,18 @@ export const SabanBrain = {
             
             if (!text) return null;
 
-            // ניקוי JSON למניעת שגיאות פרסור
+            // ניקוי אגרסיבי של התשובה כדי להבטיח JSON תקין
             text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-            const productData = JSON.parse(text);
             
-            // יצירת תמונה ו-SKU
+            let productData;
+            try {
+                productData = JSON.parse(text);
+            } catch (jsonError) {
+                console.error("Failed to parse JSON from AI:", text);
+                return null;
+            }
+            
+            // השלמת נתונים (תמונה ומחיר)
             productData.img = `https://source.unsplash.com/400x400/?construction,${encodeURIComponent(productData.category || 'tool')}`;
             productData.price = Math.floor(Math.random() * 200) + 50; 
             productData.sku = "AI-" + Math.floor(Math.random() * 9999);
@@ -112,7 +126,7 @@ export const SabanBrain = {
             return productData;
 
         } catch (e) {
-            console.error("Parsing Error or API Fail", e);
+            console.error("Search Logic Error:", e);
             return null;
         }
     }
