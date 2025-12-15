@@ -2,111 +2,55 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saban Brain Trainer 🧠</title>
+    <title>Saban Brain Trainer 🧠 | V8.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root { --primary: #7c3aed; --glass: rgba(255, 255, 255, 0.95); }
-        body { background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); font-family: system-ui, sans-serif; height: 100vh; display: flex; flex-direction: column; color: #1e293b; overflow: hidden; }
-
-        /* Container */
-        .workspace { max-width: 1200px; margin: 0 auto; width: 100%; height: 100%; display: grid; grid-template-rows: auto 1fr; gap: 20px; padding: 20px; }
-
-        /* Cards */
-        .card { background: var(--glass); border: 1px solid white; border-radius: 20px; box-shadow: 0 10px 30px rgba(124, 58, 237, 0.05); overflow: hidden; display: flex; flex-direction: column; }
-        
-        /* Inputs */
-        .input-box { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #ddd; outline: none; transition: 0.2s; background: white; font-size: 15px; }
-        .input-box:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1); }
-        
-        /* Table */
-        .knowledge-table { width: 100%; border-collapse: collapse; }
-        .knowledge-table th { text-align: right; padding: 15px; background: #f8fafc; color: #64748b; font-size: 12px; font-weight: 800; uppercase; border-bottom: 2px solid #e2e8f0; position: sticky; top: 0; }
-        .knowledge-table td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; vertical-align: top; }
-        .knowledge-table tr:hover { background: #f1f5f9; }
-        
-        /* Buttons */
-        .btn-ai { background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); color: white; padding: 10px 20px; border-radius: 12px; font-weight: bold; transition: 0.2s; display: flex; items-center; gap: 8px; cursor: pointer; }
-        .btn-ai:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(109, 40, 217, 0.3); }
-        .btn-save { background: #10b981; color: white; }
-        .btn-del { color: #ef4444; background: #fef2f2; padding: 6px; border-radius: 8px; }
-        .btn-del:hover { background: #fee2e2; }
-
-        /* Scroll */
-        .custom-scroll { overflow-y: auto; scrollbar-width: thin; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        body { background: #f0f2f5; font-family: system-ui; }
+        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
     </style>
 </head>
-<body>
+<body class="p-6">
 
-    <header class="bg-white/80 backdrop-blur px-6 py-3 border-b flex justify-between items-center sticky top-0 z-50">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center text-white text-xl shadow-lg">🧠</div>
-            <div>
-                <h1 class="font-bold text-lg leading-none text-slate-800">Brain Trainer</h1>
-                <span class="text-xs text-purple-600 font-bold">אימון בוט (Dual Core)</span>
+    <div class="max-w-4xl mx-auto">
+        <header class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-black text-slate-800 flex items-center gap-2">
+                <span class="text-3xl">🧠</span> מאמן הבוט (Live)
+            </h1>
+            <div class="text-xs font-bold bg-green-100 text-green-700 px-3 py-1 rounded-full">מחובר למנוע: FAQ</div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="card border-t-4 border-purple-600">
+                <h2 class="font-bold mb-4 text-lg">הוסף חוק חדש למוח</h2>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1">שאלה / נושא (מה הלקוח שואל?)</label>
+                        <input id="inpQuestion" class="w-full border p-3 rounded-lg bg-slate-50 focus:bg-white transition" placeholder="למשל: כמה זמן לייבוש בטון?">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1">התשובה הרשמית (של סבן)</label>
+                        <textarea id="inpAnswer" class="w-full border p-3 rounded-lg bg-slate-50 focus:bg-white h-32 resize-none" placeholder="התשובה המקצועית..."></textarea>
+                    </div>
+
+                    <button onclick="trainBrain()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-lg shadow-lg flex items-center justify-center gap-2">
+                        <i class="fas fa-microchip"></i> צרוב לזיכרון
+                    </button>
+                </div>
+            </div>
+
+            <div class="card bg-slate-800 text-white h-[500px] flex flex-col">
+                <h2 class="font-bold mb-4 border-b border-slate-700 pb-2 flex justify-between">
+                    <span>מאגר הידע הקיים</span>
+                    <button onclick="loadKnowledge()" class="text-xs text-blue-300 hover:text-white"><i class="fas fa-sync"></i> רענן</button>
+                </h2>
+                <div id="memoryList" class="flex-1 overflow-y-auto space-y-2 pr-2 custom-scroll">
+                    <div class="text-center text-slate-500 mt-20">טוען נתונים...</div>
+                </div>
             </div>
         </div>
-        <div class="text-xs text-gray-500 font-mono">v5.0 Stable</div>
-    </header>
-
-    <div class="workspace">
-        
-        <div class="card p-6 grid grid-cols-1 md:grid-cols-2 gap-6 relative">
-            
-            <div class="space-y-4 border-l pl-6 md:border-l-0 md:pl-0 md:border-r md:pr-6">
-                <div class="flex justify-between items-center">
-                    <label class="font-bold text-slate-700 flex items-center gap-2"><i class="fas fa-question-circle text-purple-500"></i> השאלה לאימון</label>
-                    <span class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">שלב 1</span>
-                </div>
-                <textarea id="askInput" class="input-box h-32 resize-none" placeholder="למשל: האם מותר להדביק קרמיקה על גבס ירוק?"></textarea>
-                <button onclick="askGemini()" id="btnAsk" class="btn-ai w-full justify-center">
-                    <i class="fas fa-sparkles"></i> שאל את המומחה (Gemini)
-                </button>
-            </div>
-
-            <div class="space-y-4">
-                <div class="flex justify-between items-center">
-                    <label class="font-bold text-slate-700 flex items-center gap-2"><i class="fas fa-comment-dots text-green-500"></i> התשובה שתשמר</label>
-                    <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">שלב 2</span>
-                </div>
-                <textarea id="answerOutput" class="input-box h-32 resize-none bg-slate-50" placeholder="התשובה תופיע כאן... ניתן לערוך אותה לפני השמירה."></textarea>
-                <button onclick="saveToBrain()" class="btn-ai btn-save w-full justify-center opacity-50 cursor-not-allowed" id="btnSave" disabled>
-                    <i class="fas fa-save"></i> שמור לזיכרון הבוט
-                </button>
-            </div>
-        </div>
-
-        <div class="card flex-1">
-            <div class="p-4 border-b flex justify-between items-center bg-white sticky top-0 z-10">
-                <div class="flex items-center gap-2">
-                    <i class="fas fa-database text-blue-500"></i>
-                    <h2 class="font-bold text-slate-700">מאגר הידע (שאלות ותשובות)</h2>
-                </div>
-                <div class="relative w-64">
-                    <input id="searchTable" class="input-box py-2 text-xs" placeholder="חפש בזיכרון..." oninput="filterTable()">
-                    <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
-                </div>
-            </div>
-            
-            <div class="custom-scroll flex-1 bg-white">
-                <table class="knowledge-table">
-                    <thead>
-                        <tr>
-                            <th width="30%">שאלה / נושא</th>
-                            <th>תשובה שמורה</th>
-                            <th width="10%">פעולות</th>
-                        </tr>
-                    </thead>
-                    <tbody id="qaTableBody">
-                        <tr><td colspan="3" class="text-center py-10 text-gray-400">טוען ידע...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
     </div>
 
     <script type="module">
@@ -118,145 +62,60 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // API Key
-        const GEMINI_KEY = "AIzaSyD9plWwyTESFm24c_OTunf4mFAsAmfrgj0";
-        
-        // State
-        let knowledgeData = [];
-
-        // --- Logic: Ask Gemini (Dual Core) ---
-        window.askGemini = async () => {
-            const question = document.getElementById('askInput').value;
-            if(!question) return alert("אנא כתוב שאלה");
-
-            const btn = document.getElementById('btnAsk');
-            const out = document.getElementById('answerOutput');
-            const saveBtn = document.getElementById('btnSave');
-
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> מנסח תשובה...';
-            out.value = "";
-            saveBtn.disabled = true; saveBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        // 1. צריבת ידע (Training)
+        window.trainBrain = async () => {
+            const q = document.getElementById('inpQuestion').value;
+            const a = document.getElementById('inpAnswer').value;
+            
+            if(!q || !a) return alert("חסר מידע!");
 
             try {
-                // ניסיון ראשון: Flash
-                let answer = await callModel(question, "gemini-1.5-flash");
-                out.value = answer;
-                enableSave();
-
-            } catch (flashError) {
-                console.warn("Flash failed, switching to backup...", flashError);
-                try {
-                    // ניסיון שני: Pro (גיבוי)
-                    let answer = await callModel(question, "gemini-pro");
-                    out.value = answer;
-                    enableSave();
-                } catch (proError) {
-                    console.error("All models failed:", proError);
-                    out.value = "שגיאת תקשורת עם גוגל. נסה שוב.";
-                }
-            }
-            
-            btn.innerHTML = '<i class="fas fa-sparkles"></i> שאל את המומחה (Gemini)';
-        };
-
-        // Helper to call Google
-        async function callModel(question, modelName) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${GEMINI_KEY}`;
-            const prompt = `
-            אתה יועץ טכני מומחה של "סבן חומרי בניין".
-            שאלה טכנית: "${question}"
-            הנחיות: ענה בעברית מקצועית ומדויקת. תהיה קצר ולעניין.
-            `;
-
-            const res = await fetch(url, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-            });
-
-            if(!res.ok) throw new Error("API Error " + res.status);
-            
-            const data = await res.json();
-            return data.candidates[0].content.parts[0].text;
-        }
-
-        function enableSave() {
-            const saveBtn = document.getElementById('btnSave');
-            saveBtn.disabled = false; 
-            saveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-        }
-
-        // --- Logic: Save to Brain ---
-        window.saveToBrain = async () => {
-            const question = document.getElementById('askInput').value;
-            const answer = document.getElementById('answerOutput').value;
-
-            if(!question || !answer) return;
-
-            try {
-                await addDoc(collection(db, "qa_knowledge"), {
-                    question: question,
-                    answer: answer,
+                // שמירה לקולקשיין FAQ האחיד
+                await addDoc(collection(db, "faq"), {
+                    question: q,
+                    answer: a,
+                    keywords: q.split(' ').filter(w => w.length > 2), // יצירת מילות מפתח אוטומטית
                     createdAt: new Date(),
-                    tags: question.split(' ').filter(w => w.length > 3)
+                    type: 'hard_rule' // סימון שזה חוק ברזל
                 });
                 
-                alert("נשמר בהצלחה! 🧠");
-                document.getElementById('askInput').value = '';
-                document.getElementById('answerOutput').value = '';
-                document.getElementById('btnSave').disabled = true;
-                document.getElementById('btnSave').classList.add('opacity-50');
-                
+                document.getElementById('inpQuestion').value = '';
+                document.getElementById('inpAnswer').value = '';
                 loadKnowledge();
+                alert("נשמר! הבוט עודכן מיידית. 🤖");
 
-            } catch(e) { alert("שגיאה בשמירה"); console.error(e); }
+            } catch(e) { console.error(e); alert("שגיאה: " + e.message); }
         };
 
-        // --- Logic: Load & Table ---
-        async function loadKnowledge() {
-            const list = document.getElementById('qaTableBody');
+        // 2. קריאת זיכרון
+        window.loadKnowledge = async () => {
+            const list = document.getElementById('memoryList');
+            list.innerHTML = '';
+            
             try {
-                const q = query(collection(db, "qa_knowledge"), orderBy("createdAt", "desc"));
+                const q = query(collection(db, "faq"), orderBy("createdAt", "desc"));
                 const snap = await getDocs(q);
-                knowledgeData = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                renderTable(knowledgeData);
-            } catch(e) { console.error(e); list.innerHTML = '<tr><td colspan="3" class="text-center text-red-500">שגיאה בטעינת נתונים</td></tr>'; }
-        }
-
-        window.renderTable = (data) => {
-            const list = document.getElementById('qaTableBody');
-            if(data.length === 0) { list.innerHTML = '<tr><td colspan="3" class="text-center py-10 text-gray-400">המוח ריק. תתחיל ללמד אותו!</td></tr>'; return; }
-
-            list.innerHTML = data.map(item => `
-                <tr class="group">
-                    <td>
-                        <div class="font-bold text-slate-700">${item.question}</div>
-                        <div class="text-[10px] text-gray-400 mt-1">${new Date(item.createdAt.seconds*1000).toLocaleDateString()}</div>
-                    </td>
-                    <td class="text-slate-600 leading-relaxed">${item.answer}</td>
-                    <td class="text-center">
-                        <button onclick="deleteItem('${item.id}')" class="btn-del"><i class="fas fa-trash-alt"></i></button>
-                    </td>
-                </tr>
-            `).join('');
-        };
-
-        window.filterTable = () => {
-            const term = document.getElementById('searchTable').value.toLowerCase();
-            const filtered = knowledgeData.filter(i => i.question.toLowerCase().includes(term) || i.answer.toLowerCase().includes(term));
-            renderTable(filtered);
+                
+                snap.forEach(d => {
+                    const item = d.data();
+                    list.innerHTML += `
+                    <div class="bg-slate-700 p-3 rounded border border-slate-600 relative group">
+                        <div class="font-bold text-purple-300 text-sm mb-1">Q: ${item.question}</div>
+                        <div class="text-slate-300 text-xs">A: ${item.answer}</div>
+                        <button onclick="deleteItem('${d.id}')" class="absolute top-2 left-2 text-red-400 opacity-0 group-hover:opacity-100 hover:scale-110 transition"><i class="fas fa-trash"></i></button>
+                    </div>`;
+                });
+            } catch(e) { list.innerHTML = '<div class="text-red-400">שגיאה בטעינה</div>'; }
         };
 
         window.deleteItem = async (id) => {
-            if(!confirm("למחוק?")) return;
-            await deleteDoc(doc(db, "qa_knowledge", id));
-            loadKnowledge();
-        };
+            if(confirm("למחוק חוק זה?")) {
+                await deleteDoc(doc(db, "faq", id));
+                loadKnowledge();
+            }
+        }
 
-        // Init
         loadKnowledge();
-        window.deleteItem = window.deleteItem; // Expose
-
     </script>
 </body>
 </html>
