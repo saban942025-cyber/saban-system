@@ -2,7 +2,7 @@
 
 const CONFIG = {
     keys: {
-        // המפתחות שלך
+        // המפתח שלך (ודא שהוא פעיל ב-Google AI Studio)
         gemini: "AIzaSyAdfGVrmr90Mp9ZhNMItD81iaE8OipKwz0", 
         googleSearch: "AIzaSyDLkShn6lBBew-PJJWtzvAe_14UF9Kv-QI",
         googleCX: "56qt2qgr7up25uvi5yjnmgqr3" 
@@ -14,9 +14,7 @@ const CONFIG = {
 window.OneSignalDeferred = window.OneSignalDeferred || [];
 try {
     OneSignalDeferred.push(async function(OneSignal) {
-        // בדיקה אם אנחנו בסביבה מאובטחת למניעת שגיאות SW
         const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
-        
         if (isSecure) {
             await OneSignal.init({
                 appId: CONFIG.oneSignalAppId,
@@ -24,20 +22,18 @@ try {
                 notifyButton: { enable: true },
                 allowLocalhostAsSecureOrigin: true,
             });
-        } else {
-            console.warn("OneSignal: התראות מושבתות (נדרש HTTPS או Localhost).");
         }
     });
 } catch (e) {
-    console.warn("OneSignal Error:", e);
+    console.warn("OneSignal Init Skipped");
 }
 
 export const SabanBrain = {
 
-    // 1. שאילתה ל-Gemini (מודל יציב: gemini-pro)
+    // 1. שאילתה ל-Gemini (שימוש במודל 1.5 Flash החדש)
     async ask(prompt, context = "אתה עוזר לוגיסטי חכם בחברת סבן.") {
-        // תיקון קריטי: מעבר למודל gemini-pro היציב למניעת שגיאות 404
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${CONFIG.keys.gemini}`;
+        // שינוי קריטי: המודל החדש
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${CONFIG.keys.gemini}`;
         
         const payload = {
             contents: [{
@@ -58,30 +54,29 @@ export const SabanBrain = {
 
             const data = await response.json();
 
-            // בדיקת שגיאות מה-API
+            // אם יש שגיאה, נציג אותה במלואה
             if (!response.ok) {
-                console.error("Gemini API Error Detail:", data);
-                return "שגיאה בגישה ל-AI. נסה שנית מאוחר יותר.";
+                console.error("Gemini API Error Full:", JSON.stringify(data, null, 2));
+                return "שגיאה בגישה ל-AI (404/400). בדוק את המפתח או המודל.";
             }
 
-            // חילוץ תשובה
             const answer = data.candidates?.[0]?.content?.parts?.[0]?.text;
             return answer || "המוח לא החזיר תשובה ברורה.";
 
         } catch (error) {
-            console.error("Network/Brain Error:", error);
-            return "שגיאת תקשורת. בדוק את החיבור לרשת.";
+            console.error("Network Error:", error);
+            return "שגיאת תקשורת. בדוק חיבור לרשת.";
         }
     },
 
     // 2. חיפוש מידע על מוצר
     async searchProductInfo(productName) {
-        // שימוש באותו מודל יציב
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${CONFIG.keys.gemini}`;
+        // שימוש במודל החדש גם כאן
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${CONFIG.keys.gemini}`;
 
         const prompt = `
         פעל כבוט טכני. אני צריך מידע על המוצר: "${productName}".
-        החזר אך ורק אובייקט JSON תקין (בלי markdown, בלי backticks) בפורמט הזה:
+        החזר אך ורק אובייקט JSON תקין (בלי markdown, בלי backticks, בלי מילים נוספות) בפורמט הזה:
         {
             "name": "שם מוצר מלא",
             "desc": "תיאור קצר (עד 15 מילים)",
@@ -100,25 +95,28 @@ export const SabanBrain = {
                 body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
             });
 
-            if (!response.ok) throw new Error("API Error");
+            if (!response.ok) {
+                console.error("Gemini Search Error:", await response.json());
+                return null;
+            }
 
             const data = await response.json();
             let text = data.candidates?.[0]?.content?.parts?.[0]?.text;
             
             if (!text) return null;
 
-            // ניקוי אגרסיבי של התשובה כדי להבטיח JSON תקין
+            // ניקוי JSON
             text = text.replace(/```json/g, '').replace(/```/g, '').trim();
             
             let productData;
             try {
                 productData = JSON.parse(text);
-            } catch (jsonError) {
-                console.error("Failed to parse JSON from AI:", text);
+            } catch (e) {
+                console.error("JSON Parse Error:", text);
                 return null;
             }
             
-            // השלמת נתונים (תמונה ומחיר)
+            // השלמת נתונים
             productData.img = `https://source.unsplash.com/400x400/?construction,${encodeURIComponent(productData.category || 'tool')}`;
             productData.price = Math.floor(Math.random() * 200) + 50; 
             productData.sku = "AI-" + Math.floor(Math.random() * 9999);
@@ -126,7 +124,7 @@ export const SabanBrain = {
             return productData;
 
         } catch (e) {
-            console.error("Search Logic Error:", e);
+            console.error("General Search Error:", e);
             return null;
         }
     }
