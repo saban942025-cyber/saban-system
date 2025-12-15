@@ -18,7 +18,7 @@
     <div id="grid" class="grid grid-cols-2 gap-4 px-4"></div>
 
     <script type="module">
-        import { SabanBrain } from './services/saban-brain.js'; // ייבוא המוח
+        import { SabanBrain } from './js/saban-brain.js'; // התיקון לנתיב
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
@@ -46,7 +46,6 @@
             }).join('');
         });
 
-        // פונקציית התייעצות ללקוח
         window.ask = async (productName) => {
             const q = prompt(`מה תרצה לשאול לגבי ${productName}?`, "האם זה מתאים לחדר רטוב?");
             if(q) {
