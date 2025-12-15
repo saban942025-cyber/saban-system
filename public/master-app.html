@@ -30,7 +30,7 @@
             color: #1c1c1e;
         }
 
-        /* --- THE APP CONTAINER (PHONE/DESKTOP) --- */
+        /* --- THE APP CONTAINER --- */
         #os-shell {
             width: 100%; height: 100%;
             background: var(--app-bg);
@@ -60,7 +60,7 @@
         .logo-anim { animation: breathe 3s infinite ease-in-out; }
         @keyframes breathe { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.8; } }
 
-        /* --- PERMISSION GATE (The "Start" Button) --- */
+        /* --- PERMISSION GATE --- */
         #permission-gate {
             position: absolute; inset: 0; z-index: 90;
             background: rgba(0,0,0,0.6); backdrop-filter: blur(10px);
@@ -74,7 +74,7 @@
         }
         @keyframes popUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-        /* --- NAVIGATION BAR (Unified) --- */
+        /* --- NAVIGATION BAR --- */
         .glass-nav {
             height: calc(60px + var(--safe-bottom));
             background: var(--glass); backdrop-filter: var(--blur);
@@ -96,10 +96,10 @@
         /* --- CONTENT FRAME --- */
         #app-frame {
             flex: 1; border: none; width: 100%; height: 100%;
-            background: white; padding-bottom: 60px; /* Space for nav */
+            background: white; padding-bottom: 60px;
         }
 
-        /* --- PWA INSTALL PROMPT --- */
+        /* --- PWA INSTALL --- */
         #pwa-install {
             position: absolute; top: 10px; right: 10px; z-index: 80;
             background: white; color: black; padding: 8px 16px;
@@ -119,9 +119,7 @@
     </div>
 
     <div id="os-shell">
-        
         <div id="pwa-install" onclick="installPWA()"><i class="fas fa-download"></i> התקן אפליקציה</div>
-
         <iframe id="app-frame" name="content"></iframe>
 
         <nav class="glass-nav" id="main-nav">
@@ -151,7 +149,7 @@
             </div>
             <h2 class="text-xl font-black text-slate-800 mb-2">ברוכים הבאים</h2>
             <p class="text-sm text-slate-500 mb-6 leading-relaxed">
-                כדי לקבל התראות על הזמנות בזמן אמת וכדי לשמוע צליל כריזה, עלינו להפעיל גישה.
+                לחץ לאישור התראות וסאונד והתחל לעבוד.
             </p>
             <button onclick="unlockApp()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-lg shadow-lg active:scale-95 transition-transform">
                 התחל עבודה 🚀
@@ -163,22 +161,19 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Config
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // State
         let userRole = 'guest';
         let deferredPrompt;
 
-        // --- INIT SEQUENCE ---
+        // --- INIT ---
         window.onload = async () => {
             const params = new URLSearchParams(window.location.search);
             const uid = params.get('uid');
             const statusText = document.getElementById('loading-text');
 
-            // 1. זיהוי משתמש
             if(uid) {
                 statusText.innerText = "מזהה עובד...";
                 try {
@@ -188,77 +183,64 @@
                         userRole = user.role;
                         localStorage.setItem('saban_user', JSON.stringify({uid, ...user}));
                         
-                        // אם זה לקוח - טען את האפליקציה שלו ישירות (בלי הסרגל התחתון של החמ"ל)
                         if(userRole === 'client') {
                             window.location.href = "client-app.html";
                             return; 
                         }
                     }
                 } catch(e) { console.error(e); }
-            } else {
-                // בדיקת זיכרון מקומי
-                const cached = localStorage.getItem('saban_user');
-                if(cached) userRole = JSON.parse(cached).role;
             }
 
-            // 2. סיום טעינה
+            // Finish Loading
             setTimeout(() => {
                 document.getElementById('splash').style.opacity = '0';
                 setTimeout(() => {
                     document.getElementById('splash').remove();
-                    // הצגת שער כניסה רק אם צריך אינטראקציה (דפדפנים חוסמים סאונד אוטומטי)
                     document.getElementById('permission-gate').style.display = 'flex';
                 }, 600);
             }, 1500);
         };
 
-        // --- UNLOCK & AUDIO ---
+        // --- UNLOCK (FIXED) ---
         window.unlockApp = () => {
-            // ניגון סאונד שקט כדי "לפתוח" את ה-AudioContext
-            const a = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAGZGF0YQQAAAAAAA==");
-            a.play().then(() => {
-                console.log("Audio Unlocked");
+            const loadApp = () => {
                 document.getElementById('permission-gate').style.display = 'none';
-                
-                // טעינת החמ"ל (הקובץ המרכזי שיצרנו קודם)
-                // שימוש בפרמטר כדי שהחמ"ל ידע לא להציג את הסרגל צד שלו במובייל, כי המאסטר מנהל את זה
                 document.getElementById('app-frame').src = "whatsapp-center2.html?embed=true";
-            }).catch(e => console.log("Audio permission needed"));
+            };
+
+            const a = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAGZGF0YQQAAAAAAA==");
+            
+            // מנסים לנגן, אם מצליח או נכשל - ממשיכים בכל מקרה
+            a.play()
+                .then(() => { console.log("Audio OK"); loadApp(); })
+                .catch(() => { console.warn("Audio blocked"); loadApp(); });
         };
 
-        // --- NAVIGATION CONTROLLER ---
+        // --- NAVIGATION ---
         window.navTo = (section) => {
-            // עדכון אייקונים
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             event.currentTarget.classList.add('active');
 
             const frame = document.getElementById('app-frame');
-            
-            // שליטה בתוך ה-Iframe (תקשורת בין חלונות)
-            // נשלח הודעה (PostMessage) לחמ"ל כדי להחליף טאב פנימי
             if (frame.contentWindow) {
+                // שליחת פקודה לחלון הפנימי
                 frame.contentWindow.postMessage({ action: 'switchTab', tab: section }, '*');
             }
         };
 
-        // --- PWA INSTALLATION ---
+        // --- PWA ---
         window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
+            e.preventDefault(); deferredPrompt = e;
             document.getElementById('pwa-install').style.display = 'block';
         });
-
         window.installPWA = async () => {
             if (deferredPrompt) {
                 deferredPrompt.prompt();
                 const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    document.getElementById('pwa-install').style.display = 'none';
-                }
+                if (outcome === 'accepted') document.getElementById('pwa-install').style.display = 'none';
                 deferredPrompt = null;
             }
         };
-
     </script>
 </body>
 </html>
