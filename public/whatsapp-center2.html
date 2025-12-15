@@ -374,7 +374,25 @@
 
         // Init
         loadOrders();
+         הוסף את זה לסוף הסקריפט ב-whatsapp-center2.html:
 
+JavaScript
+
+// --- LISTEN TO MASTER APP COMMANDS ---
+window.addEventListener('message', (event) => {
+    if (event.data.action === 'switchTab') {
+        const tabMap = { 'orders': 'orders', 'transfers': 'transfers' }; // מיפוי שמות
+        if(tabMap[event.data.tab]) switchTab(tabMap[event.data.tab]);
+    }
+});
+
+// אם רץ בתוך ה-Master App, הסתר את הסיידבר במובייל כדי למנוע כפילות
+if (window.location.search.includes('embed=true')) {
+    // CSS Injection to hide internal sidebar on mobile only
+    const style = document.createElement('style');
+    style.innerHTML = `@media (max-width: 768px) { .sidebar { display: none !important; } .main-area { transform: none !important; } }`;
+    document.head.appendChild(style);
+}
     </script>
 </body>
 </html>
