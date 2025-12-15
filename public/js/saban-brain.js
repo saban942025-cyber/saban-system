@@ -2,15 +2,14 @@
 
 const CONFIG = {
     keys: {
-        // המפתח שלך (ודא שהוא פעיל ב-Google AI Studio)
-        gemini: "AIzaSyD9plWwyTESFm24c_OTunf4mFAsAmfrgj0", 
+        gemini: "AIzaSyAdfGVrmr90Mp9ZhNMItD81iaE8OipKwz0", 
         googleSearch: "AIzaSyDLkShn6lBBew-PJJWtzvAe_14UF9Kv-QI",
         googleCX: "56qt2qgr7up25uvi5yjnmgqr3" 
     },
     oneSignalAppId: "07b81f2e-e812-424f-beca-36584b12ccf2"
 };
 
-// --- אתחול OneSignal (מוגן מקריסות) ---
+// --- אתחול OneSignal ---
 window.OneSignalDeferred = window.OneSignalDeferred || [];
 try {
     OneSignalDeferred.push(async function(OneSignal) {
@@ -30,9 +29,9 @@ try {
 
 export const SabanBrain = {
 
-    // 1. שאילתה ל-Gemini (שימוש במודל 1.5 Flash החדש)
+    // 1. שאילתה ל-Gemini (תוקן ל-gemini-1.5-flash)
     async ask(prompt, context = "אתה עוזר לוגיסטי חכם בחברת סבן.") {
-        // שינוי קריטי: המודל החדש
+        // 👇 התיקון נמצא כאן בשורה למטה
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${CONFIG.keys.gemini}`;
         
         const payload = {
@@ -54,32 +53,30 @@ export const SabanBrain = {
 
             const data = await response.json();
 
-            // אם יש שגיאה, נציג אותה במלואה
             if (!response.ok) {
-                console.error("Gemini API Error Full:", JSON.stringify(data, null, 2));
-                return "שגיאה בגישה ל-AI (404/400). בדוק את המפתח או המודל.";
+                console.error("Gemini Error:", data);
+                return "שגיאה בגישה למוח (API Error).";
             }
 
-            const answer = data.candidates?.[0]?.content?.parts?.[0]?.text;
-            return answer || "המוח לא החזיר תשובה ברורה.";
+            return data.candidates?.[0]?.content?.parts?.[0]?.text || "לא התקבלה תשובה.";
 
         } catch (error) {
             console.error("Network Error:", error);
-            return "שגיאת תקשורת. בדוק חיבור לרשת.";
+            return "שגיאת תקשורת.";
         }
     },
 
-    // 2. חיפוש מידע על מוצר
+    // 2. חיפוש מידע על מוצר (תוקן ל-gemini-1.5-flash)
     async searchProductInfo(productName) {
-        // שימוש במודל החדש גם כאן
+        // 👇 התיקון נמצא כאן בשורה למטה
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${CONFIG.keys.gemini}`;
 
         const prompt = `
         פעל כבוט טכני. אני צריך מידע על המוצר: "${productName}".
-        החזר אך ורק אובייקט JSON תקין (בלי markdown, בלי backticks, בלי מילים נוספות) בפורמט הזה:
+        החזר אך ורק אובייקט JSON תקין (בלי markdown, בלי backticks) בפורמט הזה:
         {
             "name": "שם מוצר מלא",
-            "desc": "תיאור קצר (עד 15 מילים)",
+            "desc": "תיאור קצר",
             "specs": {
                 "weight": "משקל בק'ג (מספר)",
                 "cover": "כיסוי במ'ר (מספר)",
@@ -116,7 +113,6 @@ export const SabanBrain = {
                 return null;
             }
             
-            // השלמת נתונים
             productData.img = `https://source.unsplash.com/400x400/?construction,${encodeURIComponent(productData.category || 'tool')}`;
             productData.price = Math.floor(Math.random() * 200) + 50; 
             productData.sku = "AI-" + Math.floor(Math.random() * 9999);
@@ -124,9 +120,8 @@ export const SabanBrain = {
             return productData;
 
         } catch (e) {
-            console.error("General Search Error:", e);
+            console.error("Search Logic Error:", e);
             return null;
         }
     }
 };
-
