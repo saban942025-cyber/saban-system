@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>SabanOS | ניהול גישות</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚙️</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -41,7 +42,7 @@
                 <input type="hidden" id="editUid">
                 
                 <div class="space-y-3">
-                    <div><label class="label">שם מלא</label><input type="text" id="name" class="input font-bold" placeholder="ישראל ישראלי"></div>
+                    <div><label class="label">שם מלא</label><input type="text" id="name" class="input font-bold" placeholder="ישראל ישראלי" oninput="window.updateAvatar()"></div>
                     <div><label class="label">טלפון</label><input type="tel" id="phone" class="input" placeholder="050..."></div>
                     
                     <div>
@@ -71,7 +72,7 @@
                     </div>
 
                     <div class="pt-2 border-t flex gap-2 items-center">
-                        <img id="previewAvatar" src="https://via.placeholder.com/40" class="w-10 h-10 rounded bg-slate-100">
+                        <img id="previewAvatar" src="https://ui-avatars.com/api/?name=New&background=random" class="w-10 h-10 rounded bg-slate-100 object-cover">
                         <div class="flex-1">
                             <label class="label">קישור לתמונה (אופציונלי)</label>
                             <input type="text" id="avatar" class="input text-xs" oninput="window.updateAvatar()">
@@ -112,6 +113,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        // התיקון הקריטי: הוספת serverTimestamp לייבוא
         import { getFirestore, collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // Config
@@ -142,9 +144,12 @@
 
             tbody.innerHTML = filtered.map(u => {
                 const link = `https://saban-system.onrender.com/master-app.html?uid=${u.id}`;
+                // תמונת ברירת מחדל אמינה מ-ui-avatars
+                const img = u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=random`;
+                
                 return `
                 <tr class="border-b hover:bg-blue-50 transition">
-                    <td class="p-3"><img src="${u.avatar || 'https://via.placeholder.com/40'}" class="w-10 h-10 rounded bg-white border object-cover"></td>
+                    <td class="p-3"><img src="${img}" class="w-10 h-10 rounded bg-white border object-cover"></td>
                     <td class="p-3">
                         <div class="font-bold text-slate-800">${u.name}</div>
                         <div class="text-xs text-slate-400">${u.email}</div>
@@ -160,45 +165,49 @@
             }).join('');
         }
 
-        // --- 2. שמירת משתמש (הפונקציה שתוקנה) ---
+        // --- 2. שמירת משתמש ---
         window.saveUser = async () => {
             const btn = document.getElementById('saveBtn');
             const spinner = document.getElementById('btnSpinner');
             const btnText = document.getElementById('btnText');
             
-            // בדיקות תקינות
             const name = document.getElementById('name').value;
             const email = document.getElementById('email').value;
             const editId = document.getElementById('editUid').value;
 
             if(!name || !email) return alert("חובה למלא שם ואימייל!");
 
-            // UI Loading
             btn.disabled = true;
             spinner.style.display = 'block';
             btnText.innerText = 'שומר...';
 
             try {
+                // שימוש ב-ui-avatars אם אין תמונה
+                let avatar = document.getElementById('avatar').value;
+                if(!avatar) avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
+
                 const userData = {
                     name: name,
                     email: email,
                     phone: document.getElementById('phone').value,
-                    avatar: document.getElementById('avatar').value,
+                    avatar: avatar,
                     role: currentTab === 'staff' ? document.getElementById('role').value : 'client',
                     description: document.getElementById('desc').value,
                     clientNumber: document.getElementById('clientNum').value,
-                    updatedAt: serverTimestamp()
+                    updatedAt: serverTimestamp() // כאן הייתה השגיאה קודם
                 };
 
                 if (editId) {
-                    // עדכון קיים
                     await updateDoc(doc(db, "users", editId), userData);
                     alert("עודכן בהצלחה!");
                 } else {
-                    // יצירה חדשה
                     const pass = document.getElementById('password').value;
                     const cred = await createUserWithEmailAndPassword(auth, email, pass);
-                    await setDoc(doc(db, "users", cred.user.uid), { ...userData, uid: cred.user.uid, createdAt: serverTimestamp() });
+                    // הוספת השדות הראשוניים
+                    userData.uid = cred.user.uid;
+                    userData.createdAt = serverTimestamp();
+                    
+                    await setDoc(doc(db, "users", cred.user.uid), userData);
                     alert("משתמש נוצר! הסיסמה היא: " + pass);
                 }
                 
@@ -238,11 +247,10 @@
             document.getElementById('cancelBtn').classList.remove('hidden');
             document.getElementById('saveBtn').innerHTML = 'עדכן פרטים';
             
-            // מילוי שדות
             document.getElementById('name').value = u.name;
             document.getElementById('email').value = u.email;
-            document.getElementById('email').disabled = true; // אי אפשר לשנות מייל בעריכה
-            document.getElementById('passwordContainer').classList.add('hidden'); // הסתרת סיסמה
+            document.getElementById('email').disabled = true;
+            document.getElementById('passwordContainer').classList.add('hidden');
             document.getElementById('phone').value = u.phone || '';
             document.getElementById('avatar').value = u.avatar || '';
             window.updateAvatar();
@@ -281,7 +289,10 @@
 
         window.updateAvatar = () => {
             const url = document.getElementById('avatar').value;
-            document.getElementById('previewAvatar').src = url || 'https://via.placeholder.com/40';
+            const name = document.getElementById('name').value;
+            // שימוש ב-ui-avatars כתחליף
+            const fallback = `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'New')}&background=random`;
+            document.getElementById('previewAvatar').src = url || fallback;
         };
 
         window.autoDesc = () => {
