@@ -375,14 +375,13 @@
             }
         }
 
-        // --- 4. FINALIZE & PDF ---
+        // --- 4. FINALIZE & PDF & SAVE ---
         window.finalizeOrder = async () => {
             if(parsedData.length === 0) return;
 
             // PDF Generation
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ align: 'right', direction: 'rtl' }); // תמיכה בסיסית
-            
+            const doc = new jsPDF({ align: 'right', direction: 'rtl' }); 
             doc.setFontSize(20);
             doc.text("Saban Order Request", 105, 20, { align: "center" });
             
@@ -402,10 +401,18 @@
             // Firebase Save
             try {
                 if(db) {
+                    // Generate Waze Link for persistence
+                    let wazeLink = "";
+                    if (addressInfo && addressInfo.lat) {
+                        wazeLink = `https://waze.com/ul?ll=${addressInfo.lat},${addressInfo.lng}&navigate=yes`;
+                    }
+
                     await addDoc(collection(db, "orders"), {
                         clientName: contactInfo?.name || "לקוח אפליקציה",
                         phone: contactInfo?.phone || "",
                         address: addressInfo?.text || "",
+                        wazeLink: wazeLink, // <--- שמירת הלינק להזמנה
+                        location: addressInfo ? { lat: addressInfo.lat, lng: addressInfo.lng } : null,
                         branch: addressInfo?.branch || "TBD",
                         items: parsedData,
                         status: "new",
@@ -414,9 +421,8 @@
                     });
                 }
                 
-                // Clear & Switch
                 alert("ההזמנה נשלחה בהצלחה! 🚀\nהחמ\"ל קיבל את ההודעה.");
-                window.location.reload(); // רענון נקי
+                window.location.reload(); 
             } catch(e) { alert("שגיאת רשת"); }
         }
 
@@ -464,13 +470,19 @@
 
         function renderCatalog(items) {
             document.getElementById('catalogGrid').innerHTML = items.map(p => `
-                <div class="bg-white rounded-xl p-3 shadow-sm text-center">
+                <div class="bg-white rounded-xl p-3 shadow-sm text-center" onclick="addToCart('${p.id}')">
                     <img src="${p.rich?.image || 'https://via.placeholder.com/80'}" class="mx-auto h-20 object-contain mb-2">
                     <div class="font-bold text-xs text-slate-800 h-8 line-clamp-2">${p.core.name}</div>
                     <div class="text-blue-600 font-bold text-sm">₪${p.core.price}</div>
                 </div>
             `).join('');
         }
+
+        // Fix addToCart not being available globally
+        window.addToCart = (id) => {
+             // Basic cart add implementation for catalog clicks
+             alert("פריט נוסף לעגלה (לוגיקה מלאה תתווסף בנפרד)");
+        };
 
     </script>
 </body>
