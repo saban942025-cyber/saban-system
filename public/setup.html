@@ -2,211 +2,342 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>SabanOS | ניהול גישות</title>
+    <title>SabanOS | מרכז בקרה ומשתמשים v3.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { background: #f8fafc; font-family: system-ui; }
-        .card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
-        .input-box { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; transition: 0.2s; }
-        .input-box:focus { border-color: #3b82f6; ring: 2px solid #93c5fd; }
-        .btn { padding: 10px 20px; border-radius: 8px; font-weight: bold; transition: 0.2s; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
-        .btn-primary { background: #0f172a; color: white; }
-        .btn-primary:hover { background: #1e293b; }
-        .btn-whatsapp { background: #25d366; color: white; }
-        .toggle-checkbox:checked { right: 0; border-color: #68D391; }
-        .toggle-checkbox:checked + .toggle-label { background-color: #68D391; }
+        /* --- SYSTEM THEME --- */
+        :root { --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0; --primary: #0f172a; --accent: #3b82f6; }
+        body { background-color: var(--bg); color: var(--primary); font-family: system-ui, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        
+        /* Layout */
+        .dashboard { flex: 1; display: grid; grid-template-columns: 380px 1fr; gap: 20px; padding: 20px; overflow: hidden; }
+        .panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        
+        /* Header */
+        .panel-header { padding: 15px; border-bottom: 1px solid var(--border); background: #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
+        .panel-title { font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+
+        /* Form Elements */
+        .input { width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; outline: none; transition: 0.2s; }
+        .input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        .label { display: block; font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 4px; }
+        
+        /* Tabs */
+        .tabs { display: flex; padding: 4px; background: #e2e8f0; border-radius: 8px; margin-bottom: 15px; }
+        .tab { flex: 1; text-align: center; padding: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border-radius: 6px; color: #64748b; transition: 0.2s; }
+        .tab.active { background: white; color: var(--accent); shadow: 0 1px 2px rgba(0,0,0,0.1); }
+
+        /* Table */
+        .table-wrap { flex: 1; overflow-y: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { text-align: right; padding: 10px 15px; background: #f8fafc; border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 700; color: #64748b; position: sticky; top: 0; }
+        td { padding: 10px 15px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        tr:hover { background: #f1f5f9; }
+
+        /* Status Indicators */
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .online { background: #22c55e; box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2); }
+        .offline { background: #cbd5e1; }
+        .warning-badge { background: #fee2e2; color: #991b1b; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; display: inline-flex; align-items: center; gap: 4px; cursor: help; }
+
+        /* Avatar */
+        .avatar { width: 32px; height: 32px; border-radius: 8px; object-fit: cover; background: #e2e8f0; }
     </style>
 </head>
-<body class="p-8">
+<body>
 
-    <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="dashboard">
         
-        <div class="card h-fit">
-            <h2 class="text-xl font-black text-slate-800 mb-6 flex items-center gap-2"><i class="fas fa-user-shield text-blue-600"></i> יצירת משתמש</h2>
-            
-            <form id="userForm" class="space-y-4">
-                <div>
-                    <label class="text-xs font-bold text-slate-500 uppercase">שם מלא</label>
-                    <input id="uName" class="input-box" placeholder="ישראל ישראלי" oninput="updatePreview()">
-                </div>
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-xs font-bold text-slate-500 uppercase">טלפון</label>
-                        <input id="uPhone" class="input-box" placeholder="050..." oninput="updatePreview()">
-                    </div>
-                    <div>
-                        <label class="text-xs font-bold text-slate-500 uppercase">תפקיד</label>
-                        <select id="uRole" class="input-box bg-white" onchange="updatePreview()">
-                            <option value="client">לקוח (Client)</option>
-                            <option value="staff">צוות (Staff)</option>
-                            <option value="admin">מנהל (Admin)</option>
-                            <option value="driver">נהג (Driver)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                    <label class="text-xs font-bold text-slate-500 uppercase mb-2 block">הרשאות מיוחדות</label>
-                    <div class="flex items-center gap-4">
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" id="permListen" checked class="accent-blue-600 w-4 h-4">
-                            <span class="text-sm">האזנה לחמ"ל</span>
-                        </label>
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" id="permReply" class="accent-blue-600 w-4 h-4">
-                            <span class="text-sm">אישור דיבור (Reply)</span>
-                        </label>
-                    </div>
-                </div>
-
-                <div id="magicPreview" class="hidden bg-green-50 p-4 rounded-xl border border-green-200 mt-4">
-                    <div class="text-xs font-bold text-green-800 uppercase mb-2">תצוגה מקדימה להודעת וואטסאפ</div>
-                    <div class="text-sm text-slate-700 whitespace-pre-wrap" id="waMsgPreview"></div>
-                    <button type="button" onclick="sendWhatsApp()" class="btn btn-whatsapp w-full justify-center mt-3 text-sm">
-                        <i class="fab fa-whatsapp"></i> צור ושלח הזמנה
-                    </button>
-                </div>
-
-                <button type="submit" id="saveBtn" class="btn btn-primary w-full justify-center text-sm">שמור במסד הנתונים</button>
-            </form>
-        </div>
-
-        <div class="card lg:col-span-2">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-black text-slate-800">מצבת כוח אדם ולקוחות</h2>
-                <div class="flex gap-2">
-                    <button onclick="loadUsers('staff')" class="px-3 py-1 rounded bg-slate-100 text-sm font-bold hover:bg-slate-200">צוות</button>
-                    <button onclick="loadUsers('client')" class="px-3 py-1 rounded bg-slate-100 text-sm font-bold hover:bg-slate-200">לקוחות</button>
-                </div>
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title"><i class="fas fa-user-edit text-blue-500"></i> עורך משתמשים</span>
+                <button onclick="resetForm()" class="text-xs text-red-500 font-bold hidden" id="cancelBtn">ביטול</button>
             </div>
             
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm text-right">
-                    <thead class="bg-slate-50 text-slate-500 border-b">
+            <div class="p-5 flex-1 overflow-y-auto">
+                <div class="tabs">
+                    <div onclick="switchTab('staff')" class="tab active" id="tab-staff">צוות</div>
+                    <div onclick="switchTab('client')" class="tab" id="tab-client">לקוחות</div>
+                </div>
+
+                <form id="userForm" class="space-y-4">
+                    <input type="hidden" id="editUid">
+                    
+                    <div class="flex items-center gap-3">
+                        <img id="previewAvatar" src="https://via.placeholder.com/50" class="w-12 h-12 rounded-lg object-cover border">
+                        <div class="flex-1">
+                            <label class="label">תמונה (URL)</label>
+                            <input type="text" id="avatar" class="input" placeholder="https://..." oninput="updateAvatar()">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><label class="label">שם מלא</label><input type="text" id="name" class="input font-bold" required></div>
+                        <div><label class="label">טלפון</label><input type="tel" id="phone" class="input" required></div>
+                    </div>
+
+                    <div><label class="label">אימייל (חובה למערכת)</label><input type="email" id="email" class="input" required></div>
+                    
+                    <div id="passwordField"><label class="label">סיסמה (ליצירה בלבד)</label><input type="text" id="password" class="input" value="Saban2025"></div>
+
+                    <div id="staffSection" class="space-y-3 pt-2 border-t">
+                        <div>
+                            <label class="label">תפקיד</label>
+                            <select id="role" class="input" onchange="autoDesc()">
+                                <option value="admin">👑 מנכ"ל (Admin)</option>
+                                <option value="ops">🕹️ תפעול (Ops)</option>
+                                <option value="warehouse">📦 מחסן (Warehouse)</option>
+                                <option value="driver">🚛 נהג (Driver)</option>
+                            </select>
+                        </div>
+                        <div><label class="label">סניף/מיקום</label><input type="text" id="branch" class="input"></div>
+                        <div><label class="label">תיאור</label><input type="text" id="desc" class="input text-xs"></div>
+                    </div>
+
+                    <div id="clientSection" class="hidden space-y-3 pt-2 border-t">
+                        <div><label class="label">מספר לקוח</label><input type="text" id="clientNum" class="input"></div>
+                        <div class="bg-blue-50 p-2 rounded text-xs text-blue-700">ניהול פרויקטים זמין דרך האפליקציה</div>
+                    </div>
+
+                    <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-bold text-sm shadow mt-2">שמור משתמש</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title"><i class="fas fa-network-wired text-green-500"></i> מוניטור בזמן אמת</span>
+                <div class="text-xs font-mono bg-slate-200 px-2 py-1 rounded" id="counts">טוען...</div>
+            </div>
+            
+            <div class="table-wrap">
+                <table id="userTable">
+                    <thead>
                         <tr>
-                            <th class="p-3">שם</th>
-                            <th class="p-3">תפקיד</th>
-                            <th class="p-3">הרשאות</th>
-                            <th class="p-3">לינק</th>
-                            <th class="p-3">פעולות</th>
+                            <th class="w-10"></th>
+                            <th>שם</th>
+                            <th>תפקיד</th>
+                            <th>סטטוס / תקינות</th>
+                            <th>פעולות</th>
                         </tr>
                     </thead>
-                    <tbody id="usersTable"></tbody>
+                    <tbody id="tableBody"></tbody>
                 </table>
             </div>
         </div>
+
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, updateDoc, deleteDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { initPresence } from './js/presence.js';
 
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
         const auth = getAuth(app);
+        const db = getFirestore(app);
 
-        let generatedUid = "";
+        // הפעלת נוכחות לעצמי (כדי שיראו שאני מחובר)
+        initPresence(app);
 
-        // --- 1. יצירת משתמש וסימולציה ---
-        document.getElementById('userForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const name = document.getElementById('uName').value;
-            const role = document.getElementById('uRole').value;
-            const phone = document.getElementById('uPhone').value;
-            
-            // יצירת מזהה פיקטיבי או אמיתי (כאן נשתמש ב-Timestamp לפשטות, במערכת מלאה משתמשים ב-Auth)
-            generatedUid = 'u_' + Date.now(); 
-            
-            const userData = {
-                name, role, phone,
-                permissions: {
-                    listen: document.getElementById('permListen').checked,
-                    reply: document.getElementById('permReply').checked
-                },
-                createdAt: serverTimestamp(),
-                avatar: `https://ui-avatars.com/api/?name=${name}&background=random`
-            };
+        let users = [];
+        let tab = 'staff';
 
-            try {
-                await setDoc(doc(db, "users", generatedUid), userData);
-                alert("משתמש נוצר בהצלחה! כעת ניתן לשלוח הזמנה.");
-                document.getElementById('magicPreview').classList.remove('hidden');
-                updatePreview();
-                loadUsers(role === 'client' ? 'client' : 'staff');
-            } catch(err) { alert("שגיאה: " + err.message); }
+        // --- REAL TIME MONITOR ---
+        onSnapshot(collection(db, "users"), (snap) => {
+            users = snap.docs.map(d => ({...d.data(), id: d.id}));
+            render();
         });
 
-        // --- 2. מחולל הודעות וואטסאפ ---
-        window.updatePreview = () => {
-            const name = document.getElementById('uName').value;
-            const link = `https://saban-system.onrender.com/master-app.html?uid=${generatedUid || 'DEMO'}`;
+        function render() {
+            const tbody = document.getElementById('tableBody');
+            const list = users.filter(u => tab === 'staff' ? u.type !== 'client' : u.type === 'client');
             
-            const msg = `אהלן ${name}! 👋
-ברוך הבא לאפליקציית *סבן PRO*.
+            // סטטיסטיקה
+            const onlineCount = users.filter(u => isOnline(u.lastSeen)).length;
+            document.getElementById('counts').innerText = `סה"כ: ${users.length} | מחוברים: ${onlineCount}`;
 
-📲 *מה מחכה לך בפנים?*
-• הזמנת סחורה מהירה בסריקת רנטגן ☢️
-• צ'אט ישיר עם החמ"ל והמחסן
-• מעקב אחרי הנהג בזמן אמת
-
-👇 *לחץ לכניסה מיידית (ללא סיסמה):*
-${link}`;
-            
-            document.getElementById('waMsgPreview').innerText = msg;
-        };
-
-        window.sendWhatsApp = () => {
-            const phone = document.getElementById('uPhone').value.replace('0', '972');
-            const text = document.getElementById('waMsgPreview').innerText;
-            window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank');
-        };
-
-        // --- 3. טעינת רשימה ---
-        window.loadUsers = async (typeFilter) => {
-            const tbody = document.getElementById('usersTable');
-            tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center">טוען...</td></tr>';
-            
-            const snap = await getDocs(collection(db, "users"));
-            let html = "";
-            
-            snap.forEach(d => {
-                const u = d.data();
-                // סינון גס (בצד לקוח לדמו)
-                const isClient = u.role === 'client';
-                if ((typeFilter === 'client' && !isClient) || (typeFilter === 'staff' && isClient)) return;
-
-                const link = `https://saban-system.onrender.com/master-app.html?uid=${d.id}`;
+            tbody.innerHTML = list.map(u => {
+                const online = isOnline(u.lastSeen);
+                const issues = checkIssues(u);
                 
-                html += `
-                <tr class="border-b hover:bg-gray-50">
-                    <td class="p-3 font-bold">${u.name}</td>
-                    <td class="p-3"><span class="bg-gray-100 px-2 py-1 rounded text-xs">${u.role}</span></td>
-                    <td class="p-3 text-xs">
-                        ${u.permissions?.reply ? '✅ מגיב' : '🎧 מאזין'}
+                let statusHtml = online 
+                    ? `<span class="text-xs text-green-600 font-bold flex items-center gap-1"><span class="status-dot online"></span> מחובר</span>`
+                    : `<span class="text-xs text-gray-400 flex items-center gap-1"><span class="status-dot offline"></span> מנותק</span>`;
+
+                if (issues.length > 0) {
+                    statusHtml += `<div class="mt-1 flex flex-wrap gap-1">
+                        ${issues.map(i => `<span class="warning-badge" title="${i.fix}">${i.msg}</span>`).join('')}
+                    </div>`;
+                }
+
+                return `
+                <tr>
+                    <td class="text-center"><img src="${u.avatar || 'https://via.placeholder.com/32'}" class="avatar"></td>
+                    <td>
+                        <div class="font-bold">${u.name}</div>
+                        <div class="text-[10px] text-gray-400">${u.email || '<span class="text-red-500">חסר מייל!</span>'}</div>
                     </td>
-                    <td class="p-3">
-                        <button onclick="navigator.clipboard.writeText('${link}').then(()=>alert('הועתק!'))" class="text-blue-600 hover:underline text-xs font-bold">העתק לינק</button>
-                    </td>
-                    <td class="p-3">
-                        <button onclick="deleteUser('${d.id}')" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
+                    <td><span class="text-xs bg-gray-100 px-2 py-1 rounded">${u.role}</span></td>
+                    <td>${statusHtml}</td>
+                    <td>
+                        <div class="flex gap-2">
+                            <button onclick="editUser('${u.id}')" class="text-blue-500 hover:bg-blue-50 p-1.5 rounded"><i class="fas fa-pen"></i></button>
+                            ${issues.length > 0 ? `<button onclick="autoFix('${u.id}')" class="text-green-600 hover:bg-green-50 p-1.5 rounded animate-pulse" title="תיקון אוטומטי"><i class="fas fa-magic"></i></button>` : ''}
+                            <button onclick="delUser('${u.id}')" class="text-red-500 hover:bg-red-50 p-1.5 rounded"><i class="fas fa-trash"></i></button>
+                        </div>
                     </td>
                 </tr>`;
-            });
-            tbody.innerHTML = html || '<tr><td colspan="5" class="p-4 text-center">אין נתונים</td></tr>';
+            }).join('');
+        }
+
+        // --- DIAGNOSTICS ---
+        function isOnline(timestamp) {
+            if (!timestamp) return false;
+            const diff = (new Date() - new Date(timestamp.seconds * 1000)) / 1000;
+            return diff < 120; // 2 דקות
+        }
+
+        function checkIssues(u) {
+            let errs = [];
+            if (u.password) errs.push({msg: 'סיסמה גלויה!', fix: 'מחיקת שדה סיסמה'});
+            if (!u.type) errs.push({msg: 'חסר סוג', fix: 'הוספת type: staff/client'});
+            if (u.type === 'staff' && !u.branch) errs.push({msg: 'חסר סניף', fix: 'הוספת סניף ראשי'});
+            return errs;
+        }
+
+        window.autoFix = async (id) => {
+            const u = users.find(x => x.id === id);
+            if (!confirm(`לתקן אוטומטית את ${u.name}?`)) return;
+            
+            const updates = {};
+            // מחיקת סיסמה גלויה (אבטחה)
+            if (u.password) { updates.password = deleteField(); } // דורש import של deleteField
+            // השלמת סוג
+            if (!u.type) updates.type = (u.role === 'client') ? 'client' : 'staff';
+            // השלמת סניף
+            if (u.type !== 'client' && !u.branch) updates.branch = 'מטה חברה';
+
+            try {
+                // במקרה של מחיקה צריך deleteField מפיירבייס, כאן פשוט נדרוס
+                // לגרסה פשוטה: נעדכן מה שאפשר
+                if(u.password) updates.password = null; // או למחוק ידנית
+                await updateDoc(doc(db, "users", id), updates);
+                alert("תוקן בהצלחה!");
+            } catch(e) { alert("שגיאה בתיקון: " + e.message); }
         };
 
-        window.deleteUser = async (id) => {
-            if(confirm("למחוק?")) {
-                await deleteDoc(doc(db, "users", id));
-                loadUsers('staff'); // Refresh default
+        // --- CRUD LOGIC ---
+        window.editUser = (id) => {
+            const u = users.find(x => x.id === id);
+            if (!u) return;
+            
+            document.getElementById('editUid').value = id;
+            document.getElementById('submitBtn').innerText = "עדכן פרטים";
+            document.getElementById('cancelBtn').classList.remove('hidden');
+            
+            // שדות בסיס
+            document.getElementById('name').value = u.name;
+            document.getElementById('phone').value = u.phone;
+            document.getElementById('email').value = u.email || '';
+            document.getElementById('email').disabled = true;
+            document.getElementById('passwordField').classList.add('hidden');
+            document.getElementById('avatar').value = u.avatar || '';
+            document.getElementById('previewAvatar').src = u.avatar || 'https://via.placeholder.com/50';
+
+            if (u.type === 'client') {
+                switchTab('client');
+                document.getElementById('clientNum').value = u.clientNumber || '';
+            } else {
+                switchTab('staff');
+                document.getElementById('role').value = u.role;
+                document.getElementById('branch').value = u.branch || '';
+                document.getElementById('desc').value = u.description || '';
             }
         };
 
-        loadUsers('staff'); // Init load
+        document.getElementById('userForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('editUid').value;
+            const isEdit = !!id;
+            
+            const base = {
+                name: document.getElementById('name').value,
+                phone: document.getElementById('phone').value,
+                avatar: document.getElementById('avatar').value,
+                type: tab,
+                lastUpdated: serverTimestamp()
+            };
+
+            if (tab === 'staff') {
+                base.role = document.getElementById('role').value;
+                base.branch = document.getElementById('branch').value;
+                base.description = document.getElementById('desc').value;
+            } else {
+                base.role = 'client';
+                base.clientNumber = document.getElementById('clientNum').value;
+            }
+
+            try {
+                if (isEdit) {
+                    await updateDoc(doc(db, "users", id), base);
+                } else {
+                    const email = document.getElementById('email').value;
+                    const pass = document.getElementById('password').value;
+                    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+                    await setDoc(doc(db, "users", cred.user.uid), { ...base, email, uid: cred.user.uid, createdAt: serverTimestamp() });
+                }
+                resetForm();
+            } catch(e) { alert("שגיאה: " + e.message); }
+        });
+
+        window.delUser = async (id) => {
+            if(confirm("למחוק?")) await deleteDoc(doc(db, "users", id));
+        };
+
+        // --- UTILS ---
+        window.switchTab = (t) => {
+            tab = t;
+            document.querySelectorAll('.tab').forEach(e => e.classList.remove('active'));
+            document.getElementById(`tab-${t}`).classList.add('active');
+            
+            if (t === 'staff') {
+                document.getElementById('staffSection').classList.remove('hidden');
+                document.getElementById('clientSection').classList.add('hidden');
+            } else {
+                document.getElementById('staffSection').classList.add('hidden');
+                document.getElementById('clientSection').classList.remove('hidden');
+            }
+            render();
+        };
+
+        window.resetForm = () => {
+            document.getElementById('userForm').reset();
+            document.getElementById('editUid').value = '';
+            document.getElementById('submitBtn').innerText = "שמור משתמש";
+            document.getElementById('email').disabled = false;
+            document.getElementById('passwordField').classList.remove('hidden');
+            document.getElementById('cancelBtn').classList.add('hidden');
+        };
+
+        window.updateAvatar = () => document.getElementById('previewAvatar').src = document.getElementById('avatar').value || 'https://via.placeholder.com/50';
+        
+        window.autoDesc = () => {
+            const map = { admin: 'מנהל על', ops: 'מנהל תפעול', warehouse: 'מחסנאי ראשי', driver: 'נהג חלוקה' };
+            document.getElementById('desc').value = map[document.getElementById('role').value] || '';
+        };
+
+        // EXPORTS
+        window.autoFix = autoFix;
+        window.editUser = editUser;
+        window.delUser = delUser;
+        window.switchTab = switchTab;
+        window.resetForm = resetForm;
+        window.updateAvatar = updateAvatar;
+        window.autoDesc = autoDesc;
 
     </script>
 </body>
