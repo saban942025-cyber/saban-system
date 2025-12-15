@@ -2,14 +2,14 @@
 
 const CONFIG = {
     keys: {
-        gemini: "AIzaSyAdfGVrmr90Mp9ZhNMItD81iaE8OipKwz0", // המפתח שלך
+        gemini: "AIzaSyAdfGVrmr90Mp9ZhNMItD81iaE8OipKwz0", // וודא שהמפתח הזה פעיל ב-Google AI Studio
         googleSearch: "AIzaSyDLkShn6lBBew-PJJWtzvAe_14UF9Kv-QI",
         googleCX: "56qt2qgr7up25uvi5yjnmgqr3" 
     },
     oneSignalAppId: "07b81f2e-e812-424f-beca-36584b12ccf2"
 };
 
-// --- אתחול OneSignal (עם הגנה מקריסות) ---
+// --- אתחול OneSignal ---
 window.OneSignalDeferred = window.OneSignalDeferred || [];
 try {
     OneSignalDeferred.push(async function(OneSignal) {
@@ -24,64 +24,68 @@ try {
         }
     });
 } catch (e) {
-    console.warn("OneSignal Init Skipped");
+    console.warn("OneSignal Warning: Skipped");
 }
 
 export const SabanBrain = {
 
-    // 1. שאילתה ל-Gemini (עם מנגנון גיבוי סימולציה)
-    async ask(prompt, context = "אתה עוזר לוגיסטי חכם בחברת סבן.") {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${CONFIG.keys.gemini}`;
+    // פונקציית עזר לביצוע בקשה עם ניסיון כפול (מודל חדש -> מודל ישן -> סימולציה)
+    async fetchGemini(payload) {
+        const models = ['gemini-1.5-flash', 'gemini-pro'];
         
+        for (const model of models) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${CONFIG.keys.gemini}`;
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    return data.candidates?.[0]?.content?.parts?.[0]?.text;
+                } else {
+                    console.warn(`Model ${model} failed:`, response.status);
+                }
+            } catch (e) {
+                console.warn(`Network error on ${model}`);
+            }
+        }
+        return null; // אם שניהם נכשלו
+    },
+
+    // 1. שאילתה כללית (צ'אט/מחשבון)
+    async ask(prompt, context = "אתה עוזר לוגיסטי.") {
         const payload = {
             contents: [{ parts: [{ text: `הקשר: ${context}\nשאלה: ${prompt}\nהנחיות: ענה בעברית, קצר ולעניין.` }] }]
         };
 
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+        const result = await this.fetchGemini(payload);
+        
+        if (result) return result;
 
-            if (!response.ok) {
-                console.warn("Gemini API Failed (404/403). Switching to SIMULATION mode.");
-                return this.simulateResponse(prompt); // הפעלת גיבוי
-            }
-
-            const data = await response.json();
-            return data.candidates?.[0]?.content?.parts?.[0]?.text || "לא התקבלה תשובה.";
-
-        } catch (error) {
-            console.error("Network Error, using simulation:", error);
-            return this.simulateResponse(prompt); // הפעלת גיבוי
-        }
+        console.error("All Gemini models failed. Using SIMULATION.");
+        return this.simulateResponse(prompt);
     },
 
-    // 2. חיפוש מידע על מוצר (עם מנגנון גיבוי סימולציה)
+    // 2. חיפוש מוצר
     async searchProductInfo(productName) {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${CONFIG.keys.gemini}`;
-
         const prompt = `
         החזר JSON בלבד עבור המוצר: "${productName}".
         פורמט: {"name": "...", "desc": "...", "specs": {"weight": "...", "cover": "...", "dry": "..."}, "category": "cement|glue|paint|tools"}`;
 
+        const payload = { contents: [{ parts: [{ text: prompt }] }] };
+        
+        let text = await this.fetchGemini(payload);
+
+        // אם ה-AI נכשל, נפעיל סימולציה
+        if (!text) {
+            console.error("Gemini Search failed. Using SIMULATION.");
+            return this.simulateProductData(productName);
+        }
+
         try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-            });
-
-            if (!response.ok) {
-                console.warn("Gemini Search Failed. Switching to SIMULATION mode.");
-                return this.simulateProductData(productName); // הפעלת גיבוי
-            }
-
-            const data = await response.json();
-            let text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (!text) return this.simulateProductData(productName);
-
             text = text.replace(/```json/g, '').replace(/```/g, '').trim();
             const productData = JSON.parse(text);
             
@@ -89,30 +93,26 @@ export const SabanBrain = {
             productData.img = `https://source.unsplash.com/400x400/?construction,${encodeURIComponent(productData.category || 'tool')}`;
             productData.price = Math.floor(Math.random() * 200) + 50; 
             productData.sku = "AI-" + Math.floor(Math.random() * 9999);
+            
             return productData;
-
         } catch (e) {
-            console.error("Search Error, using simulation:", e);
-            return this.simulateProductData(productName); // הפעלת גיבוי
+            console.error("JSON Parse Error, using simulation");
+            return this.simulateProductData(productName);
         }
     },
 
-    // --- מנועי הסימולציה (כדי שהמערכת תמיד תעבוד) ---
-
+    // --- מנועי הסימולציה (גיבוי) ---
     simulateResponse(prompt) {
-        // תשובות דמי חכמות למקרה שה-API נופל
-        if (prompt.includes("מלט") || prompt.includes("בטון")) return "לפי החישוב, תצטרך כ-12 שקים לכיסוי שטח כזה (יחס של 2.5 ק'ג למ'ר).";
-        if (prompt.includes("דבק")) return "מומלץ להשתמש בדבק C2TE גמיש, זמן ייבוש 24 שעות.";
-        if (prompt.includes("רובה")) return "לחדרים רטובים מומלץ רובה אקרילית או אפוקסית.";
-        return "מצטער, השרתים עמוסים כרגע, אך המערכת רשמה את השאלה: '" + prompt + "'.";
+        if (prompt.includes("מלט")) return "לפי התחשיב: כ-12 שקים לכיסוי סטנדרטי.";
+        if (prompt.includes("דבק")) return "מומלץ דבק 114 או 109, זמן עבודה שעתיים.";
+        return "המערכת במצב לא מקוון, אך השאלה נרשמה.";
     },
 
     simulateProductData(term) {
-        // יצירת מוצר דמי חכם כדי שהקטלוג לא יקרוס
         const type = term.includes("מקדח") ? "tools" : term.includes("צבע") ? "paint" : "cement";
         return {
             name: term + " (מוצר הדגמה)",
-            desc: "מוצר זה נוצר בסימולציה כי מפתח ה-AI דורש בדיקה.",
+            desc: "מוצר זה נוצר אוטומטית עקב בעיית תקשורת.",
             specs: { weight: "25 קג", cover: "10 מ\"ר", dry: "24 שעות" },
             category: type,
             price: 150,
