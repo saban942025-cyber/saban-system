@@ -1,36 +1,83 @@
-// הוסף את הייבוא בראש הסקריפט
-import { SabanBrain } from './services/saban-brain.js';
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Saban Admin | ניהול קטלוג</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>body { background: #f8fafc; direction: rtl; }</style>
+</head>
+<body class="p-10 font-sans">
 
-// החלף את הפונקציה הקיימת בחדשה:
-window.searchWeb = async () => {
-    const q = document.getElementById('aiSearchInput').value;
-    if(!q) return alert("הקלד שם מוצר");
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6">ניהול קטלוג (מחובר ל-Gemini)</h1>
+        
+        <div class="bg-white p-4 rounded-xl shadow mb-8 flex gap-2 items-center border border-blue-100">
+            <i class="fas fa-robot text-blue-500 text-2xl"></i>
+            <input id="aiInput" type="text" placeholder="הקלד שם מוצר לייבוא חכם (למשל: מקדחה מקיטה)..." class="flex-1 outline-none text-lg font-bold text-gray-700">
+            <button onclick="window.searchAI()" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition">חפש וייבא</button>
+        </div>
 
-    const container = document.getElementById('aiResults');
-    container.innerHTML = '<div class="text-center py-10"><i class="fas fa-spinner fa-spin text-3xl text-blue-500"></i><br>המוח של סבן סורק את הרשת...</div>';
-    document.getElementById('aiModal').style.display = 'flex';
+        <div id="loading" class="hidden text-center py-10 text-gray-500"><i class="fas fa-spinner fa-spin text-3xl"></i><br>המוח חושב...</div>
+        
+        <table class="w-full bg-white rounded-xl shadow overflow-hidden">
+            <thead class="bg-slate-100 border-b">
+                <tr><th class="p-3 text-right">תמונה</th><th class="p-3 text-right">שם</th><th class="p-3 text-right">מפרט טכני</th><th class="p-3 text-right">מחיר</th></tr>
+            </thead>
+            <tbody id="grid"></tbody>
+        </table>
+    </div>
 
-    // קריאה למוח!
-    const productData = await SabanBrain.searchProductInfo(q);
+    <script type="module">
+        import { SabanBrain } from './services/saban-brain.js';
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    if (productData) {
-        // הצגת התוצאה החכמה
-        container.innerHTML = `
-            <div class="ai-card bg-green-50 border-green-500" onclick='window.importItem(${JSON.stringify(productData)})'>
-                <div class="ai-badge bg-green-600">נמצא ע"י Gemini</div>
-                <img src="${productData.img}" class="w-24 h-24 object-contain bg-white rounded border">
-                <div>
-                    <div class="font-bold text-lg text-slate-800">${productData.name}</div>
-                    <div class="text-xs text-gray-500 mb-2">${productData.desc}</div>
-                    <div class="flex gap-2 mb-2">
-                        <span class="text-[10px] bg-white border px-2 rounded">⚖️ ${productData.specs.weight}</span>
-                        <span class="text-[10px] bg-white border px-2 rounded">🎨 ${productData.specs.cover}</span>
-                    </div>
-                    <div class="text-green-700 font-bold text-sm">לחץ לייבוא למערכת <i class="fas fa-check"></i></div>
-                </div>
-            </div>
-        `;
-    } else {
-        container.innerHTML = '<div class="text-center text-red-500">לא נמצא מידע. נסה שם אחר.</div>';
-    }
-};
+        const app = initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" });
+        const db = getFirestore(app);
+
+        // Load Products
+        onSnapshot(collection(db, "products"), (snap) => {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = snap.docs.map(d => {
+                const p = d.data();
+                return `<tr class="border-b">
+                    <td class="p-3"><img src="${p.img}" class="w-12 h-12 object-contain"></td>
+                    <td class="p-3">
+                        <div class="font-bold">${p.name}</div>
+                        <div class="text-xs text-gray-500">${p.desc}</div>
+                    </td>
+                    <td class="p-3 text-xs">
+                        <span class="bg-gray-100 px-2 rounded">משקל: ${p.specs?.weight}</span>
+                        <span class="bg-gray-100 px-2 rounded">כיסוי: ${p.specs?.cover}</span>
+                    </td>
+                    <td class="p-3 font-bold text-blue-600">₪${p.price}</td>
+                </tr>`;
+            }).join('');
+        });
+
+        // AI Search Function
+        window.searchAI = async () => {
+            const txt = document.getElementById('aiInput').value;
+            if(!txt) return;
+            
+            document.getElementById('loading').classList.remove('hidden');
+            
+            // קריאה למוח המרכזי
+            const data = await SabanBrain.searchProductInfo(txt);
+            
+            document.getElementById('loading').classList.add('hidden');
+            
+            if(data) {
+                if(confirm(`נמצא מוצר!\nשם: ${data.name}\nתיאור: ${data.desc}\n\nלהוסיף לקטלוג?`)) {
+                    await addDoc(collection(db, "products"), { ...data, createdAt: serverTimestamp() });
+                    alert("נוסף בהצלחה!");
+                    document.getElementById('aiInput').value = '';
+                }
+            } else {
+                alert("לא נמצא מידע. נסה שוב.");
+            }
+        };
+    </script>
+</body>
+</html>
