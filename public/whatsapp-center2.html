@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>חמ"ל הזמנות סבן PRO</title>
+    <title>חמ"ל הזמנות סבן PRO | Hybrid Parser</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
@@ -11,22 +11,40 @@
         .sidebar { width: 35%; min-width: 400px; background: white; border-left: 1px solid #e9edef; display: flex; flex-direction: column; }
         .main-area { flex: 1; background: #efeae2 url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); position: relative; display: flex; flex-direction: column; }
         
-        /* Parser Styles */
-        .parser-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 50; display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-        .parser-box { background: white; width: 95%; max-width: 1000px; height: 90vh; border-radius: 12px; display: flex; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-        .parser-col-input { width: 30%; background: #f0f2f5; padding: 20px; border-left: 1px solid #ddd; display: flex; flex-direction: column; }
-        .parser-col-result { flex: 1; padding: 20px; overflow-y: auto; background: white; }
+        /* Parser Modal Styles */
+        .parser-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 50; display: none; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
+        .parser-box { background: #f8fafc; width: 95%; max-width: 1200px; height: 90vh; border-radius: 20px; display: flex; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); }
         
-        .result-row { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #eee; gap: 10px; transition: 0.2s; }
-        .result-row:hover { background: #f9f9f9; }
-        .result-row.unknown { background: #fff1f2; border-right: 4px solid #ef4444; }
-        .result-row.matched { background: #f0fdf4; border-right: 4px solid #22c55e; }
+        /* Input Column */
+        .parser-col-input { width: 30%; background: #1e293b; padding: 25px; display: flex; flex-direction: column; color: white; border-left: 1px solid #334155; }
+        .raw-input { background: #0f172a; border: 1px solid #334155; color: #cbd5e1; font-family: monospace; resize: none; border-radius: 12px; padding: 15px; flex: 1; margin-bottom: 15px; outline: none; transition: 0.2s; }
+        .raw-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
+
+        /* Results Column */
+        .parser-col-result { flex: 1; padding: 30px; overflow-y: auto; background: #f1f5f9; display: flex; flex-direction: column; gap: 12px; }
         
+        /* Result Cards */
+        .parsed-card {
+            background: white; border-radius: 12px; padding: 12px 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02); border: 1px solid #e2e8f0;
+            display: flex; align-items: center; gap: 15px; transition: transform 0.2s;
+            animation: slideIn 0.3s ease-out;
+        }
+        .parsed-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
+        
+        .card-product { border-right: 5px solid #10b981; } /* ירוק - זוהה */
+        .card-unknown { border-right: 5px solid #f59e0b; background: #fffbeb; } /* כתום - לא זוהה */
+        .card-address { border-right: 5px solid #3b82f6; background: #eff6ff; } /* כחול - כתובת */
+
+        .qty-badge { background: #f3f4f6; padding: 5px 12px; border-radius: 8px; font-weight: 800; font-size: 1.1em; color: #1e293b; border: 1px solid #cbd5e1; text-align: center; width: 60px; }
+        
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
         /* Print Template (Hidden) */
         @media print {
             body * { visibility: hidden; }
             #printArea, #printArea * { visibility: visible; }
-            #printArea { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; background: white; direction: rtl; }
+            #printArea { position: absolute; left: 0; top: 0; width: 100%; padding: 40px; background: white; direction: rtl; color: black; z-index: 9999; }
             .no-print { display: none; }
         }
     </style>
@@ -35,74 +53,115 @@
 
     <div class="sidebar">
         <div class="h-16 bg-[#f0f2f5] border-b flex justify-between items-center px-4">
-            <div class="font-bold text-gray-700 text-lg">חמ"ל הזמנות</div>
-            <button onclick="toggleParser()" class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-bold shadow hover:bg-slate-700 transition">
+            <div class="font-bold text-gray-700 text-lg flex items-center gap-2"><i class="fas fa-headset text-green-600"></i> חמ"ל הזמנות</div>
+            <button onclick="toggleParser()" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg hover:bg-slate-700 transition flex items-center gap-2">
                 <i class="fas fa-magic text-yellow-400"></i> פענח הזמנה
             </button>
         </div>
-        <div id="ordersList" class="flex-1 overflow-y-auto p-2 space-y-2"></div>
+        <div id="ordersList" class="flex-1 overflow-y-auto p-2 space-y-2 bg-white">
+            <div class="p-4 text-center text-gray-400 text-sm">טוען שיחות אחרונות...</div>
+        </div>
     </div>
 
     <div class="main-area flex items-center justify-center">
-        <div class="bg-white/90 p-8 rounded-2xl shadow-xl text-center">
-            <img src="https://ui-avatars.com/api/?name=Saban&background=008069&color=fff" class="w-20 h-20 rounded-full mx-auto mb-4 shadow">
-            <h1 class="text-2xl font-bold text-slate-800">מערכת הזמנות חכמה</h1>
-            <p class="text-slate-500 mt-2">בחר הזמנה מהרשימה או לחץ על "פענח הזמנה" כדי להזין ידנית</p>
+        <div class="bg-white/90 p-10 rounded-3xl shadow-2xl text-center max-w-md backdrop-blur-sm">
+            <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
+                <i class="fas fa-robot text-4xl text-green-600"></i>
+            </div>
+            <h1 class="text-3xl font-black text-slate-800 mb-2">Saban War Room</h1>
+            <p class="text-slate-500 text-lg">בחר שיחה או הפעל את המפענח כדי להתחיל לעבוד.</p>
         </div>
     </div>
 
     <div id="parserModal" class="parser-modal">
         <div class="parser-box">
+            
             <div class="parser-col-input">
-                <h2 class="font-bold text-lg mb-4 text-slate-700"><i class="fas fa-paste"></i> הדבק טקסט</h2>
-                <textarea id="rawInput" class="flex-1 w-full p-3 border rounded-xl resize-none outline-none focus:ring-2 ring-green-500 font-mono text-sm mb-4" placeholder="הדבק כאן את ההודעה מהווצאפ..."></textarea>
-                <button onclick="analyze()" class="bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 shadow-lg">
-                    <i class="fas fa-bolt"></i> פענח עכשיו
+                <h2 class="font-bold text-xl mb-1 text-white flex items-center gap-2"><i class="fas fa-paste"></i> קלט גולמי</h2>
+                <p class="text-xs text-slate-400 mb-6">הדבק כאן את הטקסט מהווצאפ</p>
+                
+                <textarea id="rawInput" class="raw-input" placeholder="לדוגמה:
+בוקר טוב
+תשלח לרחוב הירקון 4
+10 שק מלט
+5 דבק קרמיקה 114
+ודלי רובה אפורה"></textarea>
+                
+                <button onclick="analyzeText()" class="bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-bold shadow-lg transition flex justify-center items-center gap-2 text-lg">
+                    <i class="fas fa-bolt"></i> נתח הזמנה
                 </button>
+                <button onclick="toggleParser()" class="mt-4 text-slate-500 hover:text-white text-sm font-bold">סגור חלון</button>
             </div>
 
             <div class="parser-col-result relative">
-                <div class="flex justify-between items-center mb-4 border-b pb-2 sticky top-0 bg-white z-10">
-                    <h2 class="font-bold text-lg">טופס ליקוט (תצוגה מקדימה)</h2>
-                    <div class="flex gap-2">
-                        <button onclick="printForm()" class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-slate-900"><i class="fas fa-print"></i> הדפס / PDF</button>
-                        <button onclick="toggleParser()" class="bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm hover:bg-gray-300"><i class="fas fa-times"></i></button>
+                <div class="flex justify-between items-center mb-6 sticky top-0 bg-[#f1f5f9] pb-4 z-10 border-b border-slate-200">
+                    <div>
+                        <h2 class="font-bold text-2xl text-slate-800">תוצאות פענוח</h2>
+                        <p class="text-sm text-slate-500">וודא כמויות לפני הדפסה</p>
                     </div>
+                    <button onclick="printOrder()" class="bg-green-600 hover:bg-green-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2 transition">
+                        <i class="fas fa-print"></i> הפק תעודה / PDF
+                    </button>
                 </div>
                 
-                <div id="resultsList" class="space-y-2">
-                    <div class="text-center text-gray-400 mt-20">ממתין לנתונים...</div>
+                <div id="resultsStage" class="flex flex-col gap-3 pb-20">
+                    <div class="text-center py-20 opacity-50">
+                        <i class="fas fa-arrow-right text-4xl text-slate-300 mb-4 block"></i>
+                        הדבק טקסט ולחץ על "נתח הזמנה"
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <div id="printArea" style="display:none;">
-        <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid black; padding-bottom: 10px;">
-            <h1 style="font-size: 30px; margin: 0;">ח.סבן חומרי בניין</h1>
-            <p style="margin: 5px 0;">טופס ליקוט והזמנה</p>
-            <p id="printDate" style="font-size: 12px;"></p>
-        </div>
-        
-        <div style="margin-bottom: 20px; font-weight: bold; font-size: 18px;">
-            לכבוד: <span id="printCustomerName">לקוח כללי</span>
-        </div>
+        <div style="direction: rtl; font-family: sans-serif; max-width: 800px; margin: 0 auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #000; padding-bottom: 20px; margin-bottom: 30px;">
+                <div style="text-align: right;">
+                    <h1 style="font-size: 32px; font-weight: 900; margin: 0;">ח.סבן חומרי בניין בע"מ</h1>
+                    <p style="font-size: 14px; margin: 5px 0;">אזור תעשייה טייבה | טל: 050-8860896</p>
+                </div>
+                <div style="text-align: center; border: 2px solid #000; padding: 10px 20px; border-radius: 8px;">
+                    <strong>מספר הזמנה</strong><br>
+                    <span style="font-size: 24px; font-weight: bold;">#<span id="printId">TEMP</span></span>
+                </div>
+            </div>
 
-        <table style="width: 100%; border-collapse: collapse; font-size: 16px;">
-            <thead>
-                <tr style="background: #eee;">
-                    <th style="border: 1px solid black; padding: 8px; width: 10%;">#</th>
-                    <th style="border: 1px solid black; padding: 8px;">תיאור הפריט</th>
-                    <th style="border: 1px solid black; padding: 8px; width: 15%;">כמות</th>
-                    <th style="border: 1px solid black; padding: 8px; width: 20%;">הערות / מק"ט</th>
-                </tr>
-            </thead>
-            <tbody id="printTableBody"></tbody>
-        </table>
+            <div style="display: flex; gap: 20px; margin-bottom: 30px;">
+                <div style="flex: 1; background: #f0f0f0; padding: 15px; border-radius: 8px;">
+                    <strong>לכבוד:</strong> <span id="printCustomer">לקוח כללי</span><br>
+                    <strong>תאריך:</strong> <span id="printDate"></span>
+                </div>
+                <div style="flex: 1; background: #f0f0f0; padding: 15px; border-radius: 8px;">
+                    <strong>כתובת לאספקה:</strong><br>
+                    <span id="printAddress" style="font-size: 16px; font-weight: bold;">איסוף עצמי</span>
+                </div>
+            </div>
 
-        <div style="margin-top: 40px; display: flex; justify-content: space-between;">
-            <div>חתימת מלקט: ____________</div>
-            <div>חתימת נהג/לקוח: ____________</div>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 40px;">
+                <thead>
+                    <tr style="background: #000; color: #fff;">
+                        <th style="padding: 10px; text-align: right; border: 1px solid #000;">#</th>
+                        <th style="padding: 10px; text-align: right; border: 1px solid #000;">תיאור הפריט</th>
+                        <th style="padding: 10px; text-align: center; border: 1px solid #000;">כמות</th>
+                        <th style="padding: 10px; text-align: center; border: 1px solid #000;">יח'</th>
+                        <th style="padding: 10px; text-align: left; border: 1px solid #000;">הערות / מק"ט</th>
+                    </tr>
+                </thead>
+                <tbody id="printRows"></tbody>
+            </table>
+
+            <div style="display: flex; justify-content: space-between; margin-top: 50px; border-top: 1px solid #ccc; padding-top: 20px;">
+                <div style="text-align: center; width: 200px;">
+                    <p>חתימת מלקט</p>
+                    <div style="height: 40px; border-bottom: 1px solid #000;"></div>
+                </div>
+                <div style="text-align: center; width: 200px;">
+                    <p>חתימת נהג / מקבל</p>
+                    <div style="height: 40px; border-bottom: 1px solid #000;"></div>
+                </div>
+            </div>
+            <p style="text-align: center; margin-top: 50px; font-size: 12px; color: #666;">הופק ע"י מערכת SabanOS Hybrid Parser</p>
         </div>
     </div>
 
@@ -115,106 +174,157 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // State
         let catalog = [];
-        let parsedData = [];
+        let parsedItems = [];
+        let addressFound = null;
 
-        // Load Catalog
-        async function loadCatalog() {
+        // Init
+        (async function init() {
             try {
+                // טעינת קטלוג מהיר לזיכרון
                 const snap = await getDocs(collection(db, "products"));
                 catalog = snap.docs.map(d => ({id: d.id, ...d.data()}));
-            } catch(e) { console.error("Catalog error", e); }
-        }
-        loadCatalog();
+                console.log("Catalog loaded:", catalog.length);
+            } catch(e) { console.error("Catalog Error", e); }
+        })();
 
-        // UI Logic
+        // --- Logic: Hybrid Parser ---
         window.toggleParser = () => {
             const el = document.getElementById('parserModal');
             el.style.display = el.style.display === 'flex' ? 'none' : 'flex';
         };
 
-        // ANALYZE LOGIC (התיקון: מקבל הכל)
-        window.analyze = () => {
+        window.analyzeText = () => {
             const text = document.getElementById('rawInput').value;
             if(!text) return;
 
+            parsedItems = [];
+            addressFound = null;
+            const stage = document.getElementById('resultsStage');
+            stage.innerHTML = '';
+
             const lines = text.split('\n');
-            parsedData = [];
-            const list = document.getElementById('resultsList');
-            list.innerHTML = '';
+            
+            lines.forEach((line, index) => {
+                const cleanLine = line.trim();
+                if(cleanLine.length < 2) return;
 
-            lines.forEach(line => {
-                const clean = line.trim();
-                if(clean.length < 2) return;
+                // 1. סינון זבל (Garbage Filter)
+                if(/בוקר טוב|תודה|אחי|היי|שלום|דחוף/.test(cleanLine)) return;
+
+                // 2. זיהוי כתובת (Waze Engine)
+                if(/רחוב|ליד|עיר|הגעה|לכבוד|משפחת/.test(cleanLine) && !/\d/.test(cleanLine)) { // כתובת פשוטה
+                    addressFound = cleanLine;
+                    renderCard(stage, 'address', { name: cleanLine });
+                    return;
+                }
+
+                // 3. ניתוח מוצר (Product Parsing)
+                // חילוץ כמות
+                const qtyMatch = cleanLine.match(/^(\d+)/) || cleanLine.match(/(\d+)$/); // מספר בהתחלה או בסוף
+                let qty = qtyMatch ? parseInt(qtyMatch[0]) : 1;
                 
-                // סינון זבל בסיסי
-                if(/בוקר|תודה|דחוף|אחי|יא/.test(clean)) return;
+                // ניקוי המספר מהטקסט כדי לחפש את השם
+                let textOnly = cleanLine.replace(/\d+/g, '').replace(/שקים|שק|יחידות|יח|מארז|חבילה/g, '').trim();
 
-                const qtyMatch = clean.match(/\d+/);
-                const qty = qtyMatch ? parseInt(qtyMatch[0]) : 1;
-                const textOnly = clean.replace(/[0-9]/g, '').trim();
-
-                // חיפוש חכם בקטלוג
+                // חיפוש בקטלוג (Fuzzy Match פשוט)
                 const match = catalog.find(p => p.core.name.includes(textOnly) || (p.core.brand && p.core.brand.includes(textOnly)));
 
-                parsedData.push({
-                    original: clean,
-                    name: match ? match.core.name : clean, // אם לא מצא, משתמש בטקסט המקורי
-                    sku: match ? match.id.substring(0,6) : '---',
+                const itemData = {
+                    id: index,
+                    original: cleanLine,
+                    name: match ? match.core.name : textOnly,
+                    sku: match ? match.core.sku : '---',
                     qty: qty,
-                    status: match ? 'matched' : 'unknown',
-                    img: match?.rich?.image
-                });
+                    type: match ? 'product' : 'unknown', // אם לא מצאנו בקטלוג -> לא מזוהה
+                    image: match?.rich?.image
+                };
+
+                parsedItems.push(itemData);
+                renderCard(stage, itemData.type, itemData);
             });
 
-            renderResults();
+            if(addressFound) {
+                // הקפצת הכתובת למעלה בדוח
+                // (בלוגיקת הדפסה)
+            }
         };
 
-        function renderResults() {
-            const list = document.getElementById('resultsList');
-            list.innerHTML = parsedData.map((item, idx) => `
-                <div class="result-row ${item.status}">
-                    <div class="w-8 h-8 flex items-center justify-center rounded bg-gray-200">
-                        ${item.img ? `<img src="${item.img}" class="w-full h-full object-cover rounded">` : '<i class="fas fa-box text-gray-400"></i>'}
-                    </div>
+        function renderCard(container, type, data) {
+            const div = document.createElement('div');
+            div.className = `parsed-card card-${type}`;
+            
+            if(type === 'address') {
+                div.innerHTML = `
+                    <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl"><i class="fas fa-map-marker-alt"></i></div>
                     <div class="flex-1">
-                        <input type="text" class="w-full bg-transparent font-bold text-gray-800 outline-none" value="${item.name}" onchange="updateItem(${idx}, 'name', this.value)">
-                        <div class="text-xs text-gray-500">מקור: ${item.original} | מק"ט: ${item.sku}</div>
+                        <div class="font-bold text-slate-800">יעד למשלוח</div>
+                        <input class="w-full bg-transparent border-none outline-none text-blue-600 font-bold" value="${data.name}" onchange="updateAddress(this.value)">
                     </div>
-                    <div class="w-16 text-center border-r">
-                        <input type="number" class="w-full text-center bg-transparent font-bold" value="${item.qty}" onchange="updateItem(${idx}, 'qty', this.value)">
+                    <a href="https://waze.com/ul?q=${encodeURIComponent(data.name)}" target="_blank" class="text-xs bg-blue-50 text-blue-600 px-3 py-1 rounded-full font-bold hover:bg-blue-100">Waze</a>
+                `;
+            } else {
+                div.innerHTML = `
+                    <img src="${data.image || 'https://via.placeholder.com/50?text=?'}" class="w-12 h-12 rounded bg-slate-100 object-cover border">
+                    <div class="flex-1">
+                        <input class="w-full font-bold text-slate-800 bg-transparent outline-none border-b border-transparent focus:border-slate-300 transition" value="${data.name}" onchange="updateItem(${data.id}, 'name', this.value)">
+                        <div class="text-xs text-slate-400 mt-1 flex gap-2">
+                            <span>מקור: ${data.original}</span>
+                            ${data.type==='unknown' ? '<span class="text-orange-500 font-bold">⚠️ לא זוהה בקטלוג</span>' : `<span class="text-green-600 font-mono">${data.sku}</span>`}
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                    <input type="number" class="qty-badge outline-none focus:border-blue-500" value="${data.qty}" onchange="updateItem(${data.id}, 'qty', this.value)">
+                    <button onclick="removeItem(${data.id}, this)" class="text-slate-300 hover:text-red-500 px-2"><i class="fas fa-times"></i></button>
+                `;
+            }
+            container.appendChild(div);
         }
 
-        window.updateItem = (idx, field, val) => {
-            parsedData[idx][field] = val;
+        // --- Data Updates ---
+        window.updateItem = (id, field, val) => {
+            const item = parsedItems.find(i => i.id === id);
+            if(item) item[field] = val;
+        };
+        
+        window.updateAddress = (val) => { addressFound = val; };
+        
+        window.removeItem = (id, el) => {
+            parsedItems = parsedItems.filter(i => i.id !== id);
+            el.closest('.parsed-card').remove();
         };
 
-        // PRINT LOGIC (הדפסה רשמית)
-        window.printForm = () => {
-            const tbody = document.getElementById('printTableBody');
-            tbody.innerHTML = parsedData.map((item, i) => `
+        // --- Print Logic ---
+        window.printOrder = () => {
+            const tbody = document.getElementById('printRows');
+            tbody.innerHTML = '';
+            
+            parsedItems.forEach((item, i) => {
+                tbody.innerHTML += `
                 <tr>
-                    <td style="border: 1px solid black; padding: 8px; text-align: center;">${i+1}</td>
-                    <td style="border: 1px solid black; padding: 8px;">${item.name}</td>
-                    <td style="border: 1px solid black; padding: 8px; text-align: center;">${item.qty}</td>
-                    <td style="border: 1px solid black; padding: 8px; text-align: center;">${item.sku}</td>
-                </tr>
-            `).join('');
+                    <td style="padding: 10px; text-align: right; border: 1px solid #ccc;">${i+1}</td>
+                    <td style="padding: 10px; border: 1px solid #ccc; font-weight: bold;">${item.name}</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #ccc; font-weight: bold; font-size: 18px;">${item.qty}</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #ccc;">יח'</td>
+                    <td style="padding: 10px; text-align: left; border: 1px solid #ccc; font-family: monospace;">${item.sku}</td>
+                </tr>`;
+            });
 
-            document.getElementById('printDate').innerText = new Date().toLocaleString('he-IL');
+            // מילוי פרטים
+            document.getElementById('printId').innerText = Math.floor(Math.random()*10000);
+            document.getElementById('printDate').innerText = new Date().toLocaleDateString('he-IL');
+            document.getElementById('printAddress').innerText = addressFound || "איסוף עצמי (לא זוהתה כתובת)";
             
-            // שימוש ב-window.print() שזה הכי אמין לעברית
-            const printContent = document.getElementById('printArea').innerHTML;
-            const originalContent = document.body.innerHTML;
+            // הדפסה
+            const content = document.getElementById('printArea').innerHTML;
+            const original = document.body.innerHTML;
             
-            document.body.innerHTML = printContent;
+            document.body.innerHTML = content;
             window.print();
-            document.body.innerHTML = originalContent;
-            window.location.reload(); // רענון כדי להחזיר את ה-JS לפעולה
+            document.body.innerHTML = original;
+            window.location.reload(); // רענון כדי להחזיר את האירועים
         };
+
     </script>
 </body>
 </html>
