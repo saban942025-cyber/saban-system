@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>חמ"ל הזמנות סבן PRO | Geo-Logistics</title>
+    <title>חמ"ל הזמנות סבן PRO | Geo & Contacts</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
@@ -31,7 +31,8 @@
         .parsed-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
         
         .card-product { border-right: 5px solid #10b981; }
-        .card-address { border-right: 5px solid #3b82f6; background: #eff6ff; flex-wrap: wrap; } 
+        .card-address { border-right: 5px solid #3b82f6; background: #eff6ff; flex-wrap: wrap; }
+        .card-contact { border-right: 5px solid #8b5cf6; background: #f5f3ff; } /* סגול לאנשי קשר */
 
         .qty-badge { background: #f3f4f6; padding: 5px 12px; border-radius: 8px; font-weight: 800; font-size: 1.1em; color: #1e293b; border: 1px solid #cbd5e1; text-align: center; width: 60px; }
         
@@ -82,11 +83,12 @@
                 <p class="text-xs text-slate-400 mb-6">הדבק טקסט מהווצאפ</p>
                 
                 <textarea id="rawInput" class="raw-input" placeholder="לדוגמה:
-שלח 10 מלט ו-5 דבק
-לרחוב הירקון 14 תל אביב"></textarea>
+איש קשר: ישראל ישראלי 050-8860896
+לרחוב הירקון 14 תל אביב
+10 שק מלט"></textarea>
                 
                 <button onclick="window.analyzeText()" class="bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-bold shadow-lg transition flex justify-center items-center gap-2 text-lg">
-                    <i class="fas fa-search-location"></i> נתח ואתר מיקום
+                    <i class="fas fa-search-location"></i> נתח טקסט
                 </button>
                 <button onclick="window.toggleParser()" class="mt-4 text-slate-500 hover:text-white text-sm font-bold">סגור</button>
             </div>
@@ -95,7 +97,7 @@
                 <div class="flex justify-between items-center mb-6 sticky top-0 bg-[#f1f5f9] pb-4 z-10 border-b border-slate-200">
                     <div>
                         <h2 class="font-bold text-2xl text-slate-800">תוצאות פענוח</h2>
-                        <p class="text-sm text-slate-500">כולל חישוב מרחקים מסניפים</p>
+                        <p class="text-sm text-slate-500">כולל חישוב מרחקים ופרטי קשר</p>
                     </div>
                     <button onclick="window.printOrder()" class="bg-green-600 hover:bg-green-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2 transition">
                         <i class="fas fa-print"></i> הפק תעודה
@@ -119,9 +121,15 @@
                 <p style="margin: 5px 0; font-size: 14px;">תעודת ליקוט ומשלוח | <span id="printBranchInfo">סניף ראשי</span></p>
             </div>
             
-            <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ddd;">
-                <strong>יעד למשלוח:</strong> <span id="printAddress" style="font-size: 18px;">-</span><br>
-                <span id="printDistInfo" style="font-size: 12px; color: #666;"></span>
+            <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+                <div style="flex: 1; background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #ddd;">
+                    <strong>יעד למשלוח:</strong> <span id="printAddress" style="font-size: 16px;">-</span><br>
+                    <span id="printDistInfo" style="font-size: 12px; color: #666;"></span>
+                </div>
+                <div style="flex: 1; background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #ddd;">
+                    <strong>איש קשר:</strong> <span id="printContactName">-</span><br>
+                    <strong>טלפון:</strong> <span id="printContactPhone">-</span>
+                </div>
             </div>
 
             <table style="width: 100%; border-collapse: collapse;">
@@ -138,26 +146,23 @@
     </div>
 
     <script type="module">
-        // Import Firebase (with error handling wrapper)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Keys & Config
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
         const GEMINI_KEY = "AIzaSyAdfGVrmr90Mp9ZhNMItD81iaE8OipKwz0"; 
         
-        // Data
         let db = null;
         let catalog = [];
         let parsedItems = [];
         let currentAddress = null;
+        let contactDetails = { name: '', phone: '' };
+
         const BRANCHES = [
             { id: 'harash', name: 'סניף החרש', lat: 32.1462, lng: 34.8951 },
             { id: 'talmid', name: 'סניף התלמיד', lat: 32.1554, lng: 34.8872 }
         ];
 
-        // --- EXPOSE FUNCTIONS TO WINDOW (Fixes ReferenceError) ---
-        // Must be defined before they are used
         window.toggleParser = () => {
             const el = document.getElementById('parserModal');
             el.style.display = el.style.display === 'flex' ? 'none' : 'flex';
@@ -165,39 +170,29 @@
 
         window.updateItem = (i, field, val) => { parsedItems[i][field] = val; };
 
-        // --- FIREBASE INIT ---
+        // INIT
         (async function initSystem() {
             try {
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
-                
-                // Load Catalog
                 const snap = await getDocs(collection(db, "products"));
                 catalog = snap.docs.map(d => ({id: d.id, ...d.data()}));
                 console.log("System initialized, Catalog loaded:", catalog.length);
-            } catch(e) {
-                console.warn("System running in offline/demo mode:", e);
-                // Demo catalog fallback if offline
-                catalog = [
-                    {core:{name:"מלט שחור", sku:"1001"}, rich:{image:""}},
-                    {core:{name:"דבק קרמיקה 114", sku:"1002"}, rich:{image:""}},
-                    {core:{name:"טיח גבס", sku:"1003"}, rich:{image:""}}
-                ];
-            }
+            } catch(e) { console.warn("Offline mode"); }
         })();
 
-        // --- CORE: Text Analysis + Geo ---
+        // --- CORE: Analysis ---
         window.analyzeText = async () => {
             const text = document.getElementById('rawInput').value;
             if(!text) return;
 
             const stage = document.getElementById('resultsStage');
-            stage.innerHTML = '<div class="text-center py-10"><i class="fas fa-spinner fa-spin text-blue-600 text-2xl"></i><div class="mt-2">מפענח ומאתר מיקומים...</div></div>';
+            stage.innerHTML = '<div class="text-center py-10"><i class="fas fa-spinner fa-spin text-blue-600 text-2xl"></i><div class="mt-2">מפענח נתונים...</div></div>';
             
             parsedItems = [];
             currentAddress = null;
+            contactDetails = { name: '', phone: '' };
             
-            // 1. Parsing Lines
             const lines = text.split('\n');
             let potentialAddress = "";
 
@@ -206,13 +201,33 @@
                 if(clean.length < 2) continue;
                 if(/בוקר|תודה|דחוף|שלום/.test(clean)) continue;
 
-                // בדיקת כתובת
-                if(/רחוב|ליד|עיר|לכבוד|הגעה/.test(clean) && !/\d{2,}/.test(clean.replace(/\d\s/,''))) {
+                // 1. זיהוי איש קשר (טלפון + שם)
+                // תומך ב: 050-8860896, 0508860896, +97250...
+                const phoneMatch = clean.match(/(?:(?:\+|00)?972|0)(?:5[0-9]|2|3|4|8|9)-?\d{7}/);
+                
+                if (phoneMatch) {
+                    const phone = phoneMatch[0];
+                    // מנקה את הטלפון ומילים כמו "טלפון" או "איש קשר" כדי להשאיר רק את השם
+                    const name = clean.replace(phone, '').replace(/טלפון|נייד|איש קשר|לקוח|[-:]/g, '').trim() || "לקוח מזדמן";
+                    
+                    contactDetails = { name, phone };
+                    
+                    parsedItems.push({
+                        type: 'contact',
+                        name: name,
+                        phone: phone,
+                        qty: 1
+                    });
+                    continue; // עברנו שורה
+                }
+
+                // 2. זיהוי כתובת
+                if(/רחוב|ליד|עיר|לכבוד|הגעה/.test(clean) && !/\d{3,}/.test(clean.replace(/\d\s/,''))) {
                     potentialAddress = clean;
                     continue;
                 }
 
-                // בדיקת מוצר
+                // 3. זיהוי מוצר
                 const qtyMatch = clean.match(/^(\d+)/) || clean.match(/(\d+)$/);
                 let qty = qtyMatch ? parseInt(qtyMatch[0]) : 1;
                 let textOnly = clean.replace(/\d+/g, '').replace(/שקים|יח|ק"ג/g, '').trim();
@@ -228,7 +243,7 @@
                 });
             }
 
-            // 2. Geo Processing (AI)
+            // Geo Processing
             let geoData = null;
             if(potentialAddress) {
                 currentAddress = potentialAddress;
@@ -238,35 +253,21 @@
             renderResults(geoData);
         };
 
-        // --- AI Geocoding ---
+        // --- AI & Geo Utils ---
         async function getCoordinatesByAI(address) {
             try {
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`;
-                const prompt = `Return JSON only: { "lat": number, "lng": number } for address: "${address}, Israel". Approximate if needed.`;
-                
-                const res = await fetch(url, {
-                    method: 'POST', 
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-                
+                const prompt = `Return JSON only: { "lat": number, "lng": number } for address: "${address}, Israel".`;
+                const res = await fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
                 const data = await res.json();
-                const jsonText = data.candidates[0].content.parts[0].text.replace(/```json|```/g, '').trim();
-                return JSON.parse(jsonText);
-            } catch(e) {
-                console.warn("Geo fail:", e);
-                return null;
-            }
+                return JSON.parse(data.candidates[0].content.parts[0].text.replace(/```json|```/g, '').trim());
+            } catch(e) { return null; }
         }
 
-        // --- Distance Calc ---
         function calculateDist(lat1, lon1, lat2, lon2) {
-            const R = 6371; 
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return (R * c).toFixed(1);
+            const R = 6371; const dLat = (lat2-lat1)*Math.PI/180; const dLon = (lon2-lon1)*Math.PI/180;
+            const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)*Math.sin(dLon/2);
+            return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))).toFixed(1);
         }
 
         // --- Render ---
@@ -274,19 +275,35 @@
             const stage = document.getElementById('resultsStage');
             stage.innerHTML = '';
 
-            // 1. כרטיס כתובת וניווט
+            // A. כרטיס איש קשר (חדש!)
+            if (contactDetails.phone) {
+                // ניקוי המספר לפורמט בינלאומי עבור לינק לוואטסאפ
+                const waPhone = contactDetails.phone.replace(/[^0-9]/g, '').replace(/^0/, '972');
+                
+                stage.innerHTML += `
+                <div class="parsed-card card-contact">
+                    <div class="w-10 h-10 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-xl"><i class="fas fa-user-check"></i></div>
+                    <div class="flex-1">
+                        <div class="text-xs text-purple-600 font-bold uppercase">זוהה איש קשר</div>
+                        <input class="w-full bg-transparent font-bold text-slate-800 border-none outline-none" value="${contactDetails.name}" onchange="contactDetails.name = this.value">
+                        <div class="text-sm text-slate-500 font-mono">${contactDetails.phone}</div>
+                    </div>
+                    <div class="flex gap-2">
+                        <a href="tel:${contactDetails.phone}" class="bg-green-50 text-green-600 w-8 h-8 rounded-full flex items-center justify-center hover:bg-green-100"><i class="fas fa-phone"></i></a>
+                        <a href="https://wa.me/${waPhone}" target="_blank" class="bg-green-500 text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-green-600"><i class="fab fa-whatsapp"></i></a>
+                    </div>
+                </div>`;
+            }
+
+            // B. כרטיס כתובת
             if (currentAddress) {
                 let geoHtml = '';
-                // Default Waze link (text search)
                 let wazeLink = `https://waze.com/ul?q=${encodeURIComponent(currentAddress)}&navigate=yes`; 
 
                 if (geo) {
-                    // Smart Link (GPS)
                     wazeLink = `https://waze.com/ul?ll=${geo.lat},${geo.lng}&navigate=yes`;
-
                     const distHarash = calculateDist(geo.lat, geo.lng, BRANCHES[0].lat, BRANCHES[0].lng);
                     const distTalmid = calculateDist(geo.lat, geo.lng, BRANCHES[1].lat, BRANCHES[1].lng);
-                    
                     const isHarashCloser = parseFloat(distHarash) < parseFloat(distTalmid);
 
                     geoHtml = `
@@ -316,8 +333,9 @@
                 </div>`;
             }
 
-            // 2. מוצרים
+            // C. מוצרים
             parsedItems.forEach((item, i) => {
+                if (item.type === 'contact') return; // לא להציג פעמיים
                 stage.innerHTML += `
                 <div class="parsed-card card-product">
                     <img src="${item.image || 'https://via.placeholder.com/50'}" class="w-12 h-12 rounded bg-slate-100 object-cover border">
@@ -333,9 +351,13 @@
 
         window.printOrder = () => {
             document.getElementById('printAddress').innerText = currentAddress || "איסוף עצמי";
-            document.getElementById('printRows').innerHTML = parsedItems.map((item,i) => 
-                `<tr><td style="border:1px solid #000;padding:5px;">${i+1}</td><td style="border:1px solid #000;padding:5px;">${item.name}</td><td style="border:1px solid #000;padding:5px;text-align:center;">${item.qty}</td></tr>`
-            ).join('');
+            document.getElementById('printContactName').innerText = contactDetails.name || "-";
+            document.getElementById('printContactPhone').innerText = contactDetails.phone || "-";
+            
+            document.getElementById('printRows').innerHTML = parsedItems
+                .filter(i => i.type !== 'contact')
+                .map((item,i) => `<tr><td style="border:1px solid #000;padding:5px;">${i+1}</td><td style="border:1px solid #000;padding:5px;">${item.name}</td><td style="border:1px solid #000;padding:5px;text-align:center;">${item.qty}</td></tr>`)
+                .join('');
             
             const content = document.getElementById('printArea').innerHTML;
             const original = document.body.innerHTML;
