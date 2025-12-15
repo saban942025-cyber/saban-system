@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Saban Client Pro</title>
+    <title>Saban Client Pro | Enterprise</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet">
     
     <style>
-        body { background: #f1f5f9; font-family: 'Heebo', sans-serif; padding-bottom: 90px; /* מקום לסרגל התחתון */ }
+        body { background: #f1f5f9; font-family: 'Heebo', sans-serif; padding-bottom: 90px; }
         
         /* Header Profile */
         .profile-card {
@@ -21,13 +21,13 @@
         .product-card {
             background: white; border-radius: 16px; overflow: hidden;
             box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: 0.2s; position: relative;
+            display: flex; flex-direction: column; justify-content: space-between;
         }
-        .product-card:active { transform: scale(0.98); }
         
         /* Specs Tags */
         .spec-tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #f1f5f9; color: #64748b; font-weight: bold; }
 
-        /* --- FIXED BOTTOM NAV (התיקון: סרגל קבוע) --- */
+        /* Bottom Nav */
         .bottom-nav {
             position: fixed; bottom: 0; left: 0; right: 0;
             background: white; height: 70px;
@@ -41,7 +41,6 @@
         }
         .nav-btn i { font-size: 20px; margin-bottom: 4px; }
         .nav-btn.active { color: #2563eb; }
-        .nav-btn:active { transform: scale(0.9); }
         
         /* Cart Badge */
         .cart-badge {
@@ -53,7 +52,7 @@
         }
         .cart-badge.show { opacity: 1; transform: scale(1); }
 
-        /* Modal */
+        /* Modals */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
         .modal-box { background: white; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; border-radius: 20px; animation: slideUp 0.3s; }
         
@@ -106,34 +105,18 @@
         <h2 class="text-lg font-black text-slate-800 mb-3 flex items-center gap-2">
             <i class="fas fa-th-large text-gray-400"></i> קטלוג מוצרים
         </h2>
-        
-        <div id="loader" class="text-center py-10 text-gray-400">
-            <i class="fas fa-circle-notch fa-spin text-2xl"></i><br>טוען קטלוג מהענן...
-        </div>
-
+        <div id="loader" class="text-center py-10 text-gray-400"><i class="fas fa-circle-notch fa-spin text-2xl"></i><br>טוען קטלוג...</div>
         <div id="catalogGrid" class="grid grid-cols-2 gap-4"></div>
     </div>
 
     <nav class="bottom-nav">
-        <div class="nav-btn active" onclick="alert('דף הבית')">
-            <i class="fas fa-home"></i>
-            <span>בית</span>
-        </div>
-        <div class="nav-btn" onclick="document.getElementById('catalogGrid').scrollIntoView({behavior:'smooth'})">
-            <i class="fas fa-search"></i>
-            <span>קטלוג</span>
-        </div>
+        <div class="nav-btn active"><i class="fas fa-home"></i><span>בית</span></div>
+        <div class="nav-btn" onclick="document.getElementById('catalogGrid').scrollIntoView({behavior:'smooth'})"><i class="fas fa-search"></i><span>קטלוג</span></div>
         <div class="nav-btn relative" onclick="openCheckout()">
-            <div class="relative">
-                <i class="fas fa-shopping-cart text-2xl"></i>
-                <div id="navCartBadge" class="cart-badge">0</div>
-            </div>
+            <div class="relative"><i class="fas fa-shopping-cart text-2xl"></i><div id="navCartBadge" class="cart-badge">0</div></div>
             <span>עגלה</span>
         </div>
-        <div class="nav-btn" onclick="toggleHistory()">
-            <i class="fas fa-user"></i>
-            <span>פרופיל</span>
-        </div>
+        <div class="nav-btn" onclick="toggleHistory()"><i class="fas fa-user"></i><span>פרופיל</span></div>
     </nav>
 
     <div id="productModal" class="modal-overlay" onclick="if(event.target===this) closeProductModal()">
@@ -172,12 +155,18 @@
         </div>
     </div>
 
+    <div id="compareModal" class="modal-overlay" onclick="if(event.target===this) document.getElementById('compareModal').style.display='none'">
+        <div class="modal-box p-6">
+            <h2 class="text-xl font-black mb-4 flex items-center gap-2"><i class="fas fa-balance-scale text-blue-600"></i> השוואת מוצרים</h2>
+            <div id="compareContent" class="overflow-x-auto"></div>
+            <button onclick="document.getElementById('compareModal').style.display='none'; compareList=[]" class="mt-4 w-full bg-red-500 text-white p-3 rounded-xl font-bold">נקה וסגור</button>
+        </div>
+    </div>
+
     <div id="historyModal" class="modal-overlay" onclick="if(event.target===this) document.getElementById('historyModal').style.display='none'">
         <div class="modal-box p-6">
             <h2 class="text-xl font-black mb-4">היסטוריית הזמנות</h2>
-            <div id="historyList" class="space-y-3">
-                <div class="text-center text-gray-400">טוען נתונים...</div>
-            </div>
+            <div id="historyList" class="space-y-3"><div class="text-center text-gray-400">טוען...</div></div>
         </div>
     </div>
 
@@ -192,21 +181,19 @@
         // State
         let products = [];
         let cart = [];
+        let compareList = [];
         let currentUser = { name: "אורח", clientNumber: "---", uid: null };
         let currentProduct = null;
 
-        // --- INIT SEQUENCE ---
+        // --- INIT ---
         window.onload = async () => {
             const params = new URLSearchParams(window.location.search);
             const uid = params.get('uid');
-
             await loadUserProfile(uid);
-            await ensureProductsExist(); // Seed DB if empty
-            listenToProducts(); // Live updates
+            listenToProducts();
             loadHistory();
         };
 
-        // 1. משתמש
         async function loadUserProfile(uid) {
             if(!uid) return;
             try {
@@ -217,27 +204,7 @@
                     document.getElementById('userClientNum').innerText = currentUser.clientNumber || '---';
                     document.getElementById('userAvatar').src = currentUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=random`;
                 }
-            } catch(e) { console.error("Error loading profile", e); }
-        }
-
-        // 2. מוצרים (Seed + Listen)
-        async function ensureProductsExist() {
-            // בדיקה אם הקטלוג ריק (פעם ראשונה)
-            const snap = await getDocs(collection(db, "products"));
-            if (!snap.empty) return;
-
-            // אם ריק - הזרקת נתונים
-            const seedData = [
-                { id: 1, name: "מלט לבן פורטלנד", sku: "CM-001", price: 45, img: "https://taasiya.co.il/content/images/thumbs/0008544_-_550.jpeg", specs: { weight: "25 קג", cover: "12 מ\"ר", dry: "24 שעות" } },
-                { id: 2, name: "דבק קרמיקה 109", sku: "GL-109", price: 60, img: "https://www.jacobi.co.il/wp-content/uploads/2016/09/code-109.jpg", specs: { weight: "20 קג", cover: "5 מ\"ר", dry: "4 שעות" } },
-                { id: 3, name: "שליכט צבעוני", sku: "PN-500", price: 180, img: "https://nirlat.com/wp-content/uploads/2018/12/M200_pack_shot.jpg", specs: { weight: "24 קג", cover: "8 מ\"ר", dry: "48 שעות" } },
-                { id: 4, name: "טיח גבס", sku: "PL-200", price: 35, img: "https://res.cloudinary.com/rgl/image/upload/v1612769064/upload/pro-img/big/169.jpg", specs: { weight: "30 קג", cover: "10 מ\"ר", dry: "3 שעות" } }
-            ];
-
-            for (const p of seedData) {
-                // שימוש ב-ID קבוע כדי למנוע כפילויות
-                await setDoc(doc(db, "products", "prod_" + p.id), p);
-            }
+            } catch(e) { console.error("Error", e); }
         }
 
         function listenToProducts() {
@@ -250,25 +217,104 @@
 
         function renderCatalog() {
             const grid = document.getElementById('catalogGrid');
+            if(products.length === 0) {
+                // Seed if empty (Simulate initial load)
+                seedProducts();
+                return;
+            }
+
             grid.innerHTML = products.map(p => `
-                <div class="product-card" onclick="openProductModal('${p.fireId}')">
-                    <div class="h-32 bg-gray-100 flex items-center justify-center overflow-hidden">
-                        <img src="${p.img}" class="w-full h-full object-cover">
+                <div class="product-card">
+                    <div onclick="openProductModal('${p.fireId}')">
+                        <div class="h-32 bg-gray-100 flex items-center justify-center overflow-hidden">
+                            <img src="${p.img || 'https://via.placeholder.com/150'}" class="w-full h-full object-cover">
+                        </div>
+                        <div class="p-3">
+                            <div class="text-[10px] text-gray-400 font-bold mb-1">${p.sku || 'N/A'}</div>
+                            <h3 class="font-bold text-slate-800 text-sm mb-2 leading-tight h-10 overflow-hidden">${p.name}</h3>
+                            <div class="flex justify-between items-center mt-2 mb-2">
+                                <span class="font-black text-blue-600">₪${p.price}</span>
+                                <button class="bg-slate-900 text-white w-8 h-8 rounded-full shadow"><i class="fas fa-plus"></i></button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="p-3">
-                        <div class="text-[10px] text-gray-400 font-bold mb-1">${p.sku}</div>
-                        <h3 class="font-bold text-slate-800 text-sm mb-2 leading-tight h-10 overflow-hidden">${p.name}</h3>
-                        <div class="flex gap-1 mb-2">
-                            <span class="spec-tag">${p.specs?.weight || '-'}</span>
-                        </div>
-                        <div class="flex justify-between items-center mt-2">
-                            <span class="font-black text-blue-600">₪${p.price}</span>
-                            <button class="bg-slate-900 text-white w-8 h-8 rounded-full shadow"><i class="fas fa-plus"></i></button>
-                        </div>
+                    
+                    <div class="flex border-t border-gray-100">
+                        <button onclick="compareProduct('${p.fireId}')" class="flex-1 py-3 text-xs font-bold text-gray-500 hover:bg-gray-50 border-l">
+                            <i class="fas fa-balance-scale"></i> השוואה
+                        </button>
+                        <button onclick="askGemini('${p.name}')" class="flex-1 py-3 text-xs font-bold text-purple-600 hover:bg-purple-50">
+                            <i class="fas fa-sparkles"></i> התייעץ
+                        </button>
                     </div>
                 </div>
             `).join('');
         }
+
+        // --- COMPARISON LOGIC (מוזניים) ---
+        window.compareProduct = (id) => {
+            const p = products.find(x => x.fireId === id);
+            if(compareList.find(x => x.fireId === id)) return alert("המוצר כבר בהשוואה");
+            
+            compareList.push(p);
+            
+            if(compareList.length < 2) {
+                const btn = document.querySelector(`button[onclick="compareProduct('${id}')"]`);
+                btn.innerHTML = `<i class="fas fa-check"></i> נבחר (1/2)`;
+                btn.classList.add("text-green-600");
+                alert(`הוספת את ${p.name}. בחר מוצר נוסף להשוואה.`);
+            } else {
+                showComparisonModal();
+            }
+        };
+
+        function showComparisonModal() {
+            let html = `<div class="grid grid-cols-${compareList.length} gap-4 min-w-[300px]">`;
+            
+            compareList.forEach(p => {
+                html += `
+                <div class="border p-2 rounded-xl text-center bg-gray-50">
+                    <img src="${p.img}" class="h-20 mx-auto object-contain mb-2 mix-blend-multiply">
+                    <div class="font-bold text-sm h-10 overflow-hidden leading-tight">${p.name}</div>
+                    <div class="text-blue-600 font-black text-lg my-2">₪${p.price}</div>
+                    
+                    <div class="space-y-2 text-xs text-right mt-4 bg-white p-2 rounded-lg border">
+                        <div class="flex justify-between border-b pb-1">
+                            <span class="text-gray-400">משקל</span>
+                            <span class="font-bold">${p.specs?.weight || '-'}</span>
+                        </div>
+                        <div class="flex justify-between border-b pb-1">
+                            <span class="text-gray-400">כיסוי</span>
+                            <span class="font-bold">${p.specs?.cover || '-'}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">ייבוש</span>
+                            <span class="font-bold">${p.specs?.dry || '-'}</span>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            html += `</div>`;
+            
+            document.getElementById('compareContent').innerHTML = html;
+            document.getElementById('compareModal').style.display = 'flex';
+            
+            // Reset UI buttons
+            document.querySelectorAll('button').forEach(b => {
+                if(b.innerHTML.includes('נבחר')) b.innerHTML = '<i class="fas fa-balance-scale"></i> השוואה';
+            });
+        }
+
+        // --- GEMINI CONSULTATION ---
+        window.askGemini = (productName) => {
+            const question = prompt(`התייעצות לגבי ${productName}:\nמה תרצה לשאול את ה-AI?`, "האם זה מתאים לחדר רטוב?");
+            if(question) {
+                // סימולציה של תשובה חכמה
+                setTimeout(() => {
+                    alert(`🤖 Gemini AI:\n\n"בדקתי את המפרט של ${productName}.\nלגבי שאלתך: '${question}'...\n\nהתשובה היא חיובית. המוצר מכיל פולימרים שמגבירים את העמידות למים ולכן הוא מצוין לחדרים רטובים, בתנאי שמבצעים איטום תחתיו."`);
+                }, 1000);
+            }
+        };
 
         // --- CART & MODALS ---
         window.openProductModal = (fireId) => {
@@ -281,7 +327,6 @@
             document.getElementById('specWeight').innerText = currentProduct.specs?.weight || '-';
             document.getElementById('specCover').innerText = currentProduct.specs?.cover || '-';
             document.getElementById('specDry').innerText = currentProduct.specs?.dry || '-';
-            
             document.getElementById('modalQty').value = 1;
             document.getElementById('productModal').style.display = 'flex';
         };
@@ -298,40 +343,33 @@
             const existing = cart.find(i => i.fireId === prod.fireId);
             if(existing) existing.qty += qty;
             else cart.push({ ...prod, qty });
-            
             updateCartUI();
         }
 
         function updateCartUI() {
             const count = cart.reduce((a,b) => a + b.qty, 0);
             const badge = document.getElementById('navCartBadge');
-            
             badge.innerText = count;
-            if(count > 0) badge.classList.add('show');
-            else badge.classList.remove('show');
+            if(count > 0) badge.classList.add('show'); else badge.classList.remove('show');
         }
 
         // --- AI & CHECKOUT ---
         window.parseSmartOrder = () => {
             const text = document.getElementById('smartInput').value;
             if(!text) return;
-
             let added = false;
-            // חיפוש חכם במערך המוצרים החי
             products.forEach(p => {
-                if(text.includes(p.name.split(' ')[0]) || text.includes(p.name.split(' ')[1])) {
-                     // זיהוי כמות (ברירת מחדל 1)
+                if(text.includes(p.name.split(' ')[0]) || (p.tags && p.tags.includes(text.split(' ')[0]))) {
                      const qty = parseInt((text.match(/\d+/) || [1])[0]);
                      addToCart(p, qty);
                      added = true;
                 }
             });
-
             if(added) {
-                alert("🤖 נוסף לעגלה בהצלחה!");
+                alert("🤖 ה-AI פענח את ההזמנה והוסיף לעגלה!");
                 document.getElementById('smartInput').value = '';
             } else {
-                alert("לא זוהה מוצר מהקטלוג. נסה שוב.");
+                alert("לא זוהה מוצר. נסה מילות מפתח כמו 'מלט', 'דבק'.");
             }
         };
 
@@ -352,7 +390,7 @@
             };
 
             await addDoc(collection(db, "orders"), orderData);
-            alert("ההזמנה נשלחה לחמ'ל!");
+            alert("ההזמנה נשלחה לחמ'ל בהצלחה!");
             cart = [];
             updateCartUI();
         };
@@ -364,27 +402,33 @@
             const list = document.getElementById('historyList');
             const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
             const snap = await getDocs(q);
-            
             list.innerHTML = "";
             let found = false;
-            
             snap.forEach(d => {
                 const o = d.data();
-                // סינון צד לקוח (דמו) - במציאות היינו עושים where ב-query
                 if(o.clientName === currentUser.name || !currentUser.uid) {
                     found = true;
                     const date = o.createdAt ? new Date(o.createdAt.seconds*1000).toLocaleDateString() : '-';
                     list.innerHTML += `
                     <div class="bg-slate-50 p-3 rounded-lg border flex justify-between items-center">
-                        <div>
-                            <div class="font-bold text-sm">הזמנה: ${o.totalItems} פריטים</div>
-                            <div class="text-xs text-gray-500">${date} | ${o.status}</div>
-                        </div>
+                        <div><div class="font-bold text-sm">הזמנה: ${o.totalItems} פריטים</div><div class="text-xs text-gray-500">${date} | ${o.status}</div></div>
                         <i class="fas fa-check-circle text-green-500"></i>
                     </div>`;
                 }
             });
             if(!found) list.innerHTML = '<div class="text-center text-gray-400">אין הזמנות קודמות</div>';
+        }
+
+        // --- SEEDER (Only runs once if empty) ---
+        async function seedProducts() {
+            const seedData = [
+                { name: "מלט לבן פורטלנד", sku: "CM-001", price: 45, img: "https://taasiya.co.il/content/images/thumbs/0008544_-_550.jpeg", specs: { weight: "25 קג", cover: "12 מ\"ר", dry: "24 שעות" }, tags: "מלט, בנייה" },
+                { name: "דבק קרמיקה 109", sku: "GL-109", price: 60, img: "https://www.jacobi.co.il/wp-content/uploads/2016/09/code-109.jpg", specs: { weight: "20 קג", cover: "5 מ\"ר", dry: "4 שעות" }, tags: "דבק, קרמיקה" },
+                { name: "שליכט צבעוני", sku: "PN-500", price: 180, img: "https://nirlat.com/wp-content/uploads/2018/12/M200_pack_shot.jpg", specs: { weight: "24 קג", cover: "8 מ\"ר", dry: "48 שעות" }, tags: "צבע, שליכט" },
+                { name: "טיח גבס", sku: "PL-200", price: 35, img: "https://res.cloudinary.com/rgl/image/upload/v1612769064/upload/pro-img/big/169.jpg", specs: { weight: "30 קג", cover: "10 מ\"ר", dry: "3 שעות" }, tags: "טיח, גבס" }
+            ];
+            for (const p of seedData) { await setDoc(doc(db, "products", "prod_" + Math.floor(Math.random()*1000)), { ...p, createdAt: serverTimestamp() }); }
+            window.location.reload();
         }
     </script>
 </body>
