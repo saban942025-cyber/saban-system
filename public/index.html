@@ -3,145 +3,255 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SabanOS | Gateway v32.0 (Role Fix)</title>
-    <link rel="manifest" href="manifest.json">
+    <title>Saban OS | מערכת שליטה מרכזית</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap');
-        body { font-family: 'Rubik', sans-serif; background-color: #0f172a; height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .login-card { background: white; border-radius: 20px; width: 100%; max-width: 400px; padding: 40px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); text-align: center; }
-        .input-field { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; background: #f8fafc; margin-bottom: 15px; outline: none; transition: 0.2s; }
-        .input-field:focus { border-color: #008069; background: white; }
-        .btn-login { width: 100%; background: #008069; color: white; padding: 12px; border-radius: 10px; font-weight: bold; transition: 0.2s; cursor: pointer; }
-        .btn-login:hover { background: #006d59; }
-        
-        /* Checkbox Style */
-        .checkbox-wrapper { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; justify-content: start; }
-        .checkbox-wrapper input { width: 16px; height: 16px; accent-color: #008069; cursor: pointer; }
-        .checkbox-wrapper label { font-size: 13px; color: #64748b; cursor: pointer; }
+        /* WhatsApp Web Theme Colors */
+        :root {
+            --wa-sidebar-bg: #ffffff;
+            --wa-main-bg: #efeae2; /* הרקע המפורסם של הצ'אט */
+            --wa-header-bg: #f0f2f5;
+            --wa-green: #008069;
+            --wa-accent: #25d366;
+            --wa-border: #d1d7db;
+        }
 
-        .loader { width: 20px; height: 20px; border: 3px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; display: none; margin: 0 auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        body { 
+            margin: 0; 
+            padding: 0; 
+            height: 100vh; 
+            overflow: hidden; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #d1d7db; /* רקע כללי כהה יותר כמו בוואטסאפ ווב */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* The Main Container (המסך הלבן הגדול) */
+        .app-container {
+            width: 100%;
+            height: 100%;
+            max-width: 1600px; /* שלא יהיה ענק מדי במסכים עצומים */
+            background: white;
+            display: flex;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        /* --- Sidebar (הסרגל הימני) --- */
+        .sidebar {
+            width: 60px; /* מצומצם לאייקונים בלבד */
+            background: #f0f2f5;
+            border-left: 1px solid var(--wa-border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 20px;
+            gap: 10px;
+            z-index: 20;
+            transition: width 0.3s;
+        }
+        
+        .sidebar:hover {
+            width: 240px; /* נפתח במעבר עכבר */
+        }
+
+        /* User Profile in Sidebar */
+        .profile-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px;
+            width: 100%;
+            justify-content: center; /* במצב סגור */
+            margin-bottom: 20px;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        
+        .profile-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid var(--wa-green);
+            flex-shrink: 0;
+        }
+
+        .profile-text {
+            opacity: 0;
+            transition: opacity 0.2s;
+            color: #54656f;
+        }
+        .sidebar:hover .profile-text { opacity: 1; }
+
+        /* Navigation Buttons */
+        .nav-btn {
+            width: 90%;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            border-radius: 8px;
+            cursor: pointer;
+            color: #54656f;
+            transition: 0.2s;
+            padding: 0 14px;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .nav-btn:hover { background: #e9edef; }
+        
+        .nav-btn.active {
+            background: #e9edef;
+            color: var(--wa-green);
+            font-weight: bold;
+            border-right: 4px solid var(--wa-green);
+        }
+
+        .nav-icon { width: 24px; font-size: 20px; text-align: center; margin-left: 15px; flex-shrink: 0; }
+        .nav-label { opacity: 0; transition: opacity 0.2s; }
+        .sidebar:hover .nav-label { opacity: 1; }
+
+        /* --- Main Content Area --- */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--wa-main-bg);
+            position: relative;
+        }
+
+        /* Background Pattern (כמו בוואטסאפ) */
+        .main-content::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            opacity: 0.06;
+            background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png");
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Header inside Main */
+        .content-header {
+            height: 60px;
+            background: var(--wa-header-bg);
+            border-bottom: 1px solid var(--wa-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 10;
+        }
+
+        /* Iframe Container */
+        .iframe-wrapper {
+            flex: 1;
+            position: relative;
+            z-index: 1;
+            background: transparent;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: transparent;
+        }
+        
+        /* Status Dot */
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background: var(--wa-green);
+            border-radius: 50%;
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            border: 2px solid #f0f2f5;
+        }
+
     </style>
 </head>
 <body>
 
-    <div class="login-card">
-        <div class="mb-6"><i class="fas fa-cubes text-5xl text-green-600"></i></div>
-        <h1 class="text-2xl font-bold text-slate-800 mb-1">SabanOS</h1>
-        <p class="text-slate-500 text-sm mb-6">מערכת הפעלה לוגיסטית</p>
+    <div class="app-container">
+        
+        <nav class="sidebar">
+            <div class="profile-section">
+                <div class="relative">
+                    <img src="https://ui-avatars.com/api/?name=Rami+Saban&background=008069&color=fff" class="profile-img">
+                    <div class="status-dot"></div>
+                </div>
+                <div class="profile-text">
+                    <div class="font-bold text-sm">ראמי סבן</div>
+                    <div class="text-xs">מחובר לחמ"ל</div>
+                </div>
+            </div>
 
-        <form onsubmit="handleLogin(event)">
-            <input type="email" id="email" class="input-field" placeholder="אימייל" required>
-            <input type="password" id="password" class="input-field" placeholder="סיסמה" required>
-            
-            <div class="checkbox-wrapper">
-                <input type="checkbox" id="rememberMe">
-                <label for="rememberMe">זכור אותי (שמור סיסמה)</label>
+            <div class="nav-btn active" onclick="loadTool('hamal-ops.html', 'מפה טקטית ומבצעים', this)">
+                <i class="fas fa-map-marked-alt nav-icon"></i>
+                <span class="nav-label">מבצעים (מפה)</span>
+            </div>
+
+            <div class="nav-btn" onclick="loadTool('hamal-manager.html', 'ניהול וחיזוי זמנים', this)">
+                <i class="fas fa-brain nav-icon"></i>
+                <span class="nav-label">המוח (חיזוי)</span>
+            </div>
+
+            <div class="nav-btn" onclick="loadTool('admin-god.html', 'יצירת לינקים ללקוחות', this)">
+                <i class="fas fa-user-plus nav-icon"></i>
+                <span class="nav-label">לקוחות (לינקים)</span>
             </div>
             
-            <button type="submit" id="submitBtn" class="btn-login">
-                <span id="btnText">כניסה</span>
-                <div id="btnLoader" class="loader"></div>
-            </button>
-            <div id="errorMsg" class="text-red-500 text-xs mt-3 font-bold hidden"></div>
-        </form>
-        
-        <div class="mt-4 text-xs text-gray-400">
-            <a href="#" onclick="localStorage.clear(); location.reload()" class="underline">נקה נתונים</a>
-        </div>
+            <div class="mt-auto mb-4 w-full h-[1px] bg-gray-300"></div>
+
+            <div class="nav-btn" onclick="loadTool('driver-pro.html', 'מבט נהג (חכמת)', this)">
+                <i class="fas fa-truck nav-icon text-orange-600"></i>
+                <span class="nav-label text-orange-700 font-bold">מבט נהג</span>
+            </div>
+             <div class="nav-btn" onclick="loadTool('client-final.html', 'מבט לקוח (אפליקציה)', this)">
+                <i class="fas fa-mobile-alt nav-icon text-blue-600"></i>
+                <span class="nav-label text-blue-700 font-bold">מבט לקוח</span>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <header class="content-header">
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-cube text-gray-500 text-xl"></i>
+                    <h2 id="page-title" class="font-bold text-gray-700 text-lg">מפה טקטית ומבצעים</h2>
+                </div>
+                <div class="flex gap-4 text-gray-500">
+                    <i class="fas fa-search cursor-pointer hover:text-green-600"></i>
+                    <i class="fas fa-paperclip cursor-pointer hover:text-green-600"></i>
+                    <i class="fas fa-ellipsis-v cursor-pointer hover:text-green-600"></i>
+                </div>
+            </header>
+
+            <div class="iframe-wrapper">
+                <iframe id="app-frame" src="hamal-ops.html"></iframe>
+            </div>
+        </main>
+
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { initPresence } from './js/presence.js'; // הפעלת המנוע
-
-        const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
-        
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        // הפעלת מעקב נוכחות מיד בעלייה (אם המשתמש כבר מחובר)
-        initPresence(app);
-
-        // 1. בדיקת זכור אותי (מילוי אוטומטי)
-        window.onload = async () => {
-            const savedEmail = localStorage.getItem('saban_saved_email');
-            if (savedEmail) {
-                document.getElementById('email').value = savedEmail;
-                document.getElementById('rememberMe').checked = true;
-            }
-
-            // בדיקת לינק קסם
-            const params = new URLSearchParams(window.location.search);
-            const uid = params.get('uid');
-            if (uid) checkUserRole(uid);
-        };
-
-        // 2. התחברות
-        window.handleLogin = async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const remember = document.getElementById('rememberMe').checked;
+    <script>
+        // פונקציית החלפת הכלים (הטאבים)
+        function loadTool(filename, title, btnElement) {
+            // 1. עדכון כותרת
+            document.getElementById('page-title').innerText = title;
             
-            setLoading(true);
+            // 2. טעינת הקובץ באייפריים
+            // הערה: הקבצים צריכים להיות באותה תיקייה כדי שזה יעבוד
+            document.getElementById('app-frame').src = filename;
 
-            try {
-                // הגדרת שמירת סשן לפי הצ'ק-בוקס
-                await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
-                
-                if(remember) localStorage.setItem('saban_saved_email', email);
-                else localStorage.removeItem('saban_saved_email');
-
-                const cred = await signInWithEmailAndPassword(auth, email, password);
-                await checkUserRole(cred.user.uid);
-
-            } catch (err) {
-                console.error(err);
-                document.getElementById('errorMsg').innerText = "שגיאה: " + err.message;
-                document.getElementById('errorMsg').classList.remove('hidden');
-                setLoading(false);
-            }
-        };
-
-        async function checkUserRole(uid) {
-            try {
-                const docSnap = await getDoc(doc(db, "users", uid));
-                if (docSnap.exists()) {
-                    const userData = docSnap.data();
-                    localStorage.setItem('saban_user', JSON.stringify({ uid, role: userData.role, name: userData.name }));
-                    forceRedirect(userData.role, uid);
-                } else {
-                    throw new Error("משתמש לא קיים");
-                }
-            } catch(e) { console.error(e); setLoading(false); }
-        }
-
-        function forceRedirect(role, uid) {
-            if (['admin', 'ops', 'manager'].includes(role)) window.location.href = 'master-app.html';
-            else if (role === 'driver') window.location.href = 'master-app.html?view=driver'; // אפשר להתאים
-            else window.location.href = `client-app.html?uid=${uid}`;
-        }
-
-        function setLoading(state) {
-            const btn = document.getElementById('submitBtn');
-            const loader = document.getElementById('btnLoader');
-            const text = document.getElementById('btnText');
-            
-            if(state) {
-                btn.disabled = true;
-                text.style.display = 'none';
-                loader.style.display = 'block';
-            } else {
-                btn.disabled = false;
-                text.style.display = 'block';
-                loader.style.display = 'none';
-            }
+            // 3. עדכון כפתור פעיל בסרגל
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            btnElement.classList.add('active');
         }
     </script>
 </body>
