@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Saban OS | מערכת רב-עיצובית</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    
+    <style>
+        /* CSS גלובלי לכולם */
+        body { margin: 0; overflow: hidden; font-family: sans-serif; height: 100vh; }
+        .layout-container { display: none; height: 100%; width: 100%; animation: fadeIn 0.5s; }
+        .layout-container.active { display: flex; flex-direction: column; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* --- עיצוב 1: GLASS COMMANDER (זכוכית) --- */
+        .theme-glass { background: linear-gradient(135deg, #0f172a, #1e1b4b); color: white; }
+        .glass-panel { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; }
+        .glass-nav { position: fixed; bottom: 20px; left: 20px; right: 20px; height: 70px; display: flex; justify-content: space-around; align-items: center; border-radius: 25px; background: rgba(0,0,0,0.4); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
+        
+        /* --- עיצוב 2: THE OPERATOR (מבצעי/כהה) --- */
+        .theme-operator { background: #111; color: #0f0; font-family: 'Courier New', monospace; }
+        .op-header { background: #000; border-bottom: 2px solid #0f0; padding: 15px; text-transform: uppercase; letter-spacing: 2px; }
+        .op-card { background: #222; border: 1px solid #333; border-left: 4px solid #0f0; margin-bottom: 10px; padding: 10px; }
+        .op-btn { background: #000; border: 1px solid #0f0; color: #0f0; padding: 10px; font-weight: bold; text-transform: uppercase; }
+
+        /* --- עיצוב 3: SOCIAL LOG (חברתי/בהיר) --- */
+        .theme-social { background: #f0f2f5; color: #1c1e21; font-family: system-ui, -apple-system, sans-serif; }
+        .social-story-bar { display: flex; gap: 10px; overflow-x: auto; padding: 15px; background: white; border-bottom: 1px solid #e4e6eb; }
+        .social-avatar { width: 60px; height: 60px; border-radius: 50%; padding: 2px; border: 2px solid #1877f2; }
+        .social-card { background: white; border-radius: 12px; margin: 10px; padding: 15px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+
+    <div id="loader" class="fixed inset-0 bg-slate-900 flex flex-col items-center justify-center z-50 text-white">
+        <i class="fas fa-fingerprint text-5xl animate-pulse text-blue-500 mb-4"></i>
+        <h2 class="text-xl font-bold">טוען פרופיל משתמש...</h2>
+    </div>
+
+    <div id="app-glass" class="layout-container theme-glass">
+        <div class="p-6 flex justify-between items-center glass-panel m-4 mt-8">
+            <div>
+                <div class="text-xs text-blue-300 font-bold tracking-widest uppercase">Saban OS</div>
+                <h1 class="text-2xl font-black">החמ"ל של <span class="userName">...</span></h1>
+            </div>
+            <img class="userAvatar w-12 h-12 rounded-full border-2 border-white/20">
+        </div>
+
+        <div class="flex-1 overflow-y-auto px-4 pb-24 space-y-4">
+            <div class="glass-panel p-4 flex gap-3 items-center" onclick="askBrain()">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-500 to-blue-500 flex items-center justify-center shadow-lg shadow-purple-500/30">
+                    <i class="fas fa-sparkles text-white"></i>
+                </div>
+                <div class="flex-1">
+                    <div class="text-sm font-bold">Saban Brain</div>
+                    <div class="text-xs opacity-60">התייעץ איתי על כל דבר...</div>
+                </div>
+            </div>
+
+            <div class="glass-panel p-5 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 bg-red-500 text-[10px] font-bold px-2 py-1 rounded-bl-lg">דחוף</div>
+                <h3 class="font-bold text-lg mb-1">העברת מלט לסניף תלמיד</h3>
+                <p class="text-sm opacity-70 mb-4">יש להעביר 20 משטחים עד השעה 14:00.</p>
+                <div class="flex gap-2">
+                    <button class="flex-1 py-2 bg-white/10 rounded-lg text-sm font-bold hover:bg-white/20 transition">פרטים</button>
+                    <button class="flex-1 py-2 bg-blue-600 rounded-lg text-sm font-bold shadow-lg shadow-blue-900/50">בצע</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-nav">
+            <i class="fas fa-home text-xl text-blue-400"></i>
+            <i class="fas fa-search text-xl opacity-50"></i>
+            <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center -mt-8 shadow-xl border-4 border-[#0f172a]" onclick="openNewTask()">
+                <i class="fas fa-plus text-white"></i>
+            </div>
+            <i class="fas fa-bell text-xl opacity-50"></i>
+            <i class="fas fa-cog text-xl opacity-50" onclick="openProfile()"></i>
+        </div>
+    </div>
+
+
+    <div id="app-operator" class="layout-container theme-operator">
+        <div class="op-header flex justify-between">
+            <span>COMMAND_CENTER // <span class="userName">USR</span></span>
+            <i class="fas fa-power-off text-red-500"></i>
+        </div>
+
+        <div class="flex-1 p-4 overflow-y-auto">
+            <div class="flex gap-2 mb-6 border-b border-[#333] pb-2">
+                <span class="text-green-700">>></span>
+                <input type="text" placeholder="ENTER COMMAND OR ASK AI..." class="bg-transparent border-none outline-none text-[#0f0] w-full font-mono uppercase">
+            </div>
+
+            <div class="text-xs text-gray-500 mb-2">ACTIVE_TASKS [3]</div>
+            
+            <div class="op-card">
+                <div class="flex justify-between mb-2">
+                    <span class="font-bold">ID: #99281</span>
+                    <span class="bg-red-900 text-red-500 px-1 text-xs">CRITICAL</span>
+                </div>
+                <div class="mb-4 text-sm">TRANSFER_CEMENT -> TALMID_BRANCH</div>
+                <div class="flex gap-2">
+                    <button class="op-btn flex-1">ACKNOWLEDGE</button>
+                    <button class="op-btn flex-1 border-red-500 text-red-500">REJECT</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-2 border-t border-[#333] flex justify-between text-xs bg-[#111]">
+            <button class="p-2 text-[#0f0]" onclick="openProfile()">[ SETTINGS ]</button>
+            <button class="p-2 text-[#0f0]">[ LOGS ]</button>
+            <button class="p-2 text-[#0f0]">[ COMMS ]</button>
+        </div>
+    </div>
+
+
+    <div id="app-social" class="layout-container theme-social">
+        <div class="bg-white p-3 flex justify-between items-center shadow-sm sticky top-0 z-10">
+            <h1 class="text-2xl font-black text-blue-600 tracking-tighter">SabanGram</h1>
+            <div class="flex gap-4">
+                <i class="fas fa-heart text-xl text-gray-700"></i>
+                <i class="fas fa-paper-plane text-xl text-gray-700"></i>
+            </div>
+        </div>
+
+        <div class="social-story-bar">
+            <div class="flex flex-col items-center gap-1 min-w-[70px]">
+                <div class="w-[64px] h-[64px] rounded-full p-[2px] bg-gradient-to-tr from-yellow-400 to-purple-600">
+                    <img class="userAvatar w-full h-full rounded-full border-2 border-white object-cover">
+                </div>
+                <span class="text-xs truncate w-full text-center">המשימה שלי</span>
+            </div>
+            <div class="flex flex-col items-center gap-1 min-w-[70px]">
+                <div class="w-[64px] h-[64px] rounded-full p-[2px] border-2 border-gray-200">
+                    <img src="https://ui-avatars.com/api/?name=Rami" class="w-full h-full rounded-full border-2 border-white">
+                </div>
+                <span class="text-xs text-gray-500">ראמי</span>
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto pb-20 bg-gray-100">
+            <div class="social-card">
+                <div class="flex items-center gap-3 mb-3">
+                    <img src="https://ui-avatars.com/api/?name=Admin" class="w-8 h-8 rounded-full">
+                    <div>
+                        <div class="font-bold text-sm">מנהל המערכת</div>
+                        <div class="text-xs text-gray-500">לפני 2 דקות • וילה הרצליה</div>
+                    </div>
+                    <i class="fas fa-ellipsis-h mr-auto text-gray-400"></i>
+                </div>
+                <div class="bg-blue-50 p-4 rounded-lg mb-3">
+                    <h3 class="font-bold">🚛 הזמנת מלט לבן</h3>
+                    <p class="text-sm">נדרשת פריקה ידנית. זהירות בשטח.</p>
+                </div>
+                <div class="flex gap-4 text-gray-500 text-sm border-t pt-3">
+                    <span><i class="far fa-check-circle"></i> אני על זה</span>
+                    <span><i class="far fa-comment"></i> תגובה</span>
+                    <span class="mr-auto" onclick="openProfile()"><i class="fas fa-cog"></i> הגדרות</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="profileModal" class="fixed inset-0 bg-black/90 z-[100] hidden flex-col items-center justify-center p-6 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-md rounded-2xl p-6 relative">
+            <button onclick="document.getElementById('profileModal').style.display='none'" class="absolute top-4 left-4 text-xl"><i class="fas fa-times"></i></button>
+            
+            <h2 class="text-2xl font-black mb-6 text-center text-slate-800">בחר את המראה שלך 🎨</h2>
+            
+            <div class="space-y-4">
+                <div onclick="setTheme('glass')" class="p-4 rounded-xl border-2 border-slate-200 hover:border-blue-500 cursor-pointer flex items-center gap-4 bg-slate-900 text-white transition transform hover:scale-105">
+                    <div class="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center text-2xl">💎</div>
+                    <div>
+                        <div class="font-bold">Glass Commander</div>
+                        <div class="text-xs opacity-70">עתידני, נקי, יוקרתי (המומלץ)</div>
+                    </div>
+                </div>
+
+                <div onclick="setTheme('social')" class="p-4 rounded-xl border-2 border-slate-200 hover:border-blue-500 cursor-pointer flex items-center gap-4 bg-white text-slate-800 transition transform hover:scale-105">
+                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-2xl">💬</div>
+                    <div>
+                        <div class="font-bold">Social Log</div>
+                        <div class="text-xs opacity-70">בהיר, כיפי, כמו רשת חברתית</div>
+                    </div>
+                </div>
+
+                <div onclick="setTheme('operator')" class="p-4 rounded-xl border-2 border-slate-200 hover:border-blue-500 cursor-pointer flex items-center gap-4 bg-black text-green-500 font-mono transition transform hover:scale-105">
+                    <div class="w-12 h-12 border border-green-500 rounded-full flex items-center justify-center text-xl">🚀</div>
+                    <div>
+                        <div class="font-bold">The Operator</div>
+                        <div class="text-xs opacity-70">מבצעי, ללא הסחות דעת, כהה</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="module">
+        import { SabanBrain } from './js/saban-brain.js';
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // Firebase Setup
+        const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // State
+        let currentUser = null;
+
+        window.onload = async () => {
+            // 1. Load User (Mocked for now, real DB later)
+            const stored = localStorage.getItem('saban_user');
+            if(!stored) {
+                // If no user, simulate one for testing
+                currentUser = { uid: "test_user_1", name: "ראמי סבן", avatar: "https://ui-avatars.com/api/?name=Rami", theme: "glass" };
+                localStorage.setItem('saban_user', JSON.stringify(currentUser));
+            } else {
+                currentUser = JSON.parse(stored);
+            }
+
+            // 2. Fetch fresh theme from DB (Optional, or use LocalStorage)
+            // const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+            // if(userDoc.exists()) currentUser.theme = userDoc.data().ui_theme || 'glass';
+
+            // 3. Apply Theme
+            applyTheme(currentUser.theme || 'glass');
+            
+            // 4. Update UI with User Info
+            document.querySelectorAll('.userName').forEach(el => el.innerText = currentUser.name);
+            document.querySelectorAll('.userAvatar').forEach(el => el.src = currentUser.avatar);
+
+            document.getElementById('loader').style.display = 'none';
+        };
+
+        window.setTheme = async (themeName) => {
+            // UI Update
+            applyTheme(themeName);
+            document.getElementById('profileModal').style.display = 'none';
+
+            // Save to LocalStorage
+            currentUser.theme = themeName;
+            localStorage.setItem('saban_user', JSON.stringify(currentUser));
+
+            // Save to Firebase (Real Sync)
+            // await updateDoc(doc(db, "users", currentUser.uid), { ui_theme: themeName });
+            
+            alert(`העיצוב הוחלף ל-${themeName.toUpperCase()} בהצלחה!`);
+        };
+
+        function applyTheme(themeName) {
+            // Hide all layouts
+            document.querySelectorAll('.layout-container').forEach(el => el.classList.remove('active'));
+            
+            // Show selected layout
+            const selected = document.getElementById(`app-${themeName}`);
+            if(selected) selected.classList.add('active');
+        }
+
+        window.openProfile = () => {
+            document.getElementById('profileModal').style.display = 'flex';
+        };
+
+        window.askBrain = async () => {
+            const q = prompt("במה המוח של סבן יכול לעזור?");
+            if(q) {
+                const ans = await SabanBrain.ask(q);
+                alert(ans);
+            }
+        };
+        
+        // Expose functions for buttons
+        window.openNewTask = () => alert("פתיחת טופס משימה חכם (Wizard)...");
+    </script>
+</body>
+</html>
