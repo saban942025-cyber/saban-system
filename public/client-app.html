@@ -3,57 +3,214 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Saban Client | חנות חכמה</title>
+    <title>Saban Client Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <style>body { background: #f3f4f6; font-family: system-ui; padding-bottom: 80px; }</style>
+    
+    <style>
+        body { margin: 0; font-family: sans-serif; background: #f8fafc; color: #1e293b; height: 100vh; display: flex; flex-direction: column; }
+        
+        /* Loader */
+        #loader { position: fixed; inset: 0; background: white; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s; }
+        
+        /* Cards */
+        .order-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0; position: relative; overflow: hidden; }
+        .order-card::before { content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 6px; background: #cbd5e1; }
+        .order-card.status-new::before { background: #3b82f6; } /* Blue */
+        .order-card.status-waiting::before { background: #eab308; } /* Yellow */
+        .order-card.status-done::before { background: #22c55e; } /* Green */
+
+        /* Timeline in Card */
+        .timeline { display: flex; justify-content: space-between; margin-top: 20px; position: relative; }
+        .timeline::after { content: ''; position: absolute; top: 6px; left: 0; right: 0; height: 2px; background: #e2e8f0; z-index: 0; }
+        .t-step { width: 14px; height: 14px; background: #e2e8f0; border-radius: 50%; z-index: 1; border: 2px solid white; position: relative; }
+        .t-step.active { background: #22c55e; box-shadow: 0 0 0 2px #dcfce7; }
+        
+        /* Header */
+        .app-header { background: white; padding: 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 50; }
+    </style>
 </head>
 <body>
 
-    <div class="bg-slate-900 text-white p-6 rounded-b-3xl shadow-lg mb-4">
-        <h1 class="text-2xl font-bold">שלום, לקוח יקר 👋</h1>
-        <p class="text-sm opacity-80">במה אפשר לעזור היום?</p>
+    <div id="loader">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+        <h2 class="text-lg font-bold text-gray-600" id="loaderMsg">מזהה לקוח מאובטח...</h2>
     </div>
 
-    <div id="grid" class="grid grid-cols-2 gap-4 px-4"></div>
+    <header class="app-header">
+        <div>
+            <h1 class="text-xl font-black text-slate-800">ההזמנות שלי 📦</h1>
+            <p id="userName" class="text-xs text-gray-500">שלום, אורח</p>
+        </div>
+        <img id="userAvatar" class="w-10 h-10 rounded-full border border-gray-200 shadow-sm" src="">
+    </header>
+
+    <main class="flex-1 overflow-y-auto p-4 pb-24" id="orders-container">
+        </main>
+
+    <div class="fixed bottom-6 left-6 z-50">
+        <button onclick="createNewOrder()" class="bg-blue-600 hover:bg-blue-700 text-white w-14 h-14 rounded-full shadow-xl flex items-center justify-center text-2xl transition transform hover:scale-110">
+            <i class="fas fa-plus"></i>
+        </button>
+    </div>
 
     <script type="module">
-        import { SabanBrain } from './js/saban-brain.js'; // התיקון לנתיב
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        const app = initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" });
-        const db = getFirestore(app);
+        // Firebase Config
+        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
+        
+        let currentUser = null;
 
-        onSnapshot(collection(db, "products"), (snap) => {
-            document.getElementById('grid').innerHTML = snap.docs.map(d => {
-                const p = d.data();
-                return `
-                <div class="bg-white rounded-xl overflow-hidden shadow-sm">
-                    <div class="h-32 bg-gray-100 flex items-center justify-center">
-                        <img src="${p.img}" class="h-full object-cover">
-                    </div>
-                    <div class="p-3">
-                        <div class="font-bold text-sm h-10 overflow-hidden">${p.name}</div>
-                        <div class="flex justify-between items-center mt-2">
-                            <span class="text-blue-600 font-bold">₪${p.price}</span>
-                            <button onclick="ask('${p.name}')" class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded border border-purple-200">
-                                <i class="fas fa-sparkles"></i> התייעץ
-                            </button>
-                        </div>
-                    </div>
-                </div>`;
-            }).join('');
-        });
+        // --- המוח: זיהוי אוטומטי מהלינק ---
+        window.onload = () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const linkUid = urlParams.get('uid'); // ה-ID מהלינק
 
-        window.ask = async (productName) => {
-            const q = prompt(`מה תרצה לשאול לגבי ${productName}?`, "האם זה מתאים לחדר רטוב?");
-            if(q) {
-                alert("🤖 בודק לך את זה...");
-                const ans = await SabanBrain.ask(q, `הלקוח שואל לגבי המוצר: ${productName}. ידוע לך המפרט הטכני.`);
-                alert(`תשובת המומחה:\n\n${ans}`);
+            if (linkUid) {
+                // תרחיש א': נכנס דרך לינק חכם
+                console.log("🔗 זוהה לינק לקוח:", linkUid);
+                
+                // יצירת משתמש על בסיס הלינק
+                currentUser = {
+                    uid: linkUid,
+                    name: "לקוח " + linkUid.substring(0, 4), // אפשר לשפר עם שליפה מהדאטה בייס
+                    avatar: `https://ui-avatars.com/api/?name=${linkUid}&background=random`
+                };
+                
+                // שמירה לזיכרון (כדי שבפעם הבאה לא יצטרך לינק)
+                localStorage.setItem('saban_client', JSON.stringify(currentUser));
+            } else {
+                // תרחיש ב': נכנס רגיל (בודק בזיכרון)
+                const saved = localStorage.getItem('saban_client');
+                if (saved) {
+                    currentUser = JSON.parse(saved);
+                } else {
+                    // אין משתמש בכלל -> יוצר אורח
+                    currentUser = { uid: 'guest', name: 'לקוח מזדמן', avatar: 'https://ui-avatars.com/api/?name=Guest' };
+                }
             }
+
+            // עדכון הממשק
+            document.getElementById('userName').innerText = `שלום, ${currentUser.name}`;
+            document.getElementById('userAvatar').src = currentUser.avatar;
+            
+            // טעינת ההזמנות
+            loadOrders();
+
+            // העלמת מסך הטעינה
+            setTimeout(() => {
+                document.getElementById('loader').style.opacity = '0';
+                setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
+            }, 800);
         };
+
+        function loadOrders() {
+            const container = document.getElementById('orders-container');
+            
+            // שאילתה: כל ההזמנות (בפרודקשן נסנן: where("clientId", "==", currentUser.uid))
+            // כרגע מביא הכל כדי שתראה שיש דאטה
+            const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
+
+            onSnapshot(q, (snapshot) => {
+                container.innerHTML = "";
+                
+                if (snapshot.empty) {
+                    container.innerHTML = `
+                        <div class="flex flex-col items-center justify-center h-64 text-gray-400">
+                            <i class="fas fa-box-open text-6xl mb-4 opacity-30"></i>
+                            <p>אין הזמנות עדיין</p>
+                        </div>`;
+                    return;
+                }
+
+                snapshot.forEach(doc => {
+                    const order = doc.data();
+                    container.innerHTML += renderOrderCard(order);
+                });
+            });
+        }
+
+        function renderOrderCard(o) {
+            // לוגיקת סטטוס וציר זמן
+            let statusClass = 'status-new';
+            let s1='active', s2='', s3='', s4='';
+            let statusText = 'נקלט במערכת';
+            let actionBtn = '';
+
+            if (o.comaxNum) { 
+                statusClass = 'status-new'; 
+                s2='active'; 
+                statusText = `בטיפול משרד (הזמנה ${o.comaxNum})`; 
+            }
+            
+            if (o.pdfUrl) { 
+                statusClass = 'status-waiting'; 
+                s2='active'; s3='active'; 
+                statusText = 'ממתין לאישור העמסה';
+                actionBtn = `
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <a href="${o.pdfUrl}" target="_blank" class="flex items-center justify-center w-full py-3 bg-blue-600 text-white font-bold rounded-xl shadow-lg hover:bg-blue-700 transition">
+                        <i class="fas fa-file-pdf mr-2"></i> צפה במסמך ואשר
+                    </a>
+                </div>`;
+            }
+
+            if (o.status === 'done') { 
+                statusClass = 'status-done'; 
+                s1='active'; s2='active'; s3='active'; s4='active'; 
+                statusText = 'ההזמנה הושלמה';
+                actionBtn = `
+                <div class="mt-4 pt-4 border-t border-gray-100 text-center">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm font-bold">
+                        <i class="fas fa-check mr-1"></i> אושר לביצוע
+                    </span>
+                </div>`;
+            }
+
+            return `
+            <div class="order-card ${statusClass}">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="font-bold text-lg">${o.clientName}</h3>
+                        <p class="text-sm text-gray-500">הזמנה #${o.orderNum || 'APP'}</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xs font-bold text-gray-400">${new Date(o.createdAt?.seconds * 1000).toLocaleDateString()}</span>
+                        <div class="text-xs font-bold mt-1 text-blue-600">${statusText}</div>
+                    </div>
+                </div>
+
+                <div class="timeline">
+                    <div class="t-step ${s1}" title="התקבל"></div>
+                    <div class="t-step ${s2}" title="קומקס"></div>
+                    <div class="t-step ${s3}" title="אישור"></div>
+                    <div class="t-step ${s4}" title="בוצע"></div>
+                </div>
+                <div class="flex justify-between text-[10px] text-gray-400 mt-1 px-1">
+                    <span>התקבל</span><span>משרד</span><span>אישור</span><span>סיום</span>
+                </div>
+
+                ${actionBtn}
+            </div>`;
+        }
+
+        // פונקציית עזר לבדיקה מהירה
+        window.createNewOrder = async () => {
+            const product = prompt("מה תרצה להזמין?");
+            if(!product) return;
+            
+            await addDoc(collection(db, "orders"), {
+                clientName: currentUser.name,
+                clientId: currentUser.uid,
+                orderNum: Math.floor(Math.random() * 10000),
+                status: 'new',
+                items: [{name: product, qty: 1}],
+                createdAt: serverTimestamp()
+            });
+            alert("ההזמנה נשלחה לחמ'ל!");
+        }
     </script>
 </body>
 </html>
