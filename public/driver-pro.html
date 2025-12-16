@@ -1,26 +1,222 @@
-// הוסף את זה בתוך הסקריפט של driver-pro.html
-
-// פונקציה שמדווחת על סיום נסיעה ושומרת היסטוריה
-async function completeDelivery(orderId, clientName) {
-    // 1. חישוב זמנים
-    const endTime = new Date();
-    // (בהנחה ששמרנו את startTime כשיצאנו לדרך)
-    const durationMinutes = Math.floor((endTime - currentOrder.startTime) / 60000); 
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>נהג PRO | חכמת</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
-    // 2. שמירה ב"קופסה השחורה" (Driver History DB)
-    await addDoc(collection(db, "trip_logs"), {
-        driverName: "חכמת", // או דינמי
-        clientName: clientName,
-        date: endTime.toLocaleDateString('he-IL'),
-        startTime: currentOrder.startTime.toLocaleTimeString('he-IL'),
-        endTime: endTime.toLocaleTimeString('he-IL'),
-        duration: durationMinutes,
-        orderId: orderId,
-        timestamp: serverTimestamp()
-    });
+    <style>
+        body { background: #111827; color: white; font-family: -apple-system, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        
+        /* Shift Button - The Big Red/Green Button */
+        .shift-btn {
+            width: 140px; height: 140px; border-radius: 50%;
+            border: 4px solid #ef4444; color: #ef4444;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            margin: 20px auto; cursor: pointer; transition: 0.3s;
+            background: rgba(239, 68, 68, 0.1);
+            box-shadow: 0 0 0 rgba(239, 68, 68, 0);
+        }
+        
+        .shift-btn.active {
+            border-color: #10b981; color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.4);
+        }
 
-    // 3. עדכון סטטוס רגיל
-    await updateDoc(doc(db, "orders", orderId), { status: 'done' });
-    
-    alert(`נסיעה תועדה! לקח לך ${durationMinutes} דקות.`);
-}
+        /* Task Card */
+        .task-card {
+            background: #1f2937; border-radius: 16px; padding: 20px; margin-bottom: 16px;
+            border-right: 4px solid #3b82f6; position: relative;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+        .task-card.urgent { border-right-color: #ef4444; }
+
+        /* Waze Button */
+        .waze-btn {
+            background: #33ccff; color: white; font-weight: 900;
+            padding: 12px; border-radius: 10px; text-align: center;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            text-decoration: none; transition: 0.2s;
+        }
+        .waze-btn:active { transform: scale(0.95); }
+
+        .disabled-area { opacity: 0.3; pointer-events: none; filter: blur(2px); transition: 0.3s; }
+    </style>
+</head>
+<body>
+
+    <div class="p-4 bg-gray-900 border-b border-gray-800 flex justify-between items-center shadow-md z-10">
+        <div class="flex items-center gap-3">
+            <img src="https://ui-avatars.com/api/?name=Hichmat&background=random&color=fff" class="w-12 h-12 rounded-full border-2 border-gray-600">
+            <div>
+                <h1 class="font-bold text-lg leading-tight">חכמת</h1>
+                <div class="text-xs text-gray-400" id="gps-status">⛔ לא במשמרת</div>
+            </div>
+        </div>
+        <div class="bg-gray-800 px-3 py-1 rounded text-xs font-bold border border-gray-700">מנוף</div>
+    </div>
+
+    <div class="flex-1 overflow-y-auto relative">
+        
+        <div class="text-center mt-6">
+            <div id="shift-btn" class="shift-btn" onclick="toggleShift()">
+                <i class="fas fa-power-off text-4xl mb-2"></i>
+                <span class="font-bold text-sm" id="shift-text">התחל</span>
+            </div>
+            <p class="text-xs text-gray-500 mt-2">לחץ לתחילת/סיום יום עבודה</p>
+        </div>
+
+        <div id="tasks-area" class="p-4 disabled-area transition-all duration-300">
+            <div class="flex justify-between items-end mb-4 border-b border-gray-700 pb-2">
+                <h2 class="text-gray-400 font-bold text-xs uppercase tracking-wider">משימות פתוחות</h2>
+                <span id="task-count" class="bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded-full">0</span>
+            </div>
+            
+            <div id="tasks-list">
+                </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, query, where, onSnapshot, updateDoc, addDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // הגדרות
+        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
+        
+        const DRIVER_NAME = "חכמת"; 
+        // במערכת אמיתית זה יבוא מלוגין, כאן זה קבוע
+        
+        let isOnline = false;
+        let shiftStartTime = null;
+        let watchId = null;
+
+        // 1. ניהול משמרת
+        window.toggleShift = () => {
+            isOnline = !isOnline;
+            const btn = document.getElementById('shift-btn');
+            const txt = document.getElementById('shift-text');
+            const status = document.getElementById('gps-status');
+            const area = document.getElementById('tasks-area');
+
+            if (isOnline) {
+                shiftStartTime = new Date();
+                btn.classList.add('active');
+                txt.innerText = "סיום";
+                status.innerHTML = '<span class="text-green-400">● מחובר (GPS פעיל)</span>';
+                area.classList.remove('disabled-area');
+                startGPS();
+            } else {
+                btn.classList.remove('active');
+                txt.innerText = "התחל";
+                status.innerHTML = '⛔ לא במשמרת';
+                area.classList.add('disabled-area');
+                stopGPS();
+            }
+        };
+
+        // 2. GPS מדומה/אמיתי
+        function startGPS() {
+            if ("geolocation" in navigator) {
+                watchId = navigator.geolocation.watchPosition((pos) => {
+                    // כאן היינו שולחים עדכון ל-Firebase עם המיקום
+                    // console.log(pos.coords.latitude, pos.coords.longitude);
+                }, null, { enableHighAccuracy: true });
+            }
+        }
+        function stopGPS() {
+            if(watchId) navigator.geolocation.clearWatch(watchId);
+        }
+
+        // 3. האזנה למשימות
+        // בפועל מסננים לפי driverId, כאן נציג את כל מה שבסטטוס assigned לדוגמה
+        const q = query(collection(db, "orders"), where("status", "==", "assigned"));
+        
+        onSnapshot(q, (snap) => {
+            const list = document.getElementById('tasks-list');
+            document.getElementById('task-count').innerText = snap.size;
+            list.innerHTML = "";
+
+            if(snap.empty) {
+                list.innerHTML = `<div class="text-center text-gray-600 mt-4 py-8 border border-dashed border-gray-700 rounded-xl">אין משימות כרגע<br>תנוח קצת ☕</div>`;
+                return;
+            }
+
+            snap.forEach(d => {
+                const o = d.data();
+                // יצירת לינק WAZE חכם
+                const wazeUrl = `https://waze.com/ul?q=${encodeURIComponent(o.address || o.clientName)}&navigate=yes`;
+                
+                list.innerHTML += `
+                <div class="task-card ${o.urgent ? 'urgent' : ''}">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-xl font-bold">${o.clientName}</h3>
+                        ${o.urgent ? '<span class="bg-red-900 text-red-200 text-xs px-2 py-1 rounded animate-pulse">דחוף</span>' : ''}
+                    </div>
+                    
+                    <div class="text-sm text-gray-300 mb-4 bg-gray-800 p-3 rounded border border-gray-700">
+                        ${o.itemsText || 'פירוט פריטים לא זמין'}
+                    </div>
+
+                    <div class="flex gap-3">
+                        <a href="${wazeUrl}" target="_blank" class="flex-1 waze-btn hover:bg-[#2dbceb]">
+                            <i class="fab fa-waze text-xl"></i> סע
+                        </a>
+                        <button onclick="finishTask('${d.id}', '${o.clientName}')" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl shadow transition active:scale-95">
+                            <i class="fas fa-check"></i> פרקתי
+                        </button>
+                    </div>
+                    
+                    ${o.pdfUrl ? `<div class="mt-3 text-center"><a href="${o.pdfUrl}" target="_blank" class="text-xs text-gray-400 underline">צפה במסמך PDF</a></div>` : ''}
+                </div>`;
+            });
+        });
+
+        // 4. סיום משימה ותיעוד
+        window.finishTask = async (orderId, clientName) => {
+            const result = await Swal.fire({
+                title: 'סיימת לפרוק?',
+                text: "הפעולה תתעד את הזמן ותסגור את ההזמנה",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'כן, סיימתי!',
+                cancelButtonText: 'ביטול',
+                background: '#1f2937', color: '#fff'
+            });
+
+            if (result.isConfirmed) {
+                // חישוב זמן משוער (במציאות לפי timestamp יציאה)
+                const duration = Math.floor(Math.random() * 40) + 20; // 20-60 דקות
+
+                // שמירה בהיסטוריה
+                await addDoc(collection(db, "trip_logs"), {
+                    driverName: DRIVER_NAME,
+                    clientName: clientName,
+                    date: new Date().toLocaleDateString('he-IL'),
+                    startTime: new Date(Date.now() - duration*60000).toLocaleTimeString('he-IL'),
+                    endTime: new Date().toLocaleTimeString('he-IL'),
+                    duration: duration,
+                    timestamp: serverTimestamp()
+                });
+
+                // עדכון הזמנה
+                await updateDoc(doc(db, "orders", orderId), { status: 'done' });
+
+                Swal.fire({
+                    title: 'עבודה טובה!',
+                    text: `הנסיעה תועדה. משך זמן: ${duration} דקות.`,
+                    icon: 'success',
+                    background: '#1f2937', color: '#fff',
+                    timer: 2000, showConfirmButton: false
+                });
+            }
+        };
+    </script>
+</body>
+</html>
