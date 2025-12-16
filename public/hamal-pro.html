@@ -12,14 +12,22 @@
         .order-item { padding: 15px; border-bottom: 1px solid #334155; cursor: pointer; transition: 0.2s; }
         .order-item:hover, .order-item.active { background: #334155; border-right: 4px solid #3b82f6; }
         .status-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; }
+        
+        /* Timeline */
+        .timeline-item { position: relative; padding-right: 20px; border-right: 2px solid #334155; padding-bottom: 20px; }
+        .timeline-item::after { content: ''; position: absolute; right: -5px; top: 0; width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; }
+        .timeline-item.active { border-color: #22c55e; }
+        .timeline-item.active::after { background: #22c55e; box-shadow: 0 0 5px #22c55e; }
     </style>
 </head>
 <body class="flex">
 
     <div class="sidebar">
-        <div class="p-4 border-b border-gray-700 font-bold text-xl flex justify-between">
+        <div class="p-4 border-b border-gray-700 font-bold text-xl flex justify-between items-center">
             <span>חמ"ל סבן 🛡️</span>
-            <span class="text-xs bg-blue-600 px-2 py-1 rounded">PRO</span>
+            <button onclick="manualSync()" class="text-xs bg-slate-700 hover:bg-slate-600 p-2 rounded text-blue-300" title="סנכרן מיילים מקומקס">
+                <i class="fas fa-sync-alt"></i>
+            </button>
         </div>
         <div class="p-2">
             <input type="text" placeholder="חפש הזמנה / לקוח..." class="w-full bg-slate-900 border border-slate-700 p-2 rounded text-sm text-white outline-none">
@@ -38,51 +46,33 @@
             <div class="bg-slate-800 p-4 border-b border-slate-700 flex justify-between items-center">
                 <div>
                     <h2 class="text-2xl font-bold" id="view-client">...</h2>
-                    <div class="text-sm opacity-60">הזמנה: <span id="view-id">...</span> | תאריך: <span id="view-date">...</span></div>
+                    <div class="text-sm opacity-60">הזמנה: <span id="view-id">...</span> | <span id="view-status">...</span></div>
                 </div>
                 <div class="flex gap-3">
-                    <button class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded font-bold" onclick="updateComax()">
-                        <i class="fas fa-keyboard"></i> עדכן מס' קומקס
-                    </button>
-                    <button class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded font-bold" onclick="markDone()">
-                        <i class="fas fa-check"></i> סגור טיפול
+                    <button class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded font-bold shadow" onclick="approveOrder()">
+                        <i class="fas fa-check-double"></i> אשר העמסה
                     </button>
                 </div>
             </div>
 
             <div class="flex-1 flex overflow-hidden">
-                <div class="w-1/3 p-6 border-l border-slate-700 overflow-y-auto">
-                    <h3 class="font-bold text-lg mb-4 text-blue-400">סטטוס טיפול</h3>
+                <div class="w-1/3 p-6 border-l border-slate-700 overflow-y-auto bg-slate-900/50">
+                    <h3 class="font-bold text-lg mb-6 text-blue-400">ציר הזמן</h3>
                     
-                    <div class="space-y-6 relative border-r-2 border-slate-700 pr-4 mr-2">
-                        <div class="relative">
-                            <div class="w-3 h-3 bg-green-500 rounded-full absolute -right-[23px] top-1.5"></div>
-                            <div class="font-bold">התקבלה מהאפליקציה</div>
-                            <div class="text-xs opacity-50">10:00 • יוסי כהן</div>
+                    <div id="timeline-container" class="pr-2">
                         </div>
-                        <div class="relative opacity-50" id="step-comax">
-                            <div class="w-3 h-3 bg-slate-600 rounded-full absolute -right-[23px] top-1.5"></div>
-                            <div class="font-bold">הוקלד בקומקס</div>
-                            <div class="text-xs text-yellow-500">ממתין להקלדה...</div>
-                        </div>
-                        <div class="relative opacity-50" id="step-pdf">
-                            <div class="w-3 h-3 bg-slate-600 rounded-full absolute -right-[23px] top-1.5"></div>
-                            <div class="font-bold">מסמך PDF התקבל</div>
-                            <div class="text-xs">ממתין למייל אוטומטי</div>
-                        </div>
-                    </div>
 
-                    <div class="mt-8 p-4 bg-slate-800 rounded-xl">
-                        <h4 class="font-bold mb-2">פריטים בהזמנה</h4>
-                        <ul class="text-sm space-y-1 opacity-80" id="items-list"></ul>
+                    <div class="mt-8 p-4 bg-slate-800 rounded-xl border border-slate-700">
+                        <h4 class="font-bold mb-2 text-sm text-gray-400">פרטי הזמנה</h4>
+                        <div id="order-details" class="text-sm space-y-2"></div>
                     </div>
                 </div>
 
                 <div class="flex-1 bg-slate-900 p-4 flex flex-col">
-                    <div id="pdf-container" class="flex-1 bg-slate-800 rounded-xl border-2 border-dashed border-slate-600 flex items-center justify-center text-slate-500">
+                    <div id="pdf-viewer" class="flex-1 bg-slate-800 rounded-xl border-2 border-dashed border-slate-600 flex items-center justify-center text-slate-500 relative overflow-hidden">
                         <div class="text-center">
                             <i class="fas fa-file-pdf text-4xl mb-2"></i>
-                            <p>אין עדיין מסמך מקומקס</p>
+                            <p>אין מסמך מקומקס</p>
                         </div>
                     </div>
                 </div>
@@ -91,11 +81,19 @@
     </div>
 
     <script type="module">
+        import { SabanBrain } from './js/saban-brain.js';
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
-        let currentOrderId = null;
+        let currentOrder = null;
+
+        // Sync Comax Button
+        window.manualSync = async () => {
+            alert("מתחיל סנכרון מול גשר קומקס...");
+            const res = await SabanBrain.syncComax();
+            console.log(res); // הלוג יופיע בקונסול
+        };
 
         // Load Orders
         onSnapshot(query(collection(db, "orders"), orderBy("createdAt", "desc")), (snap) => {
@@ -103,32 +101,83 @@
             list.innerHTML = "";
             snap.forEach(d => {
                 const o = d.data();
-                const statusColor = o.status === 'done' ? 'bg-green-500' : (o.pdfUrl ? 'bg-yellow-500' : 'bg-blue-500');
+                const isActive = currentOrder && currentOrder.id === d.id ? 'active' : '';
+                const badgeColor = o.status === 'done' ? 'bg-green-500' : (o.pdfUrl ? 'bg-yellow-500' : 'bg-blue-600');
                 
                 list.innerHTML += `
-                <div class="order-item" onclick="openOrder('${d.id}', '${o.clientName}')">
+                <div class="order-item ${isActive}" onclick="selectOrder('${d.id}')">
                     <div class="flex justify-between mb-1">
-                        <span class="font-bold">${o.clientName}</span>
-                        <span class="status-badge ${statusColor} text-black">${o.status}</span>
+                        <span class="font-bold truncate">${o.clientName}</span>
+                        <span class="status-badge ${badgeColor} text-black">${o.status}</span>
                     </div>
-                    <div class="text-xs opacity-60">הזמנה #${o.orderNum || '---'}</div>
+                    <div class="text-xs opacity-50 flex justify-between">
+                        <span>#${o.orderNum || '---'}</span>
+                        <span>${new Date(o.createdAt?.seconds * 1000).toLocaleTimeString().slice(0,5)}</span>
+                    </div>
                 </div>`;
+                
+                // Real-time update if selected
+                if(currentOrder && currentOrder.id === d.id) renderDetail({id: d.id, ...o});
             });
         });
 
-        window.openOrder = (id, name) => {
-            currentOrderId = id;
-            document.getElementById('empty-state').classList.add('hidden');
-            document.getElementById('detail-view').classList.remove('hidden');
-            document.getElementById('view-client').innerText = name;
-            document.getElementById('view-id').innerText = id.substring(0,6);
-            
-            // במציאות כאן נמשוך נתונים בזמן אמת לעדכון ה-PDF והסטטוס
+        window.selectOrder = (id) => {
+            // Find data from cache (simplified)
+            // In real app we use the snapshot data directly
+            const item = document.querySelector(`.order-item[onclick="selectOrder('${id}')"]`);
+            if(item) {
+                document.querySelectorAll('.order-item').forEach(el => el.classList.remove('active'));
+                item.classList.add('active');
+            }
         };
 
-        window.updateComax = async () => {
-            const num = prompt("הכנס מספר הזמנה מקומקס:");
-            if(num) await updateDoc(doc(db, "orders", currentOrderId), { comaxNum: num, status: 'processing' });
+        // Helper to render details (called by snapshot)
+        function renderDetail(o) {
+            currentOrder = o;
+            document.getElementById('empty-state').classList.add('hidden');
+            document.getElementById('detail-view').classList.remove('hidden');
+            
+            document.getElementById('view-client').innerText = o.clientName;
+            document.getElementById('view-id').innerText = o.orderNum || '---';
+            document.getElementById('view-status').innerText = o.status;
+            
+            // Render Timeline
+            const tl = document.getElementById('timeline-container');
+            const s1 = 'active', s2 = o.comaxNum ? 'active' : '', s3 = o.pdfUrl ? 'active' : '', s4 = o.status === 'done' ? 'active' : '';
+            
+            tl.innerHTML = `
+                <div class="timeline-item ${s1}">
+                    <div class="font-bold text-sm">התקבלה הזמנה</div>
+                    <div class="text-xs opacity-50">מהאפליקציה</div>
+                </div>
+                <div class="timeline-item ${s2}">
+                    <div class="font-bold text-sm">הקלדה בקומקס</div>
+                    <div class="text-xs opacity-50">${o.comaxNum ? 'מס: ' + o.comaxNum : 'ממתין...'}</div>
+                </div>
+                <div class="timeline-item ${s3}">
+                    <div class="font-bold text-sm">מסמך PDF</div>
+                    <div class="text-xs opacity-50">${o.pdfUrl ? 'התקבל' : 'ממתין למייל...'}</div>
+                </div>
+                <div class="timeline-item border-none ${s4}">
+                    <div class="font-bold text-sm">סיום</div>
+                    <div class="text-xs opacity-50">העמסה אושרה</div>
+                </div>
+            `;
+
+            // PDF Viewer
+            const pdfView = document.getElementById('pdf-viewer');
+            if(o.pdfUrl) {
+                pdfView.innerHTML = `<iframe src="${o.pdfUrl}" class="w-full h-full border-none"></iframe>`;
+            } else {
+                pdfView.innerHTML = `<div class="text-center"><i class="fas fa-file-pdf text-4xl mb-2"></i><p>אין מסמך</p></div>`;
+            }
+        }
+
+        window.approveOrder = async () => {
+            if(!currentOrder) return;
+            if(confirm("לאשר העמסה להזמנה זו?")) {
+                await updateDoc(doc(db, "orders", currentOrder.id), { status: 'done' });
+            }
         };
     </script>
 </body>
