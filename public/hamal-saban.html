@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>סידור ח.סבן | ניהול הזמנות</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        OneSignalDeferred.push(function(OneSignal) {
+            OneSignal.init({ appId: "07b81f2e-e812-424f-beca-36584b12ccf2" });
+        });
+    </script>
+    <style>
+        /* WhatsApp Web Style */
+        body { background: #d1d7db; height: 100vh; overflow: hidden; font-family: -apple-system, sans-serif; display: flex; }
+        
+        /* Sidebar (Right) */
+        .sidebar { width: 30%; min-width: 350px; background: white; border-left: 1px solid #e9edef; display: flex; flex-direction: column; }
+        .sb-header { background: #f0f2f5; padding: 10px 16px; height: 60px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e9edef; }
+        .search-bar { padding: 8px 12px; background: white; border-bottom: 1px solid #f0f2f5; }
+        .search-input { width: 100%; background: #f0f2f5; border: none; padding: 8px 30px; border-radius: 8px; font-size: 14px; outline: none; }
+        
+        .order-list-item { padding: 12px 16px; border-bottom: 1px solid #f0f2f5; cursor: pointer; transition: 0.2s; position: relative; display: flex; gap: 12px; }
+        .order-list-item:hover { background: #f5f6f6; }
+        .order-list-item.active { background: #f0f2f5; }
+        
+        .avatar { width: 45px; height: 45px; border-radius: 50%; background: #dfe5e7; flex-shrink: 0; }
+        
+        /* Main (Left) */
+        .main-chat { flex: 1; display: flex; flex-direction: column; background: #efeae2; position: relative; }
+        .main-chat::before { content: ''; position: absolute; inset: 0; opacity: 0.4; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); z-index: 0; }
+        
+        .chat-header { height: 60px; background: #f0f2f5; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e9edef; z-index: 10; }
+        
+        .chat-area { flex: 1; padding: 20px; overflow-y: auto; z-index: 10; display: flex; flex-direction: column; align-items: center; }
+        
+        .msg-bubble { background: white; border-radius: 8px; padding: 15px; max-width: 600px; width: 100%; box-shadow: 0 1px 2px rgba(0,0,0,0.1); margin-bottom: 15px; position: relative; }
+        .msg-info { background: #d9fdd3; } /* Green bubble */
+
+        /* Fast Food Timer */
+        .timer-badge { font-family: monospace; font-weight: bold; font-size: 14px; padding: 2px 6px; border-radius: 4px; color: white; background: #25D366; }
+        .timer-badge.urgent { background: #f44336; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% {opacity: 1;} 50% {opacity: 0.5;} 100% {opacity: 1;} }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sb-header">
+            <h2 class="font-bold text-gray-700">סידור ח.סבן 🏗️</h2>
+            <div class="flex gap-3 text-gray-500">
+                <i class="fas fa-circle-notch"></i>
+                <i class="fas fa-comment-alt"></i>
+                <i class="fas fa-ellipsis-v"></i>
+            </div>
+        </div>
+        <div class="search-bar">
+            <input type="text" class="search-input" placeholder="חפש הזמנה או לקוח...">
+        </div>
+        <div id="list-container" class="flex-1 overflow-y-auto bg-white">
+            </div>
+    </div>
+
+    <div class="main-chat">
+        <div id="empty-view" class="absolute inset-0 flex flex-col items-center justify-center z-20 bg-[#f0f2f5] border-b-[6px] border-[#25d366]">
+            <i class="fas fa-truck-loading text-6xl text-gray-300 mb-4"></i>
+            <h1 class="text-2xl font-light text-gray-600">סידור ח.סבן לוב</h1>
+            <p class="text-sm text-gray-500 mt-2">בחר הזמנה מהרשימה לטיפול</p>
+        </div>
+
+        <div id="active-view" class="flex flex-col h-full hidden">
+            <div class="chat-header">
+                <div class="flex items-center gap-3">
+                    <img id="view-avatar" class="w-10 h-10 rounded-full">
+                    <div>
+                        <h2 id="view-name" class="font-bold text-gray-800">...</h2>
+                        <div id="view-status" class="text-xs text-gray-500">...</div>
+                    </div>
+                </div>
+                <div id="view-timer" class="text-xl font-bold font-mono bg-white px-3 py-1 rounded shadow-sm text-gray-700">
+                    --:--:--
+                </div>
+            </div>
+
+            <div class="chat-area">
+                <div class="msg-bubble">
+                    <div class="text-xs text-blue-600 font-bold mb-1">פרטי הזמנה (מהאפליקציה)</div>
+                    <div id="view-details" class="text-lg font-medium text-gray-800 mb-2"></div>
+                    <div class="text-xs text-gray-400 flex justify-between">
+                        <span id="view-time"></span>
+                        <span>APP ORDER</span>
+                    </div>
+                </div>
+
+                <div id="action-bubble" class="msg-bubble msg-info hidden">
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.m4a"></audio>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
+        
+        let selectedOrderId = null;
+        let ordersData = {};
+        const sound = document.getElementById('alert-sound');
+
+        // האזנה להזמנות
+        onSnapshot(query(collection(db, "orders"), orderBy("createdAt", "desc")), (snap) => {
+            const list = document.getElementById('list-container');
+            list.innerHTML = "";
+            
+            snap.forEach(d => {
+                const o = d.data();
+                ordersData[d.id] = o;
+                
+                // בדיקת סאונד (אם סטטוס השתנה לממתין או בוצע)
+                if(o.status === 'waiting_approval' && !o.soundPlayed) {
+                    sound.play();
+                    // בגרסה מלאה נעדכן ב-DB שנוגן כדי לא לנגן שוב, כאן נסתפק בזיכרון מקומי
+                }
+
+                // חישוב זמן יעד
+                const targetTime = new Date(`${o.supplyDate}T${o.supplyTime}`);
+                const now = new Date();
+                const diffMs = targetTime - now;
+                let timerText = "00:00";
+                let badgeClass = "bg-green-500";
+                
+                if (diffMs > 0) {
+                    const hrs = Math.floor(diffMs / 3600000);
+                    const mins = Math.floor((diffMs % 3600000) / 60000);
+                    timerText = `⏱️ ${hrs}ש ${mins}ד`;
+                    if(hrs < 2) badgeClass = "bg-orange-500";
+                    if(hrs < 1) badgeClass = "bg-red-500 animate-pulse";
+                } else {
+                    timerText = "⚠️ איחור!";
+                    badgeClass = "bg-black";
+                }
+
+                const activeClass = selectedOrderId === d.id ? 'active' : '';
+                const avatar = `https://ui-avatars.com/api/?name=${o.clientName}&background=random`;
+
+                list.innerHTML += `
+                <div class="order-list-item ${activeClass}" onclick="selectOrder('${d.id}')">
+                    <img src="${avatar}" class="avatar">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex justify-between items-baseline mb-1">
+                            <span class="font-bold text-gray-900 truncate">${o.clientName}</span>
+                            <span class="text-xs text-gray-500">${new Date(o.createdAt?.seconds*1000).toLocaleTimeString().slice(0,5)}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600 truncate">#${o.orderNum} • ${getStatusText(o.status)}</span>
+                            <span class="timer-badge ${badgeClass} text-[10px]">${timerText}</span>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            
+            // עדכון תצוגה אם יש בחירה
+            if(selectedOrderId && ordersData[selectedOrderId]) {
+                renderMainView(selectedOrderId, ordersData[selectedOrderId]);
+            }
+        });
+
+        window.selectOrder = (id) => {
+            selectedOrderId = id;
+            document.getElementById('empty-view').classList.add('hidden');
+            document.getElementById('active-view').classList.remove('hidden');
+            renderMainView(id, ordersData[id]);
+            
+            // סימון ויזואלי ברשימה
+            document.querySelectorAll('.order-list-item').forEach(el => el.classList.remove('active'));
+            // כאן צריך לוגיקה מורכבת יותר לסמן את האלמנט הספציפי אבל הרינדור מחדש מטפל בזה
+        };
+
+        function renderMainView(id, o) {
+            document.getElementById('view-name').innerText = o.clientName;
+            document.getElementById('view-avatar').src = `https://ui-avatars.com/api/?name=${o.clientName}&background=random`;
+            document.getElementById('view-status').innerText = `סטטוס: ${getStatusText(o.status)}`;
+            document.getElementById('view-details').innerText = o.itemsText;
+            document.getElementById('view-time').innerText = o.supplyDate + " | " + o.supplyTime;
+
+            // עדכון טיימר גדול
+            const target = new Date(`${o.supplyDate}T${o.supplyTime}`);
+            updateBigTimer(target);
+
+            // בועת פעולה
+            const actionBubble = document.getElementById('action-bubble');
+            actionBubble.classList.remove('hidden');
+            
+            if(o.status === 'new') {
+                actionBubble.innerHTML = `
+                <div class="font-bold text-sm mb-2">🎯 שלב 1: הזנת קומקס</div>
+                <div class="flex gap-2">
+                    <input id="comaxInput" type="text" placeholder="מספר הזמנה מקומקס..." class="flex-1 p-2 rounded border border-gray-300 outline-none">
+                    <button onclick="saveComax('${id}')" class="bg-[#008069] text-white px-4 py-2 rounded font-bold shadow hover:bg-[#006a57]">שמור</button>
+                </div>`;
+            } else if (o.status === 'processing') {
+                 actionBubble.innerHTML = `<div class="flex items-center gap-3"><div class="animate-spin h-5 w-5 border-2 border-blue-500 rounded-full border-t-transparent"></div><span>מאזין למייל עם הזמנה <b>${o.comaxNum}</b>...</span></div>`;
+            } else if (o.status === 'waiting_approval') {
+                 actionBubble.innerHTML = `
+                 <div class="font-bold text-orange-600 mb-2">✋ ממתין לאישור לקוח</div>
+                 <a href="${o.pdfUrl}" target="_blank" class="block w-full text-center bg-gray-100 py-2 rounded border hover:bg-gray-200">📄 צפה במסמך שנשלח</a>`;
+            } else {
+                 actionBubble.innerHTML = `<div class="text-green-600 font-bold text-center text-lg"><i class="fas fa-check-double"></i> ההזמנה אושרה ונסגרה</div>`;
+            }
+        }
+
+        // טיימר גדול שמתעדכן כל שנייה
+        setInterval(() => {
+            if(selectedOrderId && ordersData[selectedOrderId]) {
+                const o = ordersData[selectedOrderId];
+                updateBigTimer(new Date(`${o.supplyDate}T${o.supplyTime}`));
+            }
+        }, 1000);
+
+        function updateBigTimer(target) {
+            const now = new Date();
+            const diff = target - now;
+            const el = document.getElementById('view-timer');
+            
+            if(diff <= 0) {
+                el.innerText = "00:00:00";
+                el.style.color = "red";
+                return;
+            }
+            
+            const h = Math.floor(diff / 3600000).toString().padStart(2,'0');
+            const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2,'0');
+            const s = Math.floor((diff % 60000) / 1000).toString().padStart(2,'0');
+            
+            el.innerText = `${h}:${m}:${s}`;
+            el.style.color = h == 0 ? "red" : "#374151";
+        }
+
+        window.saveComax = async (id) => {
+            const num = document.getElementById('comaxInput').value;
+            if(!num) return alert("חסר מספר");
+            await updateDoc(doc(db, "orders", id), { comaxNum: num, status: 'processing' });
+        }
+
+        function getStatusText(s) {
+            const map = {'new': 'חדש', 'processing': 'הוקלד', 'waiting_approval': 'ממתין לאישור', 'done': 'בוצע'};
+            return map[s] || s;
+        }
+    </script>
+</body>
+</html>
