@@ -1,5 +1,5 @@
 // public/js/saban-brain.js
-// גרסה: PROD-v1.0 (Hybrid: Real Search + Gemini + Failover)
+// גרסה: PROD-v3.0 (Full Auto Link)
 
 const CONFIG = {
     keys: {
@@ -7,10 +7,12 @@ const CONFIG = {
         googleSearch: "AIzaSyDLkShn6lBBew-PJJWtzvAe_14UF9Kv-QI",
         googleCX: "56qt2qgr7up25uvi5yjnmgqr3"
     },
+    // הלינק החדש והמעודכן שנתת
+    comaxBridgeUrl: "https://script.google.com/macros/s/AKfycby9KVjix6KNvctLBoEAqOihyOGzyvspprG7_-1kedDDI6Xjwht7eqNO2POww77Jink/exec",
     oneSignalAppId: "07b81f2e-e812-424f-beca-36584b12ccf2"
 };
 
-// Init OneSignal
+// אתחול OneSignal
 window.OneSignalDeferred = window.OneSignalDeferred || [];
 try {
     OneSignalDeferred.push(async function(OneSignal) {
@@ -27,7 +29,22 @@ try {
 } catch (e) { console.warn("OneSignal Skipped"); }
 
 export const SabanBrain = {
-    // צ'אט וייעוץ
+    
+    // פונקציית סנכרון: שולחת "פינג" לסקריפט שיבצע את העבודה
+    async syncComax() {
+        console.log("🔄 מסנכרן מול גשר קומקס...");
+        try {
+            // mode: 'no-cors' הוא קריטי כאן כדי לא לקבל שגיאה בדפדפן
+            // הסקריפט ירוץ ברקע ויעדכן את פיירבייס ישירות
+            await fetch(CONFIG.comaxBridgeUrl, { method: 'GET', mode: 'no-cors' });
+            return "פקודת סנכרון נשלחה. המתן לעדכון בסטורי.";
+        } catch (e) {
+            console.error("Sync Error", e);
+            return "שגיאה בסנכרון. וודא חיבור אינטרנט.";
+        }
+    },
+
+    // צ'אט וייעוץ AI
     async ask(prompt, context = "אתה עוזר לוגיסטי בחברת חומרי בניין.") {
         const models = ['gemini-1.5-flash', 'gemini-pro'];
         for (const model of models) {
@@ -47,11 +64,9 @@ export const SabanBrain = {
         return this.simulateResponse(prompt);
     },
 
-    // חיפוש מוצר וקטלוג
+    // חיפוש מוצר (היברידי)
     async searchProductInfo(productName) {
         let realData = { img: null, title: productName, snippet: "" };
-        
-        // 1. חיפוש אמיתי בגוגל
         try {
             const searchUrl = `https://customsearch.googleapis.com/customsearch/v1?key=${CONFIG.keys.googleSearch}&cx=${CONFIG.keys.googleCX}&q=${encodeURIComponent(productName)}&searchType=image&num=1`;
             const searchRes = await fetch(searchUrl);
@@ -64,7 +79,6 @@ export const SabanBrain = {
             }
         } catch (e) { console.error("Search Error", e); }
 
-        // 2. עיבוד AI
         const prompt = `המוצר: "${productName}". צור JSON: {"name": "שם רשמי", "desc": "תיאור קצר", "specs": {"weight": "X", "cover": "Y", "dry": "Z"}, "category": "tools|paint|cement", "price": 0}`;
         const aiRaw = await this.ask(prompt, "מנהל קטלוג");
         
