@@ -1,5 +1,5 @@
 // public/js/saban-brain.js
-// גרסה: PROD-v3.0 (Full Auto Link)
+// גרסה: PRODUCTION v1.0 🚀
 
 const CONFIG = {
     keys: {
@@ -7,7 +7,7 @@ const CONFIG = {
         googleSearch: "AIzaSyDLkShn6lBBew-PJJWtzvAe_14UF9Kv-QI",
         googleCX: "56qt2qgr7up25uvi5yjnmgqr3"
     },
-    // הלינק החדש והמעודכן שנתת
+    // הגשר האוטומטי לקומקס
     comaxBridgeUrl: "https://script.google.com/macros/s/AKfycby9KVjix6KNvctLBoEAqOihyOGzyvspprG7_-1kedDDI6Xjwht7eqNO2POww77Jink/exec",
     oneSignalAppId: "07b81f2e-e812-424f-beca-36584b12ccf2"
 };
@@ -30,21 +30,19 @@ try {
 
 export const SabanBrain = {
     
-    // פונקציית סנכרון: שולחת "פינג" לסקריפט שיבצע את העבודה
+    // פונקציית סנכרון ידני (גיבוי)
     async syncComax() {
         console.log("🔄 מסנכרן מול גשר קומקס...");
         try {
-            // mode: 'no-cors' הוא קריטי כאן כדי לא לקבל שגיאה בדפדפן
-            // הסקריפט ירוץ ברקע ויעדכן את פיירבייס ישירות
             await fetch(CONFIG.comaxBridgeUrl, { method: 'GET', mode: 'no-cors' });
-            return "פקודת סנכרון נשלחה. המתן לעדכון בסטורי.";
+            return "פקודת סנכרון נשלחה.";
         } catch (e) {
             console.error("Sync Error", e);
-            return "שגיאה בסנכרון. וודא חיבור אינטרנט.";
+            return "שגיאה בסנכרון.";
         }
     },
 
-    // צ'אט וייעוץ AI
+    // AI Chat
     async ask(prompt, context = "אתה עוזר לוגיסטי בחברת חומרי בניין.") {
         const models = ['gemini-1.5-flash', 'gemini-pro'];
         for (const model of models) {
@@ -61,12 +59,12 @@ export const SabanBrain = {
                 }
             } catch (e) { console.warn(`Model ${model} failed`); }
         }
-        return this.simulateResponse(prompt);
+        return "המערכת במצב אופליין.";
     },
 
-    // חיפוש מוצר (היברידי)
+    // Product Search Hybrid
     async searchProductInfo(productName) {
-        let realData = { img: null, title: productName, snippet: "" };
+        let realData = { img: null, title: productName };
         try {
             const searchUrl = `https://customsearch.googleapis.com/customsearch/v1?key=${CONFIG.keys.googleSearch}&cx=${CONFIG.keys.googleCX}&q=${encodeURIComponent(productName)}&searchType=image&num=1`;
             const searchRes = await fetch(searchUrl);
@@ -79,25 +77,14 @@ export const SabanBrain = {
             }
         } catch (e) { console.error("Search Error", e); }
 
-        const prompt = `המוצר: "${productName}". צור JSON: {"name": "שם רשמי", "desc": "תיאור קצר", "specs": {"weight": "X", "cover": "Y", "dry": "Z"}, "category": "tools|paint|cement", "price": 0}`;
-        const aiRaw = await this.ask(prompt, "מנהל קטלוג");
-        
-        try {
-            const json = JSON.parse(aiRaw.replace(/```json|```/g, '').trim());
-            json.img = realData.img || `https://source.unsplash.com/400x400/?construction,${json.category}`;
-            json.price = Math.floor(Math.random() * 200) + 50; 
-            return json;
-        } catch (e) {
-            return {
-                name: realData.title, desc: "זוהה ע\"י גוגל (מפרט חסר)",
-                specs: { weight: "?", cover: "?", dry: "?" }, category: "tools", price: 100,
-                img: realData.img || "https://via.placeholder.com/150"
-            };
-        }
-    },
-
-    simulateResponse(p) {
-        if(p.includes("מלט")) return "כ-12 שקים לכיסוי סטנדרטי.";
-        return "המערכת במצב אופליין. השאלה נרשמה.";
+        // Fallback or Enrichment logic can go here
+        return {
+            name: realData.title,
+            desc: "זוהה ע\"י גוגל",
+            specs: { weight: "סטנדרט", cover: "-", dry: "-" },
+            category: "general",
+            price: 0,
+            img: realData.img || "https://via.placeholder.com/150"
+        };
     }
 };
