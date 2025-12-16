@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Saban Brain | ניהול סידור חכם</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <style>
+        body { background: #f3f4f6; font-family: -apple-system, sans-serif; height: 100vh; display: flex; flex-direction: column; }
+        
+        /* Driver Status Card */
+        .driver-card { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-right: 4px solid transparent; }
+        .driver-card.online { border-right-color: #10b981; } /* Green */
+        .driver-card.busy { border-right-color: #f59e0b; }   /* Orange */
+        .driver-card.offline { border-right-color: #9ca3af; opacity: 0.7; }
+
+        /* Prediction Badge */
+        .prediction-box { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 5px 10px; border-radius: 8px; font-size: 12px; font-weight: bold; display: flex; align-items: center; gap: 5px; }
+
+        /* Order Row */
+        .order-row { background: white; margin: 10px 20px; padding: 20px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
+        .time-input { background: #f9fafb; border: 1px solid #d1d5db; padding: 5px; border-radius: 6px; font-weight: bold; width: 130px; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <div class="bg-white p-4 border-b flex justify-between items-center shadow-sm">
+        <div>
+            <h1 class="text-xl font-black text-slate-800">סידור עבודה <span class="text-blue-600">חכם</span></h1>
+            <p class="text-xs text-gray-500">צמצום עלויות וחיזוי זמנים</p>
+        </div>
+        <div class="flex gap-4 text-sm font-bold">
+            <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-green-500"></div> מחובר</div>
+            <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-gray-400"></div> מנותק</div>
+        </div>
+    </div>
+
+    <div class="flex flex-1 overflow-hidden">
+        
+        <div class="w-1/3 bg-gray-50 border-l p-4 overflow-y-auto">
+            <h2 class="text-xs font-bold text-gray-400 uppercase mb-4 tracking-wider">סטטוס צי הרכב (בזמן אמת)</h2>
+            <div id="drivers-container">
+                </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto bg-gray-100 p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-6">בקשות להזמנות (ממתינות לאישור ראמי)</h2>
+            <div id="orders-container">
+                </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, query, orderBy, onSnapshot, updateDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
+
+        // 1. נתוני נהגים (סימולציה לחיבור ל-DB נהגים)
+        const driversData = {
+            'hichmat': { name: 'חכמת', type: 'מנוף', status: 'busy', location: 'הרצליה', destination: 'התלמיד 6', lastLogin: new Date() },
+            'ali': { name: 'עלי', type: 'פלטה', status: 'online', location: 'הוד השרון', destination: null, lastLogin: new Date() }
+        };
+
+        // 2. פונקציית "המוח" - חישוב צפי חזרה
+        function calculateReturnTime(driver) {
+            if(driver.status !== 'busy') return "פנוי כרגע";
+            
+            // סימולציה: נסיעה מהרצליה להוד השרון + פריקה
+            // במערכת אמיתית: OSRM API + היסטוריית פריקה ללקוח ספציפי
+            const travelTime = 25; // דקות
+            const unloadTime = 40; // דקות (ממוצע היסטורי)
+            
+            const now = new Date();
+            now.setMinutes(now.getMinutes() + travelTime + unloadTime);
+            
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            
+            return `צפי חזרה: ${hours}:${minutes}`;
+        }
+
+        // 3. רינדור נהגים בזמן אמת
+        function renderDrivers() {
+            const container = document.getElementById('drivers-container');
+            container.innerHTML = "";
+
+            Object.keys(driversData).forEach(id => {
+                const d = driversData[id];
+                const eta = calculateReturnTime(d);
+                const statusClass = d.status; // online, busy, offline
+                const lastSeen = d.lastLogin.toLocaleTimeString().slice(0,5);
+
+                container.innerHTML += `
+                <div class="driver-card ${statusClass}">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-lg">${d.name}</span>
+                            <span class="text-xs bg-gray-200 px-2 rounded">${d.type}</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1">
+                            <i class="fas fa-map-marker-alt"></i> ${d.location} 
+                            ${d.destination ? `<i class="fas fa-arrow-left mx-1"></i> ${d.destination}` : ''}
+                        </div>
+                        <div class="text-[10px] text-gray-400 mt-1">נראה לאחרונה: ${lastSeen}</div>
+                    </div>
+                    ${d.status === 'busy' ? 
+                        `<div class="prediction-box"><i class="fas fa-clock"></i> ${eta}</div>` : 
+                        `<div class="text-green-600 text-xs font-bold">פנוי</div>`}
+                </div>`;
+            });
+        }
+
+        // 4. רינדור הזמנות וניהול זמנים
+        onSnapshot(query(collection(db, "orders"), orderBy("createdAt", "desc")), (snap) => {
+            const container = document.getElementById('orders-container');
+            container.innerHTML = "";
+
+            snap.forEach(docSnap => {
+                const o = docSnap.data();
+                if(o.status === 'done') return; // לא מציגים גמורים
+
+                // חישוב המלצה (המוח של ראמי)
+                const requestedTime = o.supplyTime || "08:00";
+                let warningHtml = "";
+                
+                // לוגיקה חכמה: אם הלקוח ביקש 08:00 אבל חכמת חוזר ב-11:30
+                // כאן אנחנו מדמים שזיהינו קונפליקט
+                if(requestedTime < "09:00" && o.itemsText.includes("מנוף")) {
+                    warningHtml = `
+                    <div class="mt-2 bg-red-50 text-red-700 p-2 rounded text-xs flex items-center gap-2">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        <b>קונפליקט:</b> חכמת (מנוף) יתפנה רק ב-09:30. מומלץ לדחות.
+                    </div>`;
+                }
+
+                container.innerHTML += `
+                <div class="order-row">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="font-bold text-lg">${o.clientName}</span>
+                            <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded font-bold">#${o.orderNum}</span>
+                        </div>
+                        <div class="text-sm text-gray-600 w-3/4 truncate">${o.itemsText}</div>
+                        ${warningHtml}
+                    </div>
+
+                    <div class="flex flex-col items-end gap-3 border-r pr-6 border-gray-200">
+                        <label class="text-xs font-bold text-gray-400">מועד אספקה מבוקש</label>
+                        <div class="flex items-center gap-2">
+                            <input type="time" id="time-${docSnap.id}" class="time-input" value="${requestedTime}">
+                            <span class="text-gray-400">-</span>
+                            <input type="time" id="time-end-${docSnap.id}" class="time-input" value="${addHours(requestedTime, 2)}">
+                        </div>
+                        
+                        <div class="flex gap-2 w-full mt-2">
+                            <button onclick="updateSchedule('${docSnap.id}', '${o.clientName}', true)" class="flex-1 bg-green-600 text-white text-xs py-2 rounded hover:bg-green-700 transition">
+                                <i class="fab fa-whatsapp"></i> אשר ושתף
+                            </button>
+                            <button onclick="updateSchedule('${docSnap.id}', '${o.clientName}', false)" class="px-3 bg-gray-200 text-gray-700 text-xs py-2 rounded hover:bg-gray-300">
+                                <i class="fas fa-save"></i> רק שמור
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+            });
+        });
+
+        // 5. עדכון לוח זמנים ושליחת הודעה
+        window.updateSchedule = async (id, clientName, shareWhatsapp) => {
+            const start = document.getElementById(`time-${id}`).value;
+            const end = document.getElementById(`time-end-${id}`).value;
+
+            // עדכון ב-DB
+            await updateDoc(doc(db, "orders", id), {
+                supplyTime: start,
+                supplyTimeEnd: end,
+                status: 'scheduled', // סטטוס חדש: שובץ ביומן
+                adminApproved: true
+            });
+
+            const msg = `היי ${clientName}, ההזמנה שלך אושרה! 🚚\nחלון אספקה מעודכן: ${start} - ${end}.\nצוות סבן לוגיסטיקה.`;
+
+            if(shareWhatsapp) {
+                // פתיחת וואטסאפ עם הודעה מוכנה
+                const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+                window.open(url, '_blank');
+            } else {
+                Swal.fire('עודכן!', 'לוח הזמנים עודכן במערכת', 'success');
+            }
+        };
+
+        // עזרים
+        function addHours(time, h) {
+            if(!time) return "10:00";
+            let [hours, mins] = time.split(':');
+            hours = (parseInt(hours) + h).toString().padStart(2, '0');
+            return `${hours}:${mins}`;
+        }
+
+        // הפעלה ראשונית
+        renderDrivers();
+        // סימולציה לעדכון זמן אמת כל דקה
+        setInterval(renderDrivers, 60000);
+
+    </script>
+</body>
+</html>
