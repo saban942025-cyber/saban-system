@@ -1,157 +1,26 @@
-<!DOCTYPE html>
-<html lang="he" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Saban Driver | חכמת</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <style>
-        body { background: #111827; color: white; font-family: -apple-system, sans-serif; height: 100vh; display: flex; flex-direction: column; }
-        
-        /* Shift Button */
-        .shift-btn { width: 140px; height: 140px; border-radius: 50%; border: 4px solid #374151; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 20px auto; transition: 0.3s; cursor: pointer; background: #1f2937; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        .shift-btn.active { border-color: #10b981; background: #064e3b; box-shadow: 0 0 30px #10b981; }
-        .shift-btn i { font-size: 3rem; margin-bottom: 5px; color: #9ca3af; }
-        .shift-btn.active i { color: #34d399; }
+// הוסף את זה בתוך הסקריפט של driver-pro.html
 
-        /* Task Card */
-        .task-card { background: #1f2937; border-radius: 16px; padding: 20px; margin: 15px; border-left: 5px solid #3b82f6; position: relative; }
-        .task-card.urgent { border-left-color: #ef4444; }
-        
-        .waze-btn { background: #33ccff; color: white; font-weight: 900; padding: 12px; border-radius: 12px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 15px; box-shadow: 0 4px 10px rgba(51, 204, 255, 0.3); text-decoration: none; }
-        
-        .status-badge { position: absolute; top: 20px; left: 20px; background: #374151; padding: 4px 8px; border-radius: 6px; font-size: 12px; }
-    </style>
-</head>
-<body>
+// פונקציה שמדווחת על סיום נסיעה ושומרת היסטוריה
+async function completeDelivery(orderId, clientName) {
+    // 1. חישוב זמנים
+    const endTime = new Date();
+    // (בהנחה ששמרנו את startTime כשיצאנו לדרך)
+    const durationMinutes = Math.floor((endTime - currentOrder.startTime) / 60000); 
+    
+    // 2. שמירה ב"קופסה השחורה" (Driver History DB)
+    await addDoc(collection(db, "trip_logs"), {
+        driverName: "חכמת", // או דינמי
+        clientName: clientName,
+        date: endTime.toLocaleDateString('he-IL'),
+        startTime: currentOrder.startTime.toLocaleTimeString('he-IL'),
+        endTime: endTime.toLocaleTimeString('he-IL'),
+        duration: durationMinutes,
+        orderId: orderId,
+        timestamp: serverTimestamp()
+    });
 
-    <div class="p-4 flex justify-between items-center bg-gray-900 border-b border-gray-800">
-        <div class="flex items-center gap-3">
-            <img src="https://ui-avatars.com/api/?name=Hichmat&background=random" class="w-12 h-12 rounded-full border-2 border-gray-700">
-            <div>
-                <div class="font-bold text-lg">שלום חכמת</div>
-                <div class="text-xs text-gray-400" id="gps-status">📡 GPS: כבוי</div>
-            </div>
-        </div>
-        <div class="text-xs bg-gray-800 px-2 py-1 rounded">משאית מנוף</div>
-    </div>
-
-    <div class="flex-1 overflow-y-auto">
-        
-        <div id="shift-btn" class="shift-btn" onclick="toggleShift()">
-            <i class="fas fa-power-off"></i>
-            <span class="font-bold text-sm" id="shift-text">לא במשמרת</span>
-        </div>
-
-        <div class="px-4">
-            <h3 class="text-gray-400 font-bold mb-2 uppercase text-xs tracking-wider">המשימות שלי להיום</h3>
-            <div id="tasks-container"></div>
-        </div>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, query, where, onSnapshot, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        // Config
-        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
-        
-        // State
-        let isOnline = false;
-        let watchId = null;
-        const DRIVER_ID = "hichmat_01"; // מזהה קבוע לנהג זה
-
-        // 1. Shift Logic
-        window.toggleShift = () => {
-            isOnline = !isOnline;
-            const btn = document.getElementById('shift-btn');
-            const txt = document.getElementById('shift-text');
-            const gps = document.getElementById('gps-status');
-
-            if(isOnline) {
-                btn.classList.add('active');
-                txt.innerText = "במשמרת";
-                gps.innerText = "📡 GPS: מחפש...";
-                gps.className = "text-xs text-yellow-400 animate-pulse";
-                startGPS();
-            } else {
-                btn.classList.remove('active');
-                txt.innerText = "לא במשמרת";
-                gps.innerText = "📡 GPS: כבוי";
-                gps.className = "text-xs text-gray-400";
-                stopGPS();
-            }
-        };
-
-        // 2. The GPS Brain (המאזין)
-        function startGPS() {
-            if (!navigator.geolocation) return alert("הדפדפן לא תומך במיקום");
-            
-            watchId = navigator.geolocation.watchPosition(async (pos) => {
-                const { latitude, longitude, speed } = pos.coords;
-                
-                // עדכון ממשק
-                document.getElementById('gps-status').innerText = "📡 GPS: מחובר (" + latitude.toFixed(4) + ")";
-                document.getElementById('gps-status').className = "text-xs text-green-400";
-
-                // שליחת "דופק" לשרת (Firebase)
-                // כאן אנחנו מעדכנים את מיקום הנהג בזמן אמת לטובת החמ"ל
-                /* await updateDoc(doc(db, "drivers", DRIVER_ID), {
-                    lat: latitude,
-                    lng: longitude,
-                    speed: speed || 0,
-                    lastUpdate: new Date()
-                }); 
-                */
-               console.log("📍 דופק נשלח:", latitude, longitude);
-
-            }, (err) => console.error(err), { enableHighAccuracy: true });
-        }
-
-        function stopGPS() {
-            if(watchId) navigator.geolocation.clearWatch(watchId);
-        }
-
-        // 3. משימות (האזנה לשיבוצים של ראמי)
-        const q = query(collection(db, "orders"), where("driverId", "==", DRIVER_ID), where("status", "==", "assigned"));
-        onSnapshot(q, (snap) => {
-            const container = document.getElementById('tasks-container');
-            container.innerHTML = "";
-            
-            if(snap.empty) {
-                container.innerHTML = `<div class="text-center text-gray-600 mt-10">אין משימות כרגע... תנוח קצת ☕</div>`;
-                return;
-            }
-
-            snap.forEach(d => {
-                const o = d.data();
-                // יצירת לינק לוויז
-                // אם יש קואורדינטות - השתמש בהן, אחרת חפש לפי כתובת
-                const wazeLink = o.destLat ? 
-                    `https://waze.com/ul?ll=${o.destLat},${o.destLng}&navigate=yes` : 
-                    `https://waze.com/ul?q=${encodeURIComponent(o.address)}&navigate=yes`;
-
-                container.innerHTML += `
-                <div class="task-card ${o.urgent ? 'urgent' : ''}">
-                    <div class="status-badge text-gray-300">הזמנה #${o.orderNum}</div>
-                    <div class="text-xl font-bold mb-1">${o.clientName}</div>
-                    <div class="text-gray-400 text-sm mb-4"><i class="fas fa-map-marker-alt text-red-400"></i> ${o.address || 'מיקום לא צוין'}</div>
-                    
-                    <div class="bg-gray-800 p-3 rounded mb-4 text-sm text-gray-300">
-                        ${o.itemsText}
-                    </div>
-
-                    <div class="flex gap-2">
-                        <a href="${o.pdfUrl}" target="_blank" class="flex-1 bg-gray-700 py-3 rounded-xl text-center font-bold text-sm hover:bg-gray-600">📄 מסמך</a>
-                        <a href="${wazeLink}" target="_blank" class="flex-1 waze-btn">
-                            <i class="fab fa-waze text-2xl"></i> סע ליעד
-                        </a>
-                    </div>
-                </div>`;
-            });
-        });
-    </script>
-</body>
-</html>
+    // 3. עדכון סטטוס רגיל
+    await updateDoc(doc(db, "orders", orderId), { status: 'done' });
+    
+    alert(`נסיעה תועדה! לקח לך ${durationMinutes} דקות.`);
+}
