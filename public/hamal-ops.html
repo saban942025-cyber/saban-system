@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Saban Logistics | מפה טקטית</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        body { margin: 0; display: flex; height: 100vh; overflow: hidden; font-family: sans-serif; }
+        #map { flex: 1; height: 100%; z-index: 1; }
+        
+        .sidebar { width: 350px; background: white; border-left: 1px solid #ddd; display: flex; flex-direction: column; z-index: 2; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
+        .driver-item { padding: 15px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+        .driver-item:hover { background: #f9fafb; }
+        .driver-status { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+        .st-online { background: #10b981; box-shadow: 0 0 5px #10b981; }
+        .st-offline { background: #9ca3af; }
+        .st-busy { background: #ef4444; }
+
+        /* Custom Map Icons */
+        .truck-icon { font-size: 20px; color: #1e40af; background: white; border-radius: 50%; padding: 5px; border: 2px solid #1e40af; box-shadow: 0 2px 5px rgba(0,0,0,0.3); text-align: center; width: 34px !important; height: 34px !important; display: flex; align-items: center; justify-content: center; }
+        .warehouse-icon { font-size: 24px; color: #b91c1c; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="p-4 bg-slate-800 text-white flex justify-between items-center">
+            <h2 class="font-bold text-lg">צי הרכב</h2>
+            <span class="text-xs bg-slate-700 px-2 py-1 rounded">Online: 2</span>
+        </div>
+        <div id="drivers-list" class="flex-1 overflow-y-auto">
+            <div class="driver-item" onclick="focusDriver('hichmat')">
+                <div class="flex items-center gap-3">
+                    <img src="https://ui-avatars.com/api/?name=Hichmat&background=random" class="w-10 h-10 rounded-full">
+                    <div>
+                        <div class="font-bold text-sm">חכמת (מנוף)</div>
+                        <div class="text-xs text-green-600"><span class="driver-status st-online"></span> זמין • הוד השרון</div>
+                    </div>
+                </div>
+                <i class="fas fa-crosshairs text-gray-400"></i>
+            </div>
+
+            <div class="driver-item" onclick="focusDriver('ali')">
+                <div class="flex items-center gap-3">
+                    <img src="https://ui-avatars.com/api/?name=Ali&background=random" class="w-10 h-10 rounded-full">
+                    <div>
+                        <div class="font-bold text-sm">עלי (פלטה)</div>
+                        <div class="text-xs text-red-500"><span class="driver-status st-busy"></span> בנסיעה • כפר סבא</div>
+                    </div>
+                </div>
+                <i class="fas fa-crosshairs text-gray-400"></i>
+            </div>
+        </div>
+    </div>
+
+    <div id="map"></div>
+
+    <script>
+        // 1. אתחול המפה (מרכז: הוד השרון - הבית של סבן)
+        const map = L.map('map').setView([32.155, 34.890], 13);
+
+        // שכבת אריחים (חינם - OpenStreetMap)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: 'Saban Logistics OS'
+        }).addTo(map);
+
+        // 2. אייקונים מותאמים אישית
+        const truckIcon = L.divIcon({ className: 'truck-icon', html: '<i class="fas fa-truck"></i>', iconSize: [34, 34] });
+        const homeIcon = L.divIcon({ className: 'warehouse-icon', html: '<i class="fas fa-warehouse"></i>', iconSize: [30, 30] });
+
+        // 3. הוספת המחסן (סניף החרש 10)
+        L.marker([32.155, 34.890], {icon: homeIcon}).addTo(map).bindPopup("<b>מחסן ראשי</b><br>החרש 10, הוד השרון");
+
+        // 4. סימולציית נהגים (במציאות זה יגיע מ-Firebase)
+        const drivers = {
+            'hichmat': { lat: 32.160, lng: 34.895, marker: null },
+            'ali': { lat: 32.175, lng: 34.910, marker: null }
+        };
+
+        // הוספת הנהגים למפה
+        Object.keys(drivers).forEach(id => {
+            const d = drivers[id];
+            d.marker = L.marker([d.lat, d.lng], {icon: truckIcon}).addTo(map).bindPopup(id === 'hichmat' ? 'חכמת - מנוף' : 'עלי - פלטה');
+        });
+
+        // פונקציה להתמקדות על נהג
+        window.focusDriver = (id) => {
+            const d = drivers[id];
+            map.flyTo([d.lat, d.lng], 15);
+            d.marker.openPopup();
+        };
+
+        // --- המוח: Geofencing Simulation ---
+        // פונקציה שבודקת מרחקים ומעדכנת סטטוס
+        function checkGeofence() {
+            const warehouse = { lat: 32.155, lng: 34.890 };
+            
+            Object.keys(drivers).forEach(id => {
+                const d = drivers[id];
+                const dist = getDistance(d.lat, d.lng, warehouse.lat, warehouse.lng);
+                
+                // לוגיקת האוטומציה
+                if (dist < 0.2) { // פחות מ-200 מטר
+                    console.log(`${id} נמצא במחסן - סטטוס: בהעמסה 🟧`);
+                    // כאן היינו שולחים עדכון ל-Firebase
+                } else {
+                    console.log(`${id} בדרך - סטטוס: בנסיעה 🟥`);
+                }
+            });
+        }
+
+        // חישוב מרחק בקילומטרים (Haversine Lite)
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // רדיוס כדור הארץ
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        // הפעלת הבדיקה כל 5 שניות
+        setInterval(checkGeofence, 5000);
+
+    </script>
+</body>
+</html>
