@@ -2,371 +2,424 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>סידור ח.סבן | WhatsApp Mode</title>
+    <title>Saban Enterprise | מערכת סידור</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+
     <style>
-        /* WhatsApp Theme Variables */
+        /* Enterprise CSS Setup */
         :root {
-            --wa-header: #f0f2f5;
-            --wa-bg: #efeae2; /* רקע הצ'אט הקלאסי */
-            --wa-sidebar: #ffffff;
-            --wa-green: #008069;
-            --wa-light-green: #d9fdd3;
-            --wa-border: #e9edef;
+            --primary: #2563eb; /* Royal Blue */
+            --success: #10b981; /* Emerald */
+            --warning: #f59e0b; /* Amber */
+            --danger: #ef4444; /* Red */
+            --bg-body: #f1f5f9; /* Slate 100 */
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-sub: #64748b;
         }
 
-        body { background: #d1d7db; height: 100vh; margin: 0; font-family: -apple-system, Helvetica, Arial, sans-serif; display: flex; overflow: hidden; }
+        body { background: var(--bg-body); color: var(--text-main); height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; overflow: hidden; }
 
-        /* --- Sidebar (רשימת הזמנות) --- */
-        .sidebar { width: 30%; min-width: 380px; background: var(--wa-sidebar); border-left: 1px solid var(--wa-border); display: flex; flex-direction: column; height: 100%; }
+        /* --- Sidebar Navigation --- */
+        .sidebar { width: 260px; background: white; border-left: 1px solid #e2e8f0; display: flex; flex-direction: column; z-index: 20; box-shadow: 2px 0 10px rgba(0,0,0,0.02); }
+        .logo-area { height: 70px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #e2e8f0; }
+        .logo-text { font-size: 22px; font-weight: 900; color: #1e293b; letter-spacing: -1px; }
+        .logo-text span { color: var(--primary); }
+
+        .nav-links { padding: 20px 10px; flex: 1; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 10px; color: var(--text-sub); font-weight: 600; cursor: pointer; transition: 0.2s; margin-bottom: 4px; }
+        .nav-item:hover { background: #f8fafc; color: var(--primary); }
+        .nav-item.active { background: #eff6ff; color: var(--primary); }
+        .nav-icon { width: 20px; text-align: center; }
         
-        /* Header Sidebar */
-        .sb-header { height: 60px; background: var(--wa-header); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--wa-border); }
-        .user-avatar { width: 40px; height: 40px; border-radius: 50%; background: #dfe5e7; }
-        
-        /* Stories Bar (בתוך הסרגל) */
-        .stories-wrapper { padding: 12px; background: white; border-bottom: 1px solid var(--wa-border); overflow-x: auto; white-space: nowrap; display: flex; gap: 12px; }
-        .story-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; min-width: 60px; }
-        .story-ring { width: 56px; height: 56px; border-radius: 50%; padding: 2px; background: white; position: relative; }
+        .badge { background: var(--danger); color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; margin-right: auto; }
+
+        /* --- Main Content Area --- */
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+
+        /* Top Bar & Stories */
+        .top-bar { background: white; border-bottom: 1px solid #e2e8f0; padding: 10px 20px; display: flex; flex-direction: column; gap: 10px; }
+        .stories-row { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 5px; }
+        .story { display: flex; flex-direction: column; align-items: center; cursor: pointer; min-width: 60px; transition: transform 0.2s; }
+        .story:hover { transform: translateY(-2px); }
+        .story-ring { width: 52px; height: 52px; border-radius: 50%; padding: 2px; position: relative; }
         .story-ring img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 2px solid white; }
         
-        /* Story Colors (כמו באינסטגרם/וואטסאפ) */
-        .ring-new { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
-        .ring-wait { background: linear-gradient(45deg, #3b82f6, #06b6d4); }
+        /* Story Status Colors */
+        .ring-new { background: linear-gradient(45deg, #ef4444, #f59e0b); box-shadow: 0 0 0 2px #fee2e2; }
+        .ring-wait { background: linear-gradient(45deg, #3b82f6, #06b6d4); box-shadow: 0 0 0 2px #dbeafe; }
         
-        /* Search */
-        .search-box { padding: 8px 12px; border-bottom: 1px solid var(--wa-border); background: white; }
-        .search-input { width: 100%; background: #f0f2f5; border: none; padding: 8px 32px 8px 12px; border-radius: 8px; font-size: 14px; outline: none; }
+        /* Dashboard Grid */
+        .dashboard-grid { flex: 1; padding: 20px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; align-content: start; }
 
-        /* Order List */
-        .orders-list { flex: 1; overflow-y: auto; }
-        .chat-item { display: flex; height: 72px; padding: 0 15px; background: white; cursor: pointer; align-items: center; border-bottom: 1px solid #f0f2f5; transition: 0.2s; }
-        .chat-item:hover { background: #f5f6f6; }
-        .chat-item.active { background: #f0f2f5; }
+        /* Pro Order Card */
+        .pro-card { background: white; border-radius: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.02), 0 1px 0 rgba(0,0,0,0.05); border: 1px solid #e2e8f0; display: flex; flex-direction: column; transition: 0.3s; position: relative; overflow: hidden; }
+        .pro-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border-color: #cbd5e1; }
         
-        .chat-info { flex: 1; margin-right: 15px; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
-        .chat-top { display: flex; justify-content: space-between; margin-bottom: 3px; }
-        .chat-name { font-size: 16px; color: #111b21; font-weight: 500; }
-        .chat-time { font-size: 12px; color: #667781; }
-        .chat-bottom { display: flex; justify-content: space-between; font-size: 13px; color: #667781; }
-        
-        /* Timers Chips */
-        .timer-badge { padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; color: white; min-width: 50px; text-align: center; }
-        .bg-ok { background: #25d366; }
-        .bg-warn { background: #f59e0b; }
-        .bg-danger { background: #ef4444; animation: flash 1s infinite; }
+        .card-header { padding: 16px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #fcfcfc; }
+        .card-body { padding: 16px; flex: 1; }
+        .card-footer { padding: 12px 16px; background: #f8fafc; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
 
-        /* --- Main Area (הצ'אט) --- */
-        .main-area { flex: 1; background: var(--wa-bg); display: flex; flex-direction: column; position: relative; }
-        .main-area::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.4; background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); pointer-events: none; }
-        
-        .chat-header { height: 60px; background: var(--wa-header); padding: 0 16px; display: flex; align-items: center; justify-content: space-between; border-left: 1px solid var(--wa-border); z-index: 10; }
-        
-        .msg-container { flex: 1; padding: 20px 40px; overflow-y: auto; z-index: 5; display: flex; flex-direction: column; gap: 10px; }
-        
-        .bubble { background: white; border-radius: 7.5px; box-shadow: 0 1px 0.5px rgba(0,0,0,0.13); padding: 6px 7px 8px 9px; max-width: 65%; position: relative; font-size: 14.2px; line-height: 19px; color: #111b21; align-self: flex-start; }
-        .bubble.admin { background: var(--wa-light-green); align-self: flex-end; }
-        
-        .bubble-meta { display: flex; justify-content: flex-end; font-size: 11px; color: #667781; margin-top: 4px; gap: 4px; }
+        /* Status Pills */
+        .status-pill { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .st-new { background: #ebf5ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+        .st-proc { background: #fefce8; color: #a16207; border: 1px solid #fef08a; }
+        .st-wait { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+        .st-done { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
 
-        /* Action Buttons inside Bubble */
-        .action-btn { display: inline-block; margin-top: 8px; padding: 8px 16px; background: var(--wa-header); border: 1px solid #d1d7db; border-radius: 20px; color: #008069; font-weight: bold; cursor: pointer; text-decoration: none; width: 100%; text-align: center; }
-        .action-btn:hover { background: #e9edef; }
+        /* Progress Bar */
+        .progress-track { height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin-top: 12px; }
+        .progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
 
-        /* Admin Tools Menu */
-        .tools-menu { position: absolute; top: 60px; right: 10px; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 8px; display: none; z-index: 50; width: 200px; }
-        .tools-menu.open { display: block; }
-        .menu-item { padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 10px; color: #3b4a54; border-radius: 4px; }
-        .menu-item:hover { background: #f0f2f5; }
+        /* Detail Slide-Over */
+        .detail-panel { position: absolute; top: 0; right: 0; bottom: 0; width: 500px; background: white; border-right: 1px solid #e2e8f0; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 50; box-shadow: -10px 0 25px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
+        .detail-panel.open { transform: translateX(0); }
 
-        @keyframes flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        /* Utility */
+        .timer-badge { font-family: monospace; font-weight: bold; font-size: 13px; }
+        .btn-action { width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; text-align: center; transition: 0.2s; display: flex; justify-content: center; gap: 8px; }
+        .btn-blue { background: var(--primary); color: white; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2); }
+        .btn-blue:hover { background: #1d4ed8; }
+        
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
-        <div class="sb-header">
-            <div class="flex items-center gap-3">
-                <div class="user-avatar flex items-center justify-center text-gray-500"><i class="fas fa-user"></i></div>
-                <span class="font-bold text-gray-700">סידור ח.סבן</span>
-            </div>
-            <div class="flex gap-4 text-gray-500 text-lg">
-                <button onclick="toggleTools()" title="תפריט ניהול"><i class="fas fa-ellipsis-v"></i></button>
-            </div>
+        <div class="logo-area">
+            <div class="logo-text">סידור <span>ח.סבן</span></div>
+        </div>
+        
+        <div class="nav-links">
+            <div class="text-xs font-bold text-gray-400 px-4 mb-2 uppercase tracking-wider">ראשי</div>
+            <div class="nav-item active"><i class="fas fa-th-large nav-icon"></i> לוח הזמנות</div>
+            <div class="nav-item"><i class="fas fa-exchange-alt nav-icon"></i> העברות סניפים <span class="badge">2</span></div>
+            <div class="nav-item"><i class="fas fa-history nav-icon"></i> היסטוריה</div>
             
-            <div id="tools-menu" class="tools-menu">
-                <div class="menu-item" onclick="openUserGenerator()">
-                    <i class="fas fa-user-plus text-[#008069]"></i>
-                    <span>צור לינק ללקוח</span>
-                </div>
-                <div class="menu-item" onclick="manualSync()">
-                    <i class="fas fa-sync text-blue-500"></i>
-                    <span>סנכרון יזום</span>
+            <div class="text-xs font-bold text-gray-400 px-4 mb-2 mt-6 uppercase tracking-wider">ניהול</div>
+            <div class="nav-item" onclick="openUserGenerator()"><i class="fas fa-user-plus nav-icon"></i> לינק ללקוח</div>
+            <div class="nav-item" onclick="manualSync()"><i class="fas fa-sync nav-icon"></i> סנכרון יזום</div>
+        </div>
+        
+        <div class="p-4 border-t">
+            <div class="flex items-center gap-3">
+                <img src="https://ui-avatars.com/api/?name=Rami+Saban&background=0f172a&color=fff" class="w-10 h-10 rounded-full">
+                <div>
+                    <div class="font-bold text-sm">ראמי סבן</div>
+                    <div class="text-xs text-green-600">● מחובר לחמ"ל</div>
                 </div>
             </div>
         </div>
-
-        <div class="search-box">
-            <input type="text" class="search-input" placeholder="חיפוש או התחלת צ'אט חדש">
-        </div>
-
-        <div class="stories-wrapper" id="stories-bar"></div>
-
-        <div class="orders-list" id="orders-list"></div>
     </div>
 
-    <div class="main-area">
-        <div id="empty-state" class="absolute inset-0 flex flex-col items-center justify-center bg-[#f0f2f5] z-20 border-b-[6px] border-[#25d366]">
-            <i class="fas fa-laptop-house text-4xl text-gray-400 mb-4"></i>
-            <h1 class="text-3xl font-light text-[#41525d] mb-2">סידור ח.סבן לוב</h1>
-            <p class="text-[#667781]">שלח וקבל הזמנות מבלי לחבר את הטלפון.</p>
+    <div class="main-content">
+        <div class="top-bar">
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="font-bold text-xl text-slate-800">עדכונים חיים</h2>
+                <div class="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full"><i class="fas fa-circle text-green-500 text-[8px] mr-1"></i> מערכת אונליין</div>
+            </div>
+            
+            <div class="stories-row" id="stories-container">
+                </div>
         </div>
 
-        <div id="chat-view" class="flex flex-col h-full hidden">
-            <header class="chat-header">
-                <div class="flex items-center gap-3 cursor-pointer">
-                    <img id="chat-avatar" class="w-10 h-10 rounded-full">
+        <div class="dashboard-grid" id="orders-grid">
+            </div>
+
+        <div id="detail-panel" class="detail-panel">
+            <div class="h-16 border-b flex items-center justify-between px-6 bg-gray-50">
+                <h2 class="font-bold text-lg text-slate-800">ניהול הזמנה</h2>
+                <button onclick="closePanel()" class="text-gray-400 hover:text-red-500 text-xl"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div class="p-6 flex-1 overflow-y-auto">
+                <div class="flex items-start gap-4 mb-6">
+                    <img id="det-avatar" class="w-16 h-16 rounded-xl shadow-sm">
                     <div>
-                        <div id="chat-title" class="font-bold text-[#111b21]">...</div>
-                        <div id="chat-status" class="text-xs text-[#667781]">מחובר</div>
+                        <h1 id="det-client" class="text-2xl font-black text-slate-800 leading-tight">...</h1>
+                        <div class="text-sm text-gray-500 mt-1">מספר מערכת: <span id="det-order-num" class="font-mono text-blue-600 font-bold">...</span></div>
                     </div>
                 </div>
-                <div id="big-timer" class="font-mono text-xl font-bold text-gray-600 bg-white px-3 py-1 rounded shadow-sm">
-                    00:00
-                </div>
-            </header>
 
-            <div class="msg-container" id="messages-area">
+                <div id="action-box" class="bg-blue-50 border border-blue-100 rounded-xl p-5 mb-6">
+                    </div>
+
+                <div class="relative pl-4 border-r border-gray-200 space-y-8 pr-2">
+                    <div class="relative">
+                        <div class="absolute -right-[21px] top-1 w-4 h-4 rounded-full bg-green-500 ring-4 ring-white shadow-sm"></div>
+                        <div class="text-sm font-bold text-slate-800">התקבל באפליקציה</div>
+                        <div class="text-xs text-gray-500 mt-1" id="time-created">...</div>
+                        <div class="mt-2 bg-white p-3 rounded border border-gray-200 text-sm text-gray-600 shadow-sm" id="det-text"></div>
+                    </div>
+                    
+                    <div class="relative opacity-50" id="step-comax">
+                        <div class="absolute -right-[21px] top-1 w-4 h-4 rounded-full bg-gray-300 ring-4 ring-white"></div>
+                        <div class="text-sm font-bold text-slate-800">הקלדה וסנכרון</div>
+                        <div class="text-xs text-gray-500">הזנת מספר קומקס + קליטת PDF</div>
+                    </div>
+                    
+                    <div class="relative opacity-50" id="step-client">
+                        <div class="absolute -right-[21px] top-1 w-4 h-4 rounded-full bg-gray-300 ring-4 ring-white"></div>
+                        <div class="text-sm font-bold text-slate-800">אישור לקוח</div>
+                        <div class="text-xs text-gray-500">חתימה דיגיטלית / אישור העמסה</div>
+                    </div>
                 </div>
-            
-            <div class="h-[62px] bg-[#f0f2f5] flex items-center px-4 gap-4 border-t border-[#d1d7db] z-10">
-                <i class="far fa-smile text-2xl text-[#54656f]"></i>
-                <i class="fas fa-paperclip text-2xl text-[#54656f]"></i>
-                <div class="flex-1 bg-white h-[42px] rounded-lg flex items-center px-4 text-[#54656f] text-sm">
-                    הקלד הודעה...
-                </div>
-                <i class="fas fa-microphone text-2xl text-[#54656f]"></i>
             </div>
         </div>
     </div>
 
-    <audio id="sound-msg" src="https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.m4a"></audio>
     <audio id="sound-alert" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.m4a"></audio>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // Firebase Config
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
         
-        let ordersData = {};
-        let currentChatId = null;
+        // OneSignal Init
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        OneSignalDeferred.push(function(OneSignal) {
+            OneSignal.init({ appId: "07b81f2e-e812-424f-beca-36584b12ccf2" });
+        });
 
-        // --- Data Listener ---
+        // Global State for Timers
+        let activeOrders = [];
+
+        // --- Bridge Logic ---
+        window.manualSync = async () => {
+            Swal.fire({title: 'מסנכרן...', didOpen: () => Swal.showLoading()});
+            try {
+                // קריאה לסקריפט הגשר
+                await fetch("https://script.google.com/macros/s/AKfycby9KVjix6KNvctLBoEAqOihyOGzyvspprG7_-1kedDDI6Xjwht7eqNO2POww77Jink/exec", { mode: 'no-cors' });
+                Swal.fire({icon: 'success', title: 'פקודת סנכרון נשלחה', timer: 1500, showConfirmButton: false});
+            } catch(e) {
+                Swal.fire({icon: 'error', title: 'שגיאה בסנכרון'});
+            }
+        };
+
+        // --- UI Logic ---
+        
+        // האזנה להזמנות
         onSnapshot(query(collection(db, "orders"), orderBy("createdAt", "desc")), (snap) => {
-            const list = document.getElementById('orders-list');
-            const stories = document.getElementById('stories-bar');
+            const grid = document.getElementById('orders-grid');
+            const stories = document.getElementById('stories-container');
             
-            list.innerHTML = "";
+            grid.innerHTML = "";
             stories.innerHTML = "";
-            ordersData = {};
+            activeOrders = [];
+
+            if(snap.empty) {
+                grid.innerHTML = `<div class="col-span-full text-center text-gray-400 mt-20 text-xl">אין הזמנות פעילות בחמ"ל</div>`;
+                return;
+            }
 
             snap.forEach(d => {
                 const o = d.data();
                 o.id = d.id;
-                ordersData[o.id] = o;
-                
-                // Sound Alert for new/urgent
+                activeOrders.push(o);
+
+                // Sound Logic
                 if(o.status === 'waiting_approval' && !o.soundPlayed) {
                     document.getElementById('sound-alert').play();
+                    // In real app, we would update doc to set soundPlayed: true
                 }
 
                 renderStory(o, stories);
-                renderListItem(o, list);
+                renderCard(o, grid);
             });
-            
-            // Refresh open chat if exists
-            if(currentChatId && ordersData[currentChatId]) {
-                renderChat(ordersData[currentChatId]);
-            }
         });
 
-        // --- Render Functions ---
+        // עדכון טיימרים חי
+        setInterval(() => {
+            activeOrders.forEach(o => updateCardTimer(o));
+        }, 1000);
 
         function renderStory(o, container) {
             if(o.status === 'done') return;
-            const ring = o.status === 'new' ? 'ring-new' : 'ring-wait';
+            const ring = o.status === 'new' ? 'ring-new' : (o.status === 'processing' ? 'ring-proc' : 'ring-wait');
             const avatar = `https://ui-avatars.com/api/?name=${o.clientName}&background=random`;
             
             container.innerHTML += `
-            <div class="story-item" onclick="openChat('${o.id}')">
-                <div class="story-ring ${ring}"><img src="${avatar}"></div>
-                <div class="text-xs text-gray-500 mt-1 truncate w-16 text-center">${o.clientName.split(' ')[0]}</div>
+            <div class="story" onclick="openPanel('${o.id}')">
+                <div class="story-ring ${ring}">
+                    <img src="${avatar}">
+                </div>
+                <div class="text-xs font-bold mt-1 text-slate-600 truncate w-16 text-center">${o.clientName.split(' ')[0]}</div>
             </div>`;
         }
 
-        function renderListItem(o, container) {
-            const time = new Date(o.createdAt?.seconds*1000).toLocaleTimeString().slice(0,5);
+        function renderCard(o, container) {
+            const statusInfo = getStatusInfo(o);
             const avatar = `https://ui-avatars.com/api/?name=${o.clientName}&background=random`;
-            const active = currentChatId === o.id ? 'active' : '';
-            const statusTxt = getStatusText(o.status);
             
-            // Timer Calculation
-            const {text: timerTxt, cls: timerCls} = getTimerData(o);
-
             container.innerHTML += `
-            <div class="chat-item ${active}" onclick="openChat('${o.id}')">
-                <div class="user-avatar mr-3"><img src="${avatar}" class="w-full h-full rounded-full"></div>
-                <div class="chat-info">
-                    <div class="chat-top">
-                        <span class="chat-name truncate">${o.clientName}</span>
-                        <span class="chat-time">${time}</span>
+            <div class="pro-card" onclick="openPanel('${o.id}')">
+                <div class="card-header">
+                    <div class="flex items-center gap-3">
+                        <img src="${avatar}" class="w-10 h-10 rounded-full">
+                        <div>
+                            <div class="font-bold text-slate-800 text-sm">${o.clientName}</div>
+                            <div class="text-xs text-gray-500">#${o.orderNum}</div>
+                        </div>
                     </div>
-                    <div class="chat-bottom">
-                        <span class="truncate w-32">${statusTxt} • #${o.orderNum}</span>
-                        <span class="timer-badge ${timerCls}">${timerTxt}</span>
+                    <span class="status-pill ${statusInfo.cls}">${statusInfo.txt}</span>
+                </div>
+                
+                <div class="card-body">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-bold text-gray-400 uppercase">יעד אספקה</span>
+                        <span id="timer-${o.id}" class="timer-badge bg-gray-200 text-gray-600">--:--</span>
                     </div>
+                    <div class="text-sm text-gray-600 line-clamp-2 h-10">${o.itemsText || 'פירוט פריטים...'}</div>
+                    
+                    <div class="progress-track">
+                        <div class="progress-fill ${statusInfo.bg}" style="width: ${statusInfo.pct}%"></div>
+                    </div>
+                </div>
+
+                <div class="card-footer">
+                    <div class="text-xs text-gray-400"><i class="far fa-clock"></i> ${new Date(o.createdAt?.seconds*1000).toLocaleTimeString().slice(0,5)}</div>
+                    <div class="text-xs font-bold text-blue-600 cursor-pointer">ניהול <i class="fas fa-arrow-left"></i></div>
                 </div>
             </div>`;
         }
 
-        window.openChat = (id) => {
-            currentChatId = id;
-            document.getElementById('empty-state').classList.add('hidden');
-            document.getElementById('chat-view').classList.remove('hidden');
+        // פונקציית עדכון טיימר בכרטיסייה
+        function updateCardTimer(o) {
+            const el = document.getElementById(`timer-${o.id}`);
+            if(!el) return;
             
-            // Highlight in list
-            document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
-            // (Re-rendering list handles the active class usually, but for instant feedback:)
-            // ...
-            
-            renderChat(ordersData[id]);
-        };
-
-        function renderChat(o) {
-            document.getElementById('chat-title').innerText = o.clientName;
-            document.getElementById('chat-avatar').src = `https://ui-avatars.com/api/?name=${o.clientName}&background=random`;
-            
-            const msgs = document.getElementById('messages-area');
-            msgs.innerHTML = "";
-            
-            // 1. הודעת פתיחה (הזמנה מהאפליקציה)
-            const time = new Date(o.createdAt?.seconds*1000).toLocaleTimeString().slice(0,5);
-            msgs.innerHTML += `
-            <div class="bubble">
-                <div class="font-bold text-[#e542a3] text-xs mb-1">הזמנה חדשה מאפליקציה</div>
-                <div>${o.itemsText || 'פירוט פריטים...'}</div>
-                <div class="text-sm text-gray-500 mt-1">תאריך אספקה: ${o.supplyDate} ${o.supplyTime}</div>
-                <div class="bubble-meta"><span>${time}</span></div>
-            </div>`;
-
-            // 2. סטטוסים דינמיים
-            if(o.status === 'new') {
-                msgs.innerHTML += `
-                <div class="bubble admin">
-                    <div class="text-sm">👋 היי, ההזמנה התקבלה. יש להזין מספר קומקס כדי לחבר למייל.</div>
-                    <div class="mt-2 flex gap-2">
-                        <input id="cx-input" type="text" placeholder="מס' קומקס (למשל 6210496)" class="flex-1 border p-1 rounded text-sm">
-                        <button onclick="saveComax('${o.id}')" class="bg-[#008069] text-white px-3 rounded text-sm">שמור</button>
-                    </div>
-                    <div class="bubble-meta"><i class="fas fa-check"></i> <span>עכשיו</span></div>
-                </div>`;
-            }
-
-            if(o.status === 'processing') {
-                msgs.innerHTML += `
-                <div class="bubble admin">
-                    <div>✅ מספר קומקס <b>${o.comaxNum}</b> נקלט.</div>
-                    <div>📡 המערכת מאזינה למייל כעת...</div>
-                    <div class="bubble-meta"><i class="fas fa-check-double text-blue-500"></i> <span>עכשיו</span></div>
-                </div>`;
-            }
-
-            if(o.status === 'waiting_approval') {
-                msgs.innerHTML += `
-                <div class="bubble">
-                    <div class="font-bold text-orange-500 text-xs mb-1">עדכון מערכת</div>
-                    <div>📄 התקבל מסמך מקומקס.</div>
-                    <div>הודעה נשלחה ללקוח לאישור העמסה.</div>
-                    <a href="${o.pdfUrl}" target="_blank" class="action-btn">צפה במסמך PDF</a>
-                    <div class="bubble-meta"><span>עכשיו</span></div>
-                </div>`;
-            }
-
             if(o.status === 'done') {
-                msgs.innerHTML += `
-                <div class="bubble admin">
-                    <div class="font-bold text-green-600">👍 הלקוח אישר העמסה!</div>
-                    <div>ההזמנה נסגרה בהצלחה. סע לשלום. 🚚</div>
-                    <div class="bubble-meta"><i class="fas fa-check-double text-blue-500"></i> <span>${new Date(o.approvedAt?.seconds*1000).toLocaleTimeString().slice(0,5)}</span></div>
-                </div>`;
+                el.innerText = "הושלם";
+                el.className = "timer-badge bg-green-100 text-green-700";
+                return;
             }
-            
-            // עדכון טיימר גדול
-            updateBigTimer(o);
-        }
 
-        // --- Helpers ---
-        function getTimerData(o) {
-            if(o.status === 'done') return {text: 'בוצע', cls: 'bg-gray-400'};
-            
-            let target = o.supplyDate ? new Date(`${o.supplyDate}T${o.supplyTime}`) : new Date(o.createdAt.toDate().getTime() + 3600000);
+            // יעד: לפי תאריך בטופס או שעה מהיצירה
+            let target;
+            if(o.supplyDate && o.supplyTime) {
+                target = new Date(`${o.supplyDate}T${o.supplyTime}`);
+            } else {
+                target = new Date(o.createdAt.toDate().getTime() + 3600000); 
+            }
+
             const diff = target - new Date();
-            
-            if(diff <= 0) return {text: '00:00', cls: 'bg-danger'};
-            
-            const h = Math.floor(diff/3600000);
-            const m = Math.floor((diff%3600000)/60000);
-            return {
-                text: `${h}:${m.toString().padStart(2,'0')}`,
-                cls: h < 1 ? 'bg-warn' : 'bg-ok'
-            };
+            if(diff <= 0) {
+                el.innerText = "-00:00!";
+                el.className = "timer-badge bg-red-500 text-white animate-pulse";
+            } else {
+                const h = Math.floor(diff/3600000);
+                const m = Math.floor((diff%3600000)/60000);
+                el.innerText = `${h}:${m.toString().padStart(2,'0')}`;
+                el.className = h < 1 ? "timer-badge bg-amber-500 text-white" : "timer-badge bg-emerald-500 text-white";
+            }
         }
 
-        function updateBigTimer(o) {
-            const {text, cls} = getTimerData(o);
-            const el = document.getElementById('big-timer');
-            el.innerText = text;
-            el.className = `font-mono text-xl font-bold px-3 py-1 rounded shadow-sm ${cls === 'bg-danger' ? 'text-red-600 animate-pulse' : 'text-gray-700 bg-white'}`;
-        }
+        // --- Detail Panel Logic ---
+        
+        // חשיפה ל-Window כדי שה-HTML יכיר את הפונקציה
+        window.openPanel = (id) => {
+            const o = activeOrders.find(x => x.id === id);
+            if(!o) return;
+
+            document.getElementById('detail-panel').classList.add('open');
+            document.getElementById('det-client').innerText = o.clientName;
+            document.getElementById('det-order-num').innerText = o.orderNum;
+            document.getElementById('det-avatar').src = `https://ui-avatars.com/api/?name=${o.clientName}&background=random`;
+            document.getElementById('time-created').innerText = new Date(o.createdAt.seconds*1000).toLocaleString();
+            document.getElementById('det-text').innerText = o.itemsText;
+
+            const box = document.getElementById('action-box');
+            
+            if(o.status === 'new') {
+                box.innerHTML = `
+                    <div class="text-sm font-bold text-slate-700 mb-2">📌 שלב 1: חיבור לקומקס</div>
+                    <div class="flex gap-2">
+                        <input id="cx-input" type="text" placeholder="מס' הזמנה (למשל 6210496)" class="flex-1 bg-white border border-gray-300 rounded p-3 outline-none focus:border-blue-500">
+                        <button onclick="saveComax('${id}')" class="bg-blue-600 text-white px-6 rounded font-bold hover:bg-blue-700">שמור</button>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-2">הזנת המספר תפעיל את האזנה למיילים</div>
+                `;
+                resetTimeline();
+            } else if(o.status === 'processing') {
+                box.innerHTML = `
+                    <div class="flex items-center gap-3 text-amber-600 bg-amber-50 p-2 rounded">
+                        <i class="fas fa-circle-notch fa-spin"></i>
+                        <span class="font-bold text-sm">המערכת מאזינה למייל עם הזמנה ${o.comaxNum}...</span>
+                    </div>
+                    <button onclick="manualSync()" class="mt-3 text-xs text-blue-600 underline">סנכרון יזום עכשיו</button>
+                `;
+                setTimelineStep('step-comax');
+            } else if(o.status === 'waiting_approval') {
+                box.innerHTML = `
+                    <div class="text-orange-600 font-bold mb-3 flex items-center gap-2"><i class="fas fa-exclamation-circle"></i> ממתין לאישור הלקוח</div>
+                    <a href="${o.pdfUrl}" target="_blank" class="btn-action btn-blue">
+                        <i class="fas fa-file-pdf"></i> צפה במסמך שנשלח ללקוח
+                    </a>
+                `;
+                setTimelineStep('step-comax');
+            } else {
+                box.innerHTML = `<div class="text-green-600 font-bold text-lg text-center bg-green-50 p-4 rounded-xl border border-green-100">✅ ההזמנה הושלמה בהצלחה</div>`;
+                setTimelineStep('step-comax');
+                setTimelineStep('step-client');
+            }
+        };
 
         window.saveComax = async (id) => {
             const val = document.getElementById('cx-input').value;
-            if(val) await updateDoc(doc(db, "orders", id), { comaxNum: val, status: 'processing' });
-        }
+            if(!val) return Swal.fire('שגיאה', 'חובה להזין מספר', 'error');
+            
+            await updateDoc(doc(db, "orders", id), { comaxNum: val, status: 'processing' });
+            Swal.fire({icon: 'success', title: 'נשמר', text: 'ממתין למייל מקומקס...', timer: 1500, showConfirmButton: false});
+            closePanel(); // סגירה לרענון תחושה
+        };
 
-        window.toggleTools = () => document.getElementById('tools-menu').classList.toggle('open');
-        
+        window.closePanel = () => document.getElementById('detail-panel').classList.remove('open');
+
+        // --- User Generator ---
         window.openUserGenerator = async () => {
-            document.getElementById('tools-menu').classList.remove('open');
             const { value: formValues } = await Swal.fire({
-                title: 'צור לינק ללקוח',
-                html: '<input id="swal-name" class="swal2-input" placeholder="שם הלקוח"><input id="swal-id" class="swal2-input" placeholder="מזהה (ת.ז/ח.פ)">',
-                confirmButtonColor: '#008069',
+                title: 'הוספת לקוח חדש',
+                html: '<input id="swal-name" class="swal2-input" placeholder="שם הלקוח"><input id="swal-id" class="swal2-input" placeholder="מספר זיהוי (ח.פ/ת.ז)">',
+                focusConfirm: false,
+                confirmButtonColor: '#2563eb',
+                confirmButtonText: 'צור לינק',
                 preConfirm: () => [document.getElementById('swal-name').value, document.getElementById('swal-id').value]
             });
 
             if (formValues && formValues[1]) {
                 const link = `https://saban-system.onrender.com/client-final.html?uid=${formValues[1]}`;
                 navigator.clipboard.writeText(link);
-                Swal.fire({icon:'success', title:'הועתק!', text: link, confirmButtonColor: '#008069'});
+                Swal.fire({icon: 'success', title: 'הלינק הועתק!', text: 'שלח אותו ללקוח בוואטסאפ'});
             }
         };
 
-        function getStatusText(s) {
-            const map = {'new':'חדש', 'processing':'בטיפול', 'waiting_approval':'ממתין', 'done':'הושלם'};
-            return map[s] || s;
+        // --- Helpers ---
+        function getStatusInfo(o) {
+            const map = {
+                'new': { cls: 'st-new', txt: 'התקבל', pct: 25, bg: 'bg-blue-500' },
+                'processing': { cls: 'st-proc', txt: 'בטיפול', pct: 50, bg: 'bg-amber-500' },
+                'waiting_approval': { cls: 'st-wait', txt: 'ממתין', pct: 75, bg: 'bg-orange-500' },
+                'done': { cls: 'st-done', txt: 'הושלם', pct: 100, bg: 'bg-green-500' }
+            };
+            return map[o.status] || map['new'];
         }
-        
-        // Timer Interval
-        setInterval(() => {
-            if(currentChatId && ordersData[currentChatId]) updateBigTimer(ordersData[currentChatId]);
-            // Refresh list timers logic would go here in full implementation
-        }, 1000);
+
+        function resetTimeline() {
+            document.getElementById('step-comax').style.opacity = '0.5';
+            document.getElementById('step-client').style.opacity = '0.5';
+        }
+
+        function setTimelineStep(id) {
+            const el = document.getElementById(id);
+            el.style.opacity = '1';
+            el.querySelector('.rounded-full').classList.replace('bg-gray-300', 'bg-green-500');
+        }
 
     </script>
 </body>
