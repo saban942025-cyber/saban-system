@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Saban OS Mobile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    
+    <style>
+        body { margin: 0; overflow: hidden; font-family: sans-serif; height: 100vh; transition: 0.3s; }
+        
+        /* THEMES */
+        .theme-glass { background: linear-gradient(135deg, #0f172a, #1e1b4b); color: white; --card: rgba(255,255,255,0.1); --nav: rgba(0,0,0,0.6); }
+        .theme-light { background: #f1f5f9; color: #1e293b; --card: white; --nav: white; }
+        .theme-operator { background: #000; color: #0f0; --card: #111; --nav: #111; font-family: 'Courier New'; }
+
+        .app-view { display: none; height: 100%; flex-direction: column; animation: fadeIn 0.3s; }
+        .app-view.active { display: flex; }
+        @keyframes fadeIn { from {opacity:0} to {opacity:1} }
+
+        .card { background: var(--card); border-radius: 16px; padding: 16px; margin-bottom: 12px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.05); }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; height: 70px; background: var(--nav); backdrop-filter: blur(20px); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); z-index: 50; }
+        
+        /* Timeline Widget */
+        .timeline-track { position: relative; display: flex; justify-content: space-between; margin: 20px 0; }
+        .timeline-line { position: absolute; top: 6px; left: 0; right: 0; height: 2px; bg-gray-600; z-index: 0; background: #334155; }
+        .timeline-progress { position: absolute; top: 6px; right: 0; height: 2px; background: #22c55e; z-index: 0; width: 0%; transition: 1s; }
+        .t-step { width: 14px; height: 14px; border-radius: 50%; background: #334155; z-index: 1; border: 2px solid var(--card); }
+        .t-step.active { background: #22c55e; border-color: white; }
+    </style>
+</head>
+<body class="theme-glass">
+
+    <div id="view-feed" class="app-view active">
+        <div class="p-4 flex justify-between items-center">
+            <h1 class="text-xl font-black tracking-wider">Saban<span class="text-blue-500">OS</span></h1>
+            <img id="myAvatar" class="w-10 h-10 rounded-full border-2 border-white/20">
+        </div>
+
+        <div class="px-4 pb-2 flex gap-4 overflow-x-auto no-scrollbar">
+            <div onclick="switchView('studio')" class="flex flex-col items-center min-w-[60px]">
+                <div class="w-14 h-14 rounded-full border-2 border-dashed border-gray-400 flex items-center justify-center text-xl"><i class="fas fa-plus"></i></div>
+                <span class="text-[10px] mt-1">חדש</span>
+            </div>
+            <div id="stories-wrapper" class="flex gap-3"></div>
+        </div>
+
+        <div id="feed-content" class="flex-1 overflow-y-auto p-4 pb-24">
+            </div>
+    </div>
+
+    <div id="view-studio" class="app-view">
+        <div class="p-4 flex justify-between">
+            <h2 class="text-xl font-black">🎙️ סטודיו להכרזות</h2>
+            <button onclick="switchView('feed')"><i class="fas fa-times text-2xl"></i></button>
+        </div>
+        <div class="p-4 flex-1 space-y-4">
+            <textarea id="studioMsg" class="w-full h-32 card bg-white/10 text-inherit outline-none resize-none" placeholder="מה תרצה להודיע לצוות?"></textarea>
+            
+            <div class="text-xs font-bold opacity-70">צרף מוצר (דחיפת מכירות)</div>
+            <div id="studio-catalog" class="flex gap-2 overflow-x-auto pb-2"></div>
+
+            <button onclick="publish()" class="w-full py-4 bg-blue-600 rounded-xl font-bold shadow-lg mt-4">
+                🚀 פרסם לצוות
+            </button>
+        </div>
+    </div>
+
+    <div id="view-profile" class="app-view">
+        <div class="p-6 flex flex-col items-center">
+            <img id="profImg" class="w-24 h-24 rounded-full border-4 border-blue-500 mb-4">
+            <h2 id="profName" class="text-2xl font-bold">...</h2>
+            
+            <div class="grid grid-cols-3 gap-3 w-full mt-6">
+                <button onclick="setTheme('glass')" class="p-3 bg-slate-900 text-white rounded-lg text-xs">Glass 💎</button>
+                <button onclick="setTheme('light')" class="p-3 bg-white text-black rounded-lg text-xs">Light ☀️</button>
+                <button onclick="setTheme('operator')" class="p-3 bg-black text-green-500 rounded-lg text-xs font-mono">Operator 📟</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <i class="fas fa-home text-xl text-blue-500" onclick="switchView('feed')"></i>
+        <div class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center -mt-8 shadow-lg" onclick="switchView('studio')"><i class="fas fa-microphone text-white"></i></div>
+        <i class="fas fa-user text-xl opacity-60" onclick="switchView('profile')"></i>
+    </div>
+
+    <script type="module">
+        import { SabanBrain } from './js/saban-brain.js';
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
+        
+        let user = JSON.parse(localStorage.getItem('saban_user')) || {name:'אורח', role:'staff', avatar:'https://ui-avatars.com/api/?name=Guest'};
+        let selectedProd = null;
+
+        window.onload = () => {
+            initUI();
+            loadFeed();
+            loadCatalog();
+        };
+
+        function initUI() {
+            document.getElementById('myAvatar').src = user.avatar;
+            document.getElementById('profImg').src = user.avatar;
+            document.getElementById('profName').innerText = user.name;
+            const savedTheme = localStorage.getItem('theme') || 'glass';
+            document.body.className = `theme-${savedTheme}`;
+        }
+
+        window.switchView = (v) => {
+            document.querySelectorAll('.app-view').forEach(e => e.classList.remove('active'));
+            document.getElementById(`view-${v}`).classList.add('active');
+        }
+
+        window.setTheme = (t) => {
+            document.body.className = `theme-${t}`;
+            localStorage.setItem('theme', t);
+        }
+
+        // --- CORE: FEED WITH TIMELINE ---
+        function loadFeed() {
+            // האזנה להזמנות בזמן אמת (מדמה קבלת עדכון מקומקס)
+            onSnapshot(query(collection(db, "orders"), orderBy("createdAt", "desc")), (snap) => {
+                const c = document.getElementById('feed-content');
+                c.innerHTML = "";
+                snap.forEach(d => {
+                    const o = d.data();
+                    c.innerHTML += createOrderCard(o);
+                });
+            });
+        }
+
+        function createOrderCard(o) {
+            // לוגיקת ציר הזמן הוויזואלי
+            let progress = 25; // שלב 1: התקבל
+            let step2 = '', step3 = '', step4 = '';
+            let actionBtn = `<div class="text-xs text-yellow-500 animate-pulse">⏳ ממתין לקליטה בקומקס...</div>`;
+
+            if(o.status === 'processing' || o.comaxNum) { progress = 50; step2 = 'active'; }
+            if(o.status === 'waiting_approval' || o.pdfUrl) { 
+                progress = 75; step2='active'; step3='active'; 
+                actionBtn = `<a href="${o.pdfUrl}" target="_blank" class="block w-full py-2 bg-green-600 text-center text-white font-bold rounded-lg mb-2">📄 צפה במסמך ואישור</a>`;
+            }
+            if(o.status === 'done') { progress = 100; step2='active'; step3='active'; step4='active'; actionBtn = `<div class="text-green-500 font-bold text-center">✅ בוצע בהצלחה</div>`; }
+
+            return `
+            <div class="card">
+                <div class="flex justify-between mb-2">
+                    <span class="font-bold">הזמנה #${o.orderNum || '...'}</span>
+                    <span class="text-xs opacity-60">${o.clientName}</span>
+                </div>
+                <div class="timeline-track">
+                    <div class="timeline-line"></div>
+                    <div class="timeline-progress" style="width: ${progress}%"></div>
+                    <div class="t-step active"></div>
+                    <div class="t-step ${step2}"></div>
+                    <div class="t-step ${step3}"></div>
+                    <div class="t-step ${step4}"></div>
+                </div>
+                <div class="flex justify-between text-[10px] opacity-60 mb-4">
+                    <span>נקלט</span><span>קומקס</span><span>אישור</span><span>בוצע</span>
+                </div>
+                ${actionBtn}
+            </div>`;
+        }
+
+        // --- STUDIO ---
+        async function loadCatalog() {
+            const list = document.getElementById('studio-catalog');
+            // מדומה - במציאות ימשוך מ-Firebase Products
+            list.innerHTML = `<div class="min-w-[100px] h-20 card flex items-center justify-center text-xs border-dashed" onclick="alert('טוען קטלוג...')">+ הוסף</div>`;
+        }
+
+        window.publish = async () => {
+            const txt = document.getElementById('studioMsg').value;
+            if(!txt) return;
+            await addDoc(collection(db, "stories"), {
+                text: txt, creator: user.name, avatar: user.avatar,
+                createdAt: serverTimestamp(), type: 'announcement'
+            });
+            alert("פורסם!");
+            switchView('feed');
+        }
+    </script>
+</body>
+</html>
