@@ -2,47 +2,129 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>Saban Key Tester 🔑</title>
-    <style>body { font-family: sans-serif; padding: 50px; text-align: center; }</style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saban API Tester | מעבדת מפתחות</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>body { background: #1e293b; color: white; font-family: sans-serif; }</style>
 </head>
-<body>
-    <h1>בדיקת מפתח גוגל (Tester)</h1>
-    <input type="text" id="apiKey" placeholder="הדבק כאן את המפתח (AIza...)" style="width: 300px; padding: 10px;">
-    <br><br>
-    <button onclick="testKey()" style="padding: 10px 20px; background: blue; color: white; cursor: pointer;">בדוק מפתח</button>
-    <div id="result" style="margin-top: 20px; font-weight: bold;"></div>
+<body class="p-10">
+
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-2 text-blue-400"><i class="fas fa-stethoscope"></i> מעבדת בדיקת מפתחות</h1>
+        <p class="text-gray-400 mb-8">כלי לאבחון תקלות בחיבור לגוגל ו-Gemini</p>
+
+        <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 mb-8">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><i class="fas fa-brain text-purple-400"></i> בדיקת Gemini AI</h2>
+            
+            <div class="grid gap-4 mb-4">
+                <div>
+                    <label class="text-xs text-gray-400">מפתח API (Gemini Key)</label>
+                    <input id="geminiKey" class="w-full bg-slate-900 border border-slate-600 p-3 rounded text-white font-mono" placeholder="AIzaSy...">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-400">בחר מודל לבדיקה</label>
+                    <select id="geminiModel" class="w-full bg-slate-900 border border-slate-600 p-3 rounded text-white">
+                        <option value="gemini-1.5-flash">gemini-1.5-flash (החדש והמהיר)</option>
+                        <option value="gemini-pro">gemini-pro (הישן והיציב)</option>
+                    </select>
+                </div>
+            </div>
+            <button onclick="testGemini()" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded font-bold w-full">בדוק חיבור למוח</button>
+            <div id="geminiResult" class="mt-4 p-4 rounded bg-black/30 font-mono text-sm min-h-[50px] whitespace-pre-wrap">ממתין לבדיקה...</div>
+        </div>
+
+        <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><i class="fab fa-google text-blue-400"></i> בדיקת חיפוש גוגל (Search)</h2>
+            
+            <div class="grid gap-4 mb-4">
+                <div>
+                    <label class="text-xs text-gray-400">מפתח API (Search Key)</label>
+                    <input id="searchKey" class="w-full bg-slate-900 border border-slate-600 p-3 rounded text-white font-mono" placeholder="AIzaSy...">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-400">מזהה מנוע חיפוש (CX ID)</label>
+                    <input id="searchCX" class="w-full bg-slate-900 border border-slate-600 p-3 rounded text-white font-mono" placeholder="Ex: 56qt2qgr...">
+                </div>
+            </div>
+            <button onclick="testSearch()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded font-bold w-full">בדוק חיבור לחיפוש</button>
+            <div id="searchResult" class="mt-4 p-4 rounded bg-black/30 font-mono text-sm min-h-[50px] whitespace-pre-wrap">ממתין לבדיקה...</div>
+        </div>
+
+    </div>
 
     <script>
-        async function testKey() {
-            const key = document.getElementById('apiKey').value.trim();
-            const resDiv = document.getElementById('result');
+        async function testGemini() {
+            const key = document.getElementById('geminiKey').value.trim();
+            const model = document.getElementById('geminiModel').value;
+            const log = document.getElementById('geminiResult');
             
-            if (!key) { resDiv.innerText = "נא להכניס מפתח"; return; }
-            resDiv.innerText = "בודק תקשורת לגוגל...";
+            if(!key) return alert("חסר מפתח");
 
-            // מנסים את המודל הכי בסיסי ויציב (gemini-pro)
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${key}`;
+            log.innerText = "🔄 מתחבר לגוגל...";
+            log.className = "mt-4 p-4 rounded bg-yellow-900/30 text-yellow-200 font-mono text-sm";
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
             
             try {
                 const response = await fetch(url, {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ contents: [{ parts: [{ text: "תגיד שלום" }] }] })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: "האם אתה עובד?" }] }] })
                 });
 
                 const data = await response.json();
 
                 if (response.ok) {
-                    resDiv.style.color = "green";
-                    resDiv.innerHTML = "✅ המפתח תקין ועובד!<br>גוגל ענה: " + data.candidates[0].content.parts[0].text;
+                    log.className = "mt-4 p-4 rounded bg-green-900/30 text-green-200 font-mono text-sm border border-green-500";
+                    log.innerText = `✅ הצלחה!\nהמודל ${model} ענה:\n"${data.candidates[0].content.parts[0].text}"`;
                 } else {
-                    resDiv.style.color = "red";
-                    resDiv.innerText = "❌ שגיאה: " + (data.error?.message || response.statusText);
+                    handleError(log, response.status, data);
                 }
             } catch (e) {
-                resDiv.style.color = "red";
-                resDiv.innerText = "❌ שגיאת רשת: " + e.message;
+                log.className = "mt-4 p-4 rounded bg-red-900/30 text-red-200 font-mono text-sm border border-red-500";
+                log.innerText = `❌ שגיאת רשת:\n${e.message}`;
             }
+        }
+
+        async function testSearch() {
+            const key = document.getElementById('searchKey').value.trim();
+            const cx = document.getElementById('searchCX').value.trim();
+            const log = document.getElementById('searchResult');
+
+            if(!key || !cx) return alert("חסר מפתח או CX");
+
+            log.innerText = "🔄 מבצע חיפוש ניסיון...";
+            log.className = "mt-4 p-4 rounded bg-yellow-900/30 text-yellow-200 font-mono text-sm";
+
+            const url = `https://customsearch.googleapis.com/customsearch/v1?key=${key}&cx=${cx}&q=test`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (response.ok) {
+                    log.className = "mt-4 p-4 rounded bg-green-900/30 text-green-200 font-mono text-sm border border-green-500";
+                    log.innerText = `✅ הצלחה!\nנמצאו ${data.searchInformation?.totalResults || 0} תוצאות.\n(המפתח וה-CX תקינים)`;
+                } else {
+                    handleError(log, response.status, data);
+                }
+            } catch (e) {
+                log.className = "mt-4 p-4 rounded bg-red-900/30 text-red-200 font-mono text-sm border border-red-500";
+                log.innerText = `❌ שגיאת רשת:\n${e.message}`;
+            }
+        }
+
+        function handleError(elem, status, data) {
+            elem.className = "mt-4 p-4 rounded bg-red-900/30 text-red-200 font-mono text-sm border border-red-500";
+            let explanation = "";
+
+            if (status === 400) explanation = "בקשה לא תקינה (אולי מפתח שגוי או מודל לא קיים בפרויקט הזה).";
+            if (status === 403) explanation = "אין הרשאה (המפתח חסום, או שה-API לא הופעל בקונסול).";
+            if (status === 404) explanation = "לא נמצא (המודל לא קיים או שה-URL שגוי).";
+            if (status === 429) explanation = "יותר מדי בקשות (Quota Exceeded).";
+
+            elem.innerText = `❌ שגיאה ${status}:\n${explanation}\n\nפירוט טכני:\n${JSON.stringify(data.error, null, 2)}`;
         }
     </script>
 </body>
