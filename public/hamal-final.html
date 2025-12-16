@@ -129,25 +129,27 @@
             });
         }
 
-        function renderStories(snap) {
-            const container = document.getElementById('stories-container');
-            container.innerHTML = "";
-            snap.forEach(d => {
-                const o = d.data();
-                if (o.status === 'done') return; // לא מציגים גמורים בסטורי
-                
-                const ringClass = o.status === 'new' ? 'new' : 'waiting';
-                const avatar = `https://ui-avatars.com/api/?name=${o.clientName}&background=random`;
-                
-                container.innerHTML += `
-                <div class="flex flex-col items-center gap-1 min-w-[70px]" onclick="openOrder('${d.id}', '${o.clientName}')">
-                    <div class="story-circle ${ringClass}">
-                        <img src="${avatar}">
-                    </div>
-                    <div class="text-[10px] truncate w-full text-center">${o.clientName.split(' ')[0]}</div>
-                </div>`;
-            });
-        }
+function renderStories(snap) {
+    const container = document.getElementById('stories-container');
+    container.innerHTML = "";
+    snap.forEach(d => {
+        const o = d.data();
+        if (o.status === 'done') return; // לא מציגים גמורים בסטורי
+        
+        // הגנה: אם אין שם לקוח, השתמש בברירת מחדל
+        const safeName = o.clientName || "לקוח לא ידוע";
+        const ringClass = o.status === 'new' ? 'new' : 'waiting';
+        const avatar = `https://ui-avatars.com/api/?name=${safeName}&background=random`;
+        
+        container.innerHTML += `
+        <div class="flex flex-col items-center gap-1 min-w-[70px]" onclick="openOrder('${d.id}', '${safeName}')">
+            <div class="story-circle ${ringClass}">
+                <img src="${avatar}">
+            </div>
+            <div class="text-[10px] truncate w-full text-center">${safeName.split(' ')[0]}</div>
+        </div>`;
+    });
+}
 
         // 2. פתיחת הזמנה וניהול
         window.openOrder = (id, name) => {
