@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Saban Command Center | MASTER</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <style>
+        /* Base Setup */
+        body { background: #0f172a; color: white; height: 100vh; overflow: hidden; font-family: 'Segoe UI', sans-serif; display: flex; }
+        
+        /* Sidebar */
+        .sidebar { width: 260px; background: #1e293b; border-left: 1px solid #334155; display: flex; flex-direction: column; padding-top: 20px; z-index: 20; }
+        .brand { font-size: 24px; font-weight: 900; color: #3b82f6; text-align: center; margin-bottom: 30px; letter-spacing: 2px; }
+        .brand span { color: white; }
+        
+        .nav-btn { padding: 15px 25px; cursor: pointer; color: #94a3b8; transition: 0.3s; display: flex; items-center; gap: 12px; font-weight: 600; }
+        .nav-btn:hover, .nav-btn.active { background: #334155; color: white; border-right: 4px solid #3b82f6; }
+        .nav-btn i { width: 20px; text-align: center; }
+
+        .admin-box { margin-top: auto; padding: 20px; background: #0f172a; border-top: 1px solid #334155; }
+        .gen-link-btn { width: 100%; padding: 10px; background: linear-gradient(45deg, #3b82f6, #6366f1); border-radius: 8px; font-weight: bold; font-size: 13px; display: flex; justify-content: center; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); transition: transform 0.2s; }
+        .gen-link-btn:active { transform: scale(0.97); }
+
+        /* Main Content */
+        .main-content { flex: 1; display: flex; flex-direction: column; position: relative; }
+        
+        /* Stories Bar */
+        .stories-container { height: 120px; background: #1e293b; border-bottom: 1px solid #334155; display: flex; align-items: center; padding: 0 20px; gap: 15px; overflow-x: auto; white-space: nowrap; }
+        .story-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.2s; min-width: 70px; }
+        .story-item:hover { transform: scale(1.05); }
+        .story-ring { width: 68px; height: 68px; border-radius: 50%; padding: 3px; position: relative; }
+        .story-ring img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid #1e293b; }
+        
+        /* Story Status Colors */
+        .ring-new { background: linear-gradient(45deg, #ef4444, #f59e0b); animation: pulse-ring 2s infinite; }
+        .ring-proc { background: linear-gradient(45deg, #eab308, #facc15); }
+        .ring-wait { background: linear-gradient(45deg, #3b82f6, #06b6d4); }
+        .ring-done { background: #334155; opacity: 0.6; }
+
+        /* Dashboard Grid */
+        .dashboard { flex: 1; padding: 20px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; align-content: start; }
+        
+        /* Order Card */
+        .order-card { background: #1e293b; border-radius: 16px; padding: 16px; border: 1px solid #334155; position: relative; transition: 0.3s; cursor: pointer; display: flex; flex-direction: column; gap: 10px; }
+        .order-card:hover { transform: translateY(-5px); border-color: #475569; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        .order-card.selected { border-color: #3b82f6; box-shadow: 0 0 0 2px #3b82f6; }
+        
+        .timer-chip { font-family: monospace; font-weight: bold; font-size: 14px; padding: 4px 8px; border-radius: 6px; text-align: center; }
+        .timer-ok { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+        .timer-warn { background: rgba(234, 179, 8, 0.2); color: #facc15; }
+        .timer-danger { background: rgba(239, 68, 68, 0.2); color: #f87171; animation: flash 1s infinite; }
+
+        /* Detail Panel (Slide In) */
+        .detail-panel { position: absolute; top: 0; right: 0; bottom: 0; width: 450px; background: #0f172a; border-right: 1px solid #334155; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 50; box-shadow: -10px 0 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
+        .detail-panel.open { transform: translateX(0); }
+        
+        /* Animations */
+        @keyframes pulse-ring { 0% {box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);} 70% {box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);} 100% {box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);} }
+        @keyframes flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="brand">SABAN<span>OS</span></div>
+        <div class="nav-btn active"><i class="fas fa-th-large"></i> חמ"ל ראשי</div>
+        <div class="nav-btn"><i class="fas fa-history"></i> היסטוריה</div>
+        <div class="nav-btn"><i class="fas fa-chart-line"></i> מדדים</div>
+        
+        <div class="admin-box">
+            <h3 class="text-xs font-bold text-gray-500 mb-3 uppercase tracking-wider">כלי מנהל (ראמי)</h3>
+            <button onclick="openUserGenerator()" class="gen-link-btn">
+                <i class="fas fa-user-plus"></i> צור לינק ללקוח
+            </button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="stories-container" id="stories-bar">
+            </div>
+
+        <div class="dashboard" id="orders-grid">
+            </div>
+
+        <div id="detail-panel" class="detail-panel">
+            <div class="p-6 border-b border-gray-800 flex justify-between items-center bg-[#1e293b]">
+                <h2 class="text-xl font-bold">פרטי הזמנה</h2>
+                <button onclick="closePanel()" class="text-gray-400 hover:text-white"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            
+            <div class="p-6 flex-1 overflow-y-auto">
+                <div class="flex items-center gap-4 mb-6">
+                    <img id="det-avatar" class="w-16 h-16 rounded-full border-2 border-blue-500">
+                    <div>
+                        <h2 id="det-name" class="text-2xl font-bold">...</h2>
+                        <div class="text-sm text-gray-400">הזמנה: <span id="det-id" class="text-blue-400 font-mono">...</span></div>
+                    </div>
+                </div>
+
+                <div id="action-zone" class="mb-6 p-5 rounded-xl border border-gray-700 bg-[#1e293b]"></div>
+
+                <h3 class="text-sm font-bold text-gray-500 mb-4 uppercase">התקדמות</h3>
+                <div class="relative pl-4 border-r border-gray-700 space-y-6 pr-4">
+                    <div class="relative">
+                        <div class="absolute -right-[21px] top-1 w-4 h-4 rounded-full bg-green-500 ring-4 ring-[#0f172a]"></div>
+                        <div class="text-sm font-bold">התקבלה מהאפליקציה</div>
+                        <div id="time-created" class="text-xs text-gray-500">...</div>
+                        <div id="det-text" class="mt-1 text-sm bg-gray-800 p-2 rounded text-gray-300 italic"></div>
+                    </div>
+                    
+                    <div class="relative opacity-50" id="step-comax">
+                        <div class="absolute -right-[21px] top-1 w-4 h-4 rounded-full bg-gray-600 ring-4 ring-[#0f172a]"></div>
+                        <div class="text-sm font-bold">הקלדה בקומקס</div>
+                        <div class="text-xs text-gray-500">ממתין למספר...</div>
+                    </div>
+
+                    <div class="relative opacity-50" id="step-client">
+                        <div class="absolute -right-[21px] top-1 w-4 h-4 rounded-full bg-gray-600 ring-4 ring-[#0f172a]"></div>
+                        <div class="text-sm font-bold">אישור לקוח</div>
+                        <div class="text-xs text-gray-500">ממתין לחתימה...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="sound-new" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.m4a"></audio>
+    <audio id="sound-done" src="https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.m4a"></audio>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
+        
+        // משתנים גלובליים
+        let activeOrders = [];
+        
+        // האזנה להזמנות
+        onSnapshot(query(collection(db, "orders"), orderBy("createdAt", "desc")), (snap) => {
+            const grid = document.getElementById('orders-grid');
+            const stories = document.getElementById('stories-bar');
+            
+            grid.innerHTML = "";
+            stories.innerHTML = "";
+            activeOrders = [];
+
+            snap.forEach(d => {
+                const o = d.data();
+                o.id = d.id; // שמירת ID
+                activeOrders.push(o);
+                
+                // בדיקת סאונד (אם חדש בדקה האחרונה)
+                const isFresh = (new Date() - o.createdAt?.toDate()) < 60000;
+                if(o.status === 'new' && isFresh && !o.soundPlayed) {
+                    document.getElementById('sound-new').play();
+                }
+
+                renderStory(o, stories);
+                renderCard(o, grid);
+            });
+        });
+
+        // עדכון טיימרים כל שניה
+        setInterval(() => {
+            activeOrders.forEach(o => updateCardTimer(o));
+        }, 1000);
+
+        function renderStory(o, container) {
+            if (o.status === 'done') return;
+            let ringColor = 'ring-new';
+            if(o.status === 'processing') ringColor = 'ring-proc';
+            if(o.status === 'waiting_approval') ringColor = 'ring-wait';
+
+            const avatar = `https://ui-avatars.com/api/?name=${o.clientName}&background=random&color=fff`;
+            
+            container.innerHTML += `
+            <div class="story-item" onclick="openOrder('${o.id}')">
+                <div class="story-ring ${ringColor}">
+                    <img src="${avatar}">
+                </div>
+                <div class="text-xs font-bold mt-2 truncate w-20 text-center">${o.clientName.split(' ')[0]}</div>
+                <div class="text-[10px] text-gray-400">#${o.orderNum}</div>
+            </div>`;
+        }
+
+        function renderCard(o, container) {
+            const avatar = `https://ui-avatars.com/api/?name=${o.clientName}&background=random&color=fff`;
+            let statusText = getStatusText(o.status);
+            
+            container.innerHTML += `
+            <div class="order-card" id="card-${o.id}" onclick="openOrder('${o.id}')">
+                <div class="flex justify-between items-start">
+                    <div class="flex items-center gap-3">
+                        <img src="${avatar}" class="w-10 h-10 rounded-full">
+                        <div>
+                            <div class="font-bold text-sm">${o.clientName}</div>
+                            <div class="text-xs text-gray-400">#${o.orderNum}</div>
+                        </div>
+                    </div>
+                    <div id="timer-${o.id}" class="timer-chip timer-ok">--:--</div>
+                </div>
+                
+                <div class="mt-2 text-sm text-gray-300 line-clamp-2 h-10">${o.itemsText || 'פירוט חסר...'}</div>
+                
+                <div class="mt-auto pt-3 border-t border-slate-700 flex justify-between items-center">
+                    <div class="text-xs font-bold text-blue-400">${statusText}</div>
+                    <div class="text-xs text-gray-500">${new Date(o.createdAt?.seconds*1000).toLocaleTimeString().slice(0,5)}</div>
+                </div>
+            </div>`;
+        }
+
+        function updateCardTimer(o) {
+            const el = document.getElementById(`timer-${o.id}`);
+            if(!el) return;
+            
+            if(o.status === 'done') {
+                el.innerText = "בוצע";
+                el.className = "timer-chip bg-slate-700 text-gray-400";
+                return;
+            }
+
+            // חישוב זמן יעד (ברירת מחדל: שעה מהיצירה אם לא הוזן)
+            let target = new Date();
+            if(o.supplyDate && o.supplyTime) {
+                target = new Date(`${o.supplyDate}T${o.supplyTime}`);
+            } else {
+                target = new Date(o.createdAt.toDate().getTime() + 60*60*1000); 
+            }
+
+            const diff = target - new Date();
+            
+            if(diff <= 0) {
+                el.innerText = "00:00 - איחור!";
+                el.className = "timer-chip timer-danger";
+            } else {
+                const h = Math.floor(diff / 3600000);
+                const m = Math.floor((diff % 3600000) / 60000);
+                el.innerText = `${h}:${m.toString().padStart(2,'0')}`;
+                
+                if(h < 1) el.className = "timer-chip timer-warn";
+                else el.className = "timer-chip timer-ok";
+            }
+        }
+
+        // --- לוגיקת צד לקוח ---
+        window.openUserGenerator = async () => {
+            const { value: formValues } = await Swal.fire({
+                title: 'הוספת לקוח חדש',
+                html:
+                    '<input id="swal-name" class="swal2-input" placeholder="שם הלקוח">' +
+                    '<input id="swal-id" class="swal2-input" placeholder="מספר לקוח (ח.פ/ת.ז)">',
+                focusConfirm: false,
+                background: '#1e293b',
+                color: 'white',
+                confirmButtonColor: '#3b82f6',
+                preConfirm: () => {
+                    return [
+                        document.getElementById('swal-name').value,
+                        document.getElementById('swal-id').value
+                    ]
+                }
+            });
+
+            if (formValues && formValues[0] && formValues[1]) {
+                const link = `https://saban-system.onrender.com/client-final.html?uid=${formValues[1]}`;
+                // העתקה ללוח
+                navigator.clipboard.writeText(link);
+                Swal.fire({
+                    icon: 'success',
+                    title: 'לינק נוצר והועתק!',
+                    text: link,
+                    background: '#1e293b',
+                    color: 'white',
+                    confirmButtonText: 'מעולה'
+                });
+            }
+        };
+
+        window.openOrder = (id) => {
+            const o = activeOrders.find(x => x.id === id);
+            if(!o) return;
+
+            document.getElementById('detail-panel').classList.add('open');
+            document.getElementById('det-name').innerText = o.clientName;
+            document.getElementById('det-id').innerText = o.orderNum;
+            document.getElementById('det-avatar').src = `https://ui-avatars.com/api/?name=${o.clientName}&background=random&color=fff`;
+            document.getElementById('time-created').innerText = new Date(o.createdAt.seconds*1000).toLocaleString();
+            document.getElementById('det-text').innerText = o.itemsText;
+
+            // אזור פעולה
+            const zone = document.getElementById('action-zone');
+            if(o.status === 'new') {
+                zone.innerHTML = `
+                    <label class="block text-xs font-bold text-blue-400 mb-2">מספר הזמנה בקומקס</label>
+                    <div class="flex gap-2">
+                        <input id="cx-input" type="text" placeholder="הקלד מספר..." class="flex-1 bg-slate-900 border border-slate-600 rounded p-2 text-white">
+                        <button onclick="saveComax('${id}')" class="bg-blue-600 hover:bg-blue-500 px-4 rounded font-bold">שמור</button>
+                    </div>`;
+                document.getElementById('step-comax').style.opacity = '0.5';
+            } else if (o.status === 'processing') {
+                zone.innerHTML = `<div class="text-yellow-500 animate-pulse font-bold">📡 מאזין למייל (הזמנה ${o.comaxNum})...</div>`;
+                updateTimeline('step-comax');
+            } else if (o.status === 'waiting_approval') {
+                zone.innerHTML = `
+                    <div class="text-orange-500 font-bold mb-2">ממתין לאישור לקוח</div>
+                    <a href="${o.pdfUrl}" target="_blank" class="block w-full text-center bg-slate-700 py-2 rounded text-sm hover:bg-slate-600">צפה במסמך</a>`;
+                updateTimeline('step-comax');
+            } else {
+                zone.innerHTML = `<div class="text-green-500 font-bold text-lg text-center">✅ בוצע בהצלחה!</div>`;
+                updateTimeline('step-comax');
+                updateTimeline('step-client');
+            }
+        };
+
+        function updateTimeline(stepId) {
+            const el = document.getElementById(stepId);
+            el.style.opacity = '1';
+            el.querySelector('div.bg-gray-600').classList.replace('bg-gray-600', 'bg-green-500');
+        }
+
+        window.saveComax = async (id) => {
+            const val = document.getElementById('cx-input').value;
+            if(val) await updateDoc(doc(db, "orders", id), { comaxNum: val, status: 'processing' });
+        };
+
+        window.closePanel = () => document.getElementById('detail-panel').classList.remove('open');
+
+        function getStatusText(s) {
+            const map = { 'new': 'התקבל', 'processing': 'הוקלד', 'waiting_approval': 'ממתין', 'done': 'הושלם' };
+            return map[s] || s;
+        }
+    </script>
+</body>
+</html>
