@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Saban Client App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: #f8fafc; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
+        
+        /* Order Card & Timeline */
+        .order-card { background: white; border-radius: 16px; padding: 20px; margin: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        .timeline-track { position: relative; margin-top: 30px; margin-bottom: 20px; height: 4px; background: #e2e8f0; border-radius: 4px; }
+        .timeline-fill { height: 100%; background: #22c55e; border-radius: 4px; width: 0%; transition: width 1s ease-in-out; position: relative; }
+        
+        /* Truck Animation */
+        .truck-icon { position: absolute; right: 0; top: -14px; font-size: 20px; transform: scaleX(-1); transition: right 1s ease-in-out; opacity: 0; }
+        .truck-icon.moving { opacity: 1; }
+        
+        .steps { display: flex; justify-content: space-between; position: relative; top: -14px; }
+        .step { width: 24px; height: 24px; background: white; border: 2px solid #e2e8f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; color: transparent; transition: 0.3s; }
+        .step.active { border-color: #22c55e; background: #22c55e; color: white; box-shadow: 0 0 0 3px #dcfce7; }
+        
+        .step-label { position: absolute; top: 28px; font-size: 10px; color: #94a3b8; width: 40px; text-align: center; transform: translateX(50%); right: 50%; }
+        
+        /* PDF Button */
+        .btn-approve { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; font-weight: bold; border-radius: 12px; padding: 14px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); transition: transform 0.2s; }
+        .btn-approve:active { transform: scale(0.98); }
+    </style>
+</head>
+<body>
+
+    <div class="p-4 bg-white shadow-sm flex justify-between items-center sticky top-0 z-50">
+        <h1 class="text-xl font-black text-slate-800">הזמנות שלי</h1>
+        <div id="client-name" class="text-sm font-bold text-blue-600">...</div>
+    </div>
+
+    <div id="orders-container" class="pb-20">
+        </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, query, where, orderBy, onSnapshot, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
+        
+        // זיהוי לקוח (בפרודקשן נמשוך מ-localStorage)
+        const urlParams = new URLSearchParams(window.location.search);
+        const uid = urlParams.get('uid') || '601921'; // ברירת מחדל לאורניל לבדיקה
+
+        document.getElementById('client-name').innerText = `לקוח ${uid}`;
+
+        // האזנה להזמנות
+        const q = query(collection(db, "orders"), where("clientId", "==", uid), orderBy("createdAt", "desc"));
+        
+        onSnapshot(q, (snap) => {
+            const container = document.getElementById('orders-container');
+            container.innerHTML = "";
+            snap.forEach(d => {
+                const o = d.data();
+                container.innerHTML += renderCard(d.id, o);
+            });
+            
+            // הפעלת אנימציות אחרי הרינדור
+            setTimeout(() => updateAnimations(snap), 100);
+        });
+
+        function renderCard(id, o) {
+            let width = '10%'; // שלב 1: התקבל
+            let s1='active', s2='', s3='', s4='';
+            let statusText = "התקבל במערכת";
+            let actionHtml = "";
+            let comaxDisplay = o.comaxNum ? `<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-[10px] font-bold">#${o.comaxNum}</span>` : "";
+
+            if (o.status === 'processing') { 
+                width = '40%'; s2='active'; 
+                statusText = "הוקלד בקומקס"; 
+            }
+            if (o.status === 'waiting_approval') { 
+                width = '70%'; s2='active'; s3='active'; 
+                statusText = "ממתין לאישור"; 
+                actionHtml = `
+                <div class="mt-6">
+                    <div class="bg-blue-50 p-3 rounded-lg text-xs text-blue-700 mb-3 border border-blue-100">
+                        <i class="fas fa-info-circle"></i> מסמך מוכן עבורך. אנא בדוק ואשר להעמסה.
+                    </div>
+                    <div class="flex gap-2">
+                        <a href="${o.pdfUrl}" target="_blank" class="flex-1 py-3 bg-white border border-gray-300 rounded-xl text-center font-bold text-gray-700 text-sm">📄 צפה ב-PDF</a>
+                        <button onclick="approveOrder('${id}')" class="flex-1 btn-approve">👍 אשר העמסה</button>
+                    </div>
+                </div>`;
+            }
+            if (o.status === 'done') { 
+                width = '100%'; s1='active'; s2='active'; s3='active'; s4='active'; 
+                statusText = "הושלם בהצלחה";
+                actionHtml = `<div class="mt-4 text-center text-green-600 font-bold bg-green-50 py-2 rounded-lg"><i class="fas fa-check-circle"></i> אושר להעמסה!</div>`;
+            }
+
+            return `
+            <div class="order-card relative overflow-hidden">
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <div class="text-xs text-gray-400">הזמנה ${o.orderNum}</div>
+                        <div class="font-bold text-lg text-slate-800">${statusText}</div>
+                    </div>
+                    ${comaxDisplay}
+                </div>
+
+                <div class="timeline-track">
+                    <div class="timeline-fill" style="width: ${width}">
+                        <i class="fas fa-truck truck-icon ${o.status==='done'?'moving':''}" style="right: 0;"></i>
+                    </div>
+                    <div class="steps">
+                        <div class="step ${s1}"><i class="fas fa-mobile-alt"></i></div>
+                        <div class="step ${s2}"><i class="fas fa-keyboard"></i></div>
+                        <div class="step ${s3}"><i class="fas fa-file-pdf"></i></div>
+                        <div class="step ${s4}"><i class="fas fa-check"></i></div>
+                    </div>
+                </div>
+                <div class="flex justify-between text-[10px] text-gray-400 mt-1">
+                    <span>התקבל</span><span>קומקס</span><span>מסמך</span><span>סיום</span>
+                </div>
+
+                ${actionHtml}
+            </div>`;
+        }
+
+        window.approveOrder = async (id) => {
+            if(confirm("מאשר את ההזמנה להעמסה?")) {
+                await updateDoc(doc(db, "orders", id), {
+                    status: 'done',
+                    approvedAt: serverTimestamp()
+                });
+            }
+        }
+        
+        function updateAnimations(snap) {
+            // טריק קטן לוודא שהמשאית זזה למקום הנכון
+            // ה-CSS מטפל בזה דרך ה-width שמשתנה
+        }
+    </script>
+</body>
+</html>
