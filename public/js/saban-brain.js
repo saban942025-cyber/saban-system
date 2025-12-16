@@ -150,3 +150,4 @@ export const SabanBrain = {
         return "תקלה בחיבור למוח (Gemini). המידע נשמר.";
     }
 };
+
