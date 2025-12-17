@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>ניהול העברות | סבן</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body { background: #f0f2f5; font-family: sans-serif; height: 100vh; display: flex; flex-direction: column; }
+        .transfer-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 12px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .status-badge { font-size: 11px; padding: 3px 8px; border-radius: 6px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="p-4 bg-white border-b flex justify-between items-center shadow-sm">
+        <h1 class="text-xl font-black text-slate-800">העברות מלאי <span class="text-xs font-normal text-gray-500">(עלי פלטה)</span></h1>
+        <button onclick="newTransfer()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-blue-700">
+            <i class="fas fa-plus"></i> פתיחת העברה
+        </button>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-4" id="transfers-list">
+        </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, updateDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
+
+        // פתיחת משימת העברה חדשה
+        window.newTransfer = async () => {
+            const { value: formValues } = await Swal.fire({
+                title: 'פתיחת העברה בין סניפים',
+                html:
+                    '<input id="swal-from" class="swal2-input" placeholder="מאיזה סניף? (למשל: החרש)">' +
+                    '<input id="swal-to" class="swal2-input" placeholder="לאיזה סניף? (למשל: התלמיד)">' +
+                    '<textarea id="swal-items" class="swal2-textarea" placeholder="מה חסר? (למשל: 2 משטחי מלט)"></textarea>',
+                focusConfirm: false,
+                confirmButtonText: 'צור דרישה',
+                preConfirm: () => {
+                    return [
+                        document.getElementById('swal-from').value,
+                        document.getElementById('swal-to').value,
+                        document.getElementById('swal-items').value
+                    ]
+                }
+            });
+
+            if (formValues) {
+                await addDoc(collection(db, "transfers"), {
+                    fromBranch: formValues[0],
+                    toBranch: formValues[1],
+                    items: formValues[2],
+                    status: 'new',
+                    driverId: 'ali_01', // אוטומטית לעלי
+                    createdAt: serverTimestamp()
+                });
+                Swal.fire('נפתח', 'המשימה נוצרה וממתינה למספר תעודה', 'success');
+            }
+        }
+
+        // האזנה להעברות
+        onSnapshot(query(collection(db, "transfers"), orderBy("createdAt", "desc")), (snap) => {
+            const list = document.getElementById('transfers-list');
+            list.innerHTML = "";
+            snap.forEach(d => {
+                const t = d.data();
+                let statusHtml = '';
+                
+                // לוגיקת סטטוסים
+                if (t.status === 'new') {
+                    statusHtml = `
+                        <div class="flex gap-2">
+                            <input type="text" id="cx-${d.id}" placeholder="מס' תעודה מקומקס" class="border p-1 rounded text-xs w-32">
+                            <button onclick="saveComax('${d.id}')" class="bg-green-600 text-white px-2 rounded text-xs">שמור</button>
+                        </div>`;
+                } else if (t.status === 'waiting_approval') { // זה אומר שהמסמך הגיע!
+                    statusHtml = `
+                        <div class="flex flex-col items-end gap-1">
+                            <span class="text-xs text-green-600 font-bold"><i class="fas fa-check"></i> מסמך נקלט</span>
+                            <div class="text-[10px] text-gray-400 truncate w-32">${t.emailSender || 'מייל לא זוהה'}</div>
+                            <a href="${t.pdfUrl}" target="_blank" class="text-blue-600 text-xs underline">צפה בתעודה</a>
+                        </div>`;
+                }
+
+                list.innerHTML += `
+                <div class="transfer-card border-l-4 ${t.status === 'new' ? 'border-l-orange-500' : 'border-l-green-500'}">
+                    <div>
+                        <div class="font-bold text-sm">${t.fromBranch} <i class="fas fa-arrow-left mx-1 text-gray-400"></i> ${t.toBranch}</div>
+                        <div class="text-xs text-gray-500 mt-1">${t.items}</div>
+                        <div class="mt-2 text-xs text-blue-800 bg-blue-50 px-2 py-1 rounded inline-block">🚛 עלי (פלטה)</div>
+                    </div>
+                    <div>${statusHtml}</div>
+                </div>`;
+            });
+        });
+
+        window.saveComax = async (id) => {
+            const val = document.getElementById(`cx-${id}`).value;
+            if (val) {
+                await updateDoc(doc(db, "transfers", id), { comaxNum: val, status: 'processing' });
+            }
+        }
+    </script>
+</body>
+</html>
