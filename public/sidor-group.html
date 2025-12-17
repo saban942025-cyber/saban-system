@@ -11,127 +11,214 @@
         
         #chat-feed { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; }
         
-        /* עיצוב כרטיס מסמך נכנס */
-        .doc-card {
-            background: white; border-radius: 12px; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
-            border: 1px solid #e2e8f0; border-right: 4px solid #3b82f6; /* פס כחול למסמכים */
-            padding: 12px; position: relative;
-        }
+        /* כרטיס בסיסי */
+        .card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 12px; border: 1px solid #e2e8f0; position: relative; transition: 0.3s; }
+        
+        /* סוגי כרטיסים */
+        .card-new-order { border-right: 4px solid #3b82f6; } /* הזמנה חדשה - כחול */
+        .card-client-msg { border-right: 4px solid #f97316; background: #fff7ed; animation: pulse-orange 2s infinite; } /* הודעת לקוח - כתום מהבהב */
+        .card-approved { border-right: 4px solid #22c55e; background: #f0fdf4; opacity: 0.8; } /* מאושר - ירוק */
 
-        .sender-info { font-size: 10px; color: #64748b; display: flex; justify-content: space-between; margin-bottom: 6px; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px; }
-        .doc-title { font-weight: 800; font-size: 14px; color: #1e293b; line-height: 1.4; margin-bottom: 8px; }
-        .action-row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+        .sender-row { display: flex; justify-content: space-between; font-size: 11px; color: #64748b; margin-bottom: 6px; }
+        .content-text { font-weight: bold; color: #1e293b; font-size: 14px; }
+        
+        /* כפתור שידוך */
+        .link-btn { background: #e0e7ff; color: #4338ca; font-weight: bold; font-size: 11px; padding: 5px 10px; border-radius: 6px; cursor: pointer; display: flex; items-center; gap: 5px; }
 
-        .btn-pdf { background: #eff6ff; color: #2563eb; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; display: flex; items-center; gap: 5px; }
-        .btn-inquiry { background: #fef2f2; color: #dc2626; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
+        @keyframes pulse-orange { 0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(249, 115, 22, 0); } 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); } }
     </style>
 </head>
 <body>
+    
+    <div class="bg-white p-3 border-b border-gray-200 flex justify-between items-center shadow-sm z-10">
+        <div class="text-xs font-bold text-gray-500">פיד מבצעי</div>
+        
+        <button onclick="manualLink()" class="link-btn hover:bg-indigo-100">
+            <i class="fas fa-link"></i> שידוך מסמך להזמנה
+        </button>
+    </div>
+
     <div id="chat-feed">
-        <div class="text-center text-xs text-gray-400 my-4">-- תיבת מסמכים נכנסים --</div>
+        <div class="text-center text-xs text-gray-400 mt-4">-- המערכת מאזינה --</div>
     </div>
 
     <div class="bg-[#f0f2f5] p-3 flex items-center gap-2 border-t border-gray-300">
-        <button onclick="window.parent.triggerAlert('buzzer', 'בדיקה')" class="text-white bg-red-500 w-10 h-10 rounded-full shadow-md flex items-center justify-center"><i class="fas fa-bullhorn"></i></button>
+        <button onclick="window.parent.triggerAlert('buzzer', 'בדיקה')" class="text-white bg-red-500 w-10 h-10 rounded-full shadow-md flex items-center justify-center active:scale-95"><i class="fas fa-bullhorn"></i></button>
         <input type="text" id="team-input" placeholder="הודעה לצוות..." class="flex-1 p-3 rounded-xl border-none outline-none text-sm shadow-sm">
-        <button onclick="sendTeamMsg()" class="text-[#008069] p-2"><i class="fas fa-paper-plane text-xl"></i></button>
+        <button onclick="sendTeamMsg()" class="text-[#008069] p-2 hover:bg-gray-200 rounded-full"><i class="fas fa-paper-plane text-xl"></i></button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, query, orderBy, limit, onSnapshot, updateDoc, doc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, query, orderBy, limit, onSnapshot, updateDoc, doc, arrayUnion, getDocs, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
         const feed = document.getElementById('chat-feed');
 
-        function addCard(html) {
+        function addHtml(html) {
             const div = document.createElement('div');
             div.innerHTML = html;
             feed.appendChild(div);
             feed.scrollTop = feed.scrollHeight;
         }
 
-        // --- האזנה למסמכים נכנסים ---
-        onSnapshot(query(collection(db, "orders"), orderBy("createdAt", "desc"), limit(20)), (snap) => {
+        // --- האזנה חכמה (הליבה) ---
+        // אנחנו ממיינים לפי lastUpdate כדי ששינויים חדשים יקפצו, לא רק יצירות חדשות
+        onSnapshot(query(collection(db, "orders"), orderBy("lastUpdate", "desc"), limit(20)), (snap) => {
             snap.docChanges().forEach(change => {
                 const data = change.doc.data();
                 const id = change.doc.id;
                 
-                // עיבוד זמן קבלה
-                const time = data.createdAt ? new Date(data.createdAt.seconds * 1000).toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'}) : 'עכשיו';
+                // === תיקון הסאונד: מבחן הטריות ===
+                // בודקים: האם האירוע קרה ב-15 שניות האחרונות?
+                // אם כן -> משמיעים צליל. אם לא -> רק מציגים בשקט (כדי למנוע רעש בטעינה).
+                const now = Date.now();
+                const eventTime = data.lastUpdate ? data.lastUpdate.seconds * 1000 : now;
+                const isFresh = (now - eventTime) < 15000; 
 
-                // אם זה מסמך שהתקבל במייל (יש לו docTitle או pdfUrl)
-                if (change.type === "added" || change.type === "modified") {
+                if (isFresh) {
+                    console.log("🔥 אירוע טרי זוהה:", data.status);
+                }
+
+                // 1. תרחיש: הודעה חדשה מלקוח (עדיפות עליונה)
+                if (data.status === 'changes_requested') {
+                    const lastMsg = data.chat && data.chat.length > 0 ? data.chat[data.chat.length - 1] : null;
                     
-                    // כותרת: אם יש docTitle (מהמייל) נשתמש בו, אחרת נבנה לבד
-                    const displayTitle = data.docTitle || `מסמך #${data.orderNum} ללקוח: ${data.clientName}`;
-                    
-                    // שולח: ננקה את ה- <email> המיותר אם יש
-                    let sender = data.emailSender || 'מערכת ידנית';
-                    sender = sender.replace(/<.*>/, '').trim(); 
-
-                    const html = `
-                    <div class="doc-card">
-                        <div class="sender-info">
-                            <span><i class="fas fa-envelope"></i> ${sender}</span>
-                            <span>${time}</span>
-                        </div>
-
-                        <div class="doc-title">
-                            ${displayTitle}
-                        </div>
-
-                        <div class="action-row">
-                            ${data.pdfUrl ? 
-                                `<button onclick="window.open('${data.pdfUrl}')" class="btn-pdf">
-                                    <i class="fas fa-file-pdf"></i> צפה במסמך
-                                 </button>` : 
-                                `<span class="text-xs text-gray-400">ללא קובץ</span>`
-                            }
-
-                            <button onclick="openInquiry('${id}', '${data.orderNum}')" class="btn-inquiry">
-                                🚨 פתח בירור
-                            </button>
-                        </div>
+                    if (lastMsg && lastMsg.sender === 'client' && change.type === 'modified') {
+                        const html = `
+                        <div class="card card-client-msg">
+                            <div class="sender-row">
+                                <span><i class="fas fa-comment-dots text-orange-600"></i> הודעה מלקוח: ${data.clientName}</span>
+                                <span>${new Date().toLocaleTimeString().slice(0,5)}</span>
+                            </div>
+                            <div class="content-text text-lg">
+                                "${lastMsg.text}"
+                            </div>
+                             <div class="text-xs text-gray-500 mt-1">הלקוח ממתין לתשובה...</div>
+                            <div class="mt-2 text-xs flex gap-2">
+                                <button onclick="replyToClient('${id}')" class="bg-white border border-orange-200 text-orange-600 px-3 py-1 rounded shadow-sm hover:bg-orange-50 font-bold">↩️ השב</button>
+                                <button onclick="markHandled('${id}')" class="bg-green-100 text-green-700 px-3 py-1 rounded font-bold hover:bg-green-200">✅ טופל</button>
+                            </div>
+                        </div>`;
                         
-                        ${data.status === 'urgent_attention' ? 
-                            `<div class="mt-2 bg-red-50 text-red-700 text-xs p-2 rounded border border-red-100 font-bold">
-                                <i class="fas fa-exclamation-circle"></i> בטיפול: ${data.assignedTo}
-                            </div>` : ''}
-                    </div>`;
-                    
-                    if (change.type === "added") {
-                        addCard(html);
-                        // סאונד אם זה טרי
-                        if((Date.now() - (data.createdAt?.seconds*1000)) < 10000) window.parent.triggerAlert('knock', 'מסמך חדש התקבל');
+                        addHtml(html);
+                        if (isFresh) window.parent.triggerAlert('knock', `הודעה מ${data.clientName}`);
+                    }
+                }
+                
+                // 2. תרחיש: הזמנה חדשה (נוצרה עכשיו)
+                if (change.type === "added") {
+                    // בדיקה כפולה לטריות יצירה
+                    const createdTime = data.createdAt ? data.createdAt.seconds * 1000 : 0;
+                    const isNewCreation = (now - createdTime) < 15000;
+
+                    if(isNewCreation) {
+                        const html = `
+                        <div class="card card-new-order">
+                            <div class="sender-row">
+                                <span class="text-blue-600 font-bold">📦 הזמנה חדשה נכנסה!</span>
+                                <span>${new Date().toLocaleTimeString().slice(0,5)}</span>
+                            </div>
+                            <div class="content-text">${data.clientName}</div>
+                            <div class="text-sm text-gray-600 mt-1">${data.itemsText}</div>
+                            <div class="mt-2 text-xs">
+                                <button onclick="window.parent.loadPage('client-final.html?uid=${data.clientId}&name=${data.clientName}', 'מבט לקוח', null)" class="text-blue-500 hover:underline">👁️ צפה כלקוח</button>
+                            </div>
+                        </div>`;
+                        
+                        addHtml(html);
+                        window.parent.triggerAlert('knock', 'הזמנה חדשה!');
                     }
                 }
             });
         });
 
-        // פונקציית בירור (כמו קודם)
-        window.openInquiry = async (orderId, orderNum) => {
-            const { value: form } = await Swal.fire({
-                title: `בירור למסמך ${orderNum}`,
-                html: `<input id="swal-text" class="w-full p-2 border rounded" placeholder="מה לבדוק?">
-                       <select id="swal-target" class="w-full p-2 mt-2 bg-gray-50 border rounded"><option>איציק</option><option>תמיר</option></select>`,
-                showCancelButton: true,
-                confirmButtonText: 'שלח',
-                confirmButtonColor: '#ef4444',
-                preConfirm: () => ({ text: document.getElementById('swal-text').value, target: document.getElementById('swal-target').value })
+        // --- הכלי שביקשת: שידוך מסמך ידני ---
+        window.manualLink = async () => {
+            // שלב 1: הזנת נתונים
+            const { value: formValues } = await Swal.fire({
+                title: '🔗 שידוך מסמך להזמנה',
+                html: `
+                    <label class="block text-right text-xs font-bold mb-1">מספר הזמנה (לקוח)</label>
+                    <input id="link-order-num" class="swal2-input" placeholder="למשל: 888">
+                    
+                    <label class="block text-right text-xs font-bold mb-1 mt-3">מספר מסמך/קישור</label>
+                    <input id="link-doc-url" class="swal2-input" placeholder="הדבק לינק או מספר מסמך">
+                `,
+                focusConfirm: false,
+                confirmButtonText: 'בצע שידוך',
+                preConfirm: () => {
+                    return [
+                        document.getElementById('link-order-num').value,
+                        document.getElementById('link-doc-url').value
+                    ]
+                }
             });
 
-            if(form) {
-                await updateDoc(doc(db, "orders", orderId), {
-                    status: 'urgent_attention',
-                    assignedTo: form.target,
-                    chat: arrayUnion({ sender: 'ראמי', text: form.text, time: new Date().toISOString() })
+            if (formValues) {
+                const [orderNum, docUrl] = formValues;
+                if(!orderNum || !docUrl) return;
+
+                // שלב 2: חיפוש ההזמנה
+                const q = query(collection(db, "orders"), where("orderNum", "==", orderNum)); // מחפש לפי מספר הזמנה שהמערכת נתנה או שהוגדר
+                // הערה: אם אתה משתמש ב-Auto ID של פיירבייס, נצטרך לחפש אחרת. 
+                // כאן אני מניח ש-orderNum הוא שדה קיים. אם לא, נחפש לפי שם לקוח או משהו אחר.
+                // לביטחון - נחפש את כל ההזמנות ונציג לבחירה אם לא מוצאים מדויק.
+                
+                // גרסה פשוטה: חיפוש ההזמנה הכי חדשה של הלקוח/מספר הזה
+                // לצורך הפשטות, נניח שאתה מקליד ID של מסמך פיירבייס או שנבצע לוגיקה חכמה יותר:
+                // נחבר את ה-URL הזה למסמך האחרון שנוסף.
+                
+                // התיקון: פשוט נעדכן הזמנה לפי ID אם הוא ידוע, או נחפש.
+                // כדי לעשות את זה קל, בוא נניח שאתה מדביק את ה-URL לתוך ההזמנה האחרונה ברשימה, או בוחר מרשימה.
+                
+                // שיטה חכמה יותר: נפתח חלון בחירת הזמנה פעילה
+                const snap = await getDocs(query(collection(db, "orders"), where("status", "!=", "done")));
+                const options = {};
+                snap.forEach(d => {
+                     const o = d.data();
+                     options[d.id] = `#${o.orderNum || '???'} - ${o.clientName}`;
+                });
+                
+                const { value: selectedOrderId } = await Swal.fire({
+                    title: 'לאיזו הזמנה לשדך?',
+                    input: 'select',
+                    inputOptions: options,
+                    inputPlaceholder: 'בחר הזמנה מהרשימה...'
+                });
+
+                if (selectedOrderId) {
+                    // ביצוע השידוך
+                    await updateDoc(doc(db, "orders", selectedOrderId), {
+                        pdfUrl: docUrl, // מעדכן את ה-PDF
+                        status: 'waiting_approval', // מעיר את הלקוח לאשר
+                        chat: arrayUnion({
+                            sender: 'ראמי',
+                            text: 'צירפתי לך מסמך לעיון. אנא אשרי.',
+                            time: new Date().toISOString()
+                        })
+                    });
+                    
+                    Swal.fire('בוצע!', 'המסמך שודך והלקוח קיבל עדכון.', 'success');
+                }
+            }
+        };
+
+        window.replyToClient = async (id) => {
+            const { value: text } = await Swal.fire({ input: 'text', title: 'תשובה ללקוח', confirmButtonText: 'שלח' });
+            if(text) {
+                await updateDoc(doc(db, "orders", id), {
+                    chat: arrayUnion({ sender: 'ראמי', text: text, time: new Date().toISOString() }),
+                    status: 'waiting_approval'
                 });
             }
         };
+
+        window.markHandled = async (id) => {
+             await updateDoc(doc(db, "orders", id), { status: 'waiting_approval' });
+        };
         
-        window.sendTeamMsg = async () => {}; // Placeholder
+        window.sendTeamMsg = async () => {}; 
     </script>
 </body>
 </html>
