@@ -9,167 +9,129 @@
     <style>
         body { background: transparent; font-family: -apple-system, sans-serif; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
-        #chat-feed { flex: 1; overflow-y: auto; padding: 20px 40px; display: flex; flex-direction: column; gap: 12px; }
+        #chat-feed { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; }
         
-        .bubble { max-width: 90%; padding: 12px; border-radius: 12px; position: relative; font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e5e7eb; background: white; align-self: flex-start; }
-        
-        /* עיצובים מיוחדים */
-        .bubble.urgent { border-right: 4px solid #ef4444; background: #fef2f2; }
-        .bubble.approved { border-right: 4px solid #22c55e; background: #f0fdf4; }
-        
-        .action-btn { font-size: 11px; padding: 4px 8px; border-radius: 6px; cursor: pointer; transition: 0.2s; font-weight: bold; }
-        .btn-check { background: #fee2e2; color: #b91c1c; }
-        .btn-check:hover { background: #fecaca; }
-        
-        .timestamp { font-size: 10px; color: #9ca3af; margin-top: 4px; display: flex; justify-content: space-between; }
+        /* עיצוב כרטיס מסמך נכנס */
+        .doc-card {
+            background: white; border-radius: 12px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+            border: 1px solid #e2e8f0; border-right: 4px solid #3b82f6; /* פס כחול למסמכים */
+            padding: 12px; position: relative;
+        }
+
+        .sender-info { font-size: 10px; color: #64748b; display: flex; justify-content: space-between; margin-bottom: 6px; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px; }
+        .doc-title { font-weight: 800; font-size: 14px; color: #1e293b; line-height: 1.4; margin-bottom: 8px; }
+        .action-row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+
+        .btn-pdf { background: #eff6ff; color: #2563eb; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; display: flex; items-center; gap: 5px; }
+        .btn-inquiry { background: #fef2f2; color: #dc2626; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
     <div id="chat-feed">
-        <div class="text-center text-xs text-gray-400 my-4">-- רענון נתונים חי --</div>
+        <div class="text-center text-xs text-gray-400 my-4">-- תיבת מסמכים נכנסים --</div>
     </div>
 
     <div class="bg-[#f0f2f5] p-3 flex items-center gap-2 border-t border-gray-300">
-        <button onclick="openBuzzerMenu()" class="text-white bg-red-500 w-10 h-10 rounded-full shadow-md active:scale-95 transition flex items-center justify-center">
-            <i class="fas fa-bullhorn"></i>
-        </button>
-        <input type="text" id="team-input" placeholder="הודעה לצוות..." class="flex-1 p-3 rounded-xl border-none outline-none text-sm shadow-sm" onkeydown="if(event.key==='Enter') sendTeamMsg()">
-        <button onclick="sendTeamMsg()" class="text-[#008069] p-2 hover:bg-gray-200 rounded-full"><i class="fas fa-paper-plane text-xl"></i></button>
+        <button onclick="window.parent.triggerAlert('buzzer', 'בדיקה')" class="text-white bg-red-500 w-10 h-10 rounded-full shadow-md flex items-center justify-center"><i class="fas fa-bullhorn"></i></button>
+        <input type="text" id="team-input" placeholder="הודעה לצוות..." class="flex-1 p-3 rounded-xl border-none outline-none text-sm shadow-sm">
+        <button onclick="sendTeamMsg()" class="text-[#008069] p-2"><i class="fas fa-paper-plane text-xl"></i></button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, query, orderBy, limit, onSnapshot, addDoc, updateDoc, doc, serverTimestamp, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, query, orderBy, limit, onSnapshot, updateDoc, doc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
         const feed = document.getElementById('chat-feed');
 
-        function addMsg(html, type) {
+        function addCard(html) {
             const div = document.createElement('div');
-            div.className = `bubble ${type}`;
             div.innerHTML = html;
             feed.appendChild(div);
             feed.scrollTop = feed.scrollHeight;
         }
 
-        // --- פונקציה לפתיחת בירור (ראמי -> איציק) ---
-        window.openInquiry = async (orderId, orderNum) => {
-            const { value: form } = await Swal.fire({
-                title: `🚨 בירור להזמנה ${orderNum}`,
-                html: `
-                    <label class="block text-right text-xs font-bold mb-1">למי להפנות?</label>
-                    <select id="swal-target" class="w-full p-2 border rounded mb-3 bg-gray-50">
-                        <option value="איציק">איציק</option>
-                        <option value="תמיר">תמיר</option>
-                        <option value="עלי">עלי</option>
-                    </select>
-                    <label class="block text-right text-xs font-bold mb-1">מה הבעיה/שאלה?</label>
-                    <input id="swal-text" class="w-full p-2 border rounded" placeholder="למשל: לבדוק כמות מלט...">
-                `,
-                confirmButtonText: 'פתח משימה ומדוד זמן',
-                confirmButtonColor: '#ef4444',
-                showCancelButton: true,
-                focusConfirm: false,
-                preConfirm: () => {
-                    return {
-                        target: document.getElementById('swal-target').value,
-                        text: document.getElementById('swal-text').value
-                    }
-                }
-            });
-
-            if (form) {
-                // עדכון המסמך בפיירבייס
-                await updateDoc(doc(db, "orders", orderId), {
-                    status: 'urgent_attention', // הופך את הכרטיס לאדום
-                    assignedTo: form.target,
-                    inquiryStart: new Date().getTime(), // התחלת מדידה
-                    chat: arrayUnion({
-                        sender: 'ראמי',
-                        text: `@${form.target} ${form.text}`,
-                        type: 'alert',
-                        time: new Date().toISOString()
-                    })
-                });
-                
-                // הודעה מקומית (הצופר יופעל דרך ה-Snapshot)
-            }
-        };
-
-        // --- האזנה להזמנות (Live Feed) ---
+        // --- האזנה למסמכים נכנסים ---
         onSnapshot(query(collection(db, "orders"), orderBy("createdAt", "desc"), limit(20)), (snap) => {
             snap.docChanges().forEach(change => {
                 const data = change.doc.data();
                 const id = change.doc.id;
-                const isUrgent = data.status === 'urgent_attention';
-                const isApproved = data.status === 'approved';
                 
-                // חישוב זמן מדידה (אם יש)
-                let timerHtml = '';
-                if(isUrgent && data.inquiryStart) {
-                    const elapsed = Math.floor((new Date().getTime() - data.inquiryStart) / 60000); // דקות
-                    timerHtml = `<span class="text-red-600 font-bold animate-pulse">⏱️ פתוח כבר ${elapsed} דק'</span>`;
-                }
-                
-                // כפתור מסמך
-                const docBtn = data.pdfUrl ? `<button onclick="window.open('${data.pdfUrl}')" class="text-blue-600 hover:underline"><i class="fas fa-file-pdf"></i> הצג תעודה</button>` : '';
+                // עיבוד זמן קבלה
+                const time = data.createdAt ? new Date(data.createdAt.seconds * 1000).toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'}) : 'עכשיו';
 
+                // אם זה מסמך שהתקבל במייל (יש לו docTitle או pdfUrl)
                 if (change.type === "added" || change.type === "modified") {
-                    // בניית ה-HTML של הכרטיס
+                    
+                    // כותרת: אם יש docTitle (מהמייל) נשתמש בו, אחרת נבנה לבד
+                    const displayTitle = data.docTitle || `מסמך #${data.orderNum} ללקוח: ${data.clientName}`;
+                    
+                    // שולח: ננקה את ה- <email> המיותר אם יש
+                    let sender = data.emailSender || 'מערכת ידנית';
+                    sender = sender.replace(/<.*>/, '').trim(); 
+
                     const html = `
-                        <div class="flex justify-between items-start mb-1">
-                            <div>
-                                <span class="font-bold text-gray-800">#${data.orderNum}</span>
-                                <span class="text-xs text-gray-500"> | ${data.clientName}</span>
-                            </div>
-                            <div class="text-xs">${timerHtml || data.supplyTime || ''}</div>
+                    <div class="doc-card">
+                        <div class="sender-info">
+                            <span><i class="fas fa-envelope"></i> ${sender}</span>
+                            <span>${time}</span>
+                        </div>
+
+                        <div class="doc-title">
+                            ${displayTitle}
+                        </div>
+
+                        <div class="action-row">
+                            ${data.pdfUrl ? 
+                                `<button onclick="window.open('${data.pdfUrl}')" class="btn-pdf">
+                                    <i class="fas fa-file-pdf"></i> צפה במסמך
+                                 </button>` : 
+                                `<span class="text-xs text-gray-400">ללא קובץ</span>`
+                            }
+
+                            <button onclick="openInquiry('${id}', '${data.orderNum}')" class="btn-inquiry">
+                                🚨 פתח בירור
+                            </button>
                         </div>
                         
-                        <div class="text-sm text-gray-700 mb-2">${data.itemsText}</div>
-                        
-                        ${data.chat && data.chat.length ? `
-                            <div class="bg-gray-50 p-2 rounded text-xs text-gray-600 mb-2 border border-gray-100">
-                                ${data.chat.map(m => `<div><b>${m.sender}:</b> ${m.text}</div>`).join('')}
-                            </div>
-                        ` : ''}
-
-                        <div class="flex justify-between items-center border-t pt-2 mt-1">
-                            <div class="flex gap-3 text-xs">
-                                ${docBtn}
-                                <button onclick="window.parent.loadPage('client-final.html?uid=${data.clientId}&name=${data.clientName}', 'מבט לקוח', null)" class="text-gray-500 hover:text-black"><i class="fas fa-eye"></i> הלקוח</button>
-                            </div>
-                            
-                            ${!isUrgent && !isApproved ? `
-                                <button onclick="openInquiry('${id}', '${data.orderNum}')" class="action-btn btn-check">
-                                    🚨 פתח בירור
-                                </button>
-                            ` : ''}
-                            
-                            ${isUrgent ? `<span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded font-bold">בטיפול ${data.assignedTo || ''}</span>` : ''}
-                            ${isApproved ? `<span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded font-bold">✅ מאושר</span>` : ''}
-                        </div>
-                    `;
-
-                    // הוספה למסך
-                    // הערה: בגרסה פשוטה זו אנחנו מוסיפים הודעות חדשות למטה. 
-                    // במערכת מלאה היינו מעדכנים את ה-DOM הקיים אם זה Modified.
-                    if(change.type === "added") {
-                        addMsg(html, isUrgent ? 'urgent' : (isApproved ? 'approved' : ''));
-                        // סאונד רק לחדשות ממש
-                        if((Date.now() - (data.createdAt?.seconds*1000)) < 10000) window.parent.triggerAlert('knock', 'הזמנה חדשה');
-                    } else if (change.type === "modified") {
-                        // אם זה הפך לדחוף עכשיו - צופר!
-                        if(isUrgent) window.parent.triggerAlert('buzzer', `משימה דחופה ל${data.assignedTo}`);
-                        // מוסיף את העדכון למטה כהודעה חדשה כדי שראמי יראה
-                        addMsg(html, isUrgent ? 'urgent' : '');
+                        ${data.status === 'urgent_attention' ? 
+                            `<div class="mt-2 bg-red-50 text-red-700 text-xs p-2 rounded border border-red-100 font-bold">
+                                <i class="fas fa-exclamation-circle"></i> בטיפול: ${data.assignedTo}
+                            </div>` : ''}
+                    </div>`;
+                    
+                    if (change.type === "added") {
+                        addCard(html);
+                        // סאונד אם זה טרי
+                        if((Date.now() - (data.createdAt?.seconds*1000)) < 10000) window.parent.triggerAlert('knock', 'מסמך חדש התקבל');
                     }
                 }
             });
         });
 
-        // --- צופר כללי (כמו קודם) ---
-        window.openBuzzerMenu = async () => { /* ... הקוד הקיים ... */ };
-        window.sendTeamMsg = async () => { /* ... הקוד הקיים ... */ };
+        // פונקציית בירור (כמו קודם)
+        window.openInquiry = async (orderId, orderNum) => {
+            const { value: form } = await Swal.fire({
+                title: `בירור למסמך ${orderNum}`,
+                html: `<input id="swal-text" class="w-full p-2 border rounded" placeholder="מה לבדוק?">
+                       <select id="swal-target" class="w-full p-2 mt-2 bg-gray-50 border rounded"><option>איציק</option><option>תמיר</option></select>`,
+                showCancelButton: true,
+                confirmButtonText: 'שלח',
+                confirmButtonColor: '#ef4444',
+                preConfirm: () => ({ text: document.getElementById('swal-text').value, target: document.getElementById('swal-target').value })
+            });
+
+            if(form) {
+                await updateDoc(doc(db, "orders", orderId), {
+                    status: 'urgent_attention',
+                    assignedTo: form.target,
+                    chat: arrayUnion({ sender: 'ראמי', text: form.text, time: new Date().toISOString() })
+                });
+            }
+        };
+        
+        window.sendTeamMsg = async () => {}; // Placeholder
     </script>
 </body>
 </html>
