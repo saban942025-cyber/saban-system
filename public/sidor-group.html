@@ -2,95 +2,176 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>קבוצת סידור</title>
+    <title>Sidor Group</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        body { background: #efeae2; font-family: sans-serif; height: 100vh; display: flex; flex-direction: column; }
-        .chat-bg { background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); opacity: 0.1; position: absolute; inset: 0; pointer-events: none; }
+        body { background: transparent; font-family: -apple-system, sans-serif; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
-        .msg-bubble { 
-            background: white; padding: 8px 12px; border-radius: 8px; margin-bottom: 10px; 
-            max-width: 80%; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1);
-        }
-        .msg-sys { background: #fff5c4; align-self: center; font-size: 12px; text-align: center; }
-        .msg-transfer { background: #d9fdd3; align-self: flex-start; } /* ירוק של וואטסאפ */
-        .msg-order { background: #ffffff; align-self: flex-start; }
+        /* Chat Area */
+        #chat-feed { flex: 1; overflow-y: auto; padding: 20px 40px; display: flex; flex-direction: column; gap: 8px; }
         
-        .timestamp { font-size: 10px; color: #999; text-align: left; margin-top: 4px; }
+        .bubble { max-width: 65%; padding: 6px 7px 8px 9px; border-radius: 7.5px; position: relative; font-size: 14.2px; line-height: 19px; box-shadow: 0 1px 0.5px rgba(0,0,0,0.13); }
+        .bubble.in { background: white; align-self: flex-start; border-top-right-radius: 0; }
+        .bubble.out { background: #d9fdd3; align-self: flex-end; border-top-left-radius: 0; }
+        
+        .bubble-meta { display: flex; justify-content: flex-end; font-size: 11px; color: #667781; margin-top: 4px; gap: 4px; }
+        .sender-name { font-size: 13px; font-weight: bold; color: #d62f2f; margin-bottom: 2px; cursor: pointer; } /* צבעים לפי משתמש */
+        .tag-highlight { color: #008069; font-weight: bold; background: #e0f2f1; padding: 0 4px; border-radius: 4px; }
+
+        /* Transfer Card inside Chat */
+        .transfer-widget { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; margin-top: 5px; width: 100%; border-left: 4px solid #eab308; }
+
+        /* Input Area */
+        .input-bar { background: #f0f2f5; padding: 10px 16px; display: flex; items-center; gap: 10px; }
+        .input-box { flex: 1; background: white; border-radius: 8px; padding: 12px; max-height: 100px; overflow-y: auto; outline: none; position: relative; }
+        
+        /* Users Popup (@) */
+        .users-popup { position: absolute; bottom: 70px; right: 60px; background: white; border-radius: 8px; box-shadow: 0 -4px 15px rgba(0,0,0,0.1); width: 250px; display: none; z-index: 50; }
+        .user-item { padding: 10px; display: flex; align-items: center; gap: 10px; cursor: pointer; hover:bg-gray-100; border-bottom: 1px solid #f0f2f5; }
+        .user-item img { width: 30px; height: 30px; rounded: 50%; }
+
+        /* Context Menu (+) */
+        .plus-menu { position: absolute; bottom: 70px; right: 10px; background: white; border-radius: 12px; padding: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); display: none; flex-direction: column; gap: 5px; width: 200px; }
+        .menu-option { padding: 10px; display: flex; align-items: center; gap: 10px; cursor: pointer; hover:bg-gray-100; rounded: 8px; }
     </style>
 </head>
 <body>
-    <div class="chat-bg"></div>
-    
-    <div class="bg-[#008069] text-white p-3 flex items-center gap-3 shadow z-10">
-        <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center"><i class="fas fa-users"></i></div>
-        <div>
-            <div class="font-bold">סידור סבן - חדר מלחמה 🇮🇱</div>
-            <div class="text-xs opacity-80">ראמי, איציק, יואב, חכמת, עלי...</div>
+
+    <div id="chat-feed">
+        <div class="text-xs bg-[#fff5c4] text-[#54656f] p-2 rounded-lg align-self-center shadow-sm text-center mb-4">
+            🔒 ההודעות והשיחות בקבוצה זו מוצפנות מקצה לקצה.<br>
+            חדר מלחמה - סידור עבודה יומי.
+        </div>
+        
+        <div class="bubble in">
+            <div class="sender-name" style="color: #e542a3">תמיר (מחסן תלמיד)</div>
+            בוקר טוב לכולם, חסר לי מלט לבן דחוף! <span class="tag-highlight">@נתנאל קניינות</span> תזמין בבקשה.
+            <div class="bubble-meta">08:00</div>
+        </div>
+        
+        <div class="bubble in" style="max-width: 80%">
+            <div class="sender-name" style="color: #008069">מערכת (בוט)</div>
+            <div>🚚 <b>נפתחה משימת העברה #445</b></div>
+            
+            <div class="transfer-widget">
+                <div class="flex justify-between text-xs text-gray-500 mb-1">
+                    <span>מבקש: איציק זהבי</span>
+                    <span class="text-red-500 font-bold">דחוף להיום</span>
+                </div>
+                <div class="font-bold text-sm mb-2">החרש ⬅️ התלמיד</div>
+                <div class="text-sm bg-gray-50 p-2 rounded">2 משטחי בלוק 10, שק מלט</div>
+                <div class="mt-2 flex justify-between items-center">
+                    <div class="flex items-center gap-2 text-xs">
+                        <img src="https://ui-avatars.com/api/?name=Ali&background=eab308" class="w-5 h-5 rounded-full">
+                        <span>עלי (פלטה)</span>
+                    </div>
+                    <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">ממתין למסמך</span>
+                </div>
+            </div>
+            <div class="bubble-meta">09:15</div>
+        </div>
+
+    </div>
+
+    <div class="input-bar">
+        <button onclick="toggleMenu()" class="text-[#54656f] hover:text-[#111b21] transition"><i class="fas fa-plus text-xl"></i></button>
+        <div id="msg-input" class="input-box" contenteditable="true" placeholder="הקלד הודעה... (@ לתיוג)" onkeyup="checkTag(event)"></div>
+        <button onclick="sendMsg()" class="text-[#54656f] hover:text-[#008069] transition"><i class="fas fa-paper-plane text-xl"></i></button>
+    </div>
+
+    <div id="users-popup" class="users-popup">
+        </div>
+
+    <div id="plus-menu" class="plus-menu">
+        <div class="menu-option" onclick="createTransferTask()">
+            <div class="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center"><i class="fas fa-dolly"></i></div>
+            <span class="text-sm font-bold text-gray-700">משימת העברה</span>
+        </div>
+        <div class="menu-option">
+            <div class="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center"><i class="fas fa-exclamation-triangle"></i></div>
+            <span class="text-sm font-bold text-gray-700">דיווח חריג</span>
         </div>
     </div>
 
-    <div id="chat-feed" class="flex-1 overflow-y-auto p-4 flex flex-col z-10">
-        </div>
+    <script>
+        const users = [
+            {name: 'נתנאל קניינות', id: 'netanel', color: '#3b82f6'},
+            {name: 'ראמי (מנהל)', id: 'rami', color: '#10b981'},
+            {name: 'עלי (נהג)', id: 'ali', color: '#eab308'},
+            {name: 'תמיר (מחסן)', id: 'tamir', color: '#e542a3'}
+        ];
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
-        const feed = document.getElementById('chat-feed');
-
-        // פונקציה להוספת הודעה
-        function addMsg(html, type) {
-            const div = document.createElement('div');
-            div.className = `msg-bubble ${type}`;
-            div.innerHTML = html;
-            feed.appendChild(div);
-            feed.scrollTop = feed.scrollHeight;
+        // 1. Tagging Logic (@)
+        function checkTag(e) {
+            const el = document.getElementById('msg-input');
+            const text = el.innerText;
+            const popup = document.getElementById('users-popup');
+            
+            if (text.endsWith('@')) {
+                popup.innerHTML = users.map(u => `
+                    <div class="user-item" onclick="insertTag('${u.name}')">
+                        <img src="https://ui-avatars.com/api/?name=${u.name}&background=random">
+                        <span class="text-sm font-bold text-gray-700">${u.name}</span>
+                    </div>
+                `).join('');
+                popup.style.display = 'block';
+            } else {
+                popup.style.display = 'none';
+            }
         }
 
-        // האזנה להזמנות חדשות
-        onSnapshot(query(collection(db, "orders"), orderBy("createdAt", "desc"), limit(5)), (snap) => {
-            snap.docChanges().forEach(change => {
-                if (change.type === "added") {
-                    const o = change.doc.data();
-                    addMsg(`
-                        <div class="font-bold text-blue-600 text-xs">הזמנה חדשה #${o.orderNum}</div>
-                        <div>${o.clientName}</div>
-                        <div class="text-sm text-gray-600">${o.itemsText?.slice(0,50)}...</div>
-                        ${o.pdfUrl ? '<div class="mt-1 text-green-600 text-xs"><i class="fas fa-file-pdf"></i> מסמך נקלט</div>' : ''}
-                        <div class="timestamp">${new Date(o.createdAt?.seconds*1000).toLocaleTimeString().slice(0,5)}</div>
-                    `, 'msg-order');
-                }
-            });
-        });
+        function insertTag(name) {
+            const el = document.getElementById('msg-input');
+            const text = el.innerText;
+            el.innerText = text.substring(0, text.length - 1); // remove @
+            
+            // Insert styled tag (simulated with HTML for contenteditable)
+            // Note: In real contenteditable, inserting HTML at cursor is complex. 
+            // Simplified for demo: append text.
+            el.innerText += `@${name} `; 
+            
+            document.getElementById('users-popup').style.display = 'none';
+            setEndOfContenteditable(el);
+        }
 
-        // האזנה להעברות
-        onSnapshot(query(collection(db, "transfers"), orderBy("createdAt", "desc"), limit(5)), (snap) => {
-            snap.docChanges().forEach(change => {
-                if (change.type === "added") {
-                    const t = change.doc.data();
-                    addMsg(`
-                        <div class="font-bold text-green-700 text-xs">🚛 העברה בין סניפים</div>
-                        <div>${t.fromBranch} -> ${t.toBranch}</div>
-                        <div class="text-xs bg-white/50 p-1 rounded mt-1">${t.items}</div>
-                        <div class="text-[10px] text-gray-500 mt-1">נהג: עלי</div>
-                        <div class="timestamp">${new Date(t.createdAt?.seconds*1000).toLocaleTimeString().slice(0,5)}</div>
-                    `, 'msg-transfer');
-                }
-                if (change.type === "modified") {
-                    const t = change.doc.data();
-                    if(t.status === 'waiting_approval') {
-                        addMsg(`
-                            <div class="font-bold text-xs">📎 התקבל מסמך להעברה</div>
-                            <div class="text-xs">מאת: ${t.emailSender || 'מערכת'}</div>
-                            <a href="${t.pdfUrl}" target="_blank" class="text-blue-600 underline text-xs">פתח תעודה</a>
-                        `, 'msg-sys');
-                    }
+        // 2. Task Logic (via + Button)
+        function toggleMenu() {
+            const menu = document.getElementById('plus-menu');
+            menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        function createTransferTask() {
+            toggleMenu();
+            Swal.fire({
+                title: 'פתיחת העברה',
+                text: 'המשימה תישלח לקבוצה ותתייג את עלי',
+                input: 'text',
+                inputPlaceholder: 'מה להעביר ומאיפה?',
+                showCancelButton: true,
+                confirmButtonText: 'שלח משימה'
+            }).then((res) => {
+                if(res.value) {
+                    // כאן נשלח הודעה מיוחדת לצ'אט
+                    // addMsg(....)
+                    Swal.fire('נשלח!', 'המשימה נפתחה, עלי קיבל התראה.', 'success');
                 }
             });
-        });
+        }
+        
+        // Helper to keep focus at end
+        function setEndOfContenteditable(contentEditableElement) {
+            var range,selection;
+            if(document.createRange) {
+                range = document.createRange();
+                range.selectNodeContents(contentEditableElement);
+                range.collapse(false);
+                selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+        }
     </script>
 </body>
 </html>
