@@ -2,176 +2,244 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saban OS | Master</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#008069">
+    <title>Saban OS | Mobile Command</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <style>
-        :root { --wa-main-bg: #efeae2; --wa-header: #f0f2f5; --wa-green: #008069; --wa-border: #d1d7db; }
-        body { margin: 0; padding: 0; height: 100vh; overflow: hidden; font-family: -apple-system, sans-serif; background-color: #d1d7db; display: flex; align-items: center; justify-content: center; }
+        /* Mobile Native Feel */
+        body { 
+            margin: 0; height: 100vh; overflow: hidden; background-color: #e5ddd5;
+            font-family: -apple-system, system-ui, sans-serif;
+            display: flex; flex-direction: column;
+        }
 
-        .app-container { width: 100%; height: 100%; max-width: 1920px; background: white; display: flex; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden; }
+        /* 1. Header (אלוהים) */
+        .app-header {
+            height: 60px; background: #008069; color: white;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 50; position: relative;
+        }
 
-        /* Sidebar */
-        .sidebar { width: 65px; background: #f0f2f5; border-left: 1px solid var(--wa-border); display: flex; flex-direction: column; align-items: center; padding-top: 15px; gap: 8px; z-index: 20; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; }
-        .sidebar:hover { width: 260px; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
+        /* 2. Drawer Menu (התפריט הצידי) */
+        .drawer-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40;
+            opacity: 0; pointer-events: none; transition: 0.3s;
+        }
+        .drawer-overlay.open { opacity: 1; pointer-events: auto; }
 
-        /* Profile */
-        .profile-section { display: flex; align-items: center; gap: 12px; padding: 12px; width: 100%; justify-content: center; margin-bottom: 10px; overflow: hidden; white-space: nowrap; transition: 0.3s; }
-        .sidebar:hover .profile-section { justify-content: flex-start; background: #e9edef; }
-        .profile-img { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--wa-green); flex-shrink: 0; }
-        .profile-text { opacity: 0; transition: opacity 0.2s; color: #111b21; }
-        .sidebar:hover .profile-text { opacity: 1; }
+        .drawer {
+            position: fixed; top: 0; right: -280px; bottom: 0; width: 280px;
+            background: white; z-index: 50; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex; flex-direction: column; box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+        }
+        .drawer.open { right: 0; }
 
-        /* Nav Buttons */
-        .nav-btn { width: 92%; height: 52px; display: flex; align-items: center; border-radius: 8px; cursor: pointer; color: #54656f; transition: all 0.2s; padding: 0 12px; white-space: nowrap; overflow: hidden; position: relative; }
-        .nav-btn:hover { background: #f5f6f6; color: #111b21; }
-        .nav-btn.active { background: #e9edef; color: var(--wa-green); font-weight: 600; }
-        .nav-btn.active::before { content: ''; position: absolute; right: 0; top: 10%; bottom: 10%; width: 4px; background: var(--wa-green); border-radius: 4px 0 0 4px; }
-        .nav-icon { width: 24px; font-size: 20px; text-align: center; margin-left: 16px; flex-shrink: 0; transition: 0.2s; }
-        .nav-label { opacity: 0; transition: opacity 0.2s; font-size: 15px; }
-        .sidebar:hover .nav-label { opacity: 1; }
-        
-        /* Main Content */
-        .main-content { flex: 1; display: flex; flex-direction: column; background: var(--wa-main-bg); position: relative; }
-        .main-content::before { content: ''; position: absolute; inset: 0; opacity: 0.4; background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); pointer-events: none; z-index: 0; }
-        .content-header { height: 60px; background: var(--wa-header-bg); border-bottom: 1px solid var(--wa-border); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; z-index: 10; }
-        .iframe-wrapper { flex: 1; position: relative; z-index: 1; background: transparent; }
-        iframe { width: 100%; height: 100%; border: none; background: transparent; }
+        .drawer-header {
+            height: 150px; background: #008069; color: white;
+            padding: 20px; display: flex; flex-direction: column; justify-content: flex-end;
+        }
+
+        /* 3. Main Content (iframe) */
+        .main-container { flex: 1; position: relative; background: #efeae2; }
+        iframe { width: 100%; height: 100%; border: none; }
+
+        /* 4. Unlock Overlay (להרשאות סאונד) */
+        #unlock-screen {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: white; text-align: center; backdrop-filter: blur(5px);
+        }
+
+        /* Nav Items */
+        .nav-item {
+            padding: 15px 20px; border-bottom: 1px solid #f0f2f5; cursor: pointer;
+            display: flex; align-items: center; gap: 15px; color: #374151;
+            transition: 0.2s;
+        }
+        .nav-item:active { background: #f0f2f5; }
+        .nav-item i { width: 25px; text-align: center; color: #54656f; }
+        .nav-item.active { background: #e0f2f1; color: #008069; font-weight: bold; }
+        .nav-item.active i { color: #008069; }
+
     </style>
 </head>
 <body>
 
-    <div class="app-container">
-        
-        <nav class="sidebar">
-            <div class="profile-section">
-                <div class="relative group">
-                    <img id="my-avatar" src="https://ui-avatars.com/api/?name=Guest&background=gray" class="profile-img">
-                    <div class="absolute bottom-0 right-0 w-3 h-3 bg-gray-400 border-2 border-white rounded-full" id="conn-dot"></div>
-                </div>
-                <div class="profile-text">
-                    <div class="font-bold text-sm text-slate-800" id="my-name">אורח (לא מזוהה)</div>
-                    <div class="text-[11px] text-gray-500 font-bold" id="my-role">לחץ על לינק ההתקנה</div>
-                </div>
-            </div>
-
-            <div class="nav-btn active" onclick="loadTool('sidor-group.html', 'קבוצת סידור (Live Feed)', this)">
-                <i class="fas fa-users nav-icon text-green-700"></i><span class="nav-label font-bold">קבוצת סידור</span>
-            </div>
-            <div class="nav-btn" onclick="loadTool('hamal-ops.html', 'מפה טקטית ומבצעים', this)">
-                <i class="fas fa-map-marked-alt nav-icon text-slate-600"></i><span class="nav-label">מבצעים (מפה)</span>
-            </div>
-            <div class="nav-btn" onclick="loadTool('transfers.html', 'העברות בין סניפים', this)">
-                <i class="fas fa-dolly nav-icon text-orange-600"></i><span class="nav-label">העברות מלאי</span>
-            </div>
-            <div class="nav-btn" onclick="loadTool('hamal-manager.html', 'המוח החכם', this)">
-                <i class="fas fa-brain nav-icon text-purple-600"></i><span class="nav-label">המוח (חיזוי)</span>
-            </div>
-
-            <div class="w-[80%] h-[1px] bg-gray-300 mx-auto my-2 opacity-50"></div>
-
-            <div class="nav-btn" onclick="loadTool('admin-team.html', 'ניהול צוות והרשאות', this)">
-                <i class="fas fa-users-cog nav-icon text-indigo-600"></i><span class="nav-label">ניהול צוות</span>
-            </div>
-            <div class="nav-btn" onclick="loadTool('admin-god.html', 'לינקים ללקוחות', this)">
-                <i class="fas fa-link nav-icon text-blue-500"></i><span class="nav-label">לינקים ללקוחות</span>
-            </div>
-
-            <div class="nav-btn mt-auto mb-2" onclick="loadTool('driver-pro.html', 'מבט נהג', this)">
-                <i class="fas fa-truck nav-icon text-slate-400"></i><span class="nav-label text-slate-500">מבט נהג</span>
-            </div>
-        </nav>
-
-        <main class="main-content">
-            <header class="content-header">
-                <div class="flex items-center gap-4">
-                    <div id="page-icon" class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-gray-500 shadow-sm"><i class="fas fa-users"></i></div>
-                    <div>
-                        <h2 id="page-title" class="font-bold text-gray-800 text-base">קבוצת סידור (Live Feed)</h2>
-                        <p class="text-xs text-green-600">● אונליין</p>
-                    </div>
-                </div>
-                <div class="flex gap-5 text-gray-500 text-lg">
-                    <button class="hover:text-green-600"><i class="fas fa-search"></i></button>
-                    <button class="hover:text-green-600"><i class="fas fa-ellipsis-v"></i></button>
-                </div>
-            </header>
-            <div class="iframe-wrapper">
-                <iframe id="app-frame" src="sidor-group.html" allow="geolocation; microphone; camera"></iframe>
-            </div>
-        </main>
+    <div id="unlock-screen">
+        <div class="w-20 h-20 rounded-full bg-green-600 flex items-center justify-center mb-6 animate-pulse shadow-[0_0_30px_rgba(34,197,94,0.6)]">
+            <i class="fas fa-fingerprint text-4xl"></i>
+        </div>
+        <h2 class="text-2xl font-bold mb-2">מערכת סבן מאובטחת</h2>
+        <p class="text-gray-300 text-sm mb-8 px-10">לחץ כדי להתחבר, לאשר זיהוי ולהפעיל התראות מבצעיות</p>
+        <button onclick="unlockApp()" class="bg-white text-green-800 px-8 py-3 rounded-full font-bold shadow-lg active:scale-95 transition">
+            כניסה למערכת
+        </button>
     </div>
 
+    <header class="app-header">
+        <div class="flex items-center gap-4">
+            <button onclick="toggleDrawer()" class="text-white text-2xl p-1"><i class="fas fa-bars"></i></button>
+            <div>
+                <div class="font-bold text-lg leading-none" id="page-title">דף הבית</div>
+                <div class="text-[10px] text-green-200 mt-1">● מחובר: ראמי</div>
+            </div>
+        </div>
+        <div class="relative">
+            <img src="https://ui-avatars.com/api/?name=Rami+Saban&background=25d366&color=fff" class="w-9 h-9 rounded-full border-2 border-green-300">
+            <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border border-white rounded-full"></div>
+        </div>
+    </header>
+
+    <div class="drawer-overlay" onclick="toggleDrawer()" id="drawer-bg"></div>
+    <nav class="drawer" id="drawer">
+        <div class="drawer-header">
+            <img src="https://ui-avatars.com/api/?name=Rami+Saban&background=fff&color=008069" class="w-14 h-14 rounded-full mb-3 border-2 border-white/50">
+            <div class="font-bold text-lg">ראמי סבן</div>
+            <div class="text-xs opacity-80">מנהל מערכת (God Mode)</div>
+        </div>
+        <div class="flex-1 overflow-y-auto">
+            <div class="nav-item active" onclick="loadPage('sidor-group.html', 'קבוצת סידור', this)">
+                <i class="fas fa-users"></i> קבוצת סידור (Live)
+            </div>
+            <div class="nav-item" onclick="loadPage('transfers.html', 'העברות מלאי', this)">
+                <i class="fas fa-dolly"></i> העברות וביצוע
+            </div>
+            <div class="nav-item" onclick="loadPage('hamal-ops.html', 'מפה מבצעית', this)">
+                <i class="fas fa-map-marked-alt"></i> מפה טקטית
+            </div>
+            <div class="nav-item" onclick="loadPage('hamal-manager.html', 'המוח החכם', this)">
+                <i class="fas fa-brain"></i> המוח (חיזוי)
+            </div>
+            <div class="my-2 border-t border-gray-100"></div>
+            <div class="nav-item" onclick="loadPage('admin-team.html', 'ניהול צוות', this)">
+                <i class="fas fa-users-cog"></i> ניהול צוות
+            </div>
+            <div class="nav-item" onclick="loadPage('admin-god.html', 'לינקים ללקוח', this)">
+                <i class="fas fa-link"></i> לינקים ללקוח
+            </div>
+            <div class="my-2 border-t border-gray-100"></div>
+            <div class="nav-item" onclick="testAlert()">
+                <i class="fas fa-bell text-red-500"></i> בדיקת צופר
+            </div>
+        </div>
+        <div class="p-4 text-center text-xs text-gray-400 border-t">Saban OS v6.2 Mobile</div>
+    </nav>
+
+    <main class="main-container">
+        <iframe id="app-frame" src="about:blank"></iframe>
+    </main>
+
     <script>
-        // --- 1. זיהוי משתמש (Onboarding) ---
-        const urlParams = new URLSearchParams(window.location.search);
-        const userIdFromLink = urlParams.get('user_id');
+        // --- 1. זיהוי והזרקת נתונים ---
+        const USER_INFO = {
+            id: 'rami_admin_01',
+            name: 'ראמי סבן',
+            role: 'admin',
+            avatar: 'https://ui-avatars.com/api/?name=Rami+Saban&background=25d366&color=fff'
+        };
 
-        if (userIdFromLink) {
-            localStorage.setItem('saban_user_id', userIdFromLink);
-            window.history.replaceState({}, document.title, window.location.pathname);
-            Swal.fire({ title: 'מערכת סבן', text: 'ההתקנה הושלמה בהצלחה!', icon: 'success', timer: 2000, showConfirmButton: false });
+        // פונקציה שנקראת בכניסה ראשונית
+        function unlockApp() {
+            // שמירת זהות ב-LocalStorage הגלובלי (כדי שהילדים יוכלו לקרוא)
+            localStorage.setItem('saban_user', JSON.stringify(USER_INFO));
+            
+            // הסתרת מסך הנעילה
+            document.getElementById('unlock-screen').style.opacity = '0';
+            setTimeout(() => document.getElementById('unlock-screen').style.display = 'none', 500);
+
+            // הפעלת סאונד שקט כדי "לפתוח" את האודיו בדפדפן
+            new Audio('https://assets.mixkit.co/active_storage/sfx/1111/1111-preview.m4a').play().catch(()=>{});
+
+            // בקשת התראות
+            if(Notification.permission !== "granted") Notification.requestPermission();
+
+            // טעינת דף ברירת מחדל
+            loadPage('sidor-group.html', 'קבוצת סידור', document.querySelector('.nav-item'));
         }
 
-        const myId = localStorage.getItem('saban_user_id');
-        if(myId) {
-            // כאן המערכת "יודעת" מי המשתמש ומעדכנת את התצוגה
-            // (בפועל נדרשת שליפה מה-DB, כאן נדמה זיהוי מהיר)
-            document.getElementById('conn-dot').classList.replace('bg-gray-400', 'bg-green-500');
-            document.getElementById('my-name').innerText = "משתמש מחובר"; 
-            document.getElementById('my-role').innerText = "מזהה: " + myId.slice(0,5);
+        // --- 2. ניהול תפריט ומעברים ---
+        function toggleDrawer() {
+            document.getElementById('drawer').classList.toggle('open');
+            document.getElementById('drawer-bg').classList.toggle('open');
         }
 
-        // --- 2. מנגנון ההתראות (Nagging Alert) ---
-        // פונקציה זו נקראת מתוך האייפריים (sidor-group)
-        window.triggerUrgentAlert = (msg) => {
-            console.log("🔥 URGENT ALERT TRIGGERED:", msg);
+        function loadPage(url, title, el) {
+            // עדכון כותרת
+            document.getElementById('page-title').innerText = title;
+            
+            // עדכון תפריט
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            if(el) el.classList.add('active');
+            
+            // סגירת תפריט במובייל
+            toggleDrawer();
 
-            // צליל
-            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/933/933-preview.m4a');
-            audio.loop = true;
-            audio.play().catch(e => console.log("Audio requires interaction"));
+            // טעינת האייפריים
+            const frame = document.getElementById('app-frame');
+            frame.src = url;
 
-            // רטט (עובד במובייל)
-            if (navigator.vibrate) {
-                navigator.vibrate([500, 200, 500, 200, 1000]); 
-                var vibInterval = setInterval(() => navigator.vibrate([500, 200, 500]), 2000);
-            }
+            // **הזרקת הזהות לדף החדש ברגע שהוא נטען**
+            frame.onload = () => {
+                // שולח הודעה לדף הפנימי עם פרטי המשתמש
+                frame.contentWindow.postMessage({ type: 'SET_USER', user: USER_INFO }, '*');
+                
+                // הזרקה ישירה ל-LocalStorage של הדף הפנימי (במידה והוא באותו דומיין)
+                try {
+                    frame.contentWindow.localStorage.setItem('saban_user', JSON.stringify(USER_INFO));
+                } catch(e) { console.log("Cross-origin storage restriction"); }
+            };
+        }
 
+        // --- 3. מערכת התראות מרכזית (God Mode) ---
+        // פונקציה זו זמינה לכל הדפים הפנימיים דרך window.parent.triggerAlert()
+        window.triggerAlert = (type, msg, link) => {
+            console.log("🔔 ALERT:", msg);
+            
+            // סאונד לפי סוג
+            let soundUrl = 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.m4a'; // רגיל
+            if(type === 'urgent') soundUrl = 'https://assets.mixkit.co/active_storage/sfx/933/933-preview.m4a'; // אזעקה
+            if(type === 'doc') soundUrl = 'https://assets.mixkit.co/active_storage/sfx/1111/1111-preview.m4a'; // מסמך
+
+            const audio = new Audio(soundUrl);
+            audio.play();
+
+            // רטט
+            if(navigator.vibrate) navigator.vibrate(type === 'urgent' ? [500,200,500] : [200]);
+
+            // קופצת (SweetAlert)
             Swal.fire({
-                title: '⚠️ משימה דחופה!',
+                title: type === 'doc' ? '📎 התקבל מסמך' : 'הודעה חדשה',
                 text: msg,
-                icon: 'warning',
-                confirmButtonText: 'קיבלתי, מטפל!',
-                confirmButtonColor: '#d33',
-                allowOutsideClick: false,
-                backdrop: `rgba(255,0,0,0.5)`
-            }).then(() => {
-                audio.pause();
-                if(window.vibInterval) clearInterval(window.vibInterval);
-                navigator.vibrate(0);
+                icon: type === 'urgent' ? 'warning' : 'info',
+                showCancelButton: !!link,
+                confirmButtonText: link ? 'צפה במסמך' : 'אישור',
+                cancelButtonText: 'סגור',
+                backdrop: type === 'urgent' ? `rgba(255,0,0,0.3)` : true
+            }).then((res) => {
+                if(res.isConfirmed && link) {
+                    window.open(link, '_blank');
+                }
             });
         };
 
-        // --- 3. ניווט ---
-        function loadTool(filename, title, btnElement) {
-            document.getElementById('page-title').innerText = title;
-            const iconClass = btnElement.querySelector('i').className;
-            document.getElementById('page-icon').innerHTML = `<i class="${iconClass} text-lg"></i>`;
-            
-            const frame = document.getElementById('app-frame');
-            frame.style.opacity = '0';
-            setTimeout(() => {
-                frame.src = filename;
-                frame.onload = () => { frame.style.opacity = '1'; };
-            }, 100);
-
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-            btnElement.classList.add('active');
+        function testAlert() {
+            triggerAlert('urgent', 'בדיקת צופר! ראמי המלך.');
         }
+
+        // האזנה להודעות מהדפים הפנימיים (למשל: "הגיע מסמך")
+        window.addEventListener('message', (event) => {
+            if(event.data.type === 'ALERT') {
+                triggerAlert(event.data.alertType, event.data.msg, event.data.link);
+            }
+        });
+
     </script>
 </body>
 </html>
