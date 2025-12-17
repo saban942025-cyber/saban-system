@@ -2,94 +2,125 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>קבוצת סידור</title>
+    <title>Sidor Group AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body { background: transparent; font-family: -apple-system, sans-serif; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        #chat-feed { flex: 1; overflow-y: auto; padding: 20px 40px; display: flex; flex-direction: column; gap: 8px; }
+        #chat-feed { flex: 1; overflow-y: auto; padding: 20px 40px; display: flex; flex-direction: column; gap: 10px; }
         
-        .bubble { max-width: 75%; padding: 8px 12px; border-radius: 8px; position: relative; font-size: 14px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+        .bubble { max-width: 80%; padding: 10px 14px; border-radius: 12px; position: relative; font-size: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
         .bubble.in { background: white; align-self: flex-start; border-top-right-radius: 0; }
-        .bubble.out { background: #d9fdd3; align-self: flex-end; border-top-left-radius: 0; }
-        .bubble.sys { background: #fff5c4; align-self: center; font-size: 12px; text-align: center; max-width: 90%; }
+        .bubble.alert { background: #fee2e2; border-left: 4px solid #ef4444; } /* הודעה דחופה מלקוח */
+        .bubble.approved { background: #dcfce7; border-left: 4px solid #22c55e; } /* אישור העמסה */
         
         .timestamp { font-size: 10px; color: #999; text-align: left; margin-top: 4px; }
+        
+        /* אנימציית הבהוב להודעות דחופות */
+        @keyframes flash { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+        .flashing { animation: flash 1s infinite; }
     </style>
 </head>
 <body>
     <div id="chat-feed">
-        <div class="bubble sys">
-            🔒 ההודעות בקבוצה זו מוצפנות.<br>ברוכים הבאים לחמ"ל סידור סבן.
+        <div class="text-center text-xs text-gray-500 bg-gray-100 p-2 rounded mb-4">
+            🤖 המערכת מאזינה לשינויים בזמן אמת...
         </div>
     </div>
 
-    <div class="bg-[#f0f2f5] p-3 flex items-center gap-2">
-        <button class="text-gray-500 p-2"><i class="fas fa-plus"></i></button>
-        <input type="text" placeholder="הקלד הודעה..." class="flex-1 p-2 rounded-lg border-none outline-none">
-        <button class="text-green-600 p-2"><i class="fas fa-paper-plane"></i></button>
+    <div class="bg-[#f0f2f5] p-3 flex items-center gap-2 border-t border-gray-300">
+        <button class="text-gray-500 p-2 hover:bg-gray-200 rounded-full"><i class="fas fa-plus"></i></button>
+        <input type="text" id="team-input" placeholder="הקלד הודעה לצוות..." class="flex-1 p-3 rounded-xl border-none outline-none text-sm">
+        <button onclick="sendTeamMsg()" class="text-[#008069] p-2 hover:bg-gray-200 rounded-full"><i class="fas fa-paper-plane text-xl"></i></button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, query, orderBy, limit, onSnapshot, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
         const feed = document.getElementById('chat-feed');
 
+        // פונקציית הוספת בועה
         function addMsg(html, type) {
             const div = document.createElement('div');
-            div.className = `bubble ${type}`;
+            div.className = `bubble in ${type}`;
             div.innerHTML = html;
             feed.appendChild(div);
             feed.scrollTop = feed.scrollHeight;
         }
 
-        // האזנה להזמנות והעברות - כולל זיהוי חריגים
-        onSnapshot(query(collection(db, "orders"), orderBy("createdAt", "desc"), limit(10)), (snap) => {
+        // --- הליבה: האזנה להזמנות ---
+        onSnapshot(query(collection(db, "orders"), orderBy("createdAt", "desc"), limit(20)), (snap) => {
             snap.docChanges().forEach(change => {
                 const data = change.doc.data();
-                
-                // 1. הוספה לרשימה (הודעה חדשה)
+                const id = change.doc.id;
+
+                // 1. הזמנה חדשה לגמרי
                 if (change.type === "added") {
-                    const isUrgent = data.itemsText?.includes('דחוף') || data.urgent;
-                    const icon = isUrgent ? '🔴' : '📦';
-                    
                     addMsg(`
-                        <div class="font-bold text-blue-600 text-xs">${icon} הזמנה #${data.orderNum}</div>
-                        <div class="font-bold">${data.clientName}</div>
-                        <div class="text-sm">${data.itemsText}</div>
-                        <div class="timestamp">${new Date(data.createdAt?.seconds*1000 || Date.now()).toLocaleTimeString().slice(0,5)}</div>
-                    `, 'in');
+                        <div class="flex justify-between items-start">
+                            <span class="font-bold text-blue-600 text-xs">📦 הזמנה חדשה #${data.orderNum}</span>
+                            <span class="text-[10px] bg-gray-100 px-1 rounded">${data.supplyTime || 'טרם נקבע'}</span>
+                        </div>
+                        <div class="font-bold text-gray-800">${data.clientName}</div>
+                        <div class="text-sm text-gray-600 mt-1">${data.itemsText}</div>
+                        <div class="flex gap-2 mt-2">
+                             <button onclick="window.parent.loadTool('client-final.html?uid=${data.clientId}&name=${data.clientName}', 'מבט לקוח', null)" class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100">👁️ צפה כלקוח</button>
+                        </div>
+                    `, '');
                 }
 
-                // 2. זיהוי שינויים קריטיים (MODIFIED) - כאן מפעילים את האזעקה
+                // 2. שינוי סטטוס (הלקוח נגע במשהו!)
                 if (change.type === "modified") {
                     
-                    // תרחיש: מנהל סימן הזמנה כ"דחופה לחמ"ל"
-                    if (data.status === 'urgent_attention') {
-                        // בדיקה: האם זה רלוונטי אליי? (אפשר להוסיף בדיקת ID)
-                        // שליחת פקודה לאבא (index.html) להפעיל צפצוף
-                        if(window.parent && window.parent.triggerUrgentAlert) {
-                            window.parent.triggerUrgentAlert(`תשומת לב! משימה דחופה #${data.orderNum} מחכה לאישור!`);
+                    // תרחיש א': הלקוח שלח הודעה בצ'אט ("תוסיף לי מלט")
+                    if (data.status === 'changes_requested') {
+                        // שליפת ההודעה האחרונה מהמערך
+                        const lastMsg = data.chat && data.chat.length > 0 ? data.chat[data.chat.length - 1].text : 'ביקש שינוי';
+                        
+                        addMsg(`
+                            <div class="flex items-center gap-2 text-red-600 font-bold text-xs mb-1">
+                                <i class="fas fa-comment-dots animate-bounce"></i> הודעה מלקוח בהזמנה #${data.orderNum}
+                            </div>
+                            <div class="text-sm font-bold">"${lastMsg}"</div>
+                            <div class="text-xs text-gray-500 mt-1">נדרשת התייחסות ראמי!</div>
+                        `, 'alert flashing');
+
+                        // הפעלת צופר אצל ראמי (בחלון האב)
+                        if(window.parent.triggerUrgentAlert) {
+                            window.parent.triggerUrgentAlert(`הודעה מ${data.clientName}: ${lastMsg}`);
                         }
                     }
 
-                    // תרחיש: מסמך התקבל במייל (אישור ירוק)
-                    if (data.pdfUrl && !document.getElementById(`pdf-${change.doc.id}`)) {
+                    // תרחיש ב': הלקוח אישר העמסה (נעל את ההזמנה)
+                    if (data.status === 'approved') {
                         addMsg(`
-                            <div class="font-bold text-green-700">📎 מסמך נקלט מהמייל!</div>
-                            <div class="text-xs">מאת: ${data.emailSender || 'מערכת'}</div>
-                            <a href="${data.pdfUrl}" target="_blank" id="pdf-${change.doc.id}" class="text-blue-600 underline text-xs mt-1 block">פתח מסמך PDF</a>
-                        `, 'sys');
+                            <div class="flex items-center gap-2 text-green-700 font-bold text-xs mb-1">
+                                <i class="fas fa-lock"></i> אישור העמסה (חתימה דיגיטלית)
+                            </div>
+                            <div class="text-sm">הלקוח <b>${data.clientName}</b> אישר את ההזמנה ליציאה!</div>
+                            <div class="mt-2 bg-green-100 p-2 rounded text-center font-bold text-green-800 text-xs">
+                                🏗️ רשאי להעמיס
+                            </div>
+                        `, 'approved');
                         
-                        // צליל "הצלחה" עדין
-                        new Audio('https://assets.mixkit.co/active_storage/sfx/1111/1111-preview.m4a').play().catch(()=>{});
+                        // צליל הצלחה
+                        new Audio('https://assets.mixkit.co/active_storage/sfx/1111/1111-preview.m4a').play();
                     }
                 }
             });
         });
+
+        // שליחת הודעה כללית לצוות (לא קשורה להזמנה ספציפית)
+        window.sendTeamMsg = () => {
+            const input = document.getElementById('team-input');
+            if(input.value) {
+                // לוגיקה לשמירה ב-DB כללי של הודעות צוות
+                input.value = '';
+            }
+        }
     </script>
 </body>
 </html>
