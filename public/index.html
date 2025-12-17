@@ -2,88 +2,141 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saban Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0f172a">
+    <title>Saban OS | Mobile Command</title>
+    
+    <link rel="icon" type="image/png" href="https://ui-avatars.com/api/?name=Saban&background=008069&color=fff&size=128&rounded=true">
+
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({
+          appId: "07b81f2e-e812-424f-beca-36584b12ccf2", // ה-ID שלך
+          notifyButton: {
+              enable: true,
+              size: 'medium',
+              theme: 'default',
+              position: 'bottom-left',
+              showCredit: false,
+              text: {
+                  'tip.state.unsubscribed': 'לחץ לקבלת התראות משימה',
+                  'tip.state.subscribed': 'אתה מנוי להתראות חמ"ל',
+                  'message.action.subscribed': 'מעולה! תקבל עדכונים גם כשהאפליקציה סגורה.'
+              }
+          },
+          allowLocalhostAsSecureOrigin: true,
+        });
+      });
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     <style>
-        body { background-color: #f1f5f9; font-family: -apple-system, sans-serif; padding: 20px; }
-        .card-btn {
-            background: white; border-radius: 16px; padding: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
+        /* --- בסיס --- */
+        body { margin: 0; height: 100vh; overflow: hidden; background-color: #e5ddd5; font-family: -apple-system, system-ui, sans-serif; display: flex; flex-direction: column; }
+
+        /* --- מסך נעילה (לאישור סאונד) --- */
+        #unlock-screen {
+            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.98); z-index: 100;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            gap: 10px; cursor: pointer; transition: all 0.2s;
+            color: white; text-align: center; backdrop-filter: blur(5px); transition: opacity 0.5s;
         }
-        .card-btn:active { transform: scale(0.95); background: #f8fafc; }
-        .stat-badge { background: #ef4444; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; position: absolute; top: 10px; right: 10px; }
+
+        /* --- Header --- */
+        .app-header {
+            height: 60px; background: #0f172a; color: white;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 50;
+        }
+
+        /* כפתור סאונד */
+        .sound-btn {
+            width: 36px; height: 36px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            transition: 0.3s; cursor: pointer;
+        }
+        .sound-btn.active { background: #22c55e; color: white; border-color: #22c55e; box-shadow: 0 0 10px #22c55e; animation: pulse 2s infinite; }
+        .sound-btn.muted { background: #ef4444; color: white; opacity: 0.8; }
+
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
+
+        /* --- תפריט צד (Drawer) --- */
+        .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; opacity: 0; pointer-events: none; transition: 0.3s; }
+        .drawer-overlay.open { opacity: 1; pointer-events: auto; }
+        
+        .drawer { 
+            position: fixed; top: 0; right: -280px; bottom: 0; width: 280px; 
+            background: white; z-index: 50; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            display: flex; flex-direction: column; box-shadow: -2px 0 10px rgba(0,0,0,0.1); 
+        }
+        .drawer.open { right: 0; }
+
+        .nav-item { padding: 15px 20px; border-bottom: 1px solid #f0f2f5; cursor: pointer; display: flex; align-items: center; gap: 15px; color: #374151; transition: 0.2s; }
+        .nav-item:active { background: #f1f5f9; }
+        .nav-item.active { background: #e0f2f1; color: #008069; font-weight: bold; border-right: 4px solid #008069; }
+
+        /* --- תוכן ראשי --- */
+        .main-container { flex: 1; position: relative; background: #efeae2; }
+        iframe { width: 100%; height: 100%; border: none; }
     </style>
 </head>
 <body>
 
-    <div class="mb-6 flex items-center justify-between">
-        <div>
-            <h1 class="text-2xl font-black text-slate-800">בוקר טוב ראמי ☀️</h1>
-            <p class="text-gray-500 text-sm">מרכז שליטה ובקרה</p>
+    <div id="unlock-screen">
+        <div class="w-24 h-24 rounded-full bg-green-600 flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(34,197,94,0.6)] animate-bounce">
+            <i class="fas fa-fingerprint text-5xl"></i>
         </div>
-        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-green-600">
-            <i class="fas fa-wifi"></i>
-        </div>
-    </div>
-
-    <div class="grid grid-cols-2 gap-4">
-        
-        <div onclick="nav('sidor-group.html', 'קבוצת סידור')" class="card-btn relative">
-            <div class="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center text-green-600 text-xl mb-1">
-                <i class="fas fa-users"></i>
-            </div>
-            <span class="font-bold text-slate-700">קבוצת סידור</span>
-            <span class="text-xs text-gray-400">Live Chat</span>
-            <div class="stat-badge animate-pulse">3 פעיל</div>
-        </div>
-
-        <div onclick="nav('transfers.html', 'העברות מלאי')" class="card-btn">
-            <div class="w-12 h-12 rounded-full bg-orange-50 flex items-center justify-center text-orange-500 text-xl mb-1">
-                <i class="fas fa-dolly"></i>
-            </div>
-            <span class="font-bold text-slate-700">העברות מלאי</span>
-            <span class="text-xs text-gray-400">ניהול שוטף</span>
-        </div>
-
-        <div onclick="nav('hamal-ops.html', 'מפה מבצעית')" class="card-btn">
-            <div class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 text-xl mb-1">
-                <i class="fas fa-map-marked-alt"></i>
-            </div>
-            <span class="font-bold text-slate-700">מפת כוחות</span>
-            <span class="text-xs text-gray-400">GPS בזמן אמת</span>
-        </div>
-
-        <div onclick="nav('admin-god.html', 'לינקים ללקוח')" class="card-btn">
-            <div class="w-12 h-12 rounded-full bg-purple-50 flex items-center justify-center text-purple-500 text-xl mb-1">
-                <i class="fas fa-link"></i>
-            </div>
-            <span class="font-bold text-slate-700">לינק ללקוח</span>
-            <span class="text-xs text-gray-400">פורטל שירות</span>
-        </div>
-
-    </div>
-
-    <div class="mt-6 bg-slate-800 text-white rounded-xl p-4 flex items-center justify-between">
-        <div>
-            <div class="text-xs text-gray-400">סטטוס מערכת</div>
-            <div class="font-bold text-green-400 flex items-center gap-2">
-                <i class="fas fa-check-circle"></i> הכל תקין
-            </div>
-        </div>
-        <button onclick="window.parent.triggerAlert('buzzer', 'בדיקת צופר מהלובי')" class="bg-slate-700 p-2 rounded-lg text-xs hover:bg-slate-600">
-            בדיקת צופר
+        <h2 class="text-2xl font-bold mb-2">Saban Logistics OS</h2>
+        <p class="text-gray-400 text-sm mb-8 px-10">לחץ כדי להתחבר למערכת ולהפעיל התראות</p>
+        <button onclick="unlockSystem()" class="bg-white text-slate-900 px-10 py-4 rounded-full font-bold shadow-lg active:scale-95 transition flex items-center gap-2">
+            <i class="fas fa-power-off"></i> כניסה למערכת
         </button>
     </div>
 
-    <script>
-        // פונקציה שמפעילה את הניווט בחלון האב (index.html)
-        function nav(url, title) {
-            window.parent.loadPage(url, title);
-        }
-    </script>
-</body>
-</html>
+    <header class="app-header">
+        <div class="flex items-center gap-3">
+            <button onclick="toggleDrawer()" class="text-white text-2xl w-10 h-10 flex items-center justify-center active:opacity-50">
+                <i class="fas fa-bars"></i>
+            </button>
+            
+            <button id="sound-toggle" class="sound-btn muted" onclick="toggleSound()">
+                <i class="fas fa-volume-mute"></i>
+            </button>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="text-right hidden md:block">
+                <div class="font-bold text-sm leading-none" id="header-title">חמ"ל סבן</div>
+                <div class="text-[10px] text-green-400 font-bold">● ראמי מחובר</div>
+            </div>
+            <img src="https://ui-avatars.com/api/?name=Rami+Saban&background=25d366&color=fff" class="w-9 h-9 rounded-full border-2 border-green-500 shadow-sm">
+        </div>
+    </header>
+
+    <div class="drawer-overlay" onclick="toggleDrawer()" id="drawer-bg"></div>
+    <nav class="drawer" id="drawer">
+        <div class="h-44 bg-slate-900 flex flex-col justify-end p-5 text-white bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
+            <div class="w-12 h-12 rounded-full bg-green-600 flex items-center justify-center mb-3 border-2 border-white text-xl font-bold">R</div>
+            <div class="text-xl font-bold">ראמי סבן</div>
+            <div class="text-xs text-gray-400">מנהל מערכת (Admin)</div>
+        </div>
+        <div class="flex-1 overflow-y-auto py-2">
+            <div class="nav-item" onclick="loadPage('dashboard.html', 'דף הבית', this)">
+                <i class="fas fa-home w-6 text-center text-slate-400"></i> לובי ראשי
+            </div>
+            
+            <div class="my-2 border-t border-gray-100 mx-4"></div>
+
+            <div class="nav-item" onclick="loadPage('sidor-group.html', 'קבוצת סידור', this)">
+                <i class="fas fa-users w-6 text-center text-green-600"></i> קבוצת סידור (Live)
+            </div>
+            <div class="nav-item" onclick="loadPage('transfers.html', 'העברות מלאי', this)">
+                <i class="fas fa-dolly w-6 text-center text-orange-500"></i> העברות מלאי
+            </div>
+            <div class="nav-item" onclick="loadPage('hamal-ops.html', 'מפה מבצעית', this)">
+                <i class="fas fa-map-marked-alt w-6 text-center text-blue-500"></i> מפה טקט
