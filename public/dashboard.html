@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saban Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f1f5f9; font-family: -apple-system, sans-serif; padding: 20px; }
+        .card-btn {
+            background: white; border-radius: 16px; padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 10px; cursor: pointer; transition: all 0.2s;
+        }
+        .card-btn:active { transform: scale(0.95); background: #f8fafc; }
+        .stat-badge { background: #ef4444; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; position: absolute; top: 10px; right: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="mb-6 flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-black text-slate-800">בוקר טוב ראמי ☀️</h1>
+            <p class="text-gray-500 text-sm">מרכז שליטה ובקרה</p>
+        </div>
+        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-green-600">
+            <i class="fas fa-wifi"></i>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+        
+        <div onclick="nav('sidor-group.html', 'קבוצת סידור')" class="card-btn relative">
+            <div class="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center text-green-600 text-xl mb-1">
+                <i class="fas fa-users"></i>
+            </div>
+            <span class="font-bold text-slate-700">קבוצת סידור</span>
+            <span class="text-xs text-gray-400">Live Chat</span>
+            <div class="stat-badge animate-pulse">3 פעיל</div>
+        </div>
+
+        <div onclick="nav('transfers.html', 'העברות מלאי')" class="card-btn">
+            <div class="w-12 h-12 rounded-full bg-orange-50 flex items-center justify-center text-orange-500 text-xl mb-1">
+                <i class="fas fa-dolly"></i>
+            </div>
+            <span class="font-bold text-slate-700">העברות מלאי</span>
+            <span class="text-xs text-gray-400">ניהול שוטף</span>
+        </div>
+
+        <div onclick="nav('hamal-ops.html', 'מפה מבצעית')" class="card-btn">
+            <div class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 text-xl mb-1">
+                <i class="fas fa-map-marked-alt"></i>
+            </div>
+            <span class="font-bold text-slate-700">מפת כוחות</span>
+            <span class="text-xs text-gray-400">GPS בזמן אמת</span>
+        </div>
+
+        <div onclick="nav('admin-god.html', 'לינקים ללקוח')" class="card-btn">
+            <div class="w-12 h-12 rounded-full bg-purple-50 flex items-center justify-center text-purple-500 text-xl mb-1">
+                <i class="fas fa-link"></i>
+            </div>
+            <span class="font-bold text-slate-700">לינק ללקוח</span>
+            <span class="text-xs text-gray-400">פורטל שירות</span>
+        </div>
+
+    </div>
+
+    <div class="mt-6 bg-slate-800 text-white rounded-xl p-4 flex items-center justify-between">
+        <div>
+            <div class="text-xs text-gray-400">סטטוס מערכת</div>
+            <div class="font-bold text-green-400 flex items-center gap-2">
+                <i class="fas fa-check-circle"></i> הכל תקין
+            </div>
+        </div>
+        <button onclick="window.parent.triggerAlert('buzzer', 'בדיקת צופר מהלובי')" class="bg-slate-700 p-2 rounded-lg text-xs hover:bg-slate-600">
+            בדיקת צופר
+        </button>
+    </div>
+
+    <script>
+        // פונקציה שמפעילה את הניווט בחלון האב (index.html)
+        function nav(url, title) {
+            window.parent.loadPage(url, title);
+        }
+    </script>
+</body>
+</html>
