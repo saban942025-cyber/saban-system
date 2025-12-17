@@ -3,11 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#0f172a">
-    
     <title>Saban OS | Mobile Command</title>
     
     <link rel="icon" type="image/png" href="https://ui-avatars.com/api/?name=Saban&background=008069&color=fff&size=128&rounded=true">
@@ -22,42 +20,46 @@
       OneSignalDeferred.push(async function(OneSignal) {
         await OneSignal.init({
           appId: "07b81f2e-e812-424f-beca-36584b12ccf2",
-          notifyButton: { enable: true },
+          notifyButton: { enable: true, position: 'bottom-left' },
           allowLocalhostAsSecureOrigin: true,
         });
       });
     </script>
     
     <style>
+        /* --- בסיס --- */
         body { margin: 0; height: 100vh; overflow: hidden; background-color: #e5ddd5; font-family: -apple-system, system-ui, sans-serif; display: flex; flex-direction: column; }
-        
-        /* מסך נעילה */
+
+        /* --- מסך נעילה --- */
         #unlock-screen {
             position: fixed; inset: 0; background: rgba(15, 23, 42, 0.98); z-index: 100;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             color: white; text-align: center; backdrop-filter: blur(5px); transition: opacity 0.5s;
         }
 
-        /* Header */
+        /* --- Header --- */
         .app-header {
             height: 60px; background: #0f172a; color: white;
             display: flex; align-items: center; justify-content: space-between;
             padding: 0 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 50;
         }
 
-        /* סאונד וניווט */
+        /* כפתור סאונד */
         .sound-btn { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); transition: 0.3s; cursor: pointer; }
         .sound-btn.active { background: #22c55e; border-color: #22c55e; box-shadow: 0 0 10px #22c55e; }
         .sound-btn.muted { background: #ef4444; opacity: 0.8; }
 
+        /* --- תפריט צד (Drawer) --- */
         .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; opacity: 0; pointer-events: none; transition: 0.3s; }
         .drawer-overlay.open { opacity: 1; pointer-events: auto; }
-        .drawer { position: fixed; top: 0; right: -280px; bottom: 0; width: 280px; background: white; z-index: 50; transition: 0.3s; display: flex; flex-direction: column; box-shadow: -2px 0 10px rgba(0,0,0,0.1); }
+        .drawer { position: fixed; top: 0; right: -280px; bottom: 0; width: 280px; background: white; z-index: 50; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; box-shadow: -2px 0 10px rgba(0,0,0,0.1); }
         .drawer.open { right: 0; }
-        
-        .nav-item { padding: 15px 20px; border-bottom: 1px solid #f0f2f5; cursor: pointer; display: flex; align-items: center; gap: 15px; color: #374151; }
+
+        .nav-item { padding: 15px 20px; border-bottom: 1px solid #f0f2f5; cursor: pointer; display: flex; align-items: center; gap: 15px; color: #374151; transition: 0.2s; }
+        .nav-item:active { background: #f1f5f9; }
         .nav-item.active { background: #e0f2f1; color: #008069; font-weight: bold; border-right: 4px solid #008069; }
 
+        /* --- תוכן ראשי --- */
         .main-container { flex: 1; position: relative; background: #efeae2; }
         iframe { width: 100%; height: 100%; border: none; }
     </style>
@@ -70,14 +72,14 @@
         </div>
         <h2 class="text-2xl font-bold mb-2">Saban Logistics OS</h2>
         <p class="text-gray-400 text-sm mb-8 px-10">לחץ כדי להתחבר למערכת ולהפעיל התראות</p>
-        <button id="login-btn" onclick="unlockSystem()" class="bg-white text-slate-900 px-10 py-4 rounded-full font-bold shadow-lg active:scale-95 transition flex items-center gap-2">
+        <button onclick="unlockSystem()" class="bg-white text-slate-900 px-10 py-4 rounded-full font-bold shadow-lg active:scale-95 transition flex items-center gap-2">
             <i class="fas fa-power-off"></i> כניסה למערכת
         </button>
     </div>
 
     <header class="app-header">
         <div class="flex items-center gap-3">
-            <button onclick="toggleDrawer()" class="text-white text-2xl w-10 h-10 flex items-center justify-center"><i class="fas fa-bars"></i></button>
+            <button onclick="toggleDrawer()" class="text-white text-2xl w-10 h-10 flex items-center justify-center active:opacity-50"><i class="fas fa-bars"></i></button>
             <button id="sound-toggle" class="sound-btn muted" onclick="toggleSound()"><i class="fas fa-volume-mute"></i></button>
         </div>
         <div class="flex items-center gap-3">
@@ -91,18 +93,52 @@
 
     <div class="drawer-overlay" onclick="toggleDrawer()" id="drawer-bg"></div>
     <nav class="drawer" id="drawer">
-        <div class="h-44 bg-slate-900 flex flex-col justify-end p-5 text-white">
+        <div class="h-44 bg-slate-900 flex flex-col justify-end p-5 text-white bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
+            <div class="w-12 h-12 rounded-full bg-green-600 flex items-center justify-center mb-3 border-2 border-white text-xl font-bold">R</div>
             <div class="text-xl font-bold">ראמי סבן</div>
-            <div class="text-xs text-gray-400">מנהל מערכת</div>
+            <div class="text-xs text-gray-400">מנהל מערכת (Admin)</div>
         </div>
         <div class="flex-1 overflow-y-auto py-2">
-            <div class="nav-item" onclick="loadPage('dashboard.html', 'דף הבית', this)"><i class="fas fa-home w-6 text-center text-slate-400"></i> לובי ראשי</div>
-            <div class="nav-item" onclick="loadPage('sidor-group.html', 'קבוצת סידור', this)"><i class="fas fa-users w-6 text-center text-green-600"></i> קבוצת סידור</div>
-            <div class="nav-item" onclick="loadPage('transfers.html', 'העברות מלאי', this)"><i class="fas fa-dolly w-6 text-center text-orange-500"></i> העברות מלאי</div>
-            <div class="nav-item" onclick="loadPage('hamal-ops.html', 'מפה מבצעית', this)"><i class="fas fa-map-marked-alt w-6 text-center text-blue-500"></i> מפה טקטית</div>
-            <div class="nav-item" onclick="loadPage('admin-god.html', 'לינקים ללקוח', this)"><i class="fas fa-link w-6 text-center text-gray-500"></i> לינקים ללקוח</div>
-            <div class="nav-item text-red-600" onclick="triggerAlert('buzzer', 'בדיקה!')"><i class="fas fa-bullhorn w-6 text-center"></i> בדיקת צופר</div>
+            
+            <div class="nav-item" onclick="loadPage('dashboard.html', 'דף הבית', this)">
+                <i class="fas fa-home w-6 text-center text-slate-400"></i> לובי ראשי
+            </div>
+            
+            <div class="my-2 border-t border-gray-100 mx-4"></div>
+
+            <div class="nav-item" onclick="loadPage('sidor-group.html', 'קבוצת סידור', this)">
+                <i class="fas fa-users w-6 text-center text-green-600"></i> קבוצת סידור (Live)
+            </div>
+            <div class="nav-item" onclick="loadPage('transfers.html', 'העברות מלאי', this)">
+                <i class="fas fa-dolly w-6 text-center text-orange-500"></i> העברות מלאי
+            </div>
+            <div class="nav-item" onclick="loadPage('hamal-ops.html', 'מפה מבצעית', this)">
+                <i class="fas fa-map-marked-alt w-6 text-center text-blue-500"></i> מפה טקטית
+            </div>
+            <div class="nav-item" onclick="loadPage('hamal-manager.html', 'המוח החכם', this)">
+                <i class="fas fa-brain w-6 text-center text-purple-500"></i> המוח (חיזוי)
+            </div>
+            
+            <div class="nav-item bg-sky-50" onclick="loadPage('documents-drive.html', 'ארכיון מסמכים', this)">
+                <i class="fas fa-cloud w-6 text-center text-sky-600"></i> ארכיון ודרייב
+            </div>
+            
+            <div class="my-2 border-t border-gray-100 mx-4"></div>
+            
+            <div class="nav-item" onclick="loadPage('admin-team.html', 'ניהול צוות', this)">
+                <i class="fas fa-users-cog w-6 text-center text-indigo-500"></i> ניהול צוות
+            </div>
+            <div class="nav-item" onclick="loadPage('admin-god.html', 'לינקים ללקוח', this)">
+                <i class="fas fa-link w-6 text-center text-gray-500"></i> לינקים ללקוח
+            </div>
+
+            <div class="my-2 border-t border-gray-100 mx-4"></div>
+            
+            <div class="nav-item text-red-600 hover:bg-red-50" onclick="triggerAlert('buzzer', 'בדיקת צופר עצמית!')">
+                <i class="fas fa-bullhorn w-6 text-center"></i> בדיקת צופר
+            </div>
         </div>
+        <div class="p-3 text-center text-[10px] text-gray-400 border-t">v8.5 Pro • Saban OS</div>
     </nav>
 
     <main class="main-container">
@@ -110,8 +146,7 @@
     </main>
 
     <script>
-        // --- לוגיקה ראשית (מופרדת כדי למנוע שגיאות) ---
-        
+        // --- מערכת סאונד אמינה ---
         let audioCtx;
         let isSoundOn = false;
 
@@ -139,12 +174,12 @@
             siren: () => { for(let i=0; i<6; i++) { setTimeout(()=>beep(0.2, 880, 0.5, 'sawtooth'), i*300); setTimeout(()=>beep(0.2, 680, 0.5, 'sawtooth'), i*300+150); } }
         };
 
-        // --- הפונקציה שהייתה חסרה! ---
+        // --- כניסה וניווט ---
         window.unlockSystem = function() {
             initAudio();
             playSound.knock();
             document.getElementById('unlock-screen').style.display = 'none';
-            // טעינת הלובי
+            // טעינת הלובי (Dashboard) כברירת מחדל
             loadPage('dashboard.html', 'דף הבית', document.querySelector('.nav-item'));
             toggleSound(true);
         };
@@ -164,6 +199,7 @@
             }
         };
 
+        // --- הליבה: התראות ---
         window.triggerAlert = function(type, msg) {
             console.log("ALERT:", msg);
             if (navigator.vibrate) navigator.vibrate(type === 'buzzer' ? [500,100,500] : [100]);
@@ -176,7 +212,7 @@
             else Swal.fire({ toast: true, position: 'top-end', icon: 'info', title: msg, showConfirmButton: false, timer: 3000 });
         };
 
-        // --- ניווט ---
+        // --- פונקציות תפריט ---
         window.toggleDrawer = function() {
             document.getElementById('drawer').classList.toggle('open');
             document.getElementById('drawer-bg').classList.toggle('open');
@@ -192,7 +228,6 @@
             const drawer = document.getElementById('drawer');
             if(drawer.classList.contains('open')) toggleDrawer();
             
-            // זהות משתמש
             const frame = document.getElementById('app-frame');
             frame.onload = () => {
                 frame.contentWindow.postMessage({ type: 'SET_USER', user: { name: 'ראמי סבן', role: 'admin' } }, '*');
@@ -202,7 +237,6 @@
         window.addEventListener('message', (event) => {
             if(event.data.type === 'ALERT') triggerAlert(event.data.alertType, event.data.msg);
         });
-
     </script>
 </body>
 </html>
