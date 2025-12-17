@@ -1,26 +1,184 @@
-<script>
-        // --- ניהול סאונד חכם ---
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0f172a">
+    <title>Saban OS | Mobile Command</title>
+    
+    <link rel="icon" type="image/png" href="https://ui-avatars.com/api/?name=Saban&background=008069&color=fff&size=128&rounded=true">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <style>
+        /* --- בסיס --- */
+        body { margin: 0; height: 100vh; overflow: hidden; background-color: #e5ddd5; font-family: -apple-system, system-ui, sans-serif; display: flex; flex-direction: column; }
+
+        /* --- מסך נעילה (לאישור סאונד) --- */
+        #unlock-screen {
+            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.95); z-index: 100;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: white; text-align: center; backdrop-filter: blur(5px); transition: opacity 0.5s;
+        }
+
+        /* --- Header --- */
+        .app-header {
+            height: 60px; background: #0f172a; color: white;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 50;
+        }
+
+        /* כפתור סאונד */
+        .sound-btn {
+            width: 36px; height: 36px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            transition: 0.3s; cursor: pointer;
+        }
+        .sound-btn.active { background: #22c55e; color: white; border-color: #22c55e; box-shadow: 0 0 10px #22c55e; animation: pulse 2s infinite; }
+        .sound-btn.muted { background: #ef4444; color: white; opacity: 0.8; }
+
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
+
+        /* --- תפריט צד (Drawer) --- */
+        .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; opacity: 0; pointer-events: none; transition: 0.3s; }
+        .drawer-overlay.open { opacity: 1; pointer-events: auto; }
+        
+        .drawer { 
+            position: fixed; top: 0; right: -280px; bottom: 0; width: 280px; 
+            background: white; z-index: 50; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            display: flex; flex-direction: column; box-shadow: -2px 0 10px rgba(0,0,0,0.1); 
+        }
+        .drawer.open { right: 0; }
+
+        .nav-item { padding: 15px 20px; border-bottom: 1px solid #f0f2f5; cursor: pointer; display: flex; align-items: center; gap: 15px; color: #374151; transition: 0.2s; }
+        .nav-item:active { background: #f1f5f9; }
+        .nav-item.active { background: #e0f2f1; color: #008069; font-weight: bold; border-right: 4px solid #008069; }
+
+        /* --- תוכן ראשי --- */
+        .main-container { flex: 1; position: relative; background: #efeae2; }
+        iframe { width: 100%; height: 100%; border: none; }
+    </style>
+</head>
+<body>
+
+    <div id="unlock-screen">
+        <div class="w-24 h-24 rounded-full bg-green-600 flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(34,197,94,0.6)] animate-bounce">
+            <i class="fas fa-fingerprint text-5xl"></i>
+        </div>
+        <h2 class="text-2xl font-bold mb-2">Saban Logistics OS</h2>
+        <p class="text-gray-400 text-sm mb-8 px-10">לחץ כדי להתחבר למערכת ולהפעיל התראות מבצעיות</p>
+        <button onclick="unlockSystem()" class="bg-white text-slate-900 px-10 py-4 rounded-full font-bold shadow-lg active:scale-95 transition flex items-center gap-2">
+            <i class="fas fa-power-off"></i> כניסה למערכת
+        </button>
+    </div>
+
+    <header class="app-header">
+        <div class="flex items-center gap-3">
+            <button onclick="toggleDrawer()" class="text-white text-2xl w-10 h-10 flex items-center justify-center active:opacity-50">
+                <i class="fas fa-bars"></i>
+            </button>
+            
+            <button id="sound-toggle" class="sound-btn muted" onclick="toggleSound()">
+                <i class="fas fa-volume-mute"></i>
+            </button>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="text-right hidden md:block">
+                <div class="font-bold text-sm leading-none" id="header-title">חמ"ל סבן</div>
+                <div class="text-[10px] text-green-400 font-bold">● ראמי מחובר</div>
+            </div>
+            <img src="https://ui-avatars.com/api/?name=Rami+Saban&background=25d366&color=fff" class="w-9 h-9 rounded-full border-2 border-green-500 shadow-sm">
+        </div>
+    </header>
+
+    <div class="drawer-overlay" onclick="toggleDrawer()" id="drawer-bg"></div>
+    <nav class="drawer" id="drawer">
+        <div class="h-44 bg-slate-900 flex flex-col justify-end p-5 text-white bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
+            <div class="w-12 h-12 rounded-full bg-green-600 flex items-center justify-center mb-3 border-2 border-white text-xl font-bold">R</div>
+            <div class="text-xl font-bold">ראמי סבן</div>
+            <div class="text-xs text-gray-400">מנהל מערכת (Admin)</div>
+        </div>
+        <div class="flex-1 overflow-y-auto py-2">
+            <div class="nav-item active" onclick="loadPage('sidor-group.html', 'קבוצת סידור', this)">
+                <i class="fas fa-users w-6 text-center text-green-600"></i> קבוצת סידור (Live)
+            </div>
+            <div class="nav-item" onclick="loadPage('transfers.html', 'העברות מלאי', this)">
+                <i class="fas fa-dolly w-6 text-center text-orange-500"></i> העברות מלאי
+            </div>
+            <div class="nav-item" onclick="loadPage('hamal-ops.html', 'מפה מבצעית', this)">
+                <i class="fas fa-map-marked-alt w-6 text-center text-blue-500"></i> מפה טקטית
+            </div>
+            <div class="nav-item" onclick="loadPage('hamal-manager.html', 'המוח החכם', this)">
+                <i class="fas fa-brain w-6 text-center text-purple-500"></i> המוח (חיזוי)
+            </div>
+            
+            <div class="my-2 border-t border-gray-100 mx-4"></div>
+            
+            <div class="nav-item" onclick="loadPage('admin-team.html', 'ניהול צוות', this)">
+                <i class="fas fa-users-cog w-6 text-center text-indigo-500"></i> ניהול צוות
+            </div>
+            <div class="nav-item" onclick="loadPage('admin-god.html', 'לינקים ללקוח', this)">
+                <i class="fas fa-link w-6 text-center text-gray-500"></i> לינקים ללקוח
+            </div>
+
+            <div class="my-2 border-t border-gray-100 mx-4"></div>
+            
+            <div class="nav-item text-red-600 hover:bg-red-50" onclick="triggerAlert('buzzer', 'בדיקת צופר עצמית!')">
+                <i class="fas fa-bullhorn w-6 text-center"></i> בדיקת צופר
+            </div>
+        </div>
+        <div class="p-3 text-center text-[10px] text-gray-400 border-t">v7.0 Stable • Saban OS</div>
+    </nav>
+
+    <main class="main-container">
+        <iframe id="app-frame" src="about:blank"></iframe>
+    </main>
+
+    <script>
+        // --- ניהול סאונד ---
         let isSoundOn = false;
         
-        // צלילים
+        // קבצי סאונד
         const SOUNDS = {
-            knock: new Audio('https://assets.mixkit.co/active_storage/sfx/2346/2346-preview.m4a'), // נקישה עדינה
-            siren: new Audio('https://assets.mixkit.co/active_storage/sfx/933/933-preview.m4a'),   // צופר חזק
+            knock: new Audio('https://assets.mixkit.co/active_storage/sfx/2346/2346-preview.m4a'), // נקישה
+            siren: new Audio('https://assets.mixkit.co/active_storage/sfx/933/933-preview.m4a'),   // צופר
             success: new Audio('https://assets.mixkit.co/active_storage/sfx/1111/1111-preview.m4a') // הצלחה
         };
 
+        // 1. כניסה למערכת (שחרור חסימות דפדפן)
+        function unlockSystem() {
+            // הסתרת מסך נעילה
+            const screen = document.getElementById('unlock-screen');
+            screen.style.opacity = '0';
+            setTimeout(() => screen.style.display = 'none', 500);
+
+            // הפעלת דף הבית
+            loadPage('sidor-group.html', 'קבוצת סידור', document.querySelector('.nav-item'));
+
+            // ניסיון הפעלת סאונד ראשוני
+            toggleSound();
+        }
+
+        // 2. הפעלת/כיבוי סאונד
         function toggleSound() {
             const btn = document.getElementById('sound-toggle');
             const icon = btn.querySelector('i');
 
             if (!isSoundOn) {
-                // שחרור חסימת דפדפן
+                // ניגון דמה לשחרור החסימה
                 SOUNDS.knock.play().catch(()=>{}); 
+                
                 isSoundOn = true;
                 btn.classList.remove('muted');
                 btn.classList.add('active');
                 icon.className = 'fas fa-volume-up';
-                Swal.fire({ toast: true, position: 'top', icon: 'success', title: 'הסאונד הופעל', showConfirmButton: false, timer: 1500 });
+                
+                Swal.fire({ toast: true, position: 'top', icon: 'success', title: 'התראות פעילות', showConfirmButton: false, timer: 1500 });
             } else {
                 isSoundOn = false;
                 btn.classList.remove('active');
@@ -29,17 +187,17 @@
             }
         }
 
-        // --- פונקציית ההתראה המשודרגת ---
+        // --- הליבה: מערכת ההתראות ---
         window.triggerAlert = (type, msg) => {
-            console.log("🔔 התראה:", type, msg);
+            console.log("🔥 ALERT SYSTEM:", type, msg);
 
             // 1. רטט
             if (navigator.vibrate) {
-                if (type === 'buzzer') navigator.vibrate([500, 100, 500, 100, 500]); // רטט אגרסיבי
-                else navigator.vibrate(100); // רטט עדין
+                if (type === 'buzzer') navigator.vibrate([500, 100, 500, 100, 1000]); // חזק
+                else navigator.vibrate(100); // קצר
             }
 
-            // 2. סאונד (נקישה או צופר)
+            // 2. סאונד
             if (isSoundOn) {
                 if (type === 'buzzer') {
                     SOUNDS.siren.currentTime = 0;
@@ -48,14 +206,13 @@
                     SOUNDS.success.currentTime = 0;
                     SOUNDS.success.play();
                 } else {
-                    // ברירת מחדל: נקישה עדינה
                     SOUNDS.knock.currentTime = 0;
-                    SOUNDS.knock.volume = 0.5; // שלא יהיה חזק מדי
+                    SOUNDS.knock.volume = 0.6;
                     SOUNDS.knock.play();
                 }
             }
 
-            // 3. חיווי ויזואלי
+            // 3. חיווי מסך
             if (type === 'buzzer') {
                 Swal.fire({
                     title: '📢 צופר לצוות!',
@@ -63,33 +220,46 @@
                     icon: 'warning',
                     confirmButtonColor: '#ef4444',
                     confirmButtonText: 'קיבלתי',
-                    backdrop: `rgba(255,0,0,0.4)` // רקע אדום מהבהב
+                    backdrop: `rgba(255,0,0,0.5)`
                 });
             } else {
-                // בועה עדינה למעלה
+                // הודעה עדינה
                 Swal.fire({
-                    toast: true,
-                    position: 'top-end',
-                    icon: type === 'success' ? 'success' : 'info',
-                    title: msg,
-                    showConfirmButton: false,
-                    timer: 3000
+                    toast: true, position: 'top-end', icon: type === 'success' ? 'success' : 'info',
+                    title: msg, showConfirmButton: false, timer: 3000
                 });
             }
         };
-        
-        // ... (שאר פונקציות הניווט נשארות אותו דבר) ...
-        
-        // --- פונקציות ניווט והפעלה רגילות ---
+
+        // --- ניווט ---
         function toggleDrawer() {
             document.getElementById('drawer').classList.toggle('open');
             document.getElementById('drawer-bg').classList.toggle('open');
         }
-        function loadPage(url, title) {
+
+        function loadPage(url, title, el) {
             document.getElementById('header-title').innerText = title;
             document.getElementById('app-frame').src = url;
-            toggleDrawer();
+            
+            // עדכון תפריט
+            if(el) {
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                el.classList.add('active');
+            }
+            
+            // סגירת תפריט (אם פתוח)
+            const drawer = document.getElementById('drawer');
+            if(drawer.classList.contains('open')) toggleDrawer();
+
+            // הזרקת זהות משתמש לדף הפנימי
+            const frame = document.getElementById('app-frame');
+            frame.onload = () => {
+                const user = { name: 'ראמי סבן', role: 'admin' };
+                frame.contentWindow.postMessage({ type: 'SET_USER', user: user }, '*');
+            };
         }
+
+        // האזנה להודעות מהדפים הפנימיים
         window.addEventListener('message', (event) => {
             if(event.data.type === 'ALERT') {
                 triggerAlert(event.data.alertType, event.data.msg);
