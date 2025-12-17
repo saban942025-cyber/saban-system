@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saban Drive</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body { background: #f8fafc; height: 100vh; display: flex; overflow: hidden; font-family: -apple-system, sans-serif; }
+        
+        /* סרגל צד (תיקיות) */
+        .sidebar { width: 260px; background: white; border-left: 1px solid #e2e8f0; padding: 20px; display: flex; flex-direction: column; }
+        .folder-item { 
+            display: flex; items-center; gap: 10px; padding: 12px; 
+            border-radius: 8px; cursor: pointer; color: #475569; transition: 0.2s; 
+            margin-bottom: 4px; font-weight: 500;
+        }
+        .folder-item:hover { background: #f1f5f9; }
+        .folder-item.active { background: #e0f2fe; color: #0284c7; }
+        
+        /* אזור ראשי (קבצים) */
+        .main-area { flex: 1; padding: 30px; overflow-y: auto; }
+        
+        /* כרטיס קובץ */
+        .file-card {
+            background: white; border-radius: 12px; border: 1px solid #e2e8f0;
+            position: relative; overflow: hidden; transition: 0.2s;
+            display: flex; flex-direction: column; height: 200px;
+        }
+        .file-card:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: #cbd5e1; }
+        
+        .file-preview { flex: 1; background: #f8fafc; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .file-preview img { width: 100%; height: 100%; object-fit: cover; }
+        .file-icon { font-size: 40px; color: #94a3b8; }
+        
+        .file-info { padding: 12px; border-top: 1px solid #f1f5f9; background: white; }
+        .file-name { font-weight: bold; font-size: 13px; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .file-meta { font-size: 10px; color: #94a3b8; margin-top: 2px; }
+
+        .btn-share {
+            position: absolute; top: 10px; left: 10px;
+            background: rgba(255,255,255,0.9); width: 32px; height: 32px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer; color: #475569;
+            opacity: 0; transition: 0.2s;
+        }
+        .file-card:hover .btn-share { opacity: 1; }
+        .btn-share:hover { background: #008069; color: white; }
+
+        /* כפתור העלאה */
+        .fab-upload {
+            position: fixed; bottom: 30px; left: 30px;
+            background: #0f172a; color: white; width: 60px; height: 60px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            cursor: pointer; transition: 0.2s;
+        }
+        .fab-upload:hover { transform: scale(1.1); background: #008069; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2 class="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">
+            <i class="fas fa-cloud text-[#008069]"></i> Saban Drive
+        </h2>
+        
+        <div class="text-xs font-bold text-gray-400 uppercase mb-2">תיקיות מקור</div>
+        <div class="folder-item active" onclick="filterFolder('all', this)">
+            <i class="fas fa-layer-group"></i> הכל
+        </div>
+        <div class="folder-item" onclick="filterFolder('Comax', this)">
+            <i class="fas fa-server"></i> Comax System
+        </div>
+        <div class="folder-item" onclick="filterFolder('Rami', this)">
+            <i class="fas fa-user-tie"></i> העלאות ראמי
+        </div>
+        <div class="folder-item" onclick="filterFolder('Warehouse', this)">
+            <i class="fas fa-warehouse"></i> מחסן
+        </div>
+    </div>
+
+    <div class="main-area">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-slate-700" id="current-folder-title">כל הקבצים</h1>
+            <div class="text-sm text-gray-500">סה"כ <span id="file-count">0</span> מסמכים</div>
+        </div>
+
+        <div id="file-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+            </div>
+    </div>
+
+    <div class="fab-upload" onclick="uploadFile()">
+        <i class="fas fa-plus"></i>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, getDocs, where, updateDoc, doc, arrayUnion, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
+
+        // משתנה לשמירת המסמכים בזיכרון לסינון מהיר
+        let allDocs = [];
+
+        // 1. האזנה למסמכים (גם מקומקס וגם ידני)
+        // אנחנו נאזין לשני מקורות: אוסף 'documents' (ידני) ואוסף 'orders' (קומקס) ונאחד אותם
+        
+        // נתחיל מהאוסף הייעודי שיצרנו לדרייב
+        onSnapshot(query(collection(db, "documents"), orderBy("createdAt", "desc")), (snap) => {
+            const driveDocs = snap.docs.map(d => ({id: d.id, ...d.data(), source: 'drive'}));
+            mergeAndRender(driveDocs);
+        });
+
+        function mergeAndRender(driveDocs) {
+            // כאן היינו יכולים למשוך גם מ-orders, אבל לצורך הפשטות נתמקד בדרייב
+            allDocs = driveDocs;
+            renderGrid(allDocs);
+        }
+
+        function renderGrid(docs) {
+            const grid = document.getElementById('file-grid');
+            document.getElementById('file-count').innerText = docs.length;
+            grid.innerHTML = "";
+
+            docs.forEach(file => {
+                const isImg = file.type === 'image';
+                const icon = isImg ? '' : (file.type === 'pdf' ? 'fa-file-pdf text-red-500' : 'fa-file text-gray-400');
+                
+                // תצוגה מקדימה
+                const previewHtml = isImg 
+                    ? `<img src="${file.url}">` 
+                    : `<i class="fas ${icon} file-icon"></i>`;
+
+                grid.innerHTML += `
+                <div class="file-card group">
+                    <button class="btn-share" onclick="shareFile('${file.url}', '${file.name}')" title="שלח ללקוח">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                    
+                    <div class="file-preview" onclick="window.open('${file.url}')">
+                        ${previewHtml}
+                    </div>
+                    
+                    <div class="file-info">
+                        <div class="file-name" title="${file.name}">${file.name}</div>
+                        <div class="file-meta">
+                            <i class="fas fa-user-circle"></i> ${file.uploadedBy} • ${new Date(file.createdAt?.seconds*1000).toLocaleDateString()}
+                        </div>
+                    </div>
+                </div>`;
+            });
+        }
+
+        // 2. סינון תיקיות
+        window.filterFolder = (folder, el) => {
+            // עדכון UI
+            document.querySelectorAll('.folder-item').forEach(i => i.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById('current-folder-title').innerText = el.innerText;
+
+            // סינון
+            if(folder === 'all') {
+                renderGrid(allDocs);
+            } else {
+                const filtered = allDocs.filter(d => d.folder === folder);
+                renderGrid(filtered);
+            }
+        };
+
+        // 3. העלאת קובץ (סימולציה)
+        window.uploadFile = async () => {
+            const { value: form } = await Swal.fire({
+                title: 'העלאת קובץ לדרייב',
+                html: `
+                    <input id="up-name" class="swal2-input" placeholder="שם הקובץ (למשל: מברגה מקיטה)">
+                    <input id="up-url" class="swal2-input" placeholder="קישור לתמונה/קובץ (URL)">
+                    <select id="up-folder" class="swal2-input">
+                        <option value="Rami">ראמי (מנהל)</option>
+                        <option value="Warehouse">מחסן</option>
+                        <option value="Comax">Comax</option>
+                    </select>
+                `,
+                confirmButtonText: 'שמור בארכיון',
+                preConfirm: () => ({
+                    name: document.getElementById('up-name').value,
+                    url: document.getElementById('up-url').value,
+                    folder: document.getElementById('up-folder').value
+                })
+            });
+
+            if (form && form.url) {
+                // זיהוי סוג קובץ
+                const type = form.url.match(/\.(jpeg|jpg|gif|png)$/) != null ? 'image' : 'pdf';
+
+                await addDoc(collection(db, "documents"), {
+                    name: form.name,
+                    url: form.url,
+                    folder: form.folder,
+                    type: type,
+                    uploadedBy: 'ראמי סבן',
+                    createdAt: serverTimestamp()
+                });
+                
+                Swal.fire('נשמר!', 'הקובץ נוסף לארכיון בהצלחה.', 'success');
+            }
+        };
+
+        // 4. השיגור ללינק הקסם (החלק החשוב!) 🚀
+        window.shareFile = async (fileUrl, fileName) => {
+            // א. שליפת הזמנות פעילות
+            const q = query(collection(db, "orders"), where("status", "!=", "done"));
+            const snap = await getDocs(q);
+            
+            const options = {};
+            snap.forEach(d => {
+                const o = d.data();
+                options[d.id] = `#${o.orderNum} - ${o.clientName}`;
+            });
+
+            if (Object.keys(options).length === 0) return Swal.fire('אין הזמנות', 'אין כרגע הזמנות פעילות לשיתוף', 'info');
+
+            // ב. בחירת הלקוח
+            const { value: orderId } = await Swal.fire({
+                title: 'למי לשלוח את הקובץ?',
+                input: 'select',
+                inputOptions: options,
+                inputPlaceholder: 'בחר הזמנה...',
+                showCancelButton: true,
+                confirmButtonText: 'שגר ללינק הקסם 🚀'
+            });
+
+            if (orderId) {
+                // ג. עדכון הצ'אט של ההזמנה עם התמונה
+                await updateDoc(doc(db, "orders", orderId), {
+                    chat: arrayUnion({
+                        sender: 'ראמי',
+                        text: fileName, // טקסט לגיבוי
+                        imageUrl: fileUrl, // שדה מיוחד לתמונה
+                        type: 'image', // סוג ההודעה
+                        time: new Date().toISOString()
+                    }),
+                    status: 'changes_requested' // כדי להפעיל התראה אצל הלקוח/צוות
+                });
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'נשלח בהצלחה!',
+                    text: 'הלקוח רואה את התמונה עכשיו בלינק שלו.',
+                    timer: 2000, showConfirmButton: false
+                });
+            }
+        };
+    </script>
+</body>
+</html>
