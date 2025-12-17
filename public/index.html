@@ -1,258 +1,35 @@
-<!DOCTYPE html>
-<html lang="he" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saban OS | מערכת שליטה מרכזית</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    
-    <style>
-        /* WhatsApp Web Theme Colors */
-        :root {
-            --wa-sidebar-bg: #ffffff;
-            --wa-main-bg: #efeae2; /* הרקע המפורסם של הצ'אט */
-            --wa-header-bg: #f0f2f5;
-            --wa-green: #008069;
-            --wa-accent: #25d366;
-            --wa-border: #d1d7db;
-        }
-
-        body { 
-            margin: 0; 
-            padding: 0; 
-            height: 100vh; 
-            overflow: hidden; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #d1d7db; /* רקע כללי כהה יותר כמו בוואטסאפ ווב */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* The Main Container (המסך הלבן הגדול) */
-        .app-container {
-            width: 100%;
-            height: 100%;
-            max-width: 1600px; /* שלא יהיה ענק מדי במסכים עצומים */
-            background: white;
-            display: flex;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-
-        /* --- Sidebar (הסרגל הימני) --- */
-        .sidebar {
-            width: 60px; /* מצומצם לאייקונים בלבד */
-            background: #f0f2f5;
-            border-left: 1px solid var(--wa-border);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding-top: 20px;
-            gap: 10px;
-            z-index: 20;
-            transition: width 0.3s;
-        }
-        
-        .sidebar:hover {
-            width: 240px; /* נפתח במעבר עכבר */
-        }
-
-        /* User Profile in Sidebar */
-        .profile-section {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 10px;
-            width: 100%;
-            justify-content: center; /* במצב סגור */
-            margin-bottom: 20px;
-            overflow: hidden;
-            white-space: nowrap;
-        }
-        
-        .profile-img {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: 2px solid var(--wa-green);
-            flex-shrink: 0;
-        }
-
-        .profile-text {
-            opacity: 0;
-            transition: opacity 0.2s;
-            color: #54656f;
-        }
-        .sidebar:hover .profile-text { opacity: 1; }
-
-        /* Navigation Buttons */
-        .nav-btn {
-            width: 90%;
-            height: 48px;
-            display: flex;
-            align-items: center;
-            border-radius: 8px;
-            cursor: pointer;
-            color: #54656f;
-            transition: 0.2s;
-            padding: 0 14px;
-            white-space: nowrap;
-            overflow: hidden;
-        }
-
-        .nav-btn:hover { background: #e9edef; }
-        
-        .nav-btn.active {
-            background: #e9edef;
-            color: var(--wa-green);
-            font-weight: bold;
-            border-right: 4px solid var(--wa-green);
-        }
-
-        .nav-icon { width: 24px; font-size: 20px; text-align: center; margin-left: 15px; flex-shrink: 0; }
-        .nav-label { opacity: 0; transition: opacity 0.2s; }
-        .sidebar:hover .nav-label { opacity: 1; }
-
-        /* --- Main Content Area --- */
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: var(--wa-main-bg);
-            position: relative;
-        }
-
-        /* Background Pattern (כמו בוואטסאפ) */
-        .main-content::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            opacity: 0.06;
-            background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png");
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        /* Header inside Main */
-        .content-header {
-            height: 60px;
-            background: var(--wa-header-bg);
-            border-bottom: 1px solid var(--wa-border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 20px;
-            z-index: 10;
-        }
-
-        /* Iframe Container */
-        .iframe-wrapper {
-            flex: 1;
-            position: relative;
-            z-index: 1;
-            background: transparent;
-        }
-
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-            background: transparent;
-        }
-        
-        /* Status Dot */
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            background: var(--wa-green);
-            border-radius: 50%;
-            position: absolute;
-            bottom: 0;
-            right: 0;
-            border: 2px solid #f0f2f5;
-        }
-
-    </style>
-</head>
-<body>
-
-    <div class="app-container">
-        
-        <nav class="sidebar">
-            <div class="profile-section">
-                <div class="relative">
-                    <img src="https://ui-avatars.com/api/?name=Rami+Saban&background=008069&color=fff" class="profile-img">
-                    <div class="status-dot"></div>
-                </div>
-                <div class="profile-text">
-                    <div class="font-bold text-sm">ראמי סבן</div>
-                    <div class="text-xs">מחובר לחמ"ל</div>
-                </div>
-            </div>
-
-            <div class="nav-btn active" onclick="loadTool('hamal-ops.html', 'מפה טקטית ומבצעים', this)">
-                <i class="fas fa-map-marked-alt nav-icon"></i>
-                <span class="nav-label">מבצעים (מפה)</span>
-            </div>
-
-            <div class="nav-btn" onclick="loadTool('hamal-manager.html', 'ניהול וחיזוי זמנים', this)">
-                <i class="fas fa-brain nav-icon"></i>
-                <span class="nav-label">המוח (חיזוי)</span>
-            </div>
-
-            <div class="nav-btn" onclick="loadTool('admin-god.html', 'יצירת לינקים ללקוחות', this)">
-                <i class="fas fa-user-plus nav-icon"></i>
-                <span class="nav-label">לקוחות (לינקים)</span>
-            </div>
-            
-            <div class="mt-auto mb-4 w-full h-[1px] bg-gray-300"></div>
-
-            <div class="nav-btn" onclick="loadTool('driver-pro.html', 'מבט נהג (חכמת)', this)">
-                <i class="fas fa-truck nav-icon text-orange-600"></i>
-                <span class="nav-label text-orange-700 font-bold">מבט נהג</span>
-            </div>
-             <div class="nav-btn" onclick="loadTool('client-final.html', 'מבט לקוח (אפליקציה)', this)">
-                <i class="fas fa-mobile-alt nav-icon text-blue-600"></i>
-                <span class="nav-label text-blue-700 font-bold">מבט לקוח</span>
-            </div>
-        </nav>
-
-        <main class="main-content">
-            <header class="content-header">
-                <div class="flex items-center gap-3">
-                    <i class="fas fa-cube text-gray-500 text-xl"></i>
-                    <h2 id="page-title" class="font-bold text-gray-700 text-lg">מפה טקטית ומבצעים</h2>
-                </div>
-                <div class="flex gap-4 text-gray-500">
-                    <i class="fas fa-search cursor-pointer hover:text-green-600"></i>
-                    <i class="fas fa-paperclip cursor-pointer hover:text-green-600"></i>
-                    <i class="fas fa-ellipsis-v cursor-pointer hover:text-green-600"></i>
-                </div>
-            </header>
-
-            <div class="iframe-wrapper">
-                <iframe id="app-frame" src="hamal-ops.html"></iframe>
-            </div>
-        </main>
-
+<nav class="sidebar">
+    <div class="profile-section">
+        <div class="relative">
+            <img src="https://ui-avatars.com/api/?name=Rami+Saban&background=008069&color=fff" class="profile-img">
+            <div class="status-dot"></div>
+        </div>
+        <div class="profile-text">
+            <div class="font-bold text-sm">ראמי סבן</div>
+            <div class="text-xs">מחובר לחמ"ל</div>
+        </div>
     </div>
 
-    <script>
-        // פונקציית החלפת הכלים (הטאבים)
-        function loadTool(filename, title, btnElement) {
-            // 1. עדכון כותרת
-            document.getElementById('page-title').innerText = title;
-            
-            // 2. טעינת הקובץ באייפריים
-            // הערה: הקבצים צריכים להיות באותה תיקייה כדי שזה יעבוד
-            document.getElementById('app-frame').src = filename;
+    <div class="nav-btn active" onclick="loadTool('sidor-group.html', 'קבוצת סידור (Live Feed)', this)">
+        <i class="fas fa-users nav-icon text-green-700"></i>
+        <span class="nav-label font-bold">קבוצת סידור</span>
+    </div>
 
-            // 3. עדכון כפתור פעיל בסרגל
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-            btnElement.classList.add('active');
-        }
-    </script>
-</body>
-</html>
+    <div class="nav-btn" onclick="loadTool('hamal-ops.html', 'מפה טקטית ומבצעים', this)">
+        <i class="fas fa-map-marked-alt nav-icon"></i>
+        <span class="nav-label">מבצעים (מפה)</span>
+    </div>
+
+    <div class="nav-btn" onclick="loadTool('transfers.html', 'העברות בין סניפים (עלי)', this)">
+        <i class="fas fa-dolly nav-icon text-orange-600"></i>
+        <span class="nav-label">העברות מלאי</span>
+    </div>
+
+    <div class="nav-btn" onclick="loadTool('hamal-manager.html', 'ניהול וחיזוי זמנים', this)">
+        <i class="fas fa-brain nav-icon"></i>
+        <span class="nav-label">המוח (חיזוי)</span>
+    </div>
+    
+    <div class="mt-auto mb-4 w-full h-[1px] bg-gray-300"></div>
+    <div class="nav-btn" onclick="loadTool('admin-god.html', 'יצירת לינקים', this)"><i class="fas fa-link nav-icon"></i><span class="nav-label">לינקים</span></div>
+</nav>
