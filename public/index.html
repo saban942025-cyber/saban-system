@@ -8,7 +8,29 @@
     <title>Saban OS | Mobile Command</title>
     
     <link rel="icon" type="image/png" href="https://ui-avatars.com/api/?name=Saban&background=008069&color=fff&size=128&rounded=true">
-    
+
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({
+          appId: "07b81f2e-e812-424f-beca-36584b12ccf2",
+          notifyButton: {
+              enable: true, /* מציג פעמון אדום להרשמה */
+              size: 'medium',
+              theme: 'default',
+              position: 'bottom-left',
+              showCredit: false,
+              text: {
+                  'tip.state.unsubscribed': 'לחץ לקבלת התראות משימה',
+                  'tip.state.subscribed': 'אתה מנוי להתראות חמ"ל',
+                  'message.action.subscribed': 'מעולה! תקבל עדכונים גם כשהאפליקציה סגורה.'
+              }
+          },
+          allowLocalhostAsSecureOrigin: true,
+        });
+      });
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -70,7 +92,7 @@
             <i class="fas fa-fingerprint text-5xl"></i>
         </div>
         <h2 class="text-2xl font-bold mb-2">Saban Logistics OS</h2>
-        <p class="text-gray-400 text-sm mb-8 px-10">לחץ כדי להתחבר למערכת ולהפעיל התראות מבצעיות</p>
+        <p class="text-gray-400 text-sm mb-8 px-10">לחץ כדי להתחבר למערכת ולהפעיל התראות</p>
         <button onclick="unlockSystem()" class="bg-white text-slate-900 px-10 py-4 rounded-full font-bold shadow-lg active:scale-95 transition flex items-center gap-2">
             <i class="fas fa-power-off"></i> כניסה למערכת
         </button>
@@ -132,7 +154,7 @@
                 <i class="fas fa-bullhorn w-6 text-center"></i> בדיקת צופר
             </div>
         </div>
-        <div class="p-3 text-center text-[10px] text-gray-400 border-t">v7.0 Stable • Saban OS</div>
+        <div class="p-3 text-center text-[10px] text-gray-400 border-t">v7.2 OneSignal • Saban OS</div>
     </nav>
 
     <main class="main-container">
@@ -140,46 +162,84 @@
     </main>
 
     <script>
-        // --- ניהול סאונד ---
-        let isSoundOn = false;
-        
-        // קבצי סאונד
-        const SOUNDS = {
-            knock: new Audio('https://assets.mixkit.co/active_storage/sfx/2346/2346-preview.m4a'), // נקישה
-            siren: new Audio('https://assets.mixkit.co/active_storage/sfx/933/933-preview.m4a'),   // צופר
-            success: new Audio('https://assets.mixkit.co/active_storage/sfx/1111/1111-preview.m4a') // הצלחה
+        // --- מערכת סאונד אמינה (Oscillator) ---
+        // עוקף חסימות דפדפן ע"י ייצור צליל דיגיטלי במקום הורדת קובץ
+        let audioCtx;
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        function beep(duration, frequency, volume, type) {
+            if (!audioCtx) initAudio();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.type = type || 'sine';
+            oscillator.frequency.value = frequency;
+            gainNode.gain.value = volume;
+
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + duration);
+        }
+
+        // הגדרת סוגי צלילים
+        const playSound = {
+            knock: () => beep(0.1, 800, 0.1, 'square'), // נקישה (הודעה רגילה)
+            success: () => { // צליל עולה (הצלחה/מסמך)
+                beep(0.1, 400, 0.2, 'sine');
+                setTimeout(() => beep(0.2, 600, 0.2, 'sine'), 100);
+            },
+            siren: () => { // צופר חזק (אזעקה)
+                for (let i = 0; i < 6; i++) {
+                    setTimeout(() => beep(0.2, 880, 0.5, 'sawtooth'), i * 300);
+                    setTimeout(() => beep(0.2, 680, 0.5, 'sawtooth'), i * 300 + 150);
+                }
+            }
         };
 
-        // 1. כניסה למערכת (שחרור חסימות דפדפן)
+        // --- ניהול מצב סאונד ---
+        let isSoundOn = false;
+
         function unlockSystem() {
+            // שחרור חסימת דפדפן
+            initAudio();
+            playSound.knock(); 
+
             // הסתרת מסך נעילה
             const screen = document.getElementById('unlock-screen');
             screen.style.opacity = '0';
             setTimeout(() => screen.style.display = 'none', 500);
 
-            // הפעלת דף הבית
+            // טעינת דף הבית
             loadPage('sidor-group.html', 'קבוצת סידור', document.querySelector('.nav-item'));
 
-            // ניסיון הפעלת סאונד ראשוני
-            toggleSound();
+            // הפעלת כפתור הסאונד ויזואלית
+            toggleSound(true);
         }
 
-        // 2. הפעלת/כיבוי סאונד
-        function toggleSound() {
+        function toggleSound(forceOn) {
             const btn = document.getElementById('sound-toggle');
             const icon = btn.querySelector('i');
 
-            if (!isSoundOn) {
-                // ניגון דמה לשחרור החסימה
-                SOUNDS.knock.play().catch(()=>{}); 
+            if (!isSoundOn || forceOn === true) {
+                // הפעלה
+                if (!audioCtx) initAudio();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
                 
                 isSoundOn = true;
                 btn.classList.remove('muted');
                 btn.classList.add('active');
                 icon.className = 'fas fa-volume-up';
                 
-                Swal.fire({ toast: true, position: 'top', icon: 'success', title: 'התראות פעילות', showConfirmButton: false, timer: 1500 });
+                if(forceOn !== true) Swal.fire({ toast: true, position: 'top', icon: 'success', title: 'התראות פעילות', showConfirmButton: false, timer: 1500 });
             } else {
+                // כיבוי
                 isSoundOn = false;
                 btn.classList.remove('active');
                 btn.classList.add('muted');
@@ -189,27 +249,19 @@
 
         // --- הליבה: מערכת ההתראות ---
         window.triggerAlert = (type, msg) => {
-            console.log("🔥 ALERT SYSTEM:", type, msg);
+            console.log("🔥 ALERT:", type, msg);
 
-            // 1. רטט
+            // 1. רטט (עובד במובייל)
             if (navigator.vibrate) {
-                if (type === 'buzzer') navigator.vibrate([500, 100, 500, 100, 1000]); // חזק
-                else navigator.vibrate(100); // קצר
+                if (type === 'buzzer') navigator.vibrate([500, 100, 500, 100, 1000]); 
+                else navigator.vibrate(100);
             }
 
-            // 2. סאונד
+            // 2. סאונד (סינתיסייזר)
             if (isSoundOn) {
-                if (type === 'buzzer') {
-                    SOUNDS.siren.currentTime = 0;
-                    SOUNDS.siren.play();
-                } else if (type === 'success') {
-                    SOUNDS.success.currentTime = 0;
-                    SOUNDS.success.play();
-                } else {
-                    SOUNDS.knock.currentTime = 0;
-                    SOUNDS.knock.volume = 0.6;
-                    SOUNDS.knock.play();
-                }
+                if (type === 'buzzer') playSound.siren();
+                else if (type === 'success') playSound.success();
+                else playSound.knock();
             }
 
             // 3. חיווי מסך
@@ -223,7 +275,6 @@
                     backdrop: `rgba(255,0,0,0.5)`
                 });
             } else {
-                // הודעה עדינה
                 Swal.fire({
                     toast: true, position: 'top-end', icon: type === 'success' ? 'success' : 'info',
                     title: msg, showConfirmButton: false, timer: 3000
@@ -241,17 +292,13 @@
             document.getElementById('header-title').innerText = title;
             document.getElementById('app-frame').src = url;
             
-            // עדכון תפריט
             if(el) {
                 document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
                 el.classList.add('active');
             }
-            
-            // סגירת תפריט (אם פתוח)
             const drawer = document.getElementById('drawer');
             if(drawer.classList.contains('open')) toggleDrawer();
 
-            // הזרקת זהות משתמש לדף הפנימי
             const frame = document.getElementById('app-frame');
             frame.onload = () => {
                 const user = { name: 'ראמי סבן', role: 'admin' };
