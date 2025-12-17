@@ -6,93 +6,122 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body { background: #0f172a; color: white; font-family: sans-serif; padding: 20px; }
+        .user-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 15px; display: flex; align-items: center; gap: 15px; transition: 0.2s; }
+        .user-card:hover { border-color: #3b82f6; }
+    </style>
 </head>
-<body class="bg-slate-900 text-white p-6">
+<body>
 
-    <h1 class="text-2xl font-black mb-6 flex items-center gap-3">
-        <i class="fas fa-users-cog text-blue-500"></i> ניהול צוות והרשאות
-    </h1>
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-black mb-8 text-blue-500 flex items-center gap-3">
+            <i class="fas fa-users-cog"></i> ניהול צוות והרשאות
+        </h1>
 
-    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 mb-8">
-        <h2 class="text-lg font-bold mb-4">גיוס איש צוות חדש</h2>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <input id="u-name" placeholder="שם מלא (למשל: עלי נהג)" class="bg-slate-900 border border-slate-600 p-3 rounded text-white">
-            <input id="u-phone" placeholder="טלפון (למשל: 050...)" class="bg-slate-900 border border-slate-600 p-3 rounded text-white">
+        <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl mb-8">
+            <h2 class="text-lg font-bold mb-4 text-gray-300">גיוס איש צוות חדש</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                
+                <div>
+                    <label class="text-xs text-gray-500 block mb-1">שם מלא</label>
+                    <input id="u-name" placeholder="למשל: עלי נהג" class="w-full bg-slate-900 border border-slate-600 p-3 rounded text-white outline-none focus:border-blue-500">
+                </div>
+
+                <div>
+                    <label class="text-xs text-gray-500 block mb-1">טלפון (ללא מקף)</label>
+                    <input id="u-phone" type="tel" placeholder="0501234567" class="w-full bg-slate-900 border border-slate-600 p-3 rounded text-white outline-none focus:border-blue-500 font-mono">
+                </div>
+                
+                <div>
+                    <label class="text-xs text-gray-500 block mb-1">תפקיד</label>
+                    <select id="u-role" class="w-full bg-slate-900 border border-slate-600 p-3 rounded text-white outline-none">
+                        <option value="driver">🚛 נהג (ביצוע)</option>
+                        <option value="warehouse">🏭 מחסנאי</option>
+                        <option value="admin">👮 מנהל / חמ"ל</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="text-xs text-gray-500 block mb-1">תמונה (אופציונלי)</label>
+                    <input id="u-img" placeholder="לינק לתמונה" class="w-full bg-slate-900 border border-slate-600 p-3 rounded text-white outline-none text-xs">
+                </div>
+            </div>
             
-            <select id="u-role" class="bg-slate-900 border border-slate-600 p-3 rounded text-white">
-                <option value="driver">נהג (ביצוע)</option>
-                <option value="warehouse">מחסנאי (תפעול)</option>
-                <option value="admin">מנהל (הכל)</option>
-            </select>
-
-            <select id="u-perm" class="bg-slate-900 border border-slate-600 p-3 rounded text-white">
-                <option value="write">רשאי להגיב</option>
-                <option value="read">צפייה בלבד</option>
-            </select>
-        </div>
-        
-        <div class="mt-4 flex gap-4">
-            <input id="u-img" placeholder="קישור לתמונה (URL) או השאר ריק לאווטאר אוטומטי" class="flex-1 bg-slate-900 border border-slate-600 p-3 rounded text-white text-sm">
-            <button onclick="addUser()" class="bg-blue-600 px-6 py-3 rounded font-bold hover:bg-blue-500">
-                צור ושלח לינק <i class="fab fa-whatsapp"></i>
+            <button onclick="addUser()" class="mt-6 w-full py-3 bg-gradient-to-r from-green-600 to-green-700 rounded-xl font-bold shadow-lg hover:from-green-500 hover:to-green-600 flex items-center justify-center gap-2 transition">
+                <i class="fab fa-whatsapp text-xl"></i> צור משתמש ושלח לינק התקנה
             </button>
         </div>
-    </div>
 
-    <h3 class="font-bold text-gray-400 mb-2">צוות פעיל</h3>
-    <div id="team-list" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+        <h3 class="font-bold text-gray-400 mb-4 border-b border-gray-700 pb-2">צוות פעיל במערכת</h3>
+        <div id="team-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            </div>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
-        // הוספת משתמש
         window.addUser = async () => {
             const name = document.getElementById('u-name').value;
             const phone = document.getElementById('u-phone').value;
             const role = document.getElementById('u-role').value;
-            const perm = document.getElementById('u-perm').value;
             let img = document.getElementById('u-img').value;
 
-            if(!name) return Swal.fire('חסר שם', '', 'error');
-            if(!img) img = `https://ui-avatars.com/api/?name=${name}&background=random&color=fff`;
+            if(!name || !phone) return Swal.fire('שגיאה', 'חובה להזין שם וטלפון', 'error');
+            if(!img) img = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff`;
 
             // 1. שמירה ב-DB
             const docRef = await addDoc(collection(db, "users"), {
-                name, phone, role, permission: perm, photo: img, status: 'offline'
+                name, phone, role, photo: img, 
+                status: 'offline', createdAt: serverTimestamp()
             });
 
-            // 2. יצירת לינק חכם להתקנה
-            // הלינק מכיל את ה-ID של המשתמש. כשהוא יפתח אותו, המכשיר ירשם.
-            const installLink = `https://saban-system.onrender.com/index.html?user_id=${docRef.id}`;
+            // 2. יצירת הלינק המיוחד
+            // הלינק הזה מפנה ל-index.html עם פרמטר שמזהה את המשתמש
+            const baseUrl = "https://saban-system.onrender.com/index.html"; 
+            const magicLink = `${baseUrl}?user_id=${docRef.id}`;
             
-            // 3. שליחה לוואטסאפ
-            const msg = `אהלן ${name}, ברוך הבא למערכת סבן OS! 🚚\nלחץ על הלינק כדי להתקין את האפליקציה ולהתחיל לעבוד:\n${installLink}`;
-            window.open(`https://wa.me/972${phone.substring(1)}?text=${encodeURIComponent(msg)}`, '_blank');
+            // 3. פתיחת וואטסאפ
+            const msg = `אהלן ${name}, ברוך הבא לצוות סבן! 🚚\n\nכדי להתחיל לעבוד ולקבל סידור עבודה, לחץ על הלינק והתקן את האפליקציה:\n${magicLink}`;
+            
+            // המרת טלפון לפורמט בינלאומי
+            let cleanPhone = phone.replace('-', '').replace(' ', '');
+            if(cleanPhone.startsWith('0')) cleanPhone = '972' + cleanPhone.substring(1);
+
+            window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+            
+            // ניקוי טופס
+            document.getElementById('u-name').value = '';
+            document.getElementById('u-phone').value = '';
         };
 
-        // הצגת צוות
+        // האזנה לשינויים בצוות
         onSnapshot(collection(db, "users"), (snap) => {
             const list = document.getElementById('team-list');
             list.innerHTML = "";
             snap.forEach(d => {
                 const u = d.data();
+                const roleIcon = u.role === 'driver' ? '🚚' : (u.role === 'admin' ? '👮' : '🏭');
+                
                 list.innerHTML += `
-                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex items-center gap-3">
-                    <img src="${u.photo}" class="w-12 h-12 rounded-full border-2 border-slate-500">
-                    <div>
-                        <div class="font-bold">${u.name}</div>
-                        <div class="text-xs text-gray-400">${u.role} | ${u.permission === 'read' ? '👁️ צופה' : '✏️ כותב'}</div>
+                <div class="user-card group">
+                    <img src="${u.photo}" class="w-12 h-12 rounded-full border-2 border-gray-500">
+                    <div class="flex-1">
+                        <div class="font-bold text-lg">${u.name}</div>
+                        <div class="text-xs text-gray-400">${roleIcon} ${u.role} | ${u.phone}</div>
                     </div>
-                    <button onclick="deleteUser('${d.id}')" class="mr-auto text-red-500"><i class="fas fa-trash"></i></button>
+                    <button onclick="deleteUser('${d.id}')" class="bg-slate-800 hover:bg-red-600 p-2 rounded text-gray-400 hover:text-white transition">
+                        <i class="fas fa-trash"></i>
+                    </button>
                 </div>`;
             });
         });
-        
-        window.deleteUser = async(id) => {
-            if(confirm('למחוק?')) await deleteDoc(doc(db, "users", id));
+
+        window.deleteUser = async (id) => {
+            if(confirm('למחוק איש צוות זה?')) await deleteDoc(doc(db, "users", id));
         }
     </script>
 </body>
