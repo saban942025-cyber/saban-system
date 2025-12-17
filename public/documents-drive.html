@@ -54,9 +54,7 @@
         .file-title { font-weight: 700; font-size: 13px; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
         .file-date { font-size: 10px; color: #94a3b8; display: flex; justify-content: space-between; align-items: center; }
         
-        .action-btns { 
-            display: flex; gap: 8px; margin-top: 10px; 
-        }
+        .action-btns { display: flex; gap: 8px; margin-top: 10px; }
         .btn-action {
             flex: 1; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: bold;
             display: flex; align-items: center; justify-content: center; gap: 6px;
@@ -95,6 +93,10 @@
         <div class="folder-item" onclick="filterData('manual', this)">
             <i class="fas fa-folder text-blue-500"></i> העלאות ידניות
         </div>
+        
+        <div class="text-[10px] font-bold text-gray-400 uppercase mb-2 mt-6 tracking-wider">תיקיות</div>
+        <div class="folder-item" onclick="filterData('site', this)"><i class="fas fa-hard-hat text-yellow-600"></i> תמונות שטח</div>
+        <div class="folder-item" onclick="filterData('invoice', this)"><i class="fas fa-file-invoice text-green-600"></i> חשבוניות</div>
     </div>
 
     <div class="main-area">
@@ -126,53 +128,29 @@
         let rawManuals = [];
         let currentFilter = 'all';
 
-        // 1. משיכת נתונים משני המקורות במקביל
-        
-        // מקור א': העלאות ידניות (אוסף documents)
+        // 1. האזנה ומיזוג נתונים (כמו קודם)
         onSnapshot(query(collection(db, "documents"), orderBy("createdAt", "desc")), (snap) => {
-            rawManuals = snap.docs.map(d => ({
-                id: d.id,
-                ...d.data(),
-                _source: 'manual',
-                _title: d.data().name || 'ללא שם',
-                _date: d.data().createdAt
+            rawManuals = snap.docs.map(d => ({ id: d.id, ...d.data(), _source: 'manual', _title: d.data().name || 'ללא שם', _date: d.data().createdAt }));
+            refreshGrid();
+        });
+
+        onSnapshot(query(collection(db, "orders"), orderBy("createdAt", "desc")), (snap) => {
+            rawEmails = snap.docs.filter(d => d.data().pdfUrl).map(d => ({
+                id: d.id, url: d.data().pdfUrl, type: 'pdf', _source: 'email', 
+                _title: d.data().docTitle || `תעודה #${d.data().orderNum}`, 
+                _sender: d.data().emailSender || 'Comax', _date: d.data().createdAt
             }));
             refreshGrid();
         });
 
-        // מקור ב': מיילים נכנסים (אוסף orders שיש להם pdfUrl)
-        // הערה: בפיירבייס קשה למיין על שני שדות שונים בו זמנית בלי אינדקס, אז נמשוך ונסנן בלקוח
-        onSnapshot(query(collection(db, "orders"), orderBy("createdAt", "desc")), (snap) => {
-            rawEmails = snap.docs
-                .map(d => d.data())
-                .filter(d => d.pdfUrl && d.pdfUrl.length > 5) // רק כאלה עם קובץ
-                .map(d => ({
-                    id: d.orderNum, // או d.id אם רוצים
-                    url: d.pdfUrl,
-                    type: 'pdf', // רוב המיילים מקומקס הם PDF
-                    _source: 'email',
-                    _title: d.docTitle || `תעודה #${d.orderNum}`,
-                    _sender: d.emailSender || 'Comax',
-                    _date: d.createdAt
-                }));
-            refreshGrid();
-        });
-
-        // 2. פונקציית המיזוג והתצוגה
         function refreshGrid() {
             let combined = [];
-
             if (currentFilter === 'all') combined = [...rawManuals, ...rawEmails];
             else if (currentFilter === 'email') combined = [...rawEmails];
             else if (currentFilter === 'manual') combined = [...rawManuals];
+            else combined = rawManuals.filter(d => d.folder === currentFilter); // סינון לפי תיקייה
 
-            // מיון: הכי חדש למעלה (לפי Timestamp)
-            combined.sort((a, b) => {
-                const tA = a._date?.seconds || 0;
-                const tB = b._date?.seconds || 0;
-                return tB - tA;
-            });
-
+            combined.sort((a, b) => (b._date?.seconds || 0) - (a._date?.seconds || 0));
             render(combined);
         }
 
@@ -183,137 +161,121 @@
 
             items.forEach(item => {
                 const isImg = item.type === 'image' || (item.url && item.url.match(/\.(jpeg|jpg|gif|png)/));
-                const iconClass = item.type === 'pdf' || !isImg ? 'fa-file-pdf text-red-500' : 'fa-image text-purple-500';
-                
-                // תצוגה
-                const previewContent = isImg 
-                    ? `<img src="${item.url}" loading="lazy">` 
-                    : `<i class="fas ${iconClass} file-icon"></i>`;
-
-                // תגית מקור
-                const badgeHtml = item._source === 'email' 
-                    ? `<span class="source-badge text-orange-600"><i class="fas fa-envelope"></i> מייל</span>`
-                    : `<span class="source-badge text-blue-600"><i class="fas fa-user"></i> ראמי</span>`;
-
-                const dateStr = item._date ? new Date(item._date.seconds * 1000).toLocaleDateString('he-IL') : 'לא ידוע';
-                const timeStr = item._date ? new Date(item._date.seconds * 1000).toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'}) : '';
+                const iconClass = isImg ? '' : (item.type === 'pdf' ? 'fa-file-pdf text-red-500' : 'fa-file text-gray-400');
+                const preview = isImg ? `<img src="${item.url}" loading="lazy">` : `<i class="fas ${iconClass} file-icon"></i>`;
+                const badge = item._source === 'email' ? `<span class="source-badge text-orange-600"><i class="fas fa-envelope"></i> מייל</span>` : `<span class="source-badge text-blue-600"><i class="fas fa-user"></i> ראמי</span>`;
 
                 grid.innerHTML += `
                 <div class="file-card group">
-                    ${badgeHtml}
-                    
-                    <div class="preview-area" onclick="window.open('${item.url}')">
-                        ${previewContent}
-                    </div>
-                    
+                    ${badge}
+                    <div class="preview-area" onclick="window.open('${item.url}')">${preview}</div>
                     <div class="card-footer">
                         <div class="file-title" title="${item._title}">${item._title}</div>
-                        <div class="file-date">
-                            <span>${dateStr} ${timeStr}</span>
-                            <span>${item._sender || 'Admin'}</span>
-                        </div>
-                        
+                        <div class="file-date"><span>${item._date ? new Date(item._date.seconds*1000).toLocaleDateString() : ''}</span><span>${item._sender || 'ידני'}</span></div>
                         <div class="action-btns">
-                            <button onclick="window.open('${item.url}')" class="btn-action btn-view">
-                                <i class="fas fa-eye"></i> צפה
-                            </button>
-                            <button onclick="shareFile('${item.url}', '${item._title}')" class="btn-action btn-send">
-                                <i class="fas fa-paper-plane"></i> שלח
-                            </button>
+                            <button onclick="window.open('${item.url}')" class="btn-action btn-view"><i class="fas fa-eye"></i></button>
+                            <button onclick="shareFile('${item.url}', '${item._title}')" class="btn-action btn-send"><i class="fas fa-paper-plane"></i> שלח</button>
                         </div>
                     </div>
                 </div>`;
             });
         }
 
-        // 3. סינון
         window.filterData = (type, el) => {
             currentFilter = type;
             document.querySelectorAll('.folder-item').forEach(i => i.classList.remove('active'));
             el.classList.add('active');
-            
-            const titles = { 'all': 'כל המסמכים', 'email': 'נכנסים מהמייל (Comax)', 'manual': 'העלאות וקבצים אישיים' };
-            document.getElementById('page-title').innerText = titles[type];
-            
             refreshGrid();
         };
 
-        // 4. העלאה ידנית
+        // --- הפיצ'ר החדש: העלאה + קישור מיידי ---
         window.uploadManual = async () => {
             const { value: form } = await Swal.fire({
-                title: 'העלאת קובץ חדש',
+                title: 'העלאת קובץ לדרייב',
                 html: `
-                    <input id="f-name" class="swal2-input" placeholder="שם הקובץ">
-                    <input id="f-url" class="swal2-input" placeholder="קישור (URL)">
-                    <select id="f-type" class="swal2-input"><option value="image">תמונה</option><option value="pdf">מסמך PDF</option></select>
+                    <label class="block text-right text-xs font-bold text-gray-500 mb-1">שם הקובץ</label>
+                    <input id="f-name" class="swal2-input" placeholder="למשל: תמונת שטח 1">
+                    
+                    <label class="block text-right text-xs font-bold text-gray-500 mb-1 mt-3">קישור (URL)</label>
+                    <input id="f-url" class="swal2-input" placeholder="הדבק כאן קישור">
+                    
+                    <label class="block text-right text-xs font-bold text-gray-500 mb-1 mt-3">סיווג לתיקייה</label>
+                    <select id="f-folder" class="swal2-input">
+                        <option value="manual">כללי</option>
+                        <option value="site">תמונות שטח</option>
+                        <option value="invoice">חשבוניות</option>
+                    </select>
                 `,
-                confirmButtonText: 'שמור בדרייב',
+                confirmButtonText: 'שמור בארכיון',
+                focusConfirm: false,
                 preConfirm: () => ({
                     name: document.getElementById('f-name').value,
                     url: document.getElementById('f-url').value,
-                    type: document.getElementById('f-type').value
+                    folder: document.getElementById('f-folder').value
                 })
             });
 
             if (form && form.url) {
-                await addDoc(collection(db, "documents"), {
+                // 1. שמירה בדאטה בייס
+                const isImg = form.url.match(/\.(jpeg|jpg|gif|png)/) != null;
+                const docRef = await addDoc(collection(db, "documents"), {
                     name: form.name,
                     url: form.url,
-                    type: form.type,
+                    type: isImg ? 'image' : 'file',
+                    folder: form.folder,
                     uploadedBy: 'ראמי',
-                    folder: 'Manual',
                     createdAt: serverTimestamp()
                 });
-                Swal.fire('נשמר', '', 'success');
+
+                // 2. פופ-אפ הצלחה עם אפשרות שיתוף מיידית!
+                Swal.fire({
+                    icon: 'success',
+                    title: 'הקובץ נשמר בהצלחה!',
+                    html: `
+                        <div class="text-sm mb-4">מה תרצה לעשות עכשיו?</div>
+                        <div class="flex flex-col gap-2">
+                            <button onclick="shareFile('${form.url}', '${form.name}')" class="bg-green-600 text-white p-3 rounded font-bold shadow-lg hover:bg-green-700">
+                                <i class="fas fa-paper-plane"></i> שייך ושלח ללקוח עכשיו
+                            </button>
+                            <button onclick="Swal.close()" class="bg-gray-200 text-gray-700 p-2 rounded hover:bg-gray-300">
+                                סגור (הקובץ יישמר בארכיון)
+                            </button>
+                        </div>
+                    `,
+                    showConfirmButton: false // אנחנו משתמשים בכפתורים שלנו
+                });
             }
         };
 
-        // 5. שיגור להזמנה פעילה 🚀
         window.shareFile = async (url, title) => {
-            // טוען הזמנות פעילות
             const snap = await getDocs(query(collection(db, "orders"), where("status", "!=", "done")));
-            
-            if(snap.empty) return Swal.fire('אין הזמנות', 'אין כרגע לקוחות פעילים לשלוח אליהם', 'warning');
-
             const options = {};
-            snap.forEach(d => {
-                const o = d.data();
-                options[d.id] = `#${o.orderNum || '???'} | ${o.clientName}`;
-            });
+            snap.forEach(d => { const o = d.data(); options[d.id] = `#${o.orderNum || '???'} | ${o.clientName}`; });
+
+            if(Object.keys(options).length === 0) return Swal.fire('אין הזמנות', 'אין למי לשלוח', 'info');
 
             const { value: orderId } = await Swal.fire({
-                title: 'לאיזו הזמנה לשלוח?',
-                text: `את הקובץ: ${title}`,
+                title: 'לאיזו משימה/לקוח לשייך?',
                 input: 'select',
                 inputOptions: options,
-                inputPlaceholder: 'בחר לקוח מהרשימה...',
-                confirmButtonText: 'שגר ללקוח 🚀',
-                confirmButtonColor: '#166534'
+                inputPlaceholder: 'בחר מהרשימה...'
             });
 
             if (orderId) {
-                const isImg = url.match(/\.(jpeg|jpg|gif|png)/) || title.includes('תמונה');
-                
+                const isImg = url.match(/\.(jpeg|jpg|gif|png)/) != null;
                 await updateDoc(doc(db, "orders", orderId), {
-                    status: 'changes_requested', // מעיר את הלקוח
+                    status: 'changes_requested',
                     chat: arrayUnion({
                         sender: 'ראמי',
-                        text: isImg ? title : `מסמך מצורף: ${title}`,
-                        imageUrl: isImg ? url : null, // אם זו תמונה, הלקוח יראה אותה
+                        text: isImg ? title : `קובץ מצורף: ${title}`,
+                        imageUrl: isImg ? url : null,
                         type: isImg ? 'image' : 'file',
                         time: new Date().toISOString()
                     })
                 });
-
-                Swal.fire({
-                    icon: 'success', 
-                    title: 'נשלח!', 
-                    text: 'הלקוח קיבל התראה והקובץ מופיע בצ\'אט שלו.',
-                    timer: 2000, showConfirmButton: false
-                });
+                Swal.fire('נשלח!', 'הקובץ שוייך להזמנה והלקוח קיבל עדכון.', 'success');
             }
         };
-
     </script>
 </body>
 </html>
