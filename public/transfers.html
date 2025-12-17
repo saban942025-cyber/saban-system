@@ -2,107 +2,139 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>ניהול העברות | סבן</title>
+    <title>Visual Transfers</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        body { background: #f0f2f5; font-family: sans-serif; height: 100vh; display: flex; flex-direction: column; }
-        .transfer-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 12px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-        .status-badge { font-size: 11px; padding: 3px 8px; border-radius: 6px; font-weight: bold; }
+        body { background: #f0f2f5; font-family: sans-serif; padding: 20px; }
+
+        .transfer-row {
+            background: white; border-radius: 16px; padding: 20px; margin-bottom: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            display: flex; align-items: center; justify-content: space-between;
+            position: relative; overflow: hidden;
+        }
+
+        /* Warehouses */
+        .wh-box {
+            width: 80px; height: 80px; border-radius: 12px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 12px; z-index: 2;
+            background: #f1f5f9; border: 2px solid #cbd5e1; color: #64748b; transition: 0.3s;
+        }
+        .wh-box.active {
+            background: #dbeafe; border-color: #3b82f6; color: #1e40af; transform: scale(1.1); box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+        }
+
+        /* The Neon Snake Path */
+        .path-container { flex: 1; margin: 0 20px; position: relative; height: 10px; background: #e2e8f0; border-radius: 5px; }
+        
+        .neon-snake {
+            position: absolute; top: 0; left: 0; bottom: 0; width: 30%;
+            background: linear-gradient(90deg, transparent, #22c55e, transparent);
+            border-radius: 5px;
+            animation: snakeMove 2s infinite linear;
+            opacity: 0; /* Hidden by default */
+        }
+        
+        .transfer-row.active .neon-snake { opacity: 1; }
+        
+        @keyframes snakeMove {
+            0% { left: -30%; }
+            100% { left: 100%; }
+        }
+
+        /* Document Button */
+        .doc-btn {
+            padding: 8px 16px; border-radius: 8px; font-weight: bold; font-size: 12px;
+            background: #e2e8f0; color: #94a3af; cursor: not-allowed; transition: 0.3s;
+        }
+        .doc-btn.ready {
+            background: #22c55e; color: white; cursor: pointer;
+            box-shadow: 0 0 10px #22c55e; animation: pulseBtn 1.5s infinite;
+        }
+        
+        @keyframes pulseBtn { 0% {transform: scale(1);} 50% {transform: scale(1.05);} 100% {transform: scale(1);} }
+
     </style>
 </head>
 <body>
 
-    <div class="p-4 bg-white border-b flex justify-between items-center shadow-sm">
-        <h1 class="text-xl font-black text-slate-800">העברות מלאי <span class="text-xs font-normal text-gray-500">(עלי פלטה)</span></h1>
-        <button onclick="newTransfer()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-blue-700">
-            <i class="fas fa-plus"></i> פתיחת העברה
+    <h2 class="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">
+        <i class="fas fa-exchange-alt text-blue-600"></i> העברות פעילות
+    </h2>
+
+    <div class="transfer-row active" id="trans-1">
+        <div class="wh-box active">
+            <i class="fas fa-warehouse text-2xl mb-1"></i>
+            סניף החרש
+        </div>
+
+        <div class="path-container">
+            <div class="neon-snake"></div> <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded">
+                עלי בדרך
+            </div>
+        </div>
+
+        <div class="wh-box">
+            <i class="fas fa-building text-2xl mb-1"></i>
+            סניף התלמיד
+        </div>
+    </div>
+
+    <div class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100 mt-4">
+        <div class="text-sm">
+            <div class="font-bold">תעודה #4712365</div>
+            <div class="text-xs text-gray-500">ממתין לאישור מנהל</div>
+        </div>
+        
+        <button id="doc-btn-1" class="doc-btn" onclick="viewDoc()">
+            <i class="fas fa-file-pdf"></i> מסמך לא הגיע
+        </button>
+        
+        <button onclick="managerApprove()" class="text-red-500 font-bold text-xs underline ml-4">
+            מנהל? אשר ללא מסמך
         </button>
     </div>
 
-    <div class="flex-1 overflow-y-auto p-4" id="transfers-list">
-        </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, updateDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
-
-        // פתיחת משימת העברה חדשה
-        window.newTransfer = async () => {
-            const { value: formValues } = await Swal.fire({
-                title: 'פתיחת העברה בין סניפים',
-                html:
-                    '<input id="swal-from" class="swal2-input" placeholder="מאיזה סניף? (למשל: החרש)">' +
-                    '<input id="swal-to" class="swal2-input" placeholder="לאיזה סניף? (למשל: התלמיד)">' +
-                    '<textarea id="swal-items" class="swal2-textarea" placeholder="מה חסר? (למשל: 2 משטחי מלט)"></textarea>',
-                focusConfirm: false,
-                confirmButtonText: 'צור דרישה',
-                preConfirm: () => {
-                    return [
-                        document.getElementById('swal-from').value,
-                        document.getElementById('swal-to').value,
-                        document.getElementById('swal-items').value
-                    ]
-                }
+    <script>
+        // סימולציה: קבלת מסמך (מפעיל את האורות)
+        setTimeout(() => {
+            const btn = document.getElementById('doc-btn-1');
+            btn.classList.add('ready');
+            btn.innerHTML = '<i class="fas fa-file-pdf"></i> צפה בתעודה';
+            
+            // השמעת צליל עדין
+            new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.m4a').play();
+            
+            Swal.fire({
+                toast: true, position: 'top-end', 
+                icon: 'success', title: 'התקבל מסמך להעברה!', 
+                showConfirmButton: false, timer: 3000
             });
+        }, 5000); // אחרי 5 שניות
 
-            if (formValues) {
-                await addDoc(collection(db, "transfers"), {
-                    fromBranch: formValues[0],
-                    toBranch: formValues[1],
-                    items: formValues[2],
-                    status: 'new',
-                    driverId: 'ali_01', // אוטומטית לעלי
-                    createdAt: serverTimestamp()
-                });
-                Swal.fire('נפתח', 'המשימה נוצרה וממתינה למספר תעודה', 'success');
+        function viewDoc() {
+            if(document.getElementById('doc-btn-1').classList.contains('ready')) {
+                window.open('https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf');
             }
         }
 
-        // האזנה להעברות
-        onSnapshot(query(collection(db, "transfers"), orderBy("createdAt", "desc")), (snap) => {
-            const list = document.getElementById('transfers-list');
-            list.innerHTML = "";
-            snap.forEach(d => {
-                const t = d.data();
-                let statusHtml = '';
-                
-                // לוגיקת סטטוסים
-                if (t.status === 'new') {
-                    statusHtml = `
-                        <div class="flex gap-2">
-                            <input type="text" id="cx-${d.id}" placeholder="מס' תעודה מקומקס" class="border p-1 rounded text-xs w-32">
-                            <button onclick="saveComax('${d.id}')" class="bg-green-600 text-white px-2 rounded text-xs">שמור</button>
-                        </div>`;
-                } else if (t.status === 'waiting_approval') { // זה אומר שהמסמך הגיע!
-                    statusHtml = `
-                        <div class="flex flex-col items-end gap-1">
-                            <span class="text-xs text-green-600 font-bold"><i class="fas fa-check"></i> מסמך נקלט</span>
-                            <div class="text-[10px] text-gray-400 truncate w-32">${t.emailSender || 'מייל לא זוהה'}</div>
-                            <a href="${t.pdfUrl}" target="_blank" class="text-blue-600 text-xs underline">צפה בתעודה</a>
-                        </div>`;
+        function managerApprove() {
+            Swal.fire({
+                title: 'אישור מנהל חריג',
+                text: 'האם לאשר העמסה לפני קבלת מסמך?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'כן, אני לוקח אחריות',
+                cancelButtonText: 'ביטול'
+            }).then((res) => {
+                if(res.isConfirmed) {
+                    Swal.fire('אושר!', 'עלי קיבל אישור העמסה חריג.', 'success');
                 }
-
-                list.innerHTML += `
-                <div class="transfer-card border-l-4 ${t.status === 'new' ? 'border-l-orange-500' : 'border-l-green-500'}">
-                    <div>
-                        <div class="font-bold text-sm">${t.fromBranch} <i class="fas fa-arrow-left mx-1 text-gray-400"></i> ${t.toBranch}</div>
-                        <div class="text-xs text-gray-500 mt-1">${t.items}</div>
-                        <div class="mt-2 text-xs text-blue-800 bg-blue-50 px-2 py-1 rounded inline-block">🚛 עלי (פלטה)</div>
-                    </div>
-                    <div>${statusHtml}</div>
-                </div>`;
             });
-        });
-
-        window.saveComax = async (id) => {
-            const val = document.getElementById(`cx-${id}`).value;
-            if (val) {
-                await updateDoc(doc(db, "transfers", id), { comaxNum: val, status: 'processing' });
-            }
         }
     </script>
 </body>
