@@ -2,140 +2,243 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>Visual Transfers</title>
+    <title>ניהול העברות ומסמכים</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     <style>
-        body { background: #f0f2f5; font-family: sans-serif; padding: 20px; }
+        body { background: #f8fafc; font-family: -apple-system, sans-serif; padding: 20px; color: #334155; }
 
-        .transfer-row {
-            background: white; border-radius: 16px; padding: 20px; margin-bottom: 20px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        /* כותרות סקשן */
+        .section-title { 
+            font-size: 14px; font-weight: 800; color: #64748b; text-transform: uppercase; 
+            margin-bottom: 12px; display: flex; align-items: center; gap: 8px; 
+            border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;
+        }
+
+        /* --- עיצוב תיקיית מסמכים (Inbox) --- */
+        .doc-card {
+            background: white; border: 1px solid #e2e8f0; border-radius: 12px;
+            padding: 16px; margin-bottom: 10px;
             display: flex; align-items: center; justify-content: space-between;
+            transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        }
+        .doc-card:hover { border-color: #3b82f6; transform: translateY(-1px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+
+        .doc-icon {
+            width: 40px; height: 40px; background: #fee2e2; color: #dc2626;
+            border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            font-size: 20px; flex-shrink: 0; margin-left: 15px;
+        }
+
+        /* --- עיצוב הנחש (Active Transfer) --- */
+        .transfer-row {
+            background: white; border-radius: 16px; padding: 20px; margin-bottom: 15px;
+            border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;
             position: relative; overflow: hidden;
         }
+        .transfer-row.active { border-left: 4px solid #22c55e; }
 
-        /* Warehouses */
-        .wh-box {
-            width: 80px; height: 80px; border-radius: 12px;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            font-weight: bold; font-size: 12px; z-index: 2;
-            background: #f1f5f9; border: 2px solid #cbd5e1; color: #64748b; transition: 0.3s;
+        .wh-badge {
+            font-size: 12px; font-weight: bold; background: #f1f5f9; color: #475569;
+            padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1;
+            display: flex; align-items: center; gap: 6px; z-index: 2;
         }
-        .wh-box.active {
-            background: #dbeafe; border-color: #3b82f6; color: #1e40af; transform: scale(1.1); box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
-        }
-
-        /* The Neon Snake Path */
-        .path-container { flex: 1; margin: 0 20px; position: relative; height: 10px; background: #e2e8f0; border-radius: 5px; }
         
-        .neon-snake {
-            position: absolute; top: 0; left: 0; bottom: 0; width: 30%;
+        /* הנחש הזוהר */
+        .snake-path { flex: 1; height: 4px; background: #e2e8f0; margin: 0 15px; position: relative; border-radius: 2px; }
+        .snake-head {
+            position: absolute; top: 0; bottom: 0; width: 30%;
             background: linear-gradient(90deg, transparent, #22c55e, transparent);
-            border-radius: 5px;
-            animation: snakeMove 2s infinite linear;
-            opacity: 0; /* Hidden by default */
+            animation: snakeRun 2s infinite linear;
         }
-        
-        .transfer-row.active .neon-snake { opacity: 1; }
-        
-        @keyframes snakeMove {
-            0% { left: -30%; }
-            100% { left: 100%; }
-        }
+        @keyframes snakeRun { 0% {left: -30%} 100% {left: 100%} }
 
-        /* Document Button */
-        .doc-btn {
-            padding: 8px 16px; border-radius: 8px; font-weight: bold; font-size: 12px;
-            background: #e2e8f0; color: #94a3af; cursor: not-allowed; transition: 0.3s;
+        /* כפתורים */
+        .btn-action {
+            padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: bold;
+            cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 6px;
         }
-        .doc-btn.ready {
-            background: #22c55e; color: white; cursor: pointer;
-            box-shadow: 0 0 10px #22c55e; animation: pulseBtn 1.5s infinite;
-        }
-        
-        @keyframes pulseBtn { 0% {transform: scale(1);} 50% {transform: scale(1.05);} 100% {transform: scale(1);} }
+        .btn-blue { background: #eff6ff; color: #1e40af; border: 1px solid #dbeafe; }
+        .btn-blue:hover { background: #dbeafe; }
+        .btn-green { background: #f0fdf4; color: #15803d; border: 1px solid #dcfce7; }
+        .btn-green:hover { background: #dcfce7; }
 
     </style>
 </head>
 <body>
 
-    <h2 class="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">
-        <i class="fas fa-exchange-alt text-blue-600"></i> העברות פעילות
-    </h2>
-
-    <div class="transfer-row active" id="trans-1">
-        <div class="wh-box active">
-            <i class="fas fa-warehouse text-2xl mb-1"></i>
-            סניף החרש
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-2xl font-black text-slate-800">ניהול העברות</h1>
+            <p class="text-sm text-gray-500">תיבת מסמכים נכנסים וסטטוס ביצוע</p>
         </div>
-
-        <div class="path-container">
-            <div class="neon-snake"></div> <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded">
-                עלי בדרך
-            </div>
-        </div>
-
-        <div class="wh-box">
-            <i class="fas fa-building text-2xl mb-1"></i>
-            סניף התלמיד
+        <div class="flex gap-2">
+            <span class="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-2">
+                <i class="fas fa-sync fa-spin"></i> מאזין למייל
+            </span>
         </div>
     </div>
 
-    <div class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100 mt-4">
-        <div class="text-sm">
-            <div class="font-bold">תעודה #4712365</div>
-            <div class="text-xs text-gray-500">ממתין לאישור מנהל</div>
-        </div>
-        
-        <button id="doc-btn-1" class="doc-btn" onclick="viewDoc()">
-            <i class="fas fa-file-pdf"></i> מסמך לא הגיע
-        </button>
-        
-        <button onclick="managerApprove()" class="text-red-500 font-bold text-xs underline ml-4">
-            מנהל? אשר ללא מסמך
-        </button>
+    <div class="section-title">
+        <i class="fas fa-inbox"></i> מסמכים שהתקבלו (ממתינים לשיבוץ)
     </div>
+    <div id="docs-inbox" class="mb-8">
+        <div class="text-center py-8 text-gray-400 text-sm">אין מסמכים חדשים להצגה...</div>
+        </div>
 
-    <script>
-        // סימולציה: קבלת מסמך (מפעיל את האורות)
-        setTimeout(() => {
-            const btn = document.getElementById('doc-btn-1');
-            btn.classList.add('ready');
-            btn.innerHTML = '<i class="fas fa-file-pdf"></i> צפה בתעודה';
-            
-            // השמעת צליל עדין
-            new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.m4a').play();
-            
-            Swal.fire({
-                toast: true, position: 'top-end', 
-                icon: 'success', title: 'התקבל מסמך להעברה!', 
-                showConfirmButton: false, timer: 3000
-            });
-        }, 5000); // אחרי 5 שניות
+    <div class="section-title">
+        <i class="fas fa-truck-loading"></i> העברות בביצוע (עלי/חכמת)
+    </div>
+    <div id="active-transfers">
+        </div>
 
-        function viewDoc() {
-            if(document.getElementById('doc-btn-1').classList.contains('ready')) {
-                window.open('https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf');
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, orderBy, where, onSnapshot, updateDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
+
+        // 1. האזנה למסמכים נכנסים (Inbox Logic)
+        // מסמכים שהגיעו במייל אבל עדיין לא שויכו (סטטוס waiting_approval)
+        const qDocs = query(collection(db, "transfers"), where("status", "==", "waiting_approval"));
+        
+        onSnapshot(qDocs, (snap) => {
+            const container = document.getElementById('docs-inbox');
+            if(snap.empty) {
+                container.innerHTML = `<div class="text-center py-8 text-gray-400 text-sm italic border-2 border-dashed border-gray-200 rounded-xl">📭 התיקייה ריקה - אין מסמכים חדשים</div>`;
+                return;
             }
-        }
+            
+            container.innerHTML = "";
+            snap.forEach(d => {
+                const t = d.data();
+                const senderName = t.emailSender ? t.emailSender.split('@')[0] : 'לא ידוע';
+                
+                container.innerHTML += `
+                <div class="doc-card">
+                    <div class="flex items-center">
+                        <div class="doc-icon"><i class="fas fa-file-pdf"></i></div>
+                        <div class="ml-4">
+                            <div class="font-bold text-slate-800">תעודה #${t.comaxNum || 'ללא מספר'}</div>
+                            <div class="text-xs text-gray-500 flex items-center gap-2 mt-1">
+                                <img src="https://ui-avatars.com/api/?name=${senderName}&background=random" class="w-4 h-4 rounded-full">
+                                <span>התקבל מ: <b>${senderName}</b></span>
+                                <span class="text-gray-300">|</span>
+                                <span>${new Date(t.createdAt?.seconds*1000).toLocaleTimeString().slice(0,5)}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-2">
+                        <button onclick="window.open('${t.pdfUrl}')" class="btn-blue">
+                            <i class="fas fa-eye"></i> צפה
+                        </button>
+                        
+                        <button onclick="discussInGroup('${t.comaxNum}', '${t.pdfUrl}', '${t.items}')" class="btn-blue">
+                            <i class="fas fa-comments"></i> דון בקבוצה
+                        </button>
+                        
+                        <button onclick="assignTask('${d.id}', '${t.comaxNum}', '${t.items}')" class="btn-green">
+                            <i class="fas fa-tasks"></i> פתח משימה
+                        </button>
+                    </div>
+                </div>`;
+            });
+        });
 
-        function managerApprove() {
-            Swal.fire({
-                title: 'אישור מנהל חריג',
-                text: 'האם לאשר העמסה לפני קבלת מסמך?',
-                icon: 'warning',
+        // 2. האזנה להעברות פעילות (Snake Logic)
+        const qActive = query(collection(db, "transfers"), where("status", "==", "processing"));
+        
+        onSnapshot(qActive, (snap) => {
+            const container = document.getElementById('active-transfers');
+            container.innerHTML = "";
+            snap.forEach(d => {
+                const t = d.data();
+                container.innerHTML += `
+                <div class="transfer-row active">
+                    <div class="wh-badge"><i class="fas fa-warehouse"></i> ${t.fromBranch || 'מקור'}</div>
+                    
+                    <div class="snake-path">
+                        <div class="snake-head"></div>
+                        <div class="absolute -top-5 left-1/2 transform -translate-x-1/2 text-[10px] font-bold text-green-600 bg-green-50 px-2 rounded border border-green-100">
+                            ${t.driverId === 'ali_01' ? 'עלי בביצוע' : 'בדרך ליעד'}
+                        </div>
+                    </div>
+                    
+                    <div class="wh-badge"><i class="fas fa-building"></i> ${t.toBranch || 'יעד'}</div>
+                    
+                    <div class="mr-4 text-right min-w-[120px]">
+                        <div class="font-bold text-sm text-slate-800">תעודה ${t.comaxNum}</div>
+                        <div class="text-xs text-gray-500">${t.items}</div>
+                    </div>
+                </div>`;
+            });
+        });
+
+        // --- פעולות ---
+
+        // A. דיון בקבוצה (שליחת הודעה לחמ"ל)
+        window.discussInGroup = async (docNum, url, items) => {
+            const { value: text } = await Swal.fire({
+                title: 'תיוג בקבוצת סידור',
+                input: 'text',
+                inputPlaceholder: 'למשל: @עלי תסתכל על התעודה הזו...',
                 showCancelButton: true,
-                confirmButtonColor: '#d33',
-                confirmButtonText: 'כן, אני לוקח אחריות',
-                cancelButtonText: 'ביטול'
-            }).then((res) => {
-                if(res.isConfirmed) {
-                    Swal.fire('אושר!', 'עלי קיבל אישור העמסה חריג.', 'success');
+                confirmButtonText: 'שלח לקבוצה'
+            });
+
+            if (text) {
+                // הוספת הודעה לקולקשיין של הצ'אט (בפועל orders משמש לצ'אט כרגע או messages)
+                // נשתמש ב-transfers כדי לעדכן שהתחיל דיון, או נשלח אירוע
+                // לצורך הדוגמה, נפתח חלונית שמדמה שליחה
+                Swal.fire('נשלח', 'ההודעה נשלחה לקבוצה עם הלינק למסמך', 'success');
+                // כאן יש להוסיף לוגיקה שכותבת ל-messages collection אם קיים
+            }
+        };
+
+        // B. פתיחת משימה (שיוך לנהג)
+        window.assignTask = async (docId, docNum, defaultItems) => {
+            const { value: form } = await Swal.fire({
+                title: `פתיחת משימה לתעודה ${docNum}`,
+                html: `
+                    <div class="text-right text-sm mb-2 text-gray-500">הגדרת מסלול לנהג</div>
+                    <div class="grid grid-cols-2 gap-2 mb-2">
+                        <select id="swal-from" class="swal2-select m-0 text-sm"><option value="החרש">החרש</option><option value="התלמיד">התלמיד</option></select>
+                        <select id="swal-to" class="swal2-select m-0 text-sm"><option value="התלמיד">התלמיד</option><option value="החרש">החרש</option><option value="לקוח">לקוח</option></select>
+                    </div>
+                    <select id="swal-driver" class="swal2-select w-full mb-2 text-sm">
+                        <option value="ali_01">עלי (פלטה)</option>
+                        <option value="hichmat_01">חכמת (מנוף)</option>
+                    </select>
+                `,
+                focusConfirm: false,
+                confirmButtonText: 'שגר לנהג 🚀',
+                preConfirm: () => {
+                    return {
+                        from: document.getElementById('swal-from').value,
+                        to: document.getElementById('swal-to').value,
+                        driver: document.getElementById('swal-driver').value
+                    }
                 }
             });
-        }
+
+            if (form) {
+                // עדכון המסמך לסטטוס "בביצוע" (processing) מה שמעביר אותו לרשימת הנחש
+                await updateDoc(doc(db, "transfers", docId), {
+                    status: 'processing',
+                    fromBranch: form.from,
+                    toBranch: form.to,
+                    driverId: form.driver,
+                    startTime: serverTimestamp()
+                });
+                
+                Swal.fire('בוצע', 'המשימה הועברה לנהג והנחש יצא לדרך', 'success');
+            }
+        };
+
     </script>
 </body>
 </html>
