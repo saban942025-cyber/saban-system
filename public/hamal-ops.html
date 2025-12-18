@@ -2,131 +2,153 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>Saban Logistics | מפה טקטית</title>
+    <title>Saban Ops Map</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <style>
-        body { margin: 0; display: flex; height: 100vh; overflow: hidden; font-family: sans-serif; }
-        #map { flex: 1; height: 100%; z-index: 1; }
+        body { margin: 0; padding: 0; background: #0f172a; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        #ops-map { flex: 1; width: 100%; z-index: 1; }
         
-        .sidebar { width: 350px; background: white; border-left: 1px solid #ddd; display: flex; flex-direction: column; z-index: 2; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
-        .driver-item { padding: 15px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
-        .driver-item:hover { background: #f9fafb; }
-        .driver-status { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; }
-        .st-online { background: #10b981; box-shadow: 0 0 5px #10b981; }
-        .st-offline { background: #9ca3af; }
-        .st-busy { background: #ef4444; }
-
-        /* Custom Map Icons */
-        .truck-icon { font-size: 20px; color: #1e40af; background: white; border-radius: 50%; padding: 5px; border: 2px solid #1e40af; box-shadow: 0 2px 5px rgba(0,0,0,0.3); text-align: center; width: 34px !important; height: 34px !important; display: flex; align-items: center; justify-content: center; }
-        .warehouse-icon { font-size: 24px; color: #b91c1c; }
+        .overlay-panel {
+            position: absolute; top: 20px; right: 20px; z-index: 1000;
+            background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(5px);
+            padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);
+            color: white; width: 250px;
+        }
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
+        .stat-val { font-weight: bold; color: #4ade80; }
+        
+        /* אייקונים מותאמים */
+        .driver-pin { font-size: 24px; text-shadow: 0 0 10px cyan; transition: all 0.5s ease; }
+        .driver-label { 
+            position: absolute; top: -20px; left: -20px; width: 60px; text-align: center;
+            background: rgba(0,0,0,0.7); color: white; font-size: 10px; border-radius: 4px; padding: 2px;
+        }
+        .order-pin { 
+            width: 14px; height: 14px; background: #3b82f6; border: 2px solid white; 
+            border-radius: 50%; box-shadow: 0 0 10px #3b82f6; 
+        }
+        .order-pin.urgent { background: #ef4444; box-shadow: 0 0 10px #ef4444; animation: pulse 1s infinite; }
+        
+        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.5); opacity: 0.5; } 100% { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body>
 
-    <div class="sidebar">
-        <div class="p-4 bg-slate-800 text-white flex justify-between items-center">
-            <h2 class="font-bold text-lg">צי הרכב</h2>
-            <span class="text-xs bg-slate-700 px-2 py-1 rounded">Online: 2</span>
+    <div class="overlay-panel">
+        <h2 class="text-lg font-bold mb-4 border-b border-gray-700 pb-2 flex items-center gap-2">
+            <i class="fas fa-radar text-green-500 animate-pulse"></i> תמונת מצב חיה
+        </h2>
+        <div class="stat-row">
+            <span>🚛 נהגים פעילים:</span> <span class="stat-val" id="active-drivers">0</span>
         </div>
-        <div id="drivers-list" class="flex-1 overflow-y-auto">
-            <div class="driver-item" onclick="focusDriver('hichmat')">
-                <div class="flex items-center gap-3">
-                    <img src="https://ui-avatars.com/api/?name=Hichmat&background=random" class="w-10 h-10 rounded-full">
-                    <div>
-                        <div class="font-bold text-sm">חכמת (מנוף)</div>
-                        <div class="text-xs text-green-600"><span class="driver-status st-online"></span> זמין • הוד השרון</div>
-                    </div>
-                </div>
-                <i class="fas fa-crosshairs text-gray-400"></i>
-            </div>
-
-            <div class="driver-item" onclick="focusDriver('ali')">
-                <div class="flex items-center gap-3">
-                    <img src="https://ui-avatars.com/api/?name=Ali&background=random" class="w-10 h-10 rounded-full">
-                    <div>
-                        <div class="font-bold text-sm">עלי (פלטה)</div>
-                        <div class="text-xs text-red-500"><span class="driver-status st-busy"></span> בנסיעה • כפר סבא</div>
-                    </div>
-                </div>
-                <i class="fas fa-crosshairs text-gray-400"></i>
-            </div>
+        <div class="stat-row">
+            <span>📦 הזמנות פתוחות:</span> <span class="stat-val text-blue-400" id="open-orders">0</span>
+        </div>
+        <div class="stat-row">
+            <span>🚨 אירועים חריגים:</span> <span class="stat-val text-red-500" id="alerts">0</span>
         </div>
     </div>
 
-    <div id="map"></div>
+    <div id="ops-map"></div>
 
-    <script>
-        // 1. אתחול המפה (מרכז: הוד השרון - הבית של סבן)
-        const map = L.map('map').setView([32.155, 34.890], 13);
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // שכבת אריחים (חינם - OpenStreetMap)
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: 'Saban Logistics OS'
+        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
+
+        let map;
+        const markers = { drivers: {}, orders: {} };
+
+        // 1. אתחול מפה טקטית (Dark)
+        map = L.map('ops-map', { zoomControl: false }).setView([32.160, 34.860], 12);
+        
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: 'Saban Ops', subdomains: 'abcd', maxZoom: 19
         }).addTo(map);
 
-        // 2. אייקונים מותאמים אישית
-        const truckIcon = L.divIcon({ className: 'truck-icon', html: '<i class="fas fa-truck"></i>', iconSize: [34, 34] });
-        const homeIcon = L.divIcon({ className: 'warehouse-icon', html: '<i class="fas fa-warehouse"></i>', iconSize: [30, 30] });
-
-        // 3. הוספת המחסן (סניף החרש 10)
-        L.marker([32.155, 34.890], {icon: homeIcon}).addTo(map).bindPopup("<b>מחסן ראשי</b><br>החרש 10, הוד השרון");
-
-        // 4. סימולציית נהגים (במציאות זה יגיע מ-Firebase)
-        const drivers = {
-            'hichmat': { lat: 32.160, lng: 34.895, marker: null },
-            'ali': { lat: 32.175, lng: 34.910, marker: null }
-        };
-
-        // הוספת הנהגים למפה
-        Object.keys(drivers).forEach(id => {
-            const d = drivers[id];
-            d.marker = L.marker([d.lat, d.lng], {icon: truckIcon}).addTo(map).bindPopup(id === 'hichmat' ? 'חכמת - מנוף' : 'עלי - פלטה');
-        });
-
-        // פונקציה להתמקדות על נהג
-        window.focusDriver = (id) => {
-            const d = drivers[id];
-            map.flyTo([d.lat, d.lng], 15);
-            d.marker.openPopup();
-        };
-
-        // --- המוח: Geofencing Simulation ---
-        // פונקציה שבודקת מרחקים ומעדכנת סטטוס
-        function checkGeofence() {
-            const warehouse = { lat: 32.155, lng: 34.890 };
-            
-            Object.keys(drivers).forEach(id => {
-                const d = drivers[id];
-                const dist = getDistance(d.lat, d.lng, warehouse.lat, warehouse.lng);
+        // 2. האזנה לנהגים (בזמן אמת)
+        onSnapshot(collection(db, "drivers"), (snap) => {
+            let activeCount = 0;
+            snap.forEach(doc => {
+                const driver = doc.data();
+                const id = doc.id;
                 
-                // לוגיקת האוטומציה
-                if (dist < 0.2) { // פחות מ-200 מטר
-                    console.log(`${id} נמצא במחסן - סטטוס: בהעמסה 🟧`);
-                    // כאן היינו שולחים עדכון ל-Firebase
-                } else {
-                    console.log(`${id} בדרך - סטטוס: בנסיעה 🟥`);
+                // בדיקה אם הנהג עדכן לאחרונה (תוך 10 דקות) - אחרת הוא "Offline"
+                const lastUpdate = driver.lastUpdate?.seconds * 1000 || 0;
+                const isOnline = (Date.now() - lastUpdate) < 600000;
+
+                if (isOnline && driver.location) {
+                    activeCount++;
+                    const iconHtml = `
+                        <div class="driver-pin relative">
+                            🚚
+                            <div class="driver-label">${driver.name}</div>
+                        </div>`;
+                    
+                    const icon = L.divIcon({ className: 'custom-driver', html: iconHtml, iconSize: [30, 30] });
+
+                    if (markers.drivers[id]) {
+                        markers.drivers[id].setLatLng([driver.location.lat, driver.location.lng]);
+                    } else {
+                        markers.drivers[id] = L.marker([driver.location.lat, driver.location.lng], {icon: icon})
+                            .bindPopup(`<b>${driver.name}</b><br>מהירות: ${Math.round(driver.speed || 0)} קמ"ש`)
+                            .addTo(map);
+                    }
                 }
             });
-        }
+            document.getElementById('active-drivers').innerText = activeCount;
+        });
 
-        // חישוב מרחק בקילומטרים (Haversine Lite)
-        function getDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371; // רדיוס כדור הארץ
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c;
-        }
+        // 3. האזנה להזמנות (סיכות על המפה)
+        const qOrders = query(collection(db, "orders"), where("status", "in", ["new", "approved", "assigned", "on_route"]));
+        
+        onSnapshot(qOrders, (snap) => {
+            // ניקוי הזמנות שנסגרו
+            // (בגרסה מלאה עושים diff חכם יותר, כאן ננקה ונצייר מחדש לצורך פשטות אם הרשימה קטנה)
+            Object.values(markers.orders).forEach(m => map.removeLayer(m));
+            markers.orders = {};
 
-        // הפעלת הבדיקה כל 5 שניות
-        setInterval(checkGeofence, 5000);
+            let openCount = 0;
+            let alertCount = 0;
+
+            snap.forEach(doc => {
+                const order = doc.data();
+                openCount++;
+                if(order.status === 'driver_msg' || order.status === 'urgent') alertCount++;
+
+                // מיקום פיקטיבי להמחשה (אם אין GPS בכתובת)
+                // במערכת אמיתית: משתמשים ב- Geocoding של הכתובת
+                // כאן נפזר אותם רנדומלית סביב המחסן
+                const lat = 32.160 + (Math.random() * 0.05 - 0.025);
+                const lng = 34.860 + (Math.random() * 0.05 - 0.025);
+
+                const isUrgent = order.status === 'driver_msg' || order.status === 'urgent';
+                const colorClass = isUrgent ? 'urgent' : '';
+                
+                const icon = L.divIcon({ className: `order-pin ${colorClass}` });
+                
+                const marker = L.marker([lat, lng], {icon: icon})
+                    .bindPopup(`
+                        <div style="text-align:right;">
+                            <strong>${order.clientName}</strong><br>
+                            סטטוס: ${order.status}<br>
+                            ${order.driver ? `נהג: ${order.driver}` : 'ממתין לשיבוץ'}
+                        </div>
+                    `)
+                    .addTo(map);
+                
+                markers.orders[doc.id] = marker;
+            });
+
+            document.getElementById('open-orders').innerText = openCount;
+            document.getElementById('alerts').innerText = alertCount;
+        });
 
     </script>
 </body>
