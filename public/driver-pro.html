@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#0f172a">
-    <title>Saban Driver Pro</title>
+    <meta name="theme-color" content="#1e293b">
+    <title>Saban Driver | Cockpit</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -19,47 +19,62 @@
     <style>
         body { background: #0f172a; height: 100vh; overflow: hidden; font-family: -apple-system, sans-serif; display: flex; flex-direction: column; }
         
-        /* המפה */
+        /* המפה תופסת את כל המסך */
         #map { flex: 1; width: 100%; z-index: 0; }
         
-        /* כרטיס משימה צף (Floating Action Card) */
+        /* כרטיס פעולה צף */
         .action-card {
             position: fixed; bottom: 0; left: 0; right: 0;
-            background: #1e293b; border-top-left-radius: 24px; border-top-right-radius: 24px;
-            padding: 20px; box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
-            transform: translateY(110%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            z-index: 1000; border-top: 1px solid #334155;
+            background: rgba(30, 41, 59, 0.95); backdrop-filter: blur(10px);
+            border-top-left-radius: 24px; border-top-right-radius: 24px;
+            padding: 20px; box-shadow: 0 -10px 40px rgba(0,0,0,0.6);
+            transform: translateY(120%); transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+            z-index: 1000; border-top: 1px solid rgba(255,255,255,0.1);
         }
         .action-card.active { transform: translateY(0); }
 
-        /* כפתורי פעולה ענקיים */
+        /* כפתורים */
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
         .big-btn {
-            height: 70px; border-radius: 16px; font-weight: 800; font-size: 16px;
+            height: 65px; border-radius: 16px; font-weight: 800; font-size: 16px;
             display: flex; align-items: center; justify-content: center; gap: 8px;
-            cursor: pointer; transition: 0.2s; color: white;
+            cursor: pointer; transition: 0.2s; color: white; border: none;
         }
-        .big-btn:active { transform: scale(0.95); }
-        .btn-waze { background: #3b82f6; box-shadow: 0 4px 0 #1d4ed8; }
-        .btn-call { background: #22c55e; box-shadow: 0 4px 0 #15803d; }
-        .btn-start { background: #f59e0b; box-shadow: 0 4px 0 #d97706; width: 100%; height: 80px; font-size: 20px; }
+        .big-btn:active { transform: scale(0.96); }
         
-        /* תפריט המבורגר צף */
-        .fab-menu {
-            position: fixed; top: 20px; right: 20px;
-            width: 50px; height: 50px; background: rgba(30, 41, 59, 0.9);
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            color: white; font-size: 20px; z-index: 900; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
+        .btn-waze { background: linear-gradient(135deg, #3b82f6, #2563eb); box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4); }
+        .btn-call { background: linear-gradient(135deg, #22c55e, #16a34a); box-shadow: 0 4px 15px rgba(22, 163, 74, 0.4); }
+        .btn-msg { background: linear-gradient(135deg, #f97316, #ea580c); box-shadow: 0 4px 15px rgba(234, 88, 12, 0.4); }
+        .btn-doc { background: #334155; border: 1px solid #475569; }
+        
+        .btn-start { background: linear-gradient(135deg, #f59e0b, #d97706); width: 100%; height: 70px; font-size: 18px; box-shadow: 0 0 20px rgba(245, 158, 11, 0.3); animation: pulse-glow 2s infinite; }
+        
+        @keyframes pulse-glow { 0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); } 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); } }
 
-        /* אייקון משאית */
-        .truck-icon { font-size: 30px; color: #3b82f6; text-shadow: 0 0 10px rgba(59, 130, 246, 0.8); }
-        .pin-marker { width: 40px; height: 40px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        /* אייקונים במפה */
+        .truck-marker { font-size: 32px; filter: drop-shadow(0 0 10px #3b82f6); transition: all 1s linear; }
+        .task-marker { 
+            width: 40px; height: 40px; background: #1e293b; border: 3px solid; 
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+            color: white; font-size: 18px; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+        
+        /* תפריט עליון */
+        .top-bar { position: absolute; top: 15px; left: 15px; right: 15px; display: flex; justify-content: space-between; z-index: 500; pointer-events: none; }
+        .profile-btn { pointer-events: auto; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(5px); padding: 8px 16px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.1); color: white; display: flex; items-center; gap: 10px; font-weight: bold; font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .status-badge { width: 10px; height: 10px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 10px #22c55e; }
     </style>
 </head>
 <body>
 
-    <div class="fab-menu" onclick="openMenu()">
-        <i class="fas fa-bars"></i>
+    <div class="top-bar">
+        <div class="profile-btn" onclick="showStats()">
+            <div class="status-badge" id="conn-status"></div>
+            <span id="driver-name-display">אורח</span>
+        </div>
+        <div class="profile-btn" style="padding: 8px;" onclick="centerMap()">
+            <i class="fas fa-crosshairs"></i>
+        </div>
     </div>
 
     <div id="map"></div>
@@ -73,247 +88,255 @@
 
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
         
-        // הגדרות ראשוניות
         let map, truckMarker;
-        let currentDriver = localStorage.getItem('saban_driver') || null;
+        let currentDriver = localStorage.getItem('saban_driver');
         let activeTaskId = null;
+        let watchId = null;
 
-        // אתחול
-        window.onload = () => {
-            if(!currentDriver) selectDriver();
-            else initSystem();
+        // --- אתחול המערכת ---
+        window.onload = async () => {
+            if (!currentDriver) await loginFlow();
+            else initMap();
         };
 
-        async function selectDriver() {
+        async function loginFlow() {
             const { value: name } = await Swal.fire({
-                title: 'מי נוהג היום? 🚚',
+                title: 'זהה את עצמך, נהג',
                 input: 'select',
-                inputOptions: { 'עלי': 'עלי', 'חכמת': 'חכמת', 'סלמאן': 'סלמאן' },
-                inputPlaceholder: 'בחר נהג',
+                inputOptions: { 'עלי': 'עלי', 'חכמת': 'חכמת', 'סלמאן': 'סלמאן', 'יוסי': 'יוסי' },
+                inputPlaceholder: 'בחר שם...',
                 allowOutsideClick: false,
-                confirmButtonColor: '#3b82f6'
+                confirmButtonText: 'כנס למשמרת 🚀',
+                confirmButtonColor: '#3b82f6',
+                background: '#1e293b', color: 'white'
             });
-            if(name) {
+            
+            if (name) {
                 currentDriver = name;
                 localStorage.setItem('saban_driver', name);
-                
-                // ברכת כניסה
-                Swal.fire({
-                    title: `בוקר טוב ${name}!`,
-                    text: 'המשאית מתודלקת? יאללה לעבודה 💪',
-                    icon: 'success',
-                    timer: 2000, showConfirmButton: false
-                });
-                initSystem();
+                initMap();
+                welcomeEffect();
             }
         }
 
-        function initSystem() {
-            // 1. אתחול מפה
-            map = L.map('map').setView([32.162, 34.844], 13); // מרכז ברירת מחדל (הוד"ש)
+        function initMap() {
+            document.getElementById('driver-name-display').innerText = currentDriver;
+
+            // 1. יצירת מפה (Dark Mode)
+            map = L.map('map', { zoomControl: false }).setView([32.162, 34.844], 13);
+            
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; OpenStreetMap &copy; CARTO'
+                attribution: 'Saban OS',
+                subdomains: 'abcd',
+                maxZoom: 19
             }).addTo(map);
 
-            // 2. התחלת GPS
+            // 2. הפעלת GPS
             if ("geolocation" in navigator) {
-                navigator.geolocation.watchPosition(updatePosition, 
-                (err) => Swal.fire('שגיאת GPS', 'הפעל מיקום!', 'error'), 
-                { enableHighAccuracy: true });
+                watchId = navigator.geolocation.watchPosition(updateGPS, 
+                    (err) => Swal.fire({icon: 'error', title: 'אין GPS', text: 'חובה לאשר מיקום!'}), 
+                    { enableHighAccuracy: true }
+                );
             }
 
             // 3. האזנה למשימות
             listenForTasks();
         }
 
-        // עדכון מיקום משאית
-        async function updatePosition(pos) {
+        // --- GPS ושידור מיקום ---
+        async function updateGPS(pos) {
             const lat = pos.coords.latitude;
             const lng = pos.coords.longitude;
             
-            // עדכון אייקון המשאית
+            // אייקון משאית מותאם אישית
+            const truckIcon = L.divIcon({
+                className: 'custom-div-icon',
+                html: `<div style="font-size: 30px; transform: rotate(${pos.coords.heading || 0}deg);">🚚</div>`,
+                iconSize: [30, 30],
+                iconAnchor: [15, 15]
+            });
+
             if (!truckMarker) {
-                const icon = L.divIcon({ className: 'truck-icon', html: '<i class="fas fa-truck-moving"></i>', iconSize: [30, 30] });
-                truckMarker = L.marker([lat, lng], {icon: icon}).addTo(map);
-                map.setView([lat, lng], 15);
+                truckMarker = L.marker([lat, lng], {icon: truckIcon}).addTo(map);
+                map.setView([lat, lng], 16);
             } else {
                 truckMarker.setLatLng([lat, lng]);
+                truckMarker.setIcon(truckIcon);
             }
 
-            // שידור לחמ"ל
+            // שידור לחמ"ל (המוח)
             await setDoc(doc(db, "drivers", currentDriver), {
                 name: currentDriver,
                 location: { lat, lng },
+                heading: pos.coords.heading || 0,
+                speed: pos.coords.speed || 0,
                 lastUpdate: serverTimestamp(),
-                status: activeTaskId ? 'busy' : 'idle'
+                status: activeTaskId ? 'busy' : 'free'
             });
         }
 
-        // האזנה למשימות
+        // --- ניהול משימות ---
         function listenForTasks() {
+            // מאזין להזמנות ששויכו לנהג הזה
             const q = query(collection(db, "orders"), where("driver", "==", currentDriver), where("status", "in", ["assigned", "on_route"]));
             
             onSnapshot(q, (snap) => {
-                // ניקוי סיכות ישנות (בפשטות נמחק הכל ונוסיף)
+                // ניקוי סיכות ישנות (למעט המשאית)
                 map.eachLayer(layer => { if(layer instanceof L.Marker && layer !== truckMarker) map.removeLayer(layer); });
 
-                if(snap.empty) {
-                    hideActionSheet();
+                if (snap.empty) {
+                    closeSheet();
                     activeTaskId = null;
                     return;
                 }
 
                 snap.forEach(d => {
                     const task = d.data();
-                    const isTransfer = task.type === 'transfer'; // נניח שיש שדה כזה
                     
-                    // הוספת סיכה למפה (מיקום מזויף כרגע לסימולציה אם אין, או שימוש בכתובת)
-                    // לצורך הדוגמה נשים נקודה ליד המשאית
-                    const destLat = 32.165 + (Math.random()*0.01); 
-                    const destLng = 34.845 + (Math.random()*0.01);
+                    // מיקום המשימה (בפועל צריך Geocoding אמיתי, כאן נשתמש במיקום סימולטיבי ליד הנהג)
+                    const pinLat = 32.165 + (Math.random() * 0.02 - 0.01);
+                    const pinLng = 34.845 + (Math.random() * 0.02 - 0.01);
                     
-                    const pinColor = isTransfer ? 'bg-orange-500' : 'bg-blue-500';
-                    const icon = L.divIcon({ 
-                        className: 'custom-pin',
-                        html: `<div class="pin-marker ${pinColor} text-white"><i class="fas ${isTransfer ? 'fa-dolly' : 'fa-box'}"></i></div>`,
-                        iconSize: [40, 40]
-                    });
+                    // צבע הסיכה לפי סוג
+                    const isTransfer = task.type === 'transfer';
+                    const color = isTransfer ? '#f97316' : '#3b82f6';
+                    const iconHtml = `<div class="task-marker" style="border-color: ${color}"><i class="fas ${isTransfer ? 'fa-exchange-alt' : 'fa-box'}"></i></div>`;
+                    
+                    const marker = L.marker([pinLat, pinLng], {
+                        icon: L.divIcon({ html: iconHtml, className: 'custom-pin', iconSize: [40, 40] })
+                    }).addTo(map);
 
-                    const marker = L.marker([destLat, destLng], {icon: icon}).addTo(map);
-                    marker.on('click', () => openTask(d.id, task));
+                    marker.on('click', () => openTaskSheet(d.id, task));
                     
-                    // אם זו משימה פעילה, נפתח אותה אוטומטית
-                    if (task.status === 'on_route' || snap.size === 1) {
-                        openTask(d.id, task);
+                    // אם יש משימה פעילה אחת, פתח אותה מיד
+                    if (snap.size === 1 || task.status === 'on_route') {
+                        openTaskSheet(d.id, task);
                     }
                 });
             });
         }
 
-        function openTask(id, task) {
+        function openTaskSheet(id, task) {
             activeTaskId = id;
             const sheet = document.getElementById('action-sheet');
             sheet.classList.add('active');
-
+            
             const isStarted = task.status === 'on_route';
 
-            sheet.innerHTML = `
-                <div class="flex justify-between items-start mb-4">
+            let html = `
+                <div class="flex justify-between items-start mb-4 text-white">
                     <div>
-                        <div class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">
-                            ${task.type === 'transfer' ? '🟠 העברה דחופה' : '🔵 הזמנת לקוח'}
+                        <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                            ${task.type === 'transfer' ? '🟠 העברה בין סניפים' : '🔵 הזמנת לקוח'}
                         </div>
-                        <h2 class="text-2xl font-black text-white">${task.clientName}</h2>
-                        <div class="text-gray-400 text-sm"><i class="fas fa-map-marker-alt text-red-500"></i> ${task.address}</div>
+                        <h2 class="text-2xl font-black">${task.clientName}</h2>
+                        <div class="text-gray-400 text-sm flex items-center gap-1">
+                            <i class="fas fa-map-pin text-red-500"></i> ${task.address}
+                        </div>
                     </div>
-                    <div class="bg-slate-700 px-3 py-1 rounded font-mono text-xs text-white">#${task.orderNum}</div>
+                    <div class="text-right">
+                        <div class="bg-slate-700 px-2 py-1 rounded text-xs font-mono">#${task.orderNum}</div>
+                    </div>
                 </div>
                 
-                <div class="bg-slate-800/50 p-3 rounded-lg mb-4 text-sm text-gray-300 border border-slate-700 max-h-24 overflow-y-auto">
+                <div class="bg-slate-800/50 p-3 rounded-xl mb-4 border border-slate-700 max-h-24 overflow-y-auto text-sm text-gray-300">
                     ${task.itemsText}
-                </div>
+                </div>`;
 
-                ${!isStarted ? `
-                    <button onclick="startMission('${id}')" class="big-btn btn-start animate-pulse">
-                        🚀 קבל משימה וצא לדרך
+            if (!isStarted) {
+                html += `
+                <button onclick="acceptMission('${id}')" class="big-btn btn-start">
+                    <i class="fas fa-flag-checkered"></i> קבל משימה וצא לדרך
+                </button>`;
+            } else {
+                html += `
+                <div class="btn-grid">
+                    <button onclick="navWaze('${task.address}')" class="big-btn btn-waze">
+                        <i class="fab fa-waze text-2xl"></i> נווט
                     </button>
-                ` : `
-                    <div class="grid grid-cols-2 gap-3 mb-3">
-                        <button onclick="wazeNav('${task.address}')" class="big-btn btn-waze">
-                            <i class="fab fa-waze text-2xl"></i> סע
-                        </button>
-                        <button onclick="window.open('tel:${task.phone || ''}')" class="big-btn btn-call">
-                            <i class="fas fa-phone text-2xl"></i> חייג
-                        </button>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                         <button onclick="openDoc('${task.pdfUrl}')" class="big-btn bg-slate-700 border border-slate-600">
-                            <i class="fas fa-eye"></i> תעודה
-                        </button>
-                        <button onclick="finishMission('${id}', '${task.clientName}')" class="big-btn bg-slate-700 border border-slate-600 hover:bg-green-600 hover:border-green-500 transition-colors">
-                            <i class="fas fa-check-circle"></i> הגעתי
-                        </button>
-                    </div>
-                `}
-            `;
+                    <button onclick="window.open('tel:${task.clientPhone}')" class="big-btn btn-call">
+                        <i class="fas fa-phone text-2xl"></i> חייג
+                    </button>
+                    <button onclick="msgToCenter('${id}')" class="big-btn btn-msg">
+                        <i class="fas fa-comment-alt"></i> לסידור
+                    </button>
+                    <button onclick="viewDoc('${task.pdfUrl}')" class="big-btn btn-doc">
+                        <i class="fas fa-file-invoice"></i> תעודה
+                    </button>
+                </div>
+                <button onclick="finishMission('${id}')" class="big-btn bg-slate-700 border border-slate-600 mt-3 w-full hover:bg-green-600 hover:border-green-500">
+                    <i class="fas fa-check-circle"></i> פריקה הושלמה
+                </button>`;
+            }
+            
+            sheet.innerHTML = html;
         }
 
-        window.hideActionSheet = () => document.getElementById('action-sheet').classList.remove('active');
+        window.closeSheet = () => document.getElementById('action-sheet').classList.remove('active');
+        window.centerMap = () => { if(truckMarker) map.setView(truckMarker.getLatLng(), 16); };
 
-        // פעולות
-        window.startMission = async (id) => {
-            // עדכון חמ"ל + לקוח
+        // --- לוגיקה עסקית ---
+        window.acceptMission = async (id) => {
+            // עדכון סטטוס והודעה לסידור וללקוח
             await updateDoc(doc(db, "orders", id), { 
                 status: 'on_route', 
-                driverStatus: 'moving',
-                chat: arrayUnion({ sender: 'system', type: 'driver_update', text: `🚚 הנהג ${currentDriver} קיבל את המשימה ויצא לדרך!`, time: new Date().toISOString() })
+                chat: arrayUnion({ sender: 'system', text: `🚚 ${currentDriver} יצא לדרך!`, time: new Date().toISOString() })
             });
-            
-            // סאונד מנוע
             new Audio('https://assets.mixkit.co/active_storage/sfx/2598/2598-preview.m4a').play().catch(()=>{});
         };
 
-        window.wazeNav = (address) => {
-            // דיווח ללקוח שהנהג בWaze
-            // (אפשר להוסיף כאן עדכון לפיירבייס)
-            window.location.href = `waze://?q=${encodeURIComponent(address)}&navigate=yes`;
-        };
-
-        window.openDoc = (url) => {
-            if(url) window.open(url, '_blank');
-            else Swal.fire('אין מסמך', 'לא צורפה תעודה למשימה זו', 'info');
-        };
-
-        window.finishMission = async (id, clientName) => {
-            const { isConfirmed } = await Swal.fire({
-                title: 'הגעת ליעד?',
-                text: `האם לשלוח הודעת "הגעתי" ל${clientName}?`,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'כן, דווח הגעה! 🎉',
-                confirmButtonColor: '#22c55e',
-                background: '#1e293b', color: '#fff'
-            });
-
-            if (isConfirmed) {
-                // קונפטי
-                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-                
-                // עדכון סיום
+        window.navWaze = (addr) => window.location.href = `waze://?q=${encodeURIComponent(addr)}&navigate=yes`;
+        
+        window.msgToCenter = async (id) => {
+            const { value: text } = await Swal.fire({ title: 'הודעה לסידור', input: 'text', background: '#1e293b', color:'white', confirmButtonText: 'שלח' });
+            if(text) {
+                // שולח הודעה שמקפיצה "אדום" בחמ"ל
                 await updateDoc(doc(db, "orders", id), { 
-                    status: 'done', 
-                    deliveredAt: serverTimestamp(),
-                    chat: arrayUnion({ sender: 'driver', text: `🏁 הנהג ${currentDriver} הגיע לכתובת! בוא לקבל את הסחורה.`, time: new Date().toISOString() })
+                    status: 'driver_msg', // סטטוס מיוחד
+                    chat: arrayUnion({ sender: 'driver', text: `👮 נהג: ${text}`, time: new Date().toISOString() })
                 });
-
-                Swal.fire({
-                    title: 'עבודה פצצה! 🔥',
-                    text: 'הדיווח נשלח ללקוח ולחמ"ל. כל הכבוד!',
-                    icon: 'success',
-                    timer: 3000, showConfirmButton: false,
-                    background: '#1e293b', color: '#fff'
-                });
-                
-                hideActionSheet();
+                Swal.fire({icon:'success', title:'נשלח', timer:1000, showConfirmButton:false, background:'#1e293b'});
             }
         };
 
-        window.openMenu = () => {
-             Swal.fire({
-                title: 'תפריט נהג',
-                html: `
-                    <div class="text-left bg-slate-800 p-4 rounded text-white">
-                        <div class="mb-2">👤 נהג: <b>${currentDriver}</b></div>
-                        <div class="mb-2">📊 משימות היום: <b>3</b></div>
-                        <div>⭐ דירוג שביעות רצון: <b>5.0</b></div>
-                    </div>
-                `,
-                background: '#0f172a', color: '#fff',
-                showConfirmButton: false,
-                showCloseButton: true
-             });
+        window.finishMission = async (id) => {
+            const { isConfirmed } = await Swal.fire({
+                title: 'סיימת?',
+                text: 'האם לשלוח ללקוח הודעת "הגעתי"?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'כן, דווח הגעה!',
+                confirmButtonColor: '#22c55e',
+                background: '#1e293b', color:'white'
+            });
+
+            if(isConfirmed) {
+                confetti({ particleCount: 150, spread: 80, origin: { y: 0.7 } });
+                await updateDoc(doc(db, "orders", id), { 
+                    status: 'done', 
+                    deliveredAt: serverTimestamp(),
+                    chat: arrayUnion({ sender: 'driver', text: `🏁 הנהג הגיע ליעד!`, time: new Date().toISOString() })
+                });
+                closeSheet();
+            }
         };
 
+        function welcomeEffect() {
+            Swal.fire({ 
+                title: 'יאללה בלאגן! 🔥', 
+                text: 'המשאית מחוברת והחמ"ל רואה אותך.', 
+                icon: 'success', 
+                background: '#1e293b', color:'white', 
+                timer: 2000, showConfirmButton: false 
+            });
+        }
+        
+        // חשיפת פונקציות ל-HTML
+        window.acceptMission = acceptMission;
+        window.navWaze = navWaze;
+        window.msgToCenter = msgToCenter;
+        window.viewDoc = (url) => url ? window.open(url) : Swal.fire('אין תעודה', '', 'info');
+        window.finishMission = finishMission;
     </script>
 </body>
 </html>
