@@ -2,154 +2,198 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>Saban Ops Map</title>
+    <title>Saban Ops | המוח</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <style>
-        body { margin: 0; padding: 0; background: #0f172a; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        #ops-map { flex: 1; width: 100%; z-index: 1; }
+        body { margin: 0; display: flex; flex-direction: column; height: 100vh; background: #f8fafc; font-family: system-ui; }
         
-        .overlay-panel {
-            position: absolute; top: 20px; right: 20px; z-index: 1000;
-            background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(5px);
-            padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);
-            color: white; width: 250px;
+        /* סרגל עליון צף */
+        .top-bar {
+            position: absolute; top: 20px; right: 20px; left: 20px; z-index: 1000;
+            display: flex; gap: 10px; pointer-events: none;
         }
-        .stat-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
-        .stat-val { font-weight: bold; color: #4ade80; }
+        .search-box {
+            pointer-events: auto; flex: 1; max-width: 400px; background: white; 
+            padding: 12px 20px; border-radius: 50px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            display: flex; align-items: center; gap: 10px; border: 1px solid #e2e8f0;
+        }
+        .search-input { width: 100%; outline: none; font-size: 16px; color: #334155; }
         
-        /* אייקונים מותאמים */
-        .driver-pin { font-size: 24px; text-shadow: 0 0 10px cyan; transition: all 0.5s ease; }
-        .driver-label { 
-            position: absolute; top: -20px; left: -20px; width: 60px; text-align: center;
-            background: rgba(0,0,0,0.7); color: white; font-size: 10px; border-radius: 4px; padding: 2px;
+        /* כרטיס מידע צף */
+        .brain-card {
+            background: white; padding: 15px; border-radius: 12px; min-width: 250px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.2); font-size: 14px;
         }
-        .order-pin { 
-            width: 14px; height: 14px; background: #3b82f6; border: 2px solid white; 
-            border-radius: 50%; box-shadow: 0 0 10px #3b82f6; 
-        }
-        .order-pin.urgent { background: #ef4444; box-shadow: 0 0 10px #ef4444; animation: pulse 1s infinite; }
+        .brain-stat { background: #f0fdf4; color: #166534; padding: 5px 10px; border-radius: 6px; font-weight: bold; margin-top: 5px; font-size: 12px; border: 1px solid #bbf7d0; }
+
+        /* מפה */
+        #map { flex: 1; width: 100%; z-index: 0; }
         
-        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.5); opacity: 0.5; } 100% { transform: scale(1); opacity: 1; } }
+        /* אייקונים */
+        .driver-marker { font-size: 24px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
+        .pin-red { color: #ef4444; font-size: 36px; filter: drop-shadow(0 5px 15px rgba(239, 68, 68, 0.4)); animation: bounce 1s infinite; }
+        
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
     </style>
 </head>
 <body>
 
-    <div class="overlay-panel">
-        <h2 class="text-lg font-bold mb-4 border-b border-gray-700 pb-2 flex items-center gap-2">
-            <i class="fas fa-radar text-green-500 animate-pulse"></i> תמונת מצב חיה
-        </h2>
-        <div class="stat-row">
-            <span>🚛 נהגים פעילים:</span> <span class="stat-val" id="active-drivers">0</span>
+    <div class="top-bar">
+        <div class="search-box">
+            <i class="fas fa-search text-gray-400"></i>
+            <input type="text" id="address-input" class="search-input" placeholder="חפש כתובת לשיגור..." onkeydown="if(event.key==='Enter') searchAddress()">
+            <button onclick="searchAddress()" class="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-blue-700"><i class="fas fa-arrow-left"></i></button>
         </div>
-        <div class="stat-row">
-            <span>📦 הזמנות פתוחות:</span> <span class="stat-val text-blue-400" id="open-orders">0</span>
-        </div>
-        <div class="stat-row">
-            <span>🚨 אירועים חריגים:</span> <span class="stat-val text-red-500" id="alerts">0</span>
+        
+        <div class="bg-white px-4 py-2 rounded-full shadow-lg flex items-center gap-3 pointer-events-auto text-sm font-bold text-slate-700">
+            <span><i class="fas fa-brain text-purple-500"></i> המוח לומד:</span>
+            <span class="text-blue-600" id="total-trips">0</span> נסיעות מתועדות
         </div>
     </div>
 
-    <div id="ops-map"></div>
+    <div id="map"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, query, where, onSnapshot, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
-
-        let map;
-        const markers = { drivers: {}, orders: {} };
-
-        // 1. אתחול מפה טקטית (Dark)
-        map = L.map('ops-map', { zoomControl: false }).setView([32.160, 34.860], 12);
         
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: 'Saban Ops', subdomains: 'abcd', maxZoom: 19
-        }).addTo(map);
+        let map, searchMarker;
+        let tripHistory = [];
 
-        // 2. האזנה לנהגים (בזמן אמת)
-        onSnapshot(collection(db, "drivers"), (snap) => {
-            let activeCount = 0;
-            snap.forEach(doc => {
-                const driver = doc.data();
-                const id = doc.id;
+        // 1. אתחול
+        window.onload = async () => {
+            initMap();
+            loadBrainData(); // טעינת המוח
+        };
+
+        function initMap() {
+            // מפה בהירה (CartoDB Voyager)
+            map = L.map('map', { zoomControl: false }).setView([32.162, 34.844], 13);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                attribution: 'Saban Ops', maxZoom: 19
+            }).addTo(map);
+
+            // האזנה לנהגים
+            onSnapshot(collection(db, "drivers"), (snap) => {
+                // ניקוי נהגים קודמים (פשטות)
+                map.eachLayer(l => { if(l.options.icon && l.options.icon.options.className === 'driver-marker') map.removeLayer(l); });
                 
-                // בדיקה אם הנהג עדכן לאחרונה (תוך 10 דקות) - אחרת הוא "Offline"
-                const lastUpdate = driver.lastUpdate?.seconds * 1000 || 0;
-                const isOnline = (Date.now() - lastUpdate) < 600000;
-
-                if (isOnline && driver.location) {
-                    activeCount++;
-                    const iconHtml = `
-                        <div class="driver-pin relative">
-                            🚚
-                            <div class="driver-label">${driver.name}</div>
-                        </div>`;
-                    
-                    const icon = L.divIcon({ className: 'custom-driver', html: iconHtml, iconSize: [30, 30] });
-
-                    if (markers.drivers[id]) {
-                        markers.drivers[id].setLatLng([driver.location.lat, driver.location.lng]);
-                    } else {
-                        markers.drivers[id] = L.marker([driver.location.lat, driver.location.lng], {icon: icon})
-                            .bindPopup(`<b>${driver.name}</b><br>מהירות: ${Math.round(driver.speed || 0)} קמ"ש`)
-                            .addTo(map);
+                snap.forEach(d => {
+                    const drv = d.data();
+                    if(drv.location) {
+                        const icon = L.divIcon({ className: 'driver-marker', html: '🚛', iconSize: [30,30] });
+                        L.marker([drv.location.lat, drv.location.lng], {icon}).addTo(map)
+                            .bindTooltip(drv.name, {permanent: true, direction: 'bottom', className: 'bg-white text-xs font-bold px-1 rounded shadow'});
                     }
-                }
+                });
             });
-            document.getElementById('active-drivers').innerText = activeCount;
-        });
+        }
 
-        // 3. האזנה להזמנות (סיכות על המפה)
-        const qOrders = query(collection(db, "orders"), where("status", "in", ["new", "approved", "assigned", "on_route"]));
-        
-        onSnapshot(qOrders, (snap) => {
-            // ניקוי הזמנות שנסגרו
-            // (בגרסה מלאה עושים diff חכם יותר, כאן ננקה ונצייר מחדש לצורך פשטות אם הרשימה קטנה)
-            Object.values(markers.orders).forEach(m => map.removeLayer(m));
-            markers.orders = {};
+        // 2. המוח: טעינת היסטוריה
+        async function loadBrainData() {
+            const snap = await getDocs(collection(db, "trip_logs"));
+            tripHistory = snap.docs.map(d => d.data());
+            document.getElementById('total-trips').innerText = tripHistory.length;
+        }
 
-            let openCount = 0;
-            let alertCount = 0;
+        // 3. חיפוש כתובת (Nominatim API - חינם)
+        window.searchAddress = async () => {
+            const query = document.getElementById('address-input').value;
+            if(!query) return;
 
-            snap.forEach(doc => {
-                const order = doc.data();
-                openCount++;
-                if(order.status === 'driver_msg' || order.status === 'urgent') alertCount++;
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
+            const data = await res.json();
 
-                // מיקום פיקטיבי להמחשה (אם אין GPS בכתובת)
-                // במערכת אמיתית: משתמשים ב- Geocoding של הכתובת
-                // כאן נפזר אותם רנדומלית סביב המחסן
-                const lat = 32.160 + (Math.random() * 0.05 - 0.025);
-                const lng = 34.860 + (Math.random() * 0.05 - 0.025);
-
-                const isUrgent = order.status === 'driver_msg' || order.status === 'urgent';
-                const colorClass = isUrgent ? 'urgent' : '';
+            if(data && data.length > 0) {
+                const { lat, lon, display_name } = data[0];
                 
-                const icon = L.divIcon({ className: `order-pin ${colorClass}` });
+                if(searchMarker) map.removeLayer(searchMarker);
                 
-                const marker = L.marker([lat, lng], {icon: icon})
+                // חישוב המוח: האם היינו שם?
+                const brainStats = analyzeLocation(lat, lon);
+
+                const icon = L.divIcon({ className: 'bg-transparent', html: '<i class="fas fa-map-marker-alt pin-red"></i>', iconSize: [40,40], iconAnchor:[20,40] });
+                
+                searchMarker = L.marker([lat, lon], {icon}).addTo(map)
                     .bindPopup(`
-                        <div style="text-align:right;">
-                            <strong>${order.clientName}</strong><br>
-                            סטטוס: ${order.status}<br>
-                            ${order.driver ? `נהג: ${order.driver}` : 'ממתין לשיבוץ'}
+                        <div class="brain-card">
+                            <div class="font-bold text-lg mb-1">📍 יעד חדש</div>
+                            <div class="text-gray-500 mb-2">${display_name.split(',')[0]}</div>
+                            
+                            ${brainStats ? `
+                                <div class="brain-stat">
+                                    <i class="fas fa-brain"></i> המערכת זוכרת:<br>
+                                    זמן ממוצע: <b>${brainStats.avgTime} דק'</b> (${brainStats.count} נסיעות)
+                                </div>
+                            ` : '<div class="text-xs text-gray-400 mt-1">אין נתונים היסטוריים ליעד זה</div>'}
+
+                            <button onclick="dispatchOrder('${lat}', '${lon}', '${display_name}')" class="w-full bg-blue-600 text-white mt-3 py-2 rounded-lg font-bold hover:bg-blue-700">
+                                שגר נהג ליעד 🚚
+                            </button>
                         </div>
-                    `)
-                    .addTo(map);
+                    `).openPopup();
                 
-                markers.orders[doc.id] = marker;
+                map.setView([lat, lon], 16);
+            } else {
+                Swal.fire('לא נמצא', 'נסה כתובת אחרת', 'warning');
+            }
+        };
+
+        // 4. ניתוח חכם
+        function analyzeLocation(lat, lon) {
+            // מוצא נסיעות שהיו ברדיוס של 500 מטר מהיעד
+            const matches = tripHistory.filter(t => {
+                if(!t.destLat) return false;
+                const dist = Math.sqrt(Math.pow(t.destLat - lat, 2) + Math.pow(t.destLng - lon, 2));
+                return dist < 0.005; 
             });
 
-            document.getElementById('open-orders').innerText = openCount;
-            document.getElementById('alerts').innerText = alertCount;
-        });
+            if(matches.length > 0) {
+                const totalTime = matches.reduce((sum, t) => sum + (t.duration || 0), 0);
+                return { count: matches.length, avgTime: Math.round(totalTime / matches.length) };
+            }
+            return null;
+        }
 
+        // 5. שיגור
+        window.dispatchOrder = async (lat, lon, address) => {
+            const { value: form } = await Swal.fire({
+                title: 'שיגור משימה',
+                html: `<input id="swal-items" class="swal2-input" placeholder="פירוט ציוד (למשל: 2 משטחים)">
+                       <select id="swal-driver" class="swal2-input">
+                           <option value="עלי">עלי</option>
+                           <option value="חכמת">חכמת</option>
+                           <option value="סלמאן">סלמאן</option>
+                       </select>`,
+                focusConfirm: false,
+                preConfirm: () => [document.getElementById('swal-driver').value, document.getElementById('swal-items').value]
+            });
+
+            if(form) {
+                const [driver, items] = form;
+                await addDoc(collection(db, "orders"), {
+                    driver: driver,
+                    clientName: "שיגור מהמפה",
+                    address: address.split(',')[0],
+                    destLat: parseFloat(lat), destLng: parseFloat(lon),
+                    itemsText: items,
+                    status: 'assigned', // מקפיץ אצל הנהג
+                    orderNum: "MAP-" + Math.floor(Math.random()*1000),
+                    type: 'order',
+                    createdAt: serverTimestamp(),
+                    lastUpdate: serverTimestamp()
+                });
+                Swal.fire('שודר!', `המשימה נשלחה ל${driver}`, 'success');
+            }
+        };
     </script>
 </body>
 </html>
