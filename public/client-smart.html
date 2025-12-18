@@ -209,10 +209,25 @@
             }, 800);
         };
 
+        // --- התיקון הקריטי כאן! ---
         window.submitOrder = async () => {
             const items = document.getElementById('new-items').value;
             if(!items) return Swal.fire('חסרים פרטים', 'מה להזמין?', 'warning');
-            await addDoc(collection(db, "orders"), { clientId: CLIENT_ID, clientName: CLIENT_NAME, itemsText: items, supplyDate: document.getElementById('new-date').value, supplyTime: document.getElementById('new-time').value, address: document.getElementById('new-address').value, status: 'new', orderNum: 'בהכנה', createdAt: serverTimestamp(), chat: [] });
+            
+            await addDoc(collection(db, "orders"), { 
+                clientId: CLIENT_ID, 
+                clientName: CLIENT_NAME, 
+                itemsText: items, 
+                supplyDate: document.getElementById('new-date').value, 
+                supplyTime: document.getElementById('new-time').value, 
+                address: document.getElementById('new-address').value, 
+                status: 'new', 
+                orderNum: 'בהכנה', 
+                createdAt: serverTimestamp(),
+                lastUpdate: serverTimestamp(), // <--- הוספתי את זה!
+                chat: [] 
+            });
+            
             switchView('active');
             Swal.fire({ toast: true, position: 'top', icon: 'success', title: 'נשלח לטיפול', timer: 2000, showConfirmButton: false });
             document.getElementById('new-items').value = '';
