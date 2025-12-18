@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sika Golden Bon Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Rubik', sans-serif; background-color: #111; color: white; }
+        
+        /* עיצוב המסך */
+        .screen-container { max-width: 600px; margin: 0 auto; padding: 20px; text-align: center; }
+        .product-img { width: 200px; margin: 0 auto; filter: drop-shadow(0 0 20px rgba(255,197,0,0.3)); }
+        
+        /* כפתור הדפסה */
+        .print-btn {
+            background: #ffc500; color: black; font-weight: 900; font-size: 24px;
+            padding: 20px 40px; border-radius: 50px; border: 4px solid white;
+            box-shadow: 0 0 30px #ffc500; cursor: pointer; animation: pulse 2s infinite;
+            margin-top: 30px; display: inline-flex; align-items: center; gap: 15px;
+        }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+        /* --- עיצוב הבון להדפסה בלבד --- */
+        #printable-bon { display: none; } /* מוסתר במסך רגיל */
+
+        @media print {
+            body * { visibility: hidden; } /* הסתרת הכל */
+            #printable-bon, #printable-bon * { visibility: visible; } /* הצגת הבון בלבד */
+            
+            #printable-bon {
+                display: block;
+                position: absolute; left: 0; top: 0; width: 100%;
+                font-family: 'Courier New', monospace; /* פונט של קבלות */
+                color: black; background: white;
+                padding: 10px; text-align: right;
+            }
+            
+            /* התאמה לנייר צר (80mm) */
+            .bon-header { text-align: center; border-bottom: 2px dashed black; padding-bottom: 10px; margin-bottom: 10px; }
+            .bon-logo { font-size: 30px; font-weight: 900; text-transform: uppercase; letter-spacing: -2px; }
+            .bon-title { font-size: 16px; font-weight: bold; margin-top: 5px; }
+            
+            .bon-product { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 10px; }
+            .bon-img { width: 60px; height: auto; filter: grayscale(100%); } /* חיסכון בדיו צבעוני */
+            
+            .bon-steps { font-size: 14px; line-height: 1.4; }
+            .step { margin-bottom: 8px; display: flex; align-items: flex-start; }
+            .step-num { font-weight: bold; margin-left: 5px; min-width: 20px; }
+            
+            .bon-tip { border: 2px solid black; padding: 8px; margin-top: 15px; font-weight: bold; font-size: 14px; text-align: center; }
+            
+            .bon-footer { text-align: center; margin-top: 20px; font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="screen-container">
+        <div class="bg-gray-800 p-8 rounded-3xl border-2 border-gray-700">
+            <h1 class="text-3xl font-bold mb-4">הפתרון שלך מוכן!</h1>
+            <img src="https://gilar.co.il/wp-content/uploads/2020/09/SikaCeram-255-StarFlex-LD-IL-bag.png" class="product-img mb-6">
+            
+            <div class="text-xl mb-8">
+                בחרת ב- <span class="text-[#ffc500] font-bold">Sika Ceram 255</span>.
+                <br>הדבק הגמיש ביותר לאריחים גדולים.
+            </div>
+
+            <p class="text-gray-400 text-sm mb-6">
+                רוצה לקחת את הוראות היישום איתך לאתר?
+                <br>לחץ למטה והמדפסת תוציא לך "בון זהב".
+            </p>
+
+            <button onclick="window.print()" class="print-btn">
+                <i class="fas fa-print"></i> הדפס הוראות
+            </button>
+        </div>
+    </div>
+
+    <div id="printable-bon">
+        
+        <div class="bon-header">
+            <div class="bon-logo">Sika</div>
+            <div class="bon-title">הוראות יישום - מקצוענים</div>
+            <div>תאריך: <span id="date"></span></div>
+        </div>
+
+        <div class="bon-product">
+            <img src="https://gilar.co.il/wp-content/uploads/2020/09/SikaCeram-255-StarFlex-LD-IL-bag.png" class="bon-img">
+            <div>
+                <strong>Sika Ceram-255</strong>
+                <br>StarFlex C2TE S1
+            </div>
+        </div>
+
+        <div class="bon-steps">
+            <strong>📋 שלבי ביצוע (חובה!):</strong><br><br>
+            
+            <div class="step">
+                <span class="step-num">1.</span>
+                <span>תשתית: נקה אבק וודא שהקיר יבש. בקיר גבס - חובה למרוח פריימר Sika 11W.</span>
+            </div>
+            
+            <div class="step">
+                <span class="step-num">2.</span>
+                <span>ערבוב: שפוך 6-7 ליטר מים לשק. ערבב עם מערבל מכני עד קבלת משחה אחידה.</span>
+            </div>
+            
+            <div class="step">
+                <span class="step-num">3.</span>
+                <span>הדבקה: שיטת "גב-אל-גב". מריחה על הקיר עם מאלג' משונן + מריחה דקה בגב האריח (הידוק).</span>
+            </div>
+        </div>
+
+        <div class="bon-tip">
+            💡 הטיפ של אלי:
+            <br>
+            "אל תוסיף מים אחרי שהחומר התחיל להתייבש בדלי! זה הורס את הדבק."
+        </div>
+
+        <div class="bon-footer">
+            *** בהצלחה בפרויקט ***
+            <br>חברת גילאר (Sika ישראל)
+            <br>www.gilar.co.il
+        </div>
+    </div>
+
+    <script>
+        // הכנסת תאריך עדכני לבון
+        document.getElementById('date').innerText = new Date().toLocaleDateString('he-IL');
+    </script>
+</body>
+</html>
