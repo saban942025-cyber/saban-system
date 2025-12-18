@@ -3,77 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#008069">
     <title>Saban Connect</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
     <style>
-        /* --- עיצוב דמוי WhatsApp --- */
+        /* --- עיצוב WhatsApp אותנטי --- */
         body { background-color: #efeae2; font-family: -apple-system, Helvetica, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); }
         
         /* Header */
         .app-header { background: #008069; color: white; padding: 10px 15px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.2); z-index: 20; }
         
-        /* Story Ring (סטורי סטטוס) */
+        /* Story Ring (סטטוס הזמנה) */
         .story-ring { padding: 2px; border-radius: 50%; border: 2px solid transparent; transition: 0.3s; cursor: pointer; position: relative; }
-        .story-ring.status-new { border-color: #3b82f6; } /* כחול - חדש */
-        .story-ring.status-working { border-color: #f97316; animation: spin-slow 4s infinite linear; } /* כתום - עובדים */
-        .story-ring.status-shipping { border-color: #22c55e; } /* ירוק - בדרך */
-        
-        @keyframes spin-slow { 100% { transform: rotate(360deg); } }
+        .story-ring.status-active { border-color: #22c55e; animation: pulse-green 2s infinite; }
+        @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
 
         /* אזור הצ'אט */
         #chat-container { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 8px; scroll-behavior: smooth; }
         
-        /* בועות הודעה */
-        .msg { max-width: 80%; padding: 8px 12px; border-radius: 8px; font-size: 14px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); line-height: 1.4; }
-        .msg.out { align-self: flex-start; background: #dcf8c6; border-top-right-radius: 0; } /* אני (לקוח) */
-        .msg.in { align-self: flex-end; background: white; border-top-left-radius: 0; } /* חמ"ל */
-        
+        .msg { max-width: 85%; padding: 8px 12px; border-radius: 8px; font-size: 14px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); line-height: 1.4; }
+        .msg.out { align-self: flex-start; background: #dcf8c6; border-top-right-radius: 0; }
+        .msg.in { align-self: flex-end; background: white; border-top-left-radius: 0; }
         .msg-time { font-size: 10px; color: #999; text-align: left; margin-top: 4px; display: flex; justify-content: flex-end; gap: 4px; }
         
-        /* בועת הזמנה מיוחדת */
-        .order-bubble { background: #e0f2fe !important; border-left: 4px solid #3b82f6; width: 260px; }
-        .order-header { font-weight: bold; color: #0369a1; font-size: 13px; margin-bottom: 4px; display: flex; justify-content: space-between; }
-        .waze-info { background: rgba(255,255,255,0.5); padding: 4px; border-radius: 4px; font-size: 10px; margin-top: 6px; display: flex; justify-content: space-between; color: #0c4a6e; font-weight: bold; }
-
-        /* בועת נהג */
+        /* בועת נהג מיוחדת */
         .driver-bubble { background: #f0fdf4 !important; border-left: 4px solid #22c55e; width: 280px; }
-        .map-preview { height: 120px; background: #e5e7eb; margin-top: 8px; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
-        
-        /* Input Bar */
+        .map-preview-btn {
+            background: #e5e7eb; height: 100px; border-radius: 8px; margin-top: 8px; 
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            background-image: url('https://miro.medium.com/max/1400/1*qYUvh-EtES8dtgKiBRiLsA.png'); background-size: cover; position: relative;
+        }
+        .map-preview-btn::after { content: ''; position: absolute; inset: 0; background: rgba(0,0,0,0.1); border-radius: 8px; }
+        .map-btn-overlay { position: relative; z-index: 10; background: white; padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); color: #166534; display: flex; items-center; gap: 5px; }
+
+        /* שורת הקלדה */
         .input-area { background: #f0f2f5; padding: 8px 10px; display: flex; align-items: center; gap: 8px; z-index: 20; padding-bottom: max(8px, env(safe-area-inset-bottom)); }
-        .btn-plus { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #54656f; cursor: pointer; }
         .input-box { flex: 1; background: white; border-radius: 20px; padding: 10px 15px; border: none; outline: none; font-size: 15px; }
-        .btn-send { width: 40px; height: 40px; background: #008069; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        
+        /* מפה חיה (Modal) */
+        .map-modal { 
+            position: fixed; inset: 0; background: white; z-index: 100; 
+            display: flex; flex-direction: column; transform: translateY(100%); transition: transform 0.3s ease-out;
+        }
+        .map-modal.open { transform: translateY(0); }
+        .map-header { padding: 15px; background: white; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); z-index: 10; }
+        #live-map { flex: 1; width: 100%; height: 100%; background: #f0f0f0; }
 
-        /* Modal (הזמנה) */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 50; display: none; align-items: flex-end; }
-        .modal-content { background: white; width: 100%; border-top-left-radius: 20px; border-top-right-radius: 20px; padding: 20px; animation: slideUp 0.3s ease-out; max-height: 80vh; overflow-y: auto; }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-
-        /* Story View */
-        .story-modal { position: fixed; inset: 0; background: black; z-index: 60; display: none; flex-direction: column; }
-        .story-bar { display: flex; gap: 4px; padding: 10px; }
-        .story-progress { height: 3px; background: rgba(255,255,255,0.3); flex: 1; border-radius: 2px; overflow: hidden; }
-        .story-fill { height: 100%; background: white; width: 0%; transition: width 0.1s linear; }
+        /* כרטיס נהג במפה */
+        .driver-info-card {
+            position: absolute; bottom: 30px; left: 20px; right: 20px;
+            background: white; padding: 15px; border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 1000;
+            display: flex; align-items: center; gap: 15px; animation: slideUp 0.4s ease-out;
+        }
+        .driver-avatar { width: 50px; height: 50px; border-radius: 50%; border: 3px solid #22c55e; }
+        
+        /* אנימציות */
+        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        /* Leaflet Custom Icons */
+        .truck-icon { font-size: 24px; color: #15803d; text-shadow: 0 0 10px white; }
+        .home-icon { font-size: 24px; color: #2563eb; text-shadow: 0 0 10px white; }
     </style>
 </head>
 <body>
 
     <header class="app-header">
         <div class="flex items-center gap-3">
-            <i class="fas fa-arrow-right text-white"></i>
-            <div class="story-ring status-new" id="main-avatar-ring" onclick="openStory()">
-                <img src="https://ui-avatars.com/api/?name=Saban+Group&background=25D366&color=fff" class="w-9 h-9 rounded-full border border-white/20">
+            <i class="fas fa-arrow-right text-white text-lg"></i>
+            <div class="story-ring" id="status-ring">
+                <img src="https://ui-avatars.com/api/?name=Saban+Logistics&background=25D366&color=fff" class="w-9 h-9 rounded-full border border-white/20">
             </div>
-            <div class="flex flex-col cursor-pointer" onclick="openStory()">
+            <div class="flex flex-col">
                 <span class="font-bold text-base leading-none">ח.סבן חומרי בנין</span>
-                <span class="text-[11px] opacity-80" id="header-status">לחץ לסטטוס הזמנה...</span>
+                <span class="text-[11px] opacity-90 text-green-100" id="header-status">מחובר כעת</span>
             </div>
         </div>
-        <div class="flex gap-4 text-xl">
+        <div class="flex gap-5 text-lg opacity-90">
             <i class="fas fa-video"></i>
             <i class="fas fa-phone"></i>
             <i class="fas fa-ellipsis-v"></i>
@@ -81,69 +94,44 @@
     </header>
 
     <div id="chat-container">
-        <div class="bg-[#e1f3fb] text-[12px] text-center p-2 rounded-lg text-gray-600 shadow-sm mx-auto mb-4 border border-[#ccebf8]">
-            🔒 הודעות ותמונות בשיחה זו מוגנות ומוצפנות מקצה לקצה.
-        </div>
-        
-        <div class="msg in">
-            אהלן <span id="client-name-span"></span> 👋<br>כאן הצוות של סבן. איך אפשר לעזור היום?
-            <div class="msg-time">10:00</div>
+        <div class="bg-[#e1f3fb] text-[10px] text-center p-2 rounded-lg text-gray-600 shadow-sm mx-auto mb-4 border border-[#ccebf8] max-w-[90%]">
+            🔒 השיחה מאובטחת ומוצפנת מקצה לקצה. רק אתה והחמ"ל רואים את ההודעות.
         </div>
     </div>
 
     <div class="input-area">
-        <div class="btn-plus hover:bg-gray-200 transition" onclick="openOrderModal()">
+        <button onclick="createNewOrder()" class="w-10 h-10 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200">
             <i class="fas fa-plus text-xl"></i>
-        </div>
-        <input type="text" id="msg-input" class="input-box" placeholder="הקלד הודעה..." onkeydown="if(event.key==='Enter') sendText()">
-        <div class="btn-send" onclick="sendText()">
+        </button>
+        <input type="text" id="msg-input" class="input-box" placeholder="הקלד הודעה..." onkeydown="if(event.key==='Enter') sendMsg()">
+        <button onclick="sendMsg()" class="w-10 h-10 bg-[#008069] rounded-full text-white flex items-center justify-center shadow-sm active:scale-95">
             <i class="fas fa-paper-plane text-sm"></i>
-        </div>
+        </button>
     </div>
 
-    <div id="order-modal" class="modal-overlay" onclick="if(event.target===this) closeOrderModal()">
-        <div class="modal-content">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold text-gray-800">הזמנה חדשה 🏗️</h2>
-                <button onclick="closeOrderModal()" class="bg-gray-100 w-8 h-8 rounded-full"><i class="fas fa-times"></i></button>
+    <div id="map-modal" class="map-modal">
+        <div class="map-header">
+            <div>
+                <h2 class="font-bold text-lg text-slate-800">מעקב משלוח חי</h2>
+                <div class="text-xs text-green-600 font-bold animate-pulse">● מתעדכן בזמן אמת</div>
             </div>
-            
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 mb-1">מה להביא?</label>
-                    <textarea id="order-items" class="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 h-24 text-base focus:border-green-500 outline-none" placeholder="למשל: 5 משטחי מלט, 20 שקים טיט..."></textarea>
-                </div>
-                
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 mb-1">לאן?</label>
-                    <select id="warehouse-select" class="w-full bg-gray-50 p-3 rounded-xl border border-gray-200 mb-2 text-sm" onchange="calcDistance()">
-                        <option value="site">לאתר שלי (לפי GPS)</option>
-                        <option value="pickup">איסוף עצמי</option>
-                    </select>
-                    <div id="dist-calc" class="text-xs text-blue-600 font-bold hidden bg-blue-50 p-2 rounded">
-                        <i class="fas fa-calculator fa-spin"></i> מחשב מרחק ממחסן החרש...
-                    </div>
-                </div>
-
-                <button onclick="submitOrder()" class="w-full bg-[#008069] text-white py-3 rounded-xl font-bold text-lg shadow-lg active:scale-95 transition">
-                    שלח הזמנה 🚀
-                </button>
-            </div>
+            <button onclick="closeMap()" class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-times text-gray-500"></i>
+            </button>
         </div>
-    </div>
+        
+        <div id="live-map"></div>
 
-    <div id="story-view" class="story-modal" onclick="closeStory()">
-        <div class="story-bar">
-            <div class="story-progress"><div class="story-fill" style="width: 100%"></div></div>
-        </div>
-        <div class="flex-1 flex flex-col items-center justify-center text-white p-10 text-center">
-            <div class="w-24 h-24 rounded-full border-4 border-green-500 p-1 mb-6">
-                <img src="https://ui-avatars.com/api/?name=Saban&background=fff&color=000" class="w-full h-full rounded-full">
+        <div class="driver-info-card">
+            <img src="https://ui-avatars.com/api/?name=Driver&background=random" id="map-driver-img" class="driver-avatar">
+            <div class="flex-1">
+                <div class="text-xs text-gray-400 font-bold uppercase">הנהג שלך</div>
+                <div class="font-bold text-lg text-slate-800" id="map-driver-name">דני הנהג</div>
+                <div class="text-xs text-blue-600 font-bold mt-1" id="map-eta">⏱️ מגיע תוך 12 דקות</div>
             </div>
-            <h1 class="text-2xl font-bold mb-2">סטטוס הזמנה #<span id="story-order-id">888</span></h1>
-            <div class="text-4xl mb-4" id="story-icon">🚚</div>
-            <p class="text-xl" id="story-text">הנהג בדרך אליך!</p>
-            <p class="text-sm text-gray-400 mt-8">לחץ כדי לסגור</p>
+            <a href="tel:*" class="w-10 h-10 bg-green-100 text-green-600 rounded-full flex items-center justify-center border border-green-200">
+                <i class="fas fa-phone"></i>
+            </a>
         </div>
     </div>
 
@@ -153,249 +141,163 @@
 
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
-        // זיהוי לקוח (סימולציה או אמיתי)
+        // זיהוי לקוח
         const params = new URLSearchParams(window.location.search);
-        const CLIENT_ID = params.get('uid') || 'guest_123';
-        const CLIENT_NAME = params.get('name') || 'זבולון קבלנים';
+        const CLIENT_ID = params.get('uid') || 'guest';
+        const CLIENT_NAME = params.get('name') || 'לקוח אורח';
 
-        document.getElementById('client-name-span').innerText = CLIENT_NAME.split(' ')[0];
+        let currentOrder = null;
+        let mapInstance = null;
+        let driverMarker = null;
 
-        let currentOrderId = null;
-        let warehouseCoords = { lat: 32.147, lng: 34.887 }; // החרש 10, הוד השרון
-
-        // --- 1. האזנה לצ'אט בזמן אמת ---
-        // אנחנו מאזינים להזמנה האחרונה הפעילה של הלקוח
+        // --- האזנה לצ'אט ---
         const q = query(collection(db, "orders"), where("clientId", "==", CLIENT_ID), orderBy("createdAt", "desc"));
-
+        
         onSnapshot(q, (snap) => {
-            const container = document.getElementById('chat-container');
-            
-            if (!snap.empty) {
-                const data = snap.docs[0].data();
-                const id = snap.docs[0].id;
-                currentOrderId = id;
+            if(snap.empty) return;
+            const data = snap.docs[0].data();
+            const id = snap.docs[0].id;
+            currentOrder = { id, ...data };
 
-                // עדכון הסטורי למעלה
-                updateHeaderStory(data.status);
-
-                // אם זה טעינה ראשונה או שינוי, נרנדר את הצ'אט
-                // (בגרסה מלאה נבדוק דלתא, כאן ננקה ונרנדר למען הפשטות והסדר)
-                // אנחנו שומרים על ההודעה הראשונה (ברוך הבא)
-                const welcomeMsg = container.firstElementChild.outerHTML + container.children[1].outerHTML;
-                container.innerHTML = welcomeMsg;
-
-                // רינדור הודעות
-                if(data.chat) {
-                    data.chat.forEach(msg => {
-                        appendMessageBubble(msg);
-                    });
-                }
-                
-                // גלילה למטה
-                container.scrollTop = container.scrollHeight;
-
-                // התראות סאונד (אם ההודעה האחרונה היא לא שלי)
-                const lastMsg = data.chat ? data.chat[data.chat.length - 1] : null;
-                if (lastMsg && lastMsg.sender !== 'client') {
-                    playNotification();
-                }
-            }
+            updateStatusHeader(data);
+            renderChat(data.chat || []);
         });
 
-        function appendMessageBubble(msg) {
+        function renderChat(messages) {
             const container = document.getElementById('chat-container');
-            const isMe = msg.sender === 'client';
-            const time = msg.time ? new Date(msg.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
-            
-            let html = '';
+            // שומרים על הודעת האבטחה הראשונה
+            const securityMsg = container.children[0];
+            container.innerHTML = ''; 
+            container.appendChild(securityMsg);
 
-            // 1. בועת הזמנה (מיוחדת)
-            if (msg.type === 'order_created') {
-                html = `
-                <div class="msg out order-bubble">
-                    <div class="order-header"><i class="fas fa-clipboard-list"></i> הזמנה חדשה</div>
-                    <div class="text-sm">${msg.text}</div>
-                    <div class="waze-info">
-                        <span><i class="fas fa-route"></i> ${msg.dist || '12 ק"מ'}</span>
-                        <span><i class="fas fa-clock"></i> ${msg.duration || '20 דק\''}</span>
-                    </div>
-                    <div class="msg-time">${time} <i class="fas fa-check-double text-blue-500"></i></div>
-                </div>`;
-            } 
-            // 2. בועת "נהג בדרך" (מיוחדת)
-            else if (msg.type === 'driver_assigned' || (msg.text && msg.text.includes('הנהג'))) {
-                html = `
-                <div class="msg in driver-bubble">
-                    <div class="font-bold text-green-800 text-xs mb-1">🚚 עדכון חמ"ל</div>
-                    <div class="text-sm">${msg.text}</div>
+            messages.forEach(msg => {
+                const isMe = msg.sender === 'client';
+                const time = msg.time ? new Date(msg.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
+                let contentHtml = msg.text;
+
+                // 1. בועת נהג מיוחדת
+                if(msg.type === 'driver_update' || (msg.text && msg.text.includes('הנהג'))) {
+                    const driverName = currentOrder.driver || 'הנהג';
+                    contentHtml = `
+                    <div class="driver-bubble p-3 rounded-lg relative">
+                        <div class="font-bold text-green-800 text-xs mb-1">🚚 הנהג בדרך אליך!</div>
+                        <div class="text-sm text-gray-800 mb-2">${msg.text}</div>
+                        <div class="map-preview-btn" onclick="openMap('${driverName}')">
+                            <div class="map-btn-overlay">
+                                <i class="fas fa-map-marker-alt text-red-500"></i> צפה במפה חיה
+                            </div>
+                        </div>
+                    </div>`;
                     
-                    <div class="map-preview" onclick="openLiveMap()">
-                        <div class="absolute inset-0 bg-[url('https://miro.medium.com/max/1400/1*qYUvh-EtES8dtgKiBRiLsA.png')] bg-cover opacity-60"></div>
-                        <button class="bg-white/90 text-green-700 px-4 py-2 rounded-full font-bold shadow-lg z-10 text-xs hover:scale-105 transition">
-                            <i class="fas fa-map-marker-alt"></i> צפה במיקום נהג
-                        </button>
-                    </div>
+                    const div = document.createElement('div');
+                    div.className = "msg in !p-0 !bg-transparent !shadow-none"; // ביטול עיצוב רגיל
+                    div.innerHTML = contentHtml + `<div class="msg-time px-2">${time}</div>`;
+                    container.appendChild(div);
+                    return;
+                }
 
-                    <div class="flex gap-2 mt-2">
-                        <button class="flex-1 bg-white border border-gray-200 py-1 rounded text-xs font-bold text-gray-700">📞 הנהג</button>
-                        <button class="flex-1 bg-blue-500 text-white py-1 rounded text-xs font-bold"><i class="fab fa-waze"></i> סע</button>
-                    </div>
-                    <div class="msg-time">${time}</div>
-                </div>`;
-            }
-            // 3. הודעת טקסט רגילה
-            else {
-                html = `
-                <div class="msg ${isMe ? 'out' : 'in'}">
-                    ${msg.imageUrl ? `<img src="${msg.imageUrl}" class="rounded-lg mb-1 w-full cursor-pointer" onclick="window.open(this.src)">` : ''}
-                    ${msg.text}
-                    <div class="msg-time">${time} ${isMe ? '<i class="fas fa-check text-gray-400"></i>' : ''}</div>
-                </div>`;
-            }
-            
-            container.insertAdjacentHTML('beforeend', html);
+                // 2. הודעה רגילה
+                const div = document.createElement('div');
+                div.className = `msg ${isMe ? 'out' : 'in'}`;
+                div.innerHTML = `${contentHtml}<div class="msg-time">${time} ${isMe ? '<i class="fas fa-check text-gray-400"></i>' : ''}</div>`;
+                container.appendChild(div);
+            });
+            container.scrollTop = container.scrollHeight;
         }
 
-        // --- 2. לוגיקת הזמנה וחישוב זמנים ---
-        window.openOrderModal = () => {
-            document.getElementById('order-modal').style.display = 'flex';
-            calcDistance(); // התחלת חישוב
-        };
-        window.closeOrderModal = () => document.getElementById('order-modal').style.display = 'none';
+        // --- מפה חיה ---
+        window.openMap = (driverName) => {
+            document.getElementById('map-modal').classList.add('open');
+            document.getElementById('map-driver-name').innerText = driverName;
+            document.getElementById('map-driver-img').src = `https://ui-avatars.com/api/?name=${driverName}&background=22c55e&color=fff`;
 
-        window.calcDistance = () => {
-            const distDiv = document.getElementById('dist-calc');
-            distDiv.classList.remove('hidden');
-            distDiv.innerHTML = '<i class="fas fa-calculator fa-spin"></i> מחשב מסלול ממחסן החרש...';
-            
-            // סימולציית חישוב (במציאות: Google Distance Matrix API)
-            setTimeout(() => {
-                const rndDist = (Math.random() * 15 + 5).toFixed(1); // 5-20 ק"מ
-                const rndTime = Math.floor(rndDist * 1.5 + 10); // זמן משוער
-                distDiv.innerHTML = `📍 מרחק משוער: <b>${rndDist} ק"מ</b> | ⏱️ זמן: <b>${rndTime} דקות</b>`;
-                distDiv.dataset.dist = rndDist + ' ק"מ';
-                distDiv.dataset.time = rndTime + ' דק\'';
-            }, 1500);
-        };
+            if(!mapInstance) {
+                // אתחול מפה (פעם אחת)
+                mapInstance = L.map('live-map').setView([32.162, 34.844], 14);
+                
+                // שימוש במפה בהירה ונקייה (CartoDB Positron) לעיצוב נקי בעברית
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '&copy; OpenStreetMap &copy; CARTO'
+                }).addTo(mapInstance);
 
-        window.submitOrder = async () => {
-            const items = document.getElementById('order-items').value;
-            if(!items) return;
-            
-            const distInfo = document.getElementById('dist-calc');
-            const dist = distInfo.dataset.dist || '10 ק"מ';
-            const duration = distInfo.dataset.time || '25 דק\'';
+                // מיקום הלקוח (הבית)
+                L.marker([32.165, 34.845], {
+                    icon: L.divIcon({html: '<i class="fas fa-home home-icon"></i>', className: 'bg-transparent'})
+                }).addTo(mapInstance).bindPopup("הכתובת שלך").openPopup();
+            }
 
-            // אם אין הזמנה קיימת פעילה, ניצור חדשה. אם יש, נוסיף להודעה.
-            // לצורך הפשטות, ניצור חדשה אם הסטטוס הוא 'done', אחרת נעדכן.
-            
-            const msgData = {
-                sender: 'client',
-                type: 'order_created',
-                text: items,
-                dist: dist,
-                duration: duration,
-                time: new Date().toISOString()
-            };
-
-            // יצירת הזמנה חדשה בפיירבייס
-            await addDoc(collection(db, "orders"), {
-                clientId: CLIENT_ID,
-                clientName: CLIENT_NAME,
-                itemsText: items,
-                status: 'new', // חדש
-                orderNum: Math.floor(Math.random()*10000).toString(),
-                createdAt: serverTimestamp(),
-                lastUpdate: serverTimestamp(),
-                chat: [msgData]
-            });
-
-            closeOrderModal();
-            document.getElementById('order-items').value = '';
-            
-            // סאונד שליחה
-            new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.m4a').play().catch(()=>{});
+            // עדכון מיקום נהג (סימולציה)
+            simulateDriverMovement();
         };
 
-        // --- 3. שליחת הודעה רגילה ---
-        window.sendText = async () => {
+        window.closeMap = () => document.getElementById('map-modal').classList.remove('open');
+
+        function simulateDriverMovement() {
+            let lat = 32.150, lng = 34.840;
+            
+            if(driverMarker) driverMarker.remove();
+            
+            const icon = L.divIcon({html: '<i class="fas fa-truck truck-icon"></i>', className: 'bg-transparent'});
+            driverMarker = L.marker([lat, lng], {icon: icon}).addTo(mapInstance);
+
+            // תנועה מדומה כל 2 שניות
+            setInterval(() => {
+                lat += 0.0001; lng += 0.0001;
+                driverMarker.setLatLng([lat, lng]);
+                mapInstance.panTo([lat, lng]);
+            }, 2000);
+        }
+
+        // --- פונקציות עזר ---
+        function updateStatusHeader(data) {
+            const statusText = document.getElementById('header-status');
+            const ring = document.getElementById('status-ring');
+            
+            if(data.status === 'on_route') {
+                statusText.innerText = 'הנהג בנסיעה אליך';
+                ring.classList.add('status-active');
+            } else {
+                statusText.innerText = 'מחובר | סבן חומרי בנין';
+                ring.classList.remove('status-active');
+            }
+        }
+
+        window.sendMsg = async () => {
             const input = document.getElementById('msg-input');
             const text = input.value.trim();
             if(!text) return;
-
             input.value = '';
-            
-            // אם יש הזמנה פעילה, נעדכן אותה. אם לא, צריך ליצור חדשה (או לוגיקת "שיחה כללית").
-            // בסימולציה הזו נניח שאנחנו מעדכנים את currentOrderId
-            if (currentOrderId) {
-                await updateDoc(doc(db, "orders", currentOrderId), {
+
+            if(currentOrder) {
+                await updateDoc(doc(db, "orders", currentOrder.id), {
                     chat: arrayUnion({ sender: 'client', text: text, time: new Date().toISOString() }),
-                    status: 'changes_requested', // מקפיץ לחמ"ל
+                    status: 'changes_requested',
                     lastUpdate: serverTimestamp()
                 });
             } else {
-                // יצירת "שיחה" חדשה
+                createNewOrder(text);
+            }
+        };
+
+        window.createNewOrder = async (initialText = "") => {
+            const { value: text } = await Swal.fire({
+                title: 'הזמנה חדשה 🏗️',
+                input: 'textarea',
+                inputValue: initialText,
+                inputPlaceholder: 'מה להביא לך?',
+                confirmButtonText: 'שלח הזמנה',
+                confirmButtonColor: '#008069'
+            });
+
+            if(text) {
                 await addDoc(collection(db, "orders"), {
-                    clientId: CLIENT_ID,
-                    clientName: CLIENT_NAME,
-                    status: 'new',
-                    itemsText: 'הודעת צ\'אט',
-                    createdAt: serverTimestamp(),
-                    lastUpdate: serverTimestamp(),
-                    chat: [{ sender: 'client', text: text, time: new Date().toISOString() }]
+                    clientId: CLIENT_ID, clientName: CLIENT_NAME,
+                    itemsText: text, status: 'new',
+                    createdAt: serverTimestamp(), lastUpdate: serverTimestamp(),
+                    chat: [{ sender: 'client', text: `הזמנה חדשה: ${text}`, time: new Date().toISOString() }]
                 });
             }
         };
-
-        // --- 4. עזרים (סאונד, סטורי) ---
-        function updateHeaderStory(status) {
-            const ring = document.getElementById('main-avatar-ring');
-            const statusText = document.getElementById('header-status');
-            
-            ring.className = 'story-ring'; // Reset
-            
-            if (status === 'new') {
-                ring.classList.add('status-new');
-                statusText.innerText = 'התקבל אצלנו';
-            } else if (status === 'assigned' || status === 'approved') {
-                ring.classList.add('status-working');
-                statusText.innerText = 'מכינים את ההזמנה...';
-            } else if (status === 'on_route' || status.includes('driver')) {
-                ring.classList.add('status-shipping');
-                statusText.innerText = 'הנהג בדרך אליך!';
-            } else {
-                statusText.innerText = 'מחובר';
-            }
-        }
-
-        window.openStory = () => {
-            document.getElementById('story-view').style.display = 'flex';
-            // אנימציית מילוי פס
-            setTimeout(() => document.querySelector('.story-fill').style.width = '100%', 100);
-            setTimeout(() => closeStory(), 4000); // סגירה אוטומטית
-        };
-        window.closeStory = () => {
-            document.getElementById('story-view').style.display = 'none';
-            document.querySelector('.story-fill').style.width = '0%';
-        };
-
-        window.openLiveMap = () => {
-            Swal.fire({
-                title: '📍 מעקב חי',
-                html: '<div style="height:300px; background:#e5e7eb; display:flex; align-items:center; justify-content:center;">מפת גוגל חיה נטענת...</div>',
-                showConfirmButton: false,
-                showCloseButton: true
-            });
-        };
-
-        function playNotification() {
-            // צליל הודעה נכנסת (עדין)
-            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.m4a');
-            audio.volume = 0.5;
-            audio.play().catch(e => console.log('Audio autoplay blocked'));
-            if(navigator.vibrate) navigator.vibrate(200);
-        }
-
     </script>
 </body>
 </html>
