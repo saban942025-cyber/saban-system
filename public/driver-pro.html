@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#ffffff">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
-    <title>Saban Driver | Live</title>
+    <title>Saban Driver | Live Ops</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -14,100 +12,78 @@
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
     
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
     <style>
-        /* איפוס מוחלט למסך מלא בנייד */
-        html, body { height: 100%; width: 100%; margin: 0; padding: 0; overflow: hidden; background: #fff; font-family: -apple-system, system-ui, sans-serif; }
+        /* CSS נקי למובייל */
+        body { margin: 0; padding: 0; height: 100vh; width: 100vw; overflow: hidden; display: flex; flex-direction: column; background: #fff; font-family: -apple-system, sans-serif; }
+        #map { flex: 1; width: 100%; height: 100%; z-index: 0; }
         
-        /* המפה תופסת 100% מהגובה והרוחב */
-        #map { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1; }
-        
+        /* נתוני זמן אמת (המוח) */
+        .live-stats {
+            position: absolute; top: 10px; left: 10px; z-index: 500;
+            background: rgba(0, 0, 0, 0.8); color: white; padding: 8px 12px; border-radius: 12px;
+            font-size: 12px; font-weight: bold; display: none; backdrop-filter: blur(4px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .live-stats.active { display: flex; flex-direction: column; gap: 2px; animation: slideIn 0.3s; }
+
         /* סטטוס נהג עליון */
-        .driver-status-badge {
-            position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
-            background: rgba(255, 255, 255, 0.95); padding: 8px 20px; border-radius: 30px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15); font-weight: bold; font-size: 14px;
-            display: flex; items-center; gap: 8px; z-index: 500;
-            backdrop-filter: blur(5px); border: 1px solid #e2e8f0;
+        .driver-badge {
+            position: absolute; top: 10px; right: 10px; z-index: 500;
+            background: white; padding: 6px 12px; border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15); font-weight: bold; font-size: 12px;
+            display: flex; items-center; gap: 6px; border: 1px solid #e2e8f0;
         }
-        .status-dot { width: 10px; height: 10px; background: #22c55e; border-radius: 50%; animation: pulse-green 2s infinite; }
-        @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
+        .pulse-dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
 
-        /* פס התקדמות (הנחש) - מופיע מלמעלה */
-        .progress-bar-container {
-            position: absolute; top: 0; left: 0; right: 0; z-index: 400;
-            background: rgba(255, 255, 255, 0.98); padding: 15px 20px 10px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1); border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;
-            transform: translateY(-150%); transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        .progress-bar-container.active { transform: translateY(0); }
-        
-        .steps { display: flex; justify-content: space-between; position: relative; padding: 0 10px; }
-        .steps::before { content: ''; position: absolute; top: 10px; left: 20px; right: 20px; height: 2px; background: #e2e8f0; z-index: 0; }
-        .step { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; }
-        .step-dot { width: 22px; height: 22px; background: #fff; border: 3px solid #cbd5e1; border-radius: 50%; transition: 0.3s; }
-        .step.active .step-dot { border-color: #3b82f6; background: #3b82f6; transform: scale(1.1); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
-        .step.done .step-dot { background: #22c55e; border-color: #22c55e; }
-        .step-label { font-size: 10px; font-weight: 700; color: #94a3b8; margin-top: 4px; }
-        .step.active .step-label { color: #3b82f6; }
-
-        /* כרטיס פעולה תחתון */
+        /* כרטיס משימה */
         .action-card {
             position: fixed; bottom: 0; left: 0; right: 0; background: #fff;
             border-top-left-radius: 24px; border-top-right-radius: 24px;
-            padding: 24px; padding-bottom: max(24px, env(safe-area-inset-bottom));
-            box-shadow: 0 -10px 40px rgba(0,0,0,0.15);
+            padding: 20px; box-shadow: 0 -5px 40px rgba(0,0,0,0.2);
             transform: translateY(120%); transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-            z-index: 1000;
+            z-index: 1000; padding-bottom: max(20px, env(safe-area-inset-bottom));
         }
         .action-card.active { transform: translateY(0); }
 
-        /* כפתורים מסיביים */
+        /* כפתורים */
         .big-btn {
-            height: 64px; border-radius: 16px; font-weight: 800; font-size: 16px;
+            height: 55px; border-radius: 12px; font-weight: 800; font-size: 16px;
             display: flex; align-items: center; justify-content: center; gap: 8px;
-            cursor: pointer; color: white; border: none; box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-            transition: transform 0.1s;
+            cursor: pointer; color: white; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         .big-btn:active { transform: scale(0.96); }
-        
         .btn-waze { background: linear-gradient(135deg, #3b82f6, #2563eb); }
-        .btn-call { background: linear-gradient(135deg, #22c55e, #16a34a); }
-        .btn-msg { background: linear-gradient(135deg, #f97316, #ea580c); }
-        
         .btn-start { 
-            background: linear-gradient(135deg, #2563eb, #1e40af); width: 100%; height: 75px; 
-            font-size: 20px; box-shadow: 0 10px 25px rgba(37, 99, 235, 0.4);
-            animation: pulse-btn 2s infinite;
+            background: linear-gradient(135deg, #10b981, #059669); width: 100%; height: 70px; 
+            font-size: 20px; box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+            animation: bounce-slow 3s infinite;
         }
-        @keyframes pulse-btn { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
-
-        /* עיצוב סיכות מפה */
-        .truck-marker { font-size: 44px; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3)); z-index: 2000 !important; }
+        
+        /* אייקונים */
+        .truck-marker { font-size: 40px; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3)); z-index: 2000 !important; transition: all 1s linear; }
         .custom-pin { display: flex; align-items: center; justify-content: center; }
-        .pin-inner { 
-            width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; 
-            color: white; font-size: 20px; border: 3px solid white; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-        .pin-order { background: #3b82f6; } /* הזמנה */
-        .pin-transfer { background: #f97316; } /* העברה */
+        .pin-inner { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .pin-transfer { background: #f97316; } /* כתום */
+        
+        @keyframes bounce-slow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+        @keyframes slideIn { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
     </style>
 </head>
 <body>
 
-    <div class="driver-status-badge">
-        <div class="status-dot"></div>
-        <span id="driver-name-display">מתחבר...</span>
+    <div class="driver-badge">
+        <div class="pulse-dot"></div>
+        <span id="driver-name">מתחבר...</span>
     </div>
 
-    <div id="progress-bar" class="progress-bar-container">
-        <div class="steps">
-            <div class="step active"><div class="step-dot"></div><div class="step-label">התקבל</div></div>
-            <div class="step" id="step-nav"><div class="step-dot"></div><div class="step-label">בדרך</div></div>
-            <div class="step" id="step-done"><div class="step-dot"></div><div class="step-label">סיום</div></div>
-        </div>
+    <div id="route-stats" class="live-stats">
+        <div class="text-yellow-400"><i class="fas fa-clock"></i> <span id="time-val">--</span></div>
+        <div class="text-blue-300"><i class="fas fa-road"></i> <span id="dist-val">--</span></div>
     </div>
 
     <div id="map"></div>
@@ -116,177 +92,145 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, query, where, onSnapshot, doc, setDoc, updateDoc, serverTimestamp, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, query, where, onSnapshot, doc, setDoc, updateDoc, serverTimestamp, arrayUnion, writeBatch, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
         
-        let map, truckMarker;
-        let currentDriver = null;
+        let map, truckMarker, routeLayer;
+        let currentDriver = 'עלי'; // ברירת מחדל לתרחיש
+        let currentLocation = { lat: 32.1476, lng: 34.8870 }; // ברירת מחדל: התלמיד 6, הוד השרון
         let activeTaskId = null;
 
-        // --- שלב 1: אתחול וזיהוי נהג ---
-        window.onload = () => {
+        // --- אתחול ---
+        window.onload = async () => {
+            // ניסיון זיהוי מהלינק
             const params = new URLSearchParams(window.location.search);
-            const userId = params.get('user_id');
-            const driverParam = params.get('driver');
+            if(params.get('driver')) currentDriver = params.get('driver');
             
-            // טבלת זיהוי נהגים
-            const driversMap = {
-                'QHzzWehstGOH1WBccCUS': 'עלי',
-                'TEST_DRIVER_2': 'חכמת'
-            };
-
-            // קביעת הנהג (עדיפות ללינק, ואז לזיכרון)
-            currentDriver = driverParam || driversMap[userId] || localStorage.getItem('saban_driver_name');
-
-            if (currentDriver) {
-                // נהג זוהה
-                localStorage.setItem('saban_driver_name', currentDriver);
-                document.getElementById('driver-name-display').innerText = `נהג: ${currentDriver}`;
-                initMap();
-                
-                // ברכת כניסה עדינה
-                Swal.fire({
-                    toast: true, position: 'top', icon: 'success', 
-                    title: `מחובר כ-${currentDriver}`, showConfirmButton: false, timer: 3000
-                });
-            } else {
-                // מצב חירום: לא זוהה נהג
-                Swal.fire({
-                    title: 'שגיאת הזדהות',
-                    text: 'נא להיכנס דרך הלינק האישי שנשלח אליך מהסידור.',
-                    icon: 'error',
-                    confirmButtonText: 'הבנתי'
-                });
-            }
+            document.getElementById('driver-name').innerText = currentDriver;
+            
+            initMap();
+            
+            // בדיקת "ניקוי דאטה" (אם הלינק מכיל &reset=true)
+            if(params.get('reset')) await cleanUpData();
+            
+            // התחברות ל-GPS ושידור מיקום ראשוני
+            updateLocation({ coords: { latitude: currentLocation.lat, longitude: currentLocation.lng, heading: 0 } });
         };
 
-        // --- שלב 2: בניית המפה ---
         function initMap() {
-            // מפה בהירה ונקייה בעברית
-            map = L.map('map', { zoomControl: false }).setView([32.162, 34.844], 14);
-            
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: 'Saban Logistics',
-                maxZoom: 19
-            }).addTo(map);
+            // מפה בהירה מלאה
+            map = L.map('map', { zoomControl: false, attributionControl: false }).setView([currentLocation.lat, currentLocation.lng], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 
-            // הפעלת GPS
             if ("geolocation" in navigator) {
                 navigator.geolocation.watchPosition(updateLocation, 
-                    (err) => console.warn("GPS Access Denied"), 
+                    (err) => console.log("GPS Simulation Mode"), 
                     { enableHighAccuracy: true }
                 );
             }
-
-            // התחלת האזנה למשימות
+            
             listenForTasks();
         }
 
         async function updateLocation(pos) {
             const lat = pos.coords.latitude;
             const lng = pos.coords.longitude;
-            const heading = pos.coords.heading || 0;
+            currentLocation = { lat, lng }; // שמירת מיקום נוכחי לחישובים
 
-            // אייקון משאית שפונה לכיוון הנסיעה
-            const truckHtml = `<div style="transform: rotate(${heading}deg); transition: transform 0.5s;">🚚</div>`;
+            // משאית על המפה
+            const truckHtml = `<div style="transform: rotate(${pos.coords.heading || 0}deg); transition: transform 0.5s;">🚚</div>`;
             const truckIcon = L.divIcon({ className: 'truck-marker', html: truckHtml, iconSize: [44, 44], iconAnchor: [22, 22] });
 
             if (!truckMarker) {
                 truckMarker = L.marker([lat, lng], {icon: truckIcon}).addTo(map);
-                map.setView([lat, lng], 16);
             } else {
                 truckMarker.setLatLng([lat, lng]);
                 truckMarker.setIcon(truckIcon);
             }
             
-            // עדכון החמ"ל במיקום הנהג (לצורך המפה המבצעית)
-            if(currentDriver) {
-                await setDoc(doc(db, "drivers", currentDriver), {
-                    name: currentDriver, 
-                    location: { lat, lng }, 
-                    heading, 
-                    lastUpdate: serverTimestamp(),
-                    status: activeTaskId ? 'busy' : 'online'
-                });
-            }
+            // עדכון החמ"ל
+            await setDoc(doc(db, "drivers", currentDriver), {
+                name: currentDriver, location: { lat, lng }, lastUpdate: serverTimestamp()
+            });
         }
 
-        // --- שלב 3: האזנה למשימות (העברות והזמנות) ---
+        // --- המוח: חישוב מסלול וזמנים (Routing) ---
+        function calculateRoute(destLat, destLng) {
+            // שימוש ב-OSRM (Open Source Routing Machine) החינמי
+            const url = `https://router.project-osrm.org/route/v1/driving/${currentLocation.lng},${currentLocation.lat};${destLng},${destLat}?overview=false`;
+            
+            fetch(url).then(res => res.json()).then(data => {
+                if(data.routes && data.routes.length > 0) {
+                    const duration = Math.round(data.routes[0].duration / 60); // דקות
+                    const distance = (data.routes[0].distance / 1000).toFixed(1); // ק"מ
+                    
+                    // עדכון התצוגה הצפה
+                    const stats = document.getElementById('route-stats');
+                    stats.classList.add('active');
+                    document.getElementById('time-val').innerText = `${duration} דק'`;
+                    document.getElementById('dist-val').innerText = `${distance} ק"מ`;
+                }
+            }).catch(e => console.log("Routing Error", e));
+        }
+
+        // --- האזנה למשימות ---
         function listenForTasks() {
             const q = query(collection(db, "orders"), where("driver", "==", currentDriver), where("status", "in", ["assigned", "on_route"]));
             
             onSnapshot(q, (snap) => {
-                // מנקה סיכות קודמות (חוץ מהמשאית)
+                // ניקוי מפה (חוץ מהמשאית)
                 map.eachLayer(layer => { if(layer instanceof L.Marker && layer !== truckMarker) map.removeLayer(layer); });
 
                 if (snap.empty) {
-                    // אין משימות -> מסתיר את הממשק
                     document.getElementById('action-sheet').classList.remove('active');
-                    document.getElementById('progress-bar').classList.remove('active');
-                    activeTaskId = null;
+                    document.getElementById('route-stats').classList.remove('active');
                     return;
                 }
 
                 snap.forEach(d => {
                     const task = d.data();
                     
-                    // זיהוי סוג משימה (העברה / הזמנה)
-                    const isTransfer = task.type === 'transfer' || (task.itemsText && task.itemsText.includes('העברה'));
+                    // מיקום יעד (בסימולציה הזו נשתמש בקואורדינטות אמיתיות אם יש, או נמציא ליד)
+                    // יעד דמי להמחשה (אם אין ב-DB)
+                    const destLat = 32.1650; // אזור תעשייה כללי
+                    const destLng = 34.8450;
                     
-                    // עיצוב הסיכה
-                    const pinClass = isTransfer ? 'pin-transfer' : 'pin-order';
-                    const iconClass = isTransfer ? 'fa-exchange-alt' : 'fa-box';
-                    
-                    // מיקום המשימה (אם אין קואורדינטות, יוצר מיקום פיקטיבי ליד הנהג להמחשה)
-                    // במערכת מלאה זה יבוא מ-Geocoding של הכתובת
-                    const destLat = 32.165 + (Math.random() * 0.01); 
-                    const destLng = 34.845 + (Math.random() * 0.01);
-                    
+                    // הפעלת המוח (חישוב מסלול)
+                    calculateRoute(destLat, destLng);
+
+                    // סיכה כתומה (העברה)
                     const icon = L.divIcon({
                         className: 'custom-pin',
-                        html: `<div class="pin-inner ${pinClass}"><i class="fas ${iconClass}"></i></div>`,
-                        iconSize: [50, 50],
-                        iconAnchor: [25, 25]
+                        html: `<div class="pin-inner pin-transfer"><i class="fas fa-exchange-alt"></i></div>`,
+                        iconSize: [50, 50]
                     });
 
-                    const marker = L.marker([destLat, destLng], {icon: icon}).addTo(map);
-                    marker.on('click', () => openTaskCard(d.id, task, isTransfer));
-                    
-                    // פתיחה אוטומטית של המשימה
-                    openTaskCard(d.id, task, isTransfer);
+                    L.marker([destLat, destLng], {icon: icon}).addTo(map);
+                    openTaskCard(d.id, task);
                 });
             });
         }
 
-        // --- שלב 4: כרטיס המשימה והפעולות ---
-        function openTaskCard(id, task, isTransfer) {
+        function openTaskCard(id, task) {
             activeTaskId = id;
             const sheet = document.getElementById('action-sheet');
-            const progress = document.getElementById('progress-bar');
-            
             sheet.classList.add('active');
-            progress.classList.add('active');
-
-            const isStarted = task.status === 'on_route';
-            if(isStarted) document.getElementById('step-nav').classList.add('active');
             
-            const titleColor = isTransfer ? 'text-orange-600' : 'text-blue-600';
-            const titleText = isTransfer ? 'העברה דחופה' : 'הזמנת לקוח';
-            const badge = isTransfer ? 'סניף' : 'לקוח';
+            const isStarted = task.status === 'on_route';
 
             let html = `
                 <div class="flex justify-between items-start mb-4">
                     <div>
-                        <div class="text-[11px] font-bold ${titleColor} uppercase tracking-widest mb-1">
-                            <i class="fas fa-circle text-[8px] align-middle"></i> ${titleText}
+                        <div class="text-[11px] font-bold text-orange-600 uppercase tracking-widest mb-1">
+                            <i class="fas fa-dolly"></i> העברה דחופה
                         </div>
-                        <h2 class="text-2xl font-black text-slate-800 leading-tight">${task.clientName}</h2>
+                        <h2 class="text-xl font-black text-slate-800">${task.clientName}</h2>
                         <div class="text-gray-500 text-sm font-bold flex items-center gap-1 mt-1">
-                            <i class="fas fa-map-marker-alt text-red-500"></i> ${task.address}
+                            <i class="fas fa-map-pin text-red-500"></i> ${task.address}
                         </div>
                     </div>
-                    <div class="bg-slate-100 px-3 py-1 rounded text-xs font-bold text-slate-600 border border-slate-200">
+                    <div class="bg-orange-100 text-orange-800 px-3 py-1 rounded text-xs font-bold border border-orange-200">
                         #${task.orderNum}
                     </div>
                 </div>
@@ -296,81 +240,68 @@
                 </div>`;
 
             if (!isStarted) {
-                // מסך 1: קבלת משימה
                 html += `
                 <button onclick="acceptMission('${id}')" class="big-btn btn-start">
-                    🚀 קבל משימה וצא לדרך
+                    <i class="fas fa-truck-loading"></i> קבל והתחל נסיעה
                 </button>`;
             } else {
-                // מסך 2: פעולות בדרך
                 html += `
-                <div class="grid grid-cols-2 gap-3 mb-3">
+                <div class="grid grid-cols-2 gap-3">
                     <button onclick="navWaze('${task.address}')" class="big-btn btn-waze">
                         <i class="fab fa-waze text-2xl"></i> סע ליעד
                     </button>
-                    <button onclick="window.open('tel:${task.clientPhone}')" class="big-btn btn-call">
-                        <i class="fas fa-phone-alt text-xl"></i> חייג ל${badge}
-                    </button>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <button onclick="msgToOps('${id}')" class="big-btn btn-msg">
-                        <i class="fas fa-comment-dots text-xl"></i> הודעה לסידור
-                    </button>
-                    <button onclick="finishMission('${id}', '${task.clientName}')" class="big-btn bg-slate-800 hover:bg-green-600 w-full transition-colors">
-                        <i class="fas fa-flag-checkered text-xl"></i> פריקה הושלמה
+                    <button onclick="finishMission('${id}')" class="big-btn bg-slate-800 text-white">
+                        <i class="fas fa-check-circle text-xl"></i> סיום פריקה
                     </button>
                 </div>`;
             }
             sheet.innerHTML = html;
         }
 
-        // --- לוגיקה עסקית ---
-        
+        // --- פעולות ---
         window.acceptMission = async (id) => {
-            // עדכון חמ"ל + שליחת הודעה בצ'אט
-            await updateDoc(doc(db, "orders", id), { 
-                status: 'on_route', 
-                chat: arrayUnion({ sender: 'system', text: `🚚 ${currentDriver} אישר קבלה ויצא לדרך`, time: new Date().toISOString() })
-            });
-            // סאונד יציאה
+            await updateDoc(doc(db, "orders", id), { status: 'on_route' });
             new Audio('https://assets.mixkit.co/active_storage/sfx/2598/2598-preview.m4a').play().catch(()=>{});
         };
 
         window.navWaze = (addr) => window.location.href = `waze://?q=${encodeURIComponent(addr)}&navigate=yes`;
 
-        window.msgToOps = async (id) => {
-            const { value: text } = await Swal.fire({ title: 'הודעה לסידור', input: 'text', confirmButtonText: 'שלח', confirmButtonColor: '#f97316' });
-            if(text) {
-                await updateDoc(doc(db, "orders", id), { 
-                    status: 'driver_msg', // מקפיץ אדום בחמ"ל
-                    chat: arrayUnion({ sender: 'driver', text: `נהג: ${text}`, time: new Date().toISOString() }) 
-                });
-            }
-        };
-
-        window.finishMission = async (id, name) => {
-            const { isConfirmed } = await Swal.fire({
-                title: 'סיום משימה',
-                text: `לדווח פריקה וסיום אצל ${name}?`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'כן, סיימתי!',
-                confirmButtonColor: '#22c55e',
-                cancelButtonText: 'ביטול'
-            });
-
+        window.finishMission = async (id) => {
+            const { isConfirmed } = await Swal.fire({ title: 'סיימת?', icon: 'question', showCancelButton: true, confirmButtonText: 'כן', confirmButtonColor: '#22c55e' });
             if(isConfirmed) {
                 confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
-                await updateDoc(doc(db, "orders", id), { 
-                    status: 'done', 
-                    deliveredAt: serverTimestamp(),
-                    chat: arrayUnion({ sender: 'driver', text: `🏁 פריקה הושלמה ע"י ${currentDriver}`, time: new Date().toISOString() })
-                });
-                // סגירת כרטיסים
+                await updateDoc(doc(db, "orders", id), { status: 'done', deliveredAt: serverTimestamp() });
                 document.getElementById('action-sheet').classList.remove('active');
-                document.getElementById('progress-bar').classList.remove('active');
+                document.getElementById('route-stats').classList.remove('active');
             }
         };
+
+        // --- כלי ניקוי דאטה (מופעל ידנית מהקונסול או ע"י פרמטר בלינק) ---
+        window.cleanUpData = async () => {
+            const batch = writeBatch(db);
+            const q = query(collection(db, "orders"), where("driver", "==", currentDriver));
+            const snap = await getDocs(q);
+            snap.forEach(d => batch.delete(d.ref));
+            await batch.commit();
+            console.log("🧹 Data cleaned for", currentDriver);
+            Swal.fire('בוצע ניקוי', 'הזמנות דמה נמחקו', 'info');
+        };
+        
+        // --- סימולציית העברה (להפעלה מהקונסול: createTransfer()) ---
+        window.createTransfer = async () => {
+            await addDoc(collection(db, "orders"), {
+                driver: currentDriver,
+                clientName: "סניף התלמיד",
+                address: "התלמיד 6, הוד השרון",
+                itemsText: "📦 העברת סחורה:\n- 10 שקים מלט\n- 2 משטחי בלוקים",
+                status: "assigned",
+                orderNum: "TR-500",
+                type: "transfer",
+                createdAt: serverTimestamp(),
+                lastUpdate: serverTimestamp()
+            });
+        };
+
     </script>
 </body>
 </html>
