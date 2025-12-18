@@ -3,197 +3,243 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sika Battle Arena</title>
+    <title>Sika Store Experience Render</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;700;900&display=swap" rel="stylesheet">
     
     <style>
-        body { font-family: 'Rubik', sans-serif; background-color: #1a1a1a; color: white; overflow-x: hidden; }
-        .sika-yellow { color: #ffc500; }
-        .sika-bg { background-color: #ffc500; color: black; }
-        
-        /* Battle Card Styles */
-        .battle-card {
-            background: rgba(255,255,255,0.05); border-radius: 20px; border: 1px solid #333;
-            transition: all 0.3s; position: relative; overflow: hidden;
+        /* --- סביבת החנות (Background Environment) --- */
+        body {
+            margin: 0; overflow: hidden; font-family: 'Rubik', sans-serif;
+            background: radial-gradient(circle at center, #333, #000);
+            height: 100vh; display: flex; align-items: center; justify-content: center;
         }
-        .battle-card.winner { border: 2px solid #ffc500; background: rgba(255,197,0,0.1); transform: scale(1.05); z-index: 10; box-shadow: 0 0 30px rgba(255,197,0,0.2); }
-        .battle-card.loser { opacity: 0.6; filter: grayscale(0.8); transform: scale(0.95); }
         
-        /* Bars */
-        .stat-bar-bg { height: 8px; background: #333; border-radius: 4px; overflow: hidden; margin-top: 5px; }
-        .stat-bar-fill { height: 100%; border-radius: 4px; transition: width 1s ease-out; }
-        
-        /* Animations */
-        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .animate-slide { animation: slideUp 0.5s forwards; }
-        
-        /* Eli Notification */
-        .eli-toast {
-            position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px);
-            background: white; color: black; padding: 15px 25px; border-radius: 50px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5); z-index: 100; display: flex; items-center gap: 15px;
-            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            border: 4px solid #ffc500;
+        /* רצפת החנות */
+        .store-floor {
+            position: absolute; bottom: 0; width: 100%; height: 30%;
+            background: linear-gradient(to bottom, #444 0%, #222 100%);
+            border-top: 1px solid #555;
+            z-index: 1;
         }
-        .eli-toast.show { transform: translateX(-50%) translateY(0); }
+
+        /* דמויות רקע (אווירה) */
+        .bg-people {
+            position: absolute; width: 100%; height: 100%; pointer-events: none; z-index: 0;
+            background-image: url('https://images.unsplash.com/photo-1581244277943-fe4a9c777189?q=80&w=2000&auto=format&fit=crop'); 
+            background-size: cover; filter: blur(4px) brightness(0.4);
+        }
+
+        /* --- מבנה הקיוסק (The Totem) --- */
+        .kiosk-stand {
+            position: relative; z-index: 10;
+            width: 380px; height: 85vh;
+            background: #1a1a1a;
+            border-radius: 30px;
+            box-shadow: 0 50px 100px rgba(0,0,0,0.8), inset 0 0 20px rgba(255,255,255,0.1);
+            border: 4px solid #333;
+            display: flex; flex-direction: column; align-items: center;
+            transform: perspective(1000px) rotateX(2deg);
+            transition: transform 0.3s;
+        }
+
+        /* מיתוג צדדי זוהר */
+        .kiosk-stand::before {
+            content: ''; position: absolute; left: -10px; top: 20%; bottom: 20%; width: 5px;
+            background: #ffc500; box-shadow: 0 0 20px #ffc500; border-radius: 5px;
+        }
+        .kiosk-stand::after {
+            content: ''; position: absolute; right: -10px; top: 20%; bottom: 20%; width: 5px;
+            background: #ffc500; box-shadow: 0 0 20px #ffc500; border-radius: 5px;
+        }
+
+        /* ראש הקיוסק */
+        .kiosk-header {
+            width: 100%; padding: 20px; text-align: center;
+            background: linear-gradient(180deg, #111, #222);
+            border-radius: 25px 25px 0 0; border-bottom: 2px solid #ffc500;
+        }
+        .sika-logo-3d {
+            background: #ffc500; color: black; display: inline-block;
+            padding: 5px 15px; font-weight: 900; font-size: 24px;
+            transform: skewX(-10deg); border: 2px solid white; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+
+        /* המסך האינטראקטיבי */
+        .kiosk-screen {
+            width: 340px; height: 65%; background: white;
+            border: 8px solid #000; border-radius: 5px;
+            overflow: hidden; position: relative;
+        }
+
+        /* חריץ המדפסת */
+        .printer-slot {
+            width: 200px; height: 15px; background: #000;
+            margin-top: 20px; border-radius: 10px;
+            box-shadow: inset 0 2px 5px rgba(255,255,255,0.2);
+            position: relative;
+        }
+
+        /* הנייר המודפס (אנימציה) */
+        .printed-paper {
+            position: absolute; top: 5px; left: 10px; right: 10px;
+            background: #fff; height: 0; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: height 1.5s ease-out;
+            z-index: -1; text-align: center; overflow: hidden;
+            font-family: 'Courier New', monospace; font-size: 10px; padding: 0 10px;
+            border-bottom: 3px dashed #ccc;
+        }
+        .printed-paper.printing { height: 180px; z-index: 20; top: 100%; }
+
+        /* --- ממשק האפליקציה הפנימי (Sika UI) --- */
+        .app-ui { height: 100%; display: flex; flex-direction: column; }
+        .app-hero { background: #ffc500; padding: 20px; text-align: center; }
+        .app-content { flex: 1; padding: 15px; overflow-y: auto; background: #f4f4f4; }
+        .prod-item { background: white; padding: 10px; border-radius: 10px; margin-bottom: 10px; display: flex; gap: 10px; border: 1px solid #ddd; cursor: pointer; transition: 0.2s; }
+        .prod-item:hover { transform: scale(1.02); border-color: #e3000f; }
+        .app-btn { background: #e3000f; color: white; border: none; padding: 10px; width: 100%; border-radius: 8px; font-weight: bold; margin-top: 5px; cursor: pointer; }
+
+        /* דמות קבלן וירטואלית (Overlay) */
+        .contractor-hand {
+            position: absolute; bottom: -50px; right: -50px; width: 300px;
+            pointer-events: none; z-index: 50;
+            transition: transform 0.2s;
+        }
     </style>
 </head>
-<body class="flex flex-col h-screen">
+<body>
 
-    <header class="p-6 flex justify-between items-center border-b border-gray-800 bg-black">
-        <div class="flex items-center gap-4">
-            <div class="bg-[#ffc500] text-black font-black px-4 py-2 text-2xl skew-x-[-10deg] border-2 border-white">Sika</div>
-            <div>
-                <div class="text-xl font-bold">זירת המומחים</div>
-                <div class="text-xs text-gray-500">Sika AI vs The World</div>
-            </div>
-        </div>
-        <div class="flex items-center gap-3 bg-gray-900 px-4 py-2 rounded-full border border-gray-700">
-            <div class="relative">
-                <img src="https://randomuser.me/api/portraits/men/32.jpg" class="w-10 h-10 rounded-full border-2 border-green-500">
-                <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border border-black"></div>
-            </div>
-            <div class="text-sm">
-                <div class="font-bold text-gray-300">אלי (מומחה)</div>
-                <div class="text-[10px] text-green-400">מחובר (מתאילנד 🌴)</div>
-            </div>
-        </div>
-    </header>
+    <div class="bg-people"></div>
+    <div class="store-floor"></div>
 
-    <main class="flex-1 flex flex-col items-center justify-center p-4 relative">
+    <div class="kiosk-stand">
         
-        <div id="stage-search" class="w-full max-w-2xl text-center">
-            <h1 class="text-5xl font-black mb-6">מה ההתלבטות שלך?</h1>
-            <div class="relative">
-                <input type="text" id="battleInput" 
-                    class="w-full bg-gray-800 text-white text-2xl py-6 px-8 rounded-full border-2 border-gray-700 focus:border-[#ffc500] outline-none shadow-2xl transition"
-                    placeholder="למשל: סרם 255 מול תרמוקיר 603..."
-                    onkeydown="if(event.key === 'Enter') startBattle()">
-                <button onclick="startBattle()" class="absolute left-3 top-3 bottom-3 bg-[#ffc500] text-black px-8 rounded-full font-bold text-xl hover:scale-105 transition">
-                    השווה <i class="fas fa-bolt"></i>
-                </button>
-            </div>
-            <p class="mt-4 text-gray-500">נסה: "מה עדיף לריצוף חוץ?" או "255 vs 603"</p>
+        <div class="kiosk-header">
+            <div class="sika-logo-3d">Sika</div>
+            <div class="text-white text-xs mt-1 tracking-widest uppercase">Expert Station</div>
         </div>
 
-        <div id="stage-arena" class="hidden w-full max-w-5xl">
-            <div class="text-center mb-10 animate-slide">
-                <div class="inline-block bg-red-600 text-white px-4 py-1 rounded font-bold text-sm tracking-widest mb-2">HEAD TO HEAD</div>
-                <h2 class="text-4xl font-bold">תוצאות הניתוח הטכני</h2>
-            </div>
-
-            <div class="grid grid-cols-2 gap-8 items-center">
+        <div class="kiosk-screen">
+            <div class="app-ui" id="appInterface">
+                <div class="app-hero">
+                    <h2 class="font-black text-2xl">שלום, מקצוען!</h2>
+                    <p class="text-sm">מה אנחנו אוטמים היום?</p>
+                </div>
                 
-                <div class="battle-card loser p-8 animate-slide" style="animation-delay: 0.1s">
-                    <div class="text-gray-400 text-sm font-bold uppercase mb-2">המתחרה הוותיק</div>
-                    <h3 class="text-3xl font-bold mb-4">תרמוקיר 603</h3>
-                    
-                    <div class="space-y-4">
+                <div class="app-content">
+                    <div class="prod-item" onclick="selectProduct('Sika Ceram-255')">
+                        <img src="https://gilar.co.il/wp-content/uploads/2020/09/SikaCeram-255-StarFlex-LD-IL-bag.png" class="w-12 h-12 object-contain">
                         <div>
-                            <div class="flex justify-between text-sm mb-1"><span>חוזק הידבקות (C2)</span> <span>מצויין</span></div>
-                            <div class="stat-bar-bg"><div class="stat-bar-fill bg-gray-500" style="width: 80%"></div></div>
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-sm mb-1"><span>גמישות (S1)</span> <span>בסיסי</span></div>
-                            <div class="stat-bar-bg"><div class="stat-bar-fill bg-gray-500" style="width: 30%"></div></div>
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-sm mb-1"><span>זמן פתוח (Open Time)</span> <span>רגיל</span></div>
-                            <div class="stat-bar-bg"><div class="stat-bar-fill bg-gray-500" style="width: 50%"></div></div>
+                            <div class="font-bold text-sm">Sika Ceram 255</div>
+                            <div class="text-[10px] text-gray-500">דבק גמיש במיוחד C2TE S1</div>
                         </div>
                     </div>
-                    <div class="mt-6 text-gray-400 text-sm">
-                        "מוצר טוב ואמין, אהוב על השוק כבר שנים. מתאים לרוב העבודות הסטנדרטיות."
+                    
+                    <div class="prod-item" onclick="selectProduct('Sika TopSeal 107')">
+                        <img src="https://via.placeholder.com/50/cccccc/333?text=107" class="w-12 h-12 object-contain">
+                        <div>
+                            <div class="font-bold text-sm">Sika TopSeal 107</div>
+                            <div class="text-[10px] text-gray-500">איטום צמנטי למקלחות</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 bg-white p-3 rounded-lg border-r-4 border-[#e3000f] text-xs">
+                        <b><i class="fas fa-robot"></i> מוח Sika AI:</b>
+                        <p class="mt-1">אני זמין לשאלות. נסה ללחוץ על מוצר כדי לקבל הוראות יישום.</p>
                     </div>
                 </div>
-
-                <div class="battle-card winner p-8 animate-slide" style="animation-delay: 0.3s">
-                    <div class="absolute top-0 right-0 bg-[#ffc500] text-black text-xs font-bold px-3 py-1">בחירת המומחה 🏆</div>
-                    <div class="text-[#ffc500] text-sm font-bold uppercase mb-2">הטכנולוגיה החדשה</div>
-                    <h3 class="text-3xl font-bold mb-4">Sika Ceram-255 <span class="text-lg font-normal text-gray-300">StarFlex</span></h3>
-                    
-                    <div class="space-y-4">
-                        <div>
-                            <div class="flex justify-between text-sm mb-1"><span>חוזק הידבקות (C2)</span> <span>חזק מאוד</span></div>
-                            <div class="stat-bar-bg"><div class="stat-bar-fill bg-[#ffc500]" style="width: 95%"></div></div>
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-sm mb-1"><span>גמישות (S1)</span> <span class="text-[#ffc500]">גמיש במיוחד!</span></div>
-                            <div class="stat-bar-bg"><div class="stat-bar-fill bg-[#ffc500]" style="width: 90%"></div></div>
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-sm mb-1"><span>זמן פתוח (Open Time)</span> <span>ארוך (+30 דק')</span></div>
-                            <div class="stat-bar-bg"><div class="stat-bar-fill bg-[#ffc500]" style="width: 85%"></div></div>
-                        </div>
-                    </div>
-                    <div class="mt-6 text-gray-200 text-sm border-r-2 border-[#ffc500] pr-3">
-                        <b>למה הוא מנצח?</b> נוסחת StarFlex מאפשרת עבודה עם אריחים גדולים ללא שקיעה, וגמישות שמונעת סדקים בעתיד. שווה את ההשקעה.
-                    </div>
-
-                    <div class="mt-8 flex gap-3">
-                        <button onclick="printBon()" class="flex-1 bg-[#ffc500] hover:bg-yellow-400 text-black font-bold py-3 rounded-xl shadow-lg transition">
-                            אני רוצה את ה-255 <i class="fas fa-check"></i>
-                        </button>
-                    </div>
-                </div>
-
             </div>
-            
-            <div class="mt-12 text-center animate-slide" style="animation-delay: 0.6s">
-                <p class="text-gray-500 mb-3">עדיין מתלבט? אל תהמר.</p>
-                <button onclick="askEli()" class="bg-gray-800 hover:bg-gray-700 border border-gray-600 text-white px-6 py-2 rounded-full text-sm transition flex items-center gap-2 mx-auto">
-                    <i class="fas fa-phone-volume text-green-500"></i> שאל את אלי (נציג בכיר)
-                </button>
+
+            <div id="printScreen" class="hidden absolute inset-0 bg-white flex flex-col items-center justify-center text-center p-6">
+                <i class="fas fa-check-circle text-5xl text-green-500 mb-4"></i>
+                <h3 class="font-bold text-xl">ההוראות בדרך!</h3>
+                <p class="text-gray-500 text-sm mb-6">אסוף את הבון מהחריץ למטה</p>
+                <button onclick="resetApp()" class="bg-gray-200 px-4 py-2 rounded-lg text-sm font-bold">חזרה להתחלה</button>
             </div>
         </div>
 
-    </main>
-
-    <div id="eliToast" class="eli-toast">
-        <img src="https://randomuser.me/api/portraits/men/32.jpg" class="w-12 h-12 rounded-full border-2 border-black">
-        <div>
-            <div class="font-bold text-sm">הודעה מאלי (בזמן אמת):</div>
-            <div class="text-lg leading-tight">"אחי, עזוב שטויות. קח את ה-255. <br>הוא יחזיק לך לכל החיים. בדוק."</div>
+        <div class="printer-slot">
+            <div class="printed-paper" id="paperReceipt">
+                <div class="mt-2 font-black text-lg">SIKA</div>
+                <div class="border-b border-black mb-2 pb-1">הוראות ביצוע</div>
+                <div class="text-left font-bold" id="receiptProdName">מוצר כללי</div>
+                <div class="text-[9px] mt-2 text-right">
+                    1. נקה תשתית<br>
+                    2. הוסף מים לפי שק<br>
+                    3. יישם בשתי שכבות<br>
+                </div>
+                <div class="mt-2 border-2 border-black p-1 text-[8px] font-bold">
+                    טיפ מאלי: <br> "אל תרטיב את הקיר לפני!"
+                </div>
+                <div class="mt-2 text-[8px]">*** בהצלחה ***</div>
+            </div>
         </div>
+
+        <button onclick="triggerPrint()" class="mt-8 bg-[#ffc500] text-black px-10 py-4 rounded-full font-black text-xl shadow-[0_0_20px_#ffc500] hover:scale-105 transition animate-pulse">
+            <i class="fas fa-fingerprint"></i> לחץ לקבלת בון
+        </button>
+
     </div>
 
     <script>
-        function startBattle() {
-            const input = document.getElementById('battleInput');
-            if(!input.value) return;
+        let currentProduct = "Sika Ceram-255";
 
-            document.getElementById('stage-search').classList.add('hidden');
-            
-            // Sound Effect (optional)
-            // new Audio('https://actions.google.com/sounds/v1/impacts/crash.ogg').play();
-            
-            document.getElementById('stage-arena').classList.remove('hidden');
+        function selectProduct(name) {
+            currentProduct = name;
+            // אפקט בחירה במסך
+            const ui = document.getElementById('appInterface');
+            ui.innerHTML = `
+                <div class="h-full flex flex-col bg-white p-4">
+                    <h2 class="text-xl font-bold mb-2 text-[#e3000f]">${name}</h2>
+                    <div class="bg-gray-100 p-3 rounded text-sm mb-4 flex-1">
+                        <b>הוראות יישום:</b><br>
+                        יש ליישם על תשתית נקייה.
+                        זמן ייבוש: 24 שעות.
+                        <br><br>
+                        <i class="fas fa-comment"></i> <b>טיפ מאלי:</b> השתמש במאלג' 8 מ"מ.
+                    </div>
+                    <button onclick="triggerPrint()" class="app-btn py-4 text-lg">
+                        <i class="fas fa-print"></i> הדפס הוראות לאתר
+                    </button>
+                    <button onclick="resetApp()" class="text-gray-400 text-xs mt-4">חזור</button>
+                </div>
+            `;
         }
 
-        function askEli() {
-            const btn = event.currentTarget;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> יוצר קשר מוצפן עם תאילנד...';
+        function triggerPrint() {
+            // 1. שנה מסך להצלחה
+            document.getElementById('appInterface').classList.add('hidden');
+            document.getElementById('printScreen').classList.remove('hidden');
+
+            // 2. עדכן את הנייר
+            document.getElementById('receiptProdName').innerText = currentProduct;
+
+            // 3. הוצא את הנייר (אנימציה)
+            const paper = document.getElementById('paperReceipt');
+            paper.classList.add('printing');
             
+            // 4. סאונד של מדפסת (אופציונלי)
+            // new Audio('printer_sound.mp3').play();
+
+            // 5. איפוס אחרי כמה שניות
             setTimeout(() => {
-                // Show Toast
-                const toast = document.getElementById('eliToast');
-                toast.classList.add('show');
-                
-                // Play notification sound
-                new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play();
-
+                // המשתמש "לוקח" את הנייר
+                paper.style.transform = "translateY(500px) rotate(20deg) opacity(0)";
                 setTimeout(() => {
-                    toast.classList.remove('show');
-                    btn.innerHTML = '<i class="fas fa-check text-green-500"></i> ההמלצה התקבלה';
-                    btn.classList.add('text-green-500');
-                }, 5000); // מציג את ההודעה ל-5 שניות
-            }, 1500);
+                    paper.classList.remove('printing');
+                    paper.style.transform = "none";
+                    resetApp();
+                }, 1000);
+            }, 4000);
         }
 
-        function printBon() {
-            alert("הדפסת בון ליקוט: \n10 יח' Sika Ceram-255 \n\nגש לקופה לשלם (ולקבל הנחה של מקצוענים)");
+        function resetApp() {
+            document.getElementById('printScreen').classList.add('hidden');
+            document.getElementById('appInterface').classList.remove('hidden');
+            // שחזור HTML מקורי (בפועל באפליקציה מלאה זה ריאקט/VUE)
+            location.reload(); 
         }
     </script>
 </body>
