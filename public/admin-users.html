@@ -16,21 +16,14 @@
         </h1>
 
         <div class="bg-white p-6 rounded-2xl shadow-lg mb-8 border-t-4 border-blue-500">
-            <h2 class="font-bold text-lg mb-4 text-gray-700">הקמת משתמש חדש</h2>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <h2 class="font-bold text-lg mb-4 text-gray-700">הקמת תיק חדש</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 
-                <div class="space-y-1">
-                    <label class="text-xs font-bold text-gray-400">שם מלא / עסק</label>
-                    <input id="uName" type="text" class="w-full border p-3 rounded-xl bg-slate-50 outline-none focus:border-blue-500 transition">
-                </div>
-
-                <div class="space-y-1">
-                    <label class="text-xs font-bold text-gray-400">טלפון נייד (חובה)</label>
-                    <input id="uPhone" type="tel" class="w-full border p-3 rounded-xl bg-slate-50 outline-none focus:border-blue-500 transition text-left" dir="ltr">
-                </div>
-
-                <div class="space-y-1">
-                    <label class="text-xs font-bold text-gray-400">תפקיד במערכת</label>
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-gray-400">פרטים אישיים</label>
+                    <input id="uName" type="text" placeholder="שם מלא / שם העסק" class="w-full border p-3 rounded-xl bg-slate-50 outline-none focus:border-blue-500 transition">
+                    <input id="uPhone" type="tel" placeholder="טלפון נייד (חובה - מזהה כניסה)" class="w-full border p-3 rounded-xl bg-slate-50 outline-none focus:border-blue-500 transition text-left" dir="ltr">
                     <select id="uRole" class="w-full border p-3 rounded-xl bg-slate-50 outline-none cursor-pointer">
                         <option value="client">לקוח (מחלקת הזמנות)</option>
                         <option value="staff">איש צוות (חמ"ל)</option>
@@ -38,37 +31,41 @@
                     </select>
                 </div>
 
-                <div class="space-y-1">
-                    <label class="text-xs font-bold text-gray-400">מספר לקוח (ח.פ/ת.ז)</label>
-                    <input id="uClientNum" type="text" class="w-full border p-3 rounded-xl bg-slate-50 outline-none focus:border-blue-500 transition">
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-gray-400">פרטי לקוח (אופציונלי)</label>
+                    <input id="uClientNum" type="text" placeholder="מספר לקוח (ח.פ/ת.ז)" class="w-full border p-3 rounded-xl bg-slate-50 outline-none focus:border-blue-500 transition">
+                    <input id="uContact" type="text" placeholder="שם איש קשר" class="w-full border p-3 rounded-xl bg-slate-50 outline-none focus:border-blue-500 transition">
+                    <input id="uImg" type="text" placeholder="לינק ללוגו/תמונה" class="w-full border p-3 rounded-xl bg-slate-50 outline-none focus:border-blue-500 transition text-left" dir="ltr">
                 </div>
 
-                <div class="col-span-full md:col-span-4 space-y-1">
+                <div class="space-y-2">
                     <label class="text-xs font-bold text-gray-400">פרויקטים (מופרד בפסיקים)</label>
-                    <input id="uProjects" type="text" placeholder="לדוגמה: וילה סביון, פנטהאוז הרצליה" class="w-full border p-3 rounded-xl bg-slate-50 outline-none focus:border-blue-500 transition">
+                    <textarea id="uProjects" placeholder="לדוגמה: אבן יהודה, וילה סביון, מגדלי הים התיכון" class="w-full h-[130px] border p-3 rounded-xl bg-slate-50 outline-none focus:border-blue-500 resize-none"></textarea>
                 </div>
             </div>
             
             <div class="mt-6 flex justify-end">
-                <button onclick="addUser()" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-blue-700 shadow-lg transition flex items-center gap-2">
-                    <i class="fas fa-plus-circle"></i> צור משתמש ושמור
+                <button onclick="addUser()" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-blue-700 shadow-lg transition flex items-center gap-2 transform hover:scale-105">
+                    <i class="fas fa-save"></i> שמור משתמש במערכת
                 </button>
             </div>
         </div>
 
         <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
-            <table class="w-full text-sm text-right">
-                <thead class="bg-slate-50 text-slate-500 font-bold uppercase border-b">
-                    <tr>
-                        <th class="p-4">משתמש</th>
-                        <th class="p-4">פרטי גישה</th>
-                        <th class="p-4">סטטוס/פרויקטים</th>
-                        <th class="p-4 text-center">לינק אישי</th>
-                        <th class="p-4 text-center">פעולות</th>
-                    </tr>
-                </thead>
-                <tbody id="usersList" class="divide-y divide-slate-100"></tbody>
-            </table>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-right">
+                    <thead class="bg-slate-50 text-slate-500 font-bold uppercase border-b">
+                        <tr>
+                            <th class="p-4 w-1/4">משתמש</th>
+                            <th class="p-4 w-1/5">פרטי קשר</th>
+                            <th class="p-4 w-1/4">פרויקטים וסטטוס</th>
+                            <th class="p-4 text-center">לינק אישי</th>
+                            <th class="p-4 text-center">ניהול</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersList" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -76,103 +73,161 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, setDoc, doc, onSnapshot, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // Firebase Config
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" };
         const db = getFirestore(initializeApp(firebaseConfig));
 
-        // הוספת משתמש
+        // --- הוספת משתמש ---
         window.addUser = async () => {
             const name = document.getElementById('uName').value;
             const phone = document.getElementById('uPhone').value;
             const role = document.getElementById('uRole').value;
+            
+            // נתונים נוספים
             const clientNum = document.getElementById('uClientNum').value || '---';
+            const contact = document.getElementById('uContact').value || name;
+            const avatar = document.getElementById('uImg').value;
             const projects = document.getElementById('uProjects').value.split(',').map(s=>s.trim()).filter(s=>s);
 
             if(!name || !phone) return Swal.fire('שגיאה', 'חובה למלא שם וטלפון', 'error');
 
             try {
+                // השימוש במספר הטלפון כ-ID מבטיח מניעת כפילויות
                 await setDoc(doc(db, "users", phone), {
-                    name, phone, role, clientNum, projects,
+                    name, phone, role, clientNum, contact, projects, avatar,
                     createdAt: serverTimestamp()
                 });
-                Swal.fire({ icon: 'success', title: 'נשמר!', timer: 1500, showConfirmButton: false });
+                
+                Swal.fire({ 
+                    icon: 'success', 
+                    title: 'המשתמש נשמר!', 
+                    text: 'הפרטים עודכנו בהצלחה בבסיס הנתונים.',
+                    timer: 1500, 
+                    showConfirmButton: false 
+                });
+                
+                // איפוס חלקי של הטופס
                 document.getElementById('uName').value = '';
                 document.getElementById('uPhone').value = '';
+                document.getElementById('uProjects').value = '';
+                
             } catch(e) {
                 console.error(e);
-                Swal.fire('שגיאה', 'לא ניתן לשמור', 'error');
+                Swal.fire('שגיאה', 'לא ניתן לשמור את הנתונים', 'error');
             }
         };
 
-        // מחיקה
+        // --- מחיקת משתמש ---
         window.delUser = async (phone) => {
-            if(confirm('למחוק את המשתמש מהמערכת?')) await deleteDoc(doc(db, "users", phone));
+            const res = await Swal.fire({
+                title: 'האם אתה בטוח?',
+                text: "מחיקת המשתמש תמנע ממנו גישה למערכת",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                confirmButtonText: 'כן, מחק',
+                cancelButtonText: 'ביטול'
+            });
+
+            if (res.isConfirmed) {
+                await deleteDoc(doc(db, "users", phone));
+                Swal.fire('נמחק!', 'המשתמש הוסר מהמערכת.', 'success');
+            }
         };
 
-        // שיתוף לינק חכם
+        // --- שיתוף לינק חכם (הלב של המערכת) ---
         window.shareLink = (phone, name, role) => {
-            // הכתובת הבסיסית של האפליקציה (שנה לכתובת האמיתית שלך ב-Render)
+            // הכתובת הבסיסית של האפליקציה שלך
             const baseUrl = "https://saban-system.onrender.com"; 
             
             let targetUrl = "";
             let msg = "";
 
             if (role === 'client') {
+                // לינק ללקוח: הולך לאפליקציית הלקוח (client-whatsapp)
                 targetUrl = `${baseUrl}/client-whatsapp.html?uid=${phone}&name=${encodeURIComponent(name)}`;
-                msg = `היי ${name}, 👋\nשמחתי לצרף אותך למערכת ההזמנות הדיגיטלית של *ח.סבן*.\n\nלכניסה מהירה וביצוע הזמנות לחץ על הלינק:\n${targetUrl}\n\nבהצלחה!`;
+                msg = `היי ${name}, 👋\nברוכים הבאים למערכת ההזמנות הדיגיטלית של *ח.סבן*.\n\nלכניסה מהירה, בחירת פרויקט וביצוע הזמנות - לחץ על הלינק האישי שלך:\n${targetUrl}\n\nאנחנו כאן לכל שאלה!`;
             } else {
-                // לצוות - שולחים למסך כניסה או ישירות לחמ"ל אם רוצים
-                targetUrl = `${baseUrl}/whatsapp-center.html`; // או login-gateway.html
-                msg = `היי ${name},\nהנה הלינק לכניסה לחמ"ל המבצעי:\n${targetUrl}`;
+                // לינק לצוות: הולך לחמ"ל (whatsapp-center) עם חיבור אוטומטי
+                targetUrl = `${baseUrl}/whatsapp-center.html?uid=${phone}`;
+                msg = `היי ${name},\nיצרתי עבורך לינק אישי לכניסה לחמ"ל המבצעי (ללא צורך בסיסמה):\n${targetUrl}\n\nנא לשמור את הלינק ולא להעביר אותו. 🔒`;
             }
 
-            // פתיחת וואטסאפ לשיתוף
+            // פתיחת וואטסאפ
             const waUrl = `https://wa.me/?text=${encodeURIComponent(msg)}`;
             window.open(waUrl, '_blank');
         };
 
-        // האזנה לשינויים
+        // העתקה ללוח
+        window.copyLink = (phone, name, role) => {
+            const baseUrl = "https://saban-system.onrender.com";
+            const page = role === 'client' ? 'client-whatsapp.html' : 'whatsapp-center.html';
+            const url = `${baseUrl}/${page}?uid=${phone}&name=${encodeURIComponent(name)}`;
+            
+            navigator.clipboard.writeText(url);
+            Swal.fire({ icon:'success', title:'הלינק הועתק ללוח!', toast:true, position:'bottom', timer:1500, showConfirmButton:false });
+        };
+
+        // --- טעינת הנתונים (Real-time) ---
         onSnapshot(collection(db, "users"), (snap) => {
             const list = document.getElementById('usersList');
             list.innerHTML = '';
+            
+            if(snap.empty) {
+                list.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-gray-400">אין משתמשים במערכת</td></tr>';
+                return;
+            }
+
             snap.forEach(d => {
                 const u = d.data();
                 const isClient = u.role === 'client';
-                const badgeClass = isClient ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700';
-                const roleName = isClient ? 'לקוח' : (u.role === 'admin' ? 'מנהל' : 'צוות');
                 
-                // תצוגת פרויקטים
-                const projectsHtml = (u.projects && u.projects.length) 
-                    ? u.projects.map(p => `<span class="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded border">${p}</span>`).join(' ') 
-                    : '<span class="text-xs text-gray-400">- אין פרויקטים -</span>';
+                // עיצוב לפי תפקיד
+                const badgeClass = isClient 
+                    ? 'bg-green-100 text-green-700 border-green-200' 
+                    : (u.role === 'admin' ? 'bg-red-100 text-red-700 border-red-200' : 'bg-blue-100 text-blue-700 border-blue-200');
+                
+                const roleLabel = isClient ? 'לקוח' : (u.role === 'admin' ? 'מנהל' : 'צוות תפעול');
+                
+                // עיצוב פרויקטים
+                const projectsHtml = (u.projects && u.projects.length > 0) 
+                    ? u.projects.map(p => `<span class="inline-block text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200 mb-1">${p}</span>`).join(' ') 
+                    : '<span class="text-xs text-gray-300 italic">- כללי -</span>';
+
+                // תמונת פרופיל
+                const avatarSrc = u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=random&color=fff`;
 
                 list.innerHTML += `
-                <tr class="hover:bg-slate-50 transition group">
+                <tr class="hover:bg-blue-50/50 transition border-b last:border-0 group">
                     <td class="p-4">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 font-bold text-lg">
-                                ${u.name.charAt(0)}
-                            </div>
+                            <img src="${avatarSrc}" class="w-10 h-10 rounded-full border border-gray-200 shadow-sm object-cover">
                             <div>
                                 <div class="font-bold text-slate-800">${u.name}</div>
-                                <div class="text-xs text-slate-500">${isClient ? 'מס\' לקוח: ' + u.clientNum : 'הרשאת מערכת'}</div>
+                                <div class="text-xs text-slate-500">${u.role === 'client' ? u.contact : 'משתמש פנימי'}</div>
                             </div>
                         </div>
                     </td>
-                    <td class="p-4 font-mono text-sm text-slate-600">${u.phone}</td>
                     <td class="p-4">
-                        <div class="mb-1"><span class="px-2 py-1 rounded text-xs font-bold ${badgeClass}">${roleName}</span></div>
-                        <div class="flex flex-wrap gap-1 max-w-[200px]">${projectsHtml}</div>
+                        <div class="font-mono text-sm text-slate-600 font-bold tracking-wide">${u.phone}</div>
+                        ${isClient ? `<div class="text-[10px] text-blue-600 font-bold">מס' לקוח: ${u.clientNum}</div>` : ''}
+                    </td>
+                    <td class="p-4">
+                        <div class="mb-1"><span class="px-2 py-0.5 rounded text-[11px] font-bold border ${badgeClass}">${roleLabel}</span></div>
+                        <div class="max-w-[250px] leading-tight">${projectsHtml}</div>
                     </td>
                     <td class="p-4 text-center">
-                        <button onclick="shareLink('${u.phone}', '${u.name}', '${u.role}')" class="bg-green-500 hover:bg-green-600 text-white p-2 rounded-full shadow-md transition transform hover:scale-110" title="שלח לינק בוואטסאפ">
-                            <i class="fab fa-whatsapp text-lg"></i>
-                        </button>
-                        <button onclick="navigator.clipboard.writeText('https://saban-system.onrender.com/client-whatsapp.html?uid=${u.phone}&name=${encodeURIComponent(u.name)}'); Swal.fire({icon:'success',title:'הועתק!',toast:true,position:'bottom',timer:1500,showConfirmButton:false})" class="bg-gray-100 hover:bg-gray-200 text-gray-600 p-2 rounded-full mr-2 transition" title="העתק ללוח">
-                            <i class="fas fa-link"></i>
-                        </button>
+                        <div class="flex justify-center gap-2 opacity-80 group-hover:opacity-100 transition">
+                            <button onclick="shareLink('${u.phone}', '${u.name}', '${u.role}')" class="bg-green-500 hover:bg-green-600 text-white w-9 h-9 rounded-full shadow-md transition transform hover:scale-110 flex items-center justify-center" title="שלח בוואטסאפ">
+                                <i class="fab fa-whatsapp text-lg"></i>
+                            </button>
+                            <button onclick="copyLink('${u.phone}', '${u.name}', '${u.role}')" class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 w-9 h-9 rounded-full shadow-sm transition flex items-center justify-center" title="העתק לינק">
+                                <i class="fas fa-link"></i>
+                            </button>
+                        </div>
                     </td>
                     <td class="p-4 text-center">
-                        <button onclick="delUser('${u.phone}')" class="text-red-300 hover:text-red-500 transition"><i class="fas fa-trash"></i></button>
+                        <button onclick="delUser('${u.phone}')" class="text-red-300 hover:text-red-500 hover:bg-red-50 w-8 h-8 rounded-full transition"><i class="fas fa-trash-alt"></i></button>
                     </td>
                 </tr>`;
             });
