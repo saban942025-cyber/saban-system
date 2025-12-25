@@ -10,23 +10,18 @@
     
     <style>
         body { background-color: #efeae2; font-family: -apple-system, sans-serif; height: 100dvh; display: flex; flex-direction: column; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); }
-        
         .msg { max-width: 85%; padding: 8px 12px; border-radius: 8px; font-size: 14px; position: relative; margin-bottom: 8px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
         .msg.out { align-self: flex-start; background: #d9fdd3; border-top-right-radius: 0; }
         .msg.in { align-self: flex-end; background: white; border-top-left-radius: 0; }
-        
         .msg-time { font-size: 10px; color: #999; text-align: left; margin-top: 4px; align-self: flex-end; display: flex; align-items: center; gap: 4px; }
-        
-        /* Media & PDF */
         .media-preview { border-radius: 6px; margin-bottom: 5px; max-width: 100%; display: block; border: 1px solid rgba(0,0,0,0.1); }
         .pdf-card { background: #fdf2f2; border: 1px solid #fecaca; padding: 10px; border-radius: 6px; display: flex; items-center; gap: 10px; text-decoration: none; color: #991b1b; }
         .link-preview { font-size: 12px; color: #0284c7; text-decoration: underline; margin-top: 5px; display: block; }
-
-        /* Startup Modal */
+        
+        /* Modal & Avatar */
         #startupModal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
         .modal-box { background: white; width: 90%; max-width: 320px; border-radius: 20px; padding: 25px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes popUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-
         .avatar-img { width: 30px; height: 30px; border-radius: 50%; margin-left: 8px; object-fit: cover; }
     </style>
 </head>
@@ -39,12 +34,11 @@
             </div>
             <h2 class="text-xl font-bold text-gray-800 mb-2">ברוכים הבאים!</h2>
             <p class="text-gray-500 text-sm mb-6">איך נוכל לעזור היום?</p>
-            
             <div class="grid gap-3">
-                <button onclick="startSession('הזמנה חדשה')" class="bg-[#008069] text-white py-3 rounded-xl font-bold shadow hover:bg-[#006d59] transition flex items-center justify-center gap-2">
+                <button onclick="window.startSession('הזמנה חדשה')" class="bg-[#008069] text-white py-3 rounded-xl font-bold shadow hover:bg-[#006d59] transition flex items-center justify-center gap-2">
                     <i class="fas fa-clipboard-list"></i> אני רוצה להזמין
                 </button>
-                <button onclick="startSession('פניה כללית')" class="bg-white text-gray-700 border border-gray-300 py-3 rounded-xl font-bold hover:bg-gray-50 transition flex items-center justify-center gap-2">
+                <button onclick="window.startSession('פניה כללית')" class="bg-white text-gray-700 border border-gray-300 py-3 rounded-xl font-bold hover:bg-gray-50 transition flex items-center justify-center gap-2">
                     <i class="fas fa-question-circle"></i> שאלה / בירור
                 </button>
             </div>
@@ -57,7 +51,7 @@
             <span class="font-bold text-base">מחלקת הזמנות</span>
             <span class="text-[11px] text-green-100">מחובר עכשיו</span>
         </div>
-        <button onclick="toggleMute()" id="muteBtn" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 transition">
+        <button onclick="window.toggleMute()" id="muteBtn" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 transition">
             <i class="fas fa-volume-up"></i>
         </button>
     </div>
@@ -69,21 +63,22 @@
     </div>
 
     <div class="p-2 bg-[#f0f2f5] flex items-center gap-2 pb-safe">
-        <input type="file" id="fileInput" hidden accept="image/*,application/pdf" onchange="handleFileUpload(this)">
+        <input type="file" id="fileInput" hidden accept="image/*,application/pdf" onchange="window.handleFileUpload(this)">
         <button onclick="document.getElementById('fileInput').click()" class="w-10 h-10 rounded-full text-gray-500 hover:bg-gray-200 transition rotate-45">
             <i class="fas fa-paperclip text-xl"></i>
         </button>
-        <input id="msg-input" type="text" class="flex-1 bg-white rounded-2xl py-3 px-4 text-sm outline-none border-none shadow-sm" placeholder="הקלד הודעה..." onkeydown="if(event.key==='Enter') sendMsg()">
-        <button onclick="sendMsg()" class="w-11 h-11 bg-[#008069] rounded-full text-white shadow-sm flex items-center justify-center hover:scale-105 transition">
+        <input id="msg-input" type="text" class="flex-1 bg-white rounded-2xl py-3 px-4 text-sm outline-none border-none shadow-sm" placeholder="הקלד הודעה..." onkeydown="if(event.key==='Enter') window.sendMsg()">
+        <button onclick="window.sendMsg()" class="w-11 h-11 bg-[#008069] rounded-full text-white shadow-sm flex items-center justify-center hover:scale-105 transition">
             <i class="fas fa-paper-plane"></i>
         </button>
     </div>
 
-    <audio id="msgSound" src="https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.m4a" preload="auto"></audio>
-
     <script type="module">
+        // Import Modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { SabanSounds } from './js/sounds.js';          // <--- חיבור הסאונד
+        import { SabanPush } from './js/notifications.js';    // <--- חיבור ההתראות
 
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
@@ -91,39 +86,32 @@
         const params = new URLSearchParams(window.location.search);
         const clientName = params.get('name') || 'אורח';
         const clientId = params.get('uid') || 'guest_' + Date.now();
-        const clientAvatarUrl = params.get('img') || ''; // קבלת תמונה מהלינק אם יש
-
+        const clientAvatarUrl = params.get('img') || '';
         let isMuted = false;
 
-        // --- Functions attached to WINDOW for HTML access ---
+        // Init Push
+        SabanPush.init('client', clientId);
+
+        // --- Window functions (Expose to HTML) ---
 
         window.startSession = async (type) => {
-            // Unlock Audio Logic (Critical fix)
-            const audio = document.getElementById('msgSound');
-            audio.muted = true;
-            try {
-                await audio.play();
-                audio.pause();
-                audio.currentTime = 0;
-                audio.muted = false;
-            } catch(e) { console.log("Audio unlock failed", e); }
+            // ניסיון ראשוני לניגון שקט כדי לשחרר חסימת דפדפן (שימוש בפונקציה מהמודול)
+            // הערה: sounds.js יוצר Audio חדש, אז זה פחות קריטי כאן, אבל עצם האינטראקציה חשובה
+            try { SabanSounds.playMessage(); } catch(e){} 
 
             document.getElementById('startupModal').style.display = 'none';
             
-            // Send system message
             await sendMessage({ 
                 text: `🏁 *התחלת שיחה:* הלקוח בחר בנושא "${type}"`, 
                 type: 'system',
-                isVisibleToClient: false // System msg hidden from client view
+                isVisibleToClient: false 
             });
         };
 
         window.toggleMute = () => {
             isMuted = !isMuted;
             const btn = document.getElementById('muteBtn');
-            const icon = isMuted ? '<i class="fas fa-volume-mute text-red-200"></i>' : '<i class="fas fa-volume-up"></i>';
-            btn.innerHTML = icon;
-            // Visual feedback
+            btn.innerHTML = isMuted ? '<i class="fas fa-volume-mute text-red-200"></i>' : '<i class="fas fa-volume-up"></i>';
             btn.classList.add('scale-110');
             setTimeout(() => btn.classList.remove('scale-110'), 200);
         };
@@ -139,38 +127,28 @@
         window.handleFileUpload = (input) => {
             const file = input.files[0];
             if(!file) return;
-            
             const reader = new FileReader();
             reader.onload = async (e) => {
                 const type = file.type.includes('pdf') ? 'pdf' : 'image';
                 await sendMessage({ 
                     text: type === 'pdf' ? '📄 מסמך מצורף' : '📷 תמונה מצורפת',
                     type: type, 
-                    url: e.target.result // Base64 Simulation
+                    url: e.target.result 
                 });
             };
             reader.readAsDataURL(file);
         };
 
-        // Internal Helper
         async function sendMessage(payload) {
             const orderRef = doc(db, "orders", clientId);
             const s = await getDoc(orderRef);
             
-            // שמירת אווטאר הלקוח בהזמנה אם אין
             const orderData = { 
-                clientName, 
-                status: 'new', 
-                createdAt: serverTimestamp(),
-                clientAvatar: clientAvatarUrl // שומר את הלינק לתמונה
+                clientName, status: 'new', createdAt: serverTimestamp(), clientAvatar: clientAvatarUrl 
             };
 
-            if(!s.exists()) {
-                await setDoc(orderRef, orderData);
-            } else {
-                // עדכון תמונה אם השתנתה
-                 if(clientAvatarUrl) await setDoc(orderRef, { clientAvatar: clientAvatarUrl }, { merge: true });
-            }
+            if(!s.exists()) await setDoc(orderRef, orderData);
+            else if(clientAvatarUrl) await setDoc(orderRef, { clientAvatar: clientAvatarUrl }, { merge: true });
 
             await addDoc(collection(db, `orders/${clientId}/internal_chat`), {
                 ...payload,
@@ -187,13 +165,11 @@
             
             snap.docs.forEach(d => {
                 const m = d.data();
-                if(m.isVisibleToClient === false) return; // Ghost Mode
+                if(m.isVisibleToClient === false) return; 
                 
-                // Sound Play Logic
+                // Sound Logic via Module
                 if(!isMuted && m.sender !== 'client' && !snap.metadata.hasPendingWrites) {
-                    const audio = document.getElementById('msgSound');
-                    audio.currentTime = 0;
-                    audio.play().catch(e => console.log('Autoplay blocked'));
+                    SabanSounds.playMessage(); // <--- שימוש ב-Module
                 }
                 
                 renderMessage(m, box);
@@ -205,21 +181,17 @@
             const isMe = m.sender === 'client';
             let content = `<div class="text-[15px] whitespace-pre-wrap">${m.text}</div>`;
             
-            // Avatar Logic
             let avatarUrl = '';
             if (!isMe) {
-                 // תמונת צוות (אפשר לשכלל אם הצוות שולח את התמונה שלו בהודעה)
                  avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(m.sender)}&background=fff&color=000`;
             } else {
-                 // תמונת לקוח - מהלינק או ברירת מחדל
                  avatarUrl = clientAvatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(clientName)}&background=d9fdd3`;
             }
 
             if(m.type === 'image') {
                 content = `
                 <img src="${m.url}" class="media-preview cursor-pointer" onclick="window.open('${m.url}')">
-                <a href="${m.url}" target="_blank" class="link-preview"><i class="fas fa-external-link-alt"></i> פתח תמונה בגודל מלא</a>
-                `;
+                <a href="${m.url}" target="_blank" class="link-preview"><i class="fas fa-external-link-alt"></i> פתח תמונה בגודל מלא</a>`;
             } else if(m.type === 'pdf') {
                 content = `
                 <a href="${m.url}" target="_blank" class="pdf-card">
