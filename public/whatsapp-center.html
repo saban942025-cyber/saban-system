@@ -21,11 +21,13 @@
         /* --- Stories (סטוריז) --- */
         .stories-container { padding: 12px 0; background: #fff; border-bottom: 1px solid #f0f2f5; overflow-x: auto; display: flex; gap: 14px; scrollbar-width: none; }
         .stories-container::-webkit-scrollbar { display: none; }
+        
         .story-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; min-width: 68px; transition: transform 0.2s; }
         .story-item:hover { transform: scale(1.05); }
+        
         .story-ring { width: 56px; height: 56px; border-radius: 50%; padding: 2px; display: flex; align-items: center; justify-content: center; position: relative; }
         
-        /* אנימציות וצבעים לסטורי */
+        /* צבעים ואנימציות לסטורי */
         .ring-order { border: 2px solid #25d366; animation: pulse-green 2s infinite; }
         .ring-urgent { border: 2px solid #ef4444; background: #fee2e2; animation: pulse-red 1.5s infinite; }
         .ring-transfer { border: 2px solid #3b82f6; background: #dbeafe; animation: pulse-blue 2s infinite; }
@@ -42,8 +44,8 @@
         /* --- Tabs --- */
         .tabs { display: flex; background: white; border-bottom: 1px solid #e9edef; padding: 0 5px; }
         .tab { flex: 1; text-align: center; padding: 14px 0; cursor: pointer; color: #54656f; font-weight: 600; border-bottom: 3px solid transparent; transition: 0.2s; font-size: 13px; }
-        .tab.active { color: var(--wa-green); border-bottom-color: var(--wa-green); }
-        .tab.transfer-tab.active { color: var(--task-blue); border-bottom-color: var(--task-blue); }
+        .tab.active { color: var(--wa-green); border-bottom-color: var(--wa-green); background: #f0fdf4; }
+        .tab.transfer-tab.active { color: var(--task-blue); border-bottom-color: var(--task-blue); background: #f0f9ff; }
         .badge { position: absolute; top: 8px; left: 20%; background: #25d366; color: white; font-size: 10px; padding: 0 5px; border-radius: 10px; min-width: 16px; display: none; }
         .badge.show { display: flex; align-items: center; justify-content: center; }
 
@@ -55,17 +57,17 @@
         .task-icon { width: 45px; height: 45px; background: #bae6fd; color: #0369a1; border-radius: 50%; display: flex; items-center; justify-content: center; margin-left: 12px; font-size: 18px; }
         .avatar { width: 45px; height: 45px; rounded: 50%; object-fit: cover; border: 1px solid #e9edef; margin-left: 12px; }
 
-        /* --- Cards --- */
+        /* --- Cards (Inside Chat) --- */
+        /* כרטיס ירוק - הזמנה */
         .order-card { background: white; border-radius: 8px; overflow: hidden; width: 320px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-top: 5px; border: 1px solid #e5e7eb; }
         .order-head { background: linear-gradient(to left, #f0fdf4, white); padding: 10px; border-bottom: 1px solid #dcfce7; display: flex; justify-content: space-between; align-items: center; font-weight: bold; color: #166534; }
         .order-body { padding: 15px; font-family: monospace; white-space: pre-wrap; font-size: 13px; background: #fafafa; color: #333; }
         
-        /* כפתורי פעולה בכרטיס */
         .order-actions { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1px; background: #e5e7eb; border-top: 1px solid #e5e7eb; }
         .action-btn { background: white; padding: 10px; font-size: 11px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; transition: 0.2s; color: #4b5563; }
         .action-btn:hover { background: #f9fafb; color: #111827; }
 
-        /* כרטיס משימה כחול */
+        /* כרטיס כחול - משימה */
         .transfer-card { background: white; border-radius: 8px; overflow: hidden; width: 320px; margin-top: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid #bae6fd; }
         .transfer-head { background: linear-gradient(to left, #e0f2fe, white); padding: 10px; border-bottom: 1px solid #bae6fd; display: flex; justify-content: space-between; align-items: center; font-weight: bold; color: #0369a1; }
 
@@ -102,7 +104,7 @@
                     <option value="urgent">🚨 דחוף / הקפצה (אדום)</option>
                     <option value="admin">📄 משרדי (אפור)</option>
                 </select>
-                <textarea id="taskDesc" class="form-input h-24" placeholder="פירוט המשימה..."></textarea>
+                <textarea id="taskDesc" class="form-input h-24" placeholder="פירוט המשימה (מאיפה, לאן, מה)..."></textarea>
                 <button onclick="window.submitTask()" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold shadow hover:bg-blue-700">שגר ללוח 🚀</button>
             </div>
         </div>
@@ -146,8 +148,10 @@
 
             <div id="chat-list" class="flex-1 overflow-y-auto custom-scroll"></div>
             
-            <div class="p-2 bg-gray-50 border-t">
-                <button onclick="window.open('dashboard.html', '_blank')" class="w-full bg-slate-800 text-white py-2 rounded text-sm font-bold shadow hover:bg-slate-900 transition"><i class="fas fa-calendar-alt"></i> פתח לוח תכנון וסידור</button>
+            <div class="p-3 bg-gray-50 border-t flex justify-center">
+                <button onclick="window.open('dashboard.html', '_blank')" class="bg-slate-800 text-white px-6 py-2 rounded-full text-sm font-bold shadow hover:bg-slate-700 transition w-full">
+                    <i class="fas fa-calendar-alt"></i> מעבר לסידור עבודה
+                </button>
             </div>
         </div>
 
@@ -194,7 +198,7 @@
                 <h3 id="crmName" class="font-bold text-xl text-gray-800"></h3>
                 <div class="mt-2"><span id="crmNum" class="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-mono font-bold"></span></div>
                 <div class="mt-8 border-t pt-4 text-right">
-                    <div class="text-xs font-bold text-gray-400 uppercase mb-3">היסטוריה</div>
+                    <div class="text-xs font-bold text-gray-400 uppercase mb-3">היסטוריה אחרונה</div>
                     <div id="crmHistoryList" class="flex flex-col gap-2"></div>
                 </div>
             </div>
@@ -208,7 +212,7 @@
 
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
         
-        // Init
+        // --- AUTH & INIT ---
         const urlUid = new URLSearchParams(window.location.search).get('uid');
         let currentUser = JSON.parse(localStorage.getItem('saban_user')) || { name: 'מוקדן' };
         if(urlUid) getDoc(doc(db, "users", urlUid)).then(s => { if(s.exists()){ currentUser=s.data(); localStorage.setItem('saban_user',JSON.stringify(currentUser)); document.getElementById('myName').innerText=currentUser.name; }});
@@ -216,7 +220,7 @@
 
         let currentChatId = null, currentFilter = 'all', pendingDoc = null, chatsCache = [];
 
-        // --- 1. Task Logic ---
+        // --- 1. TASK LOGIC ---
         window.submitTask = async () => {
             const type = document.getElementById('taskType').value;
             const desc = document.getElementById('taskDesc').value;
@@ -231,7 +235,7 @@
             document.getElementById('taskDesc').value = '';
         };
 
-        // --- 2. Render Logic (כולל סינון מחוקים) ---
+        // --- 2. RENDER LIST & STORIES ---
         onSnapshot(query(collection(db, "orders"), orderBy("lastActive", "desc")), (snap) => {
             chatsCache = [];
             snap.forEach(d => chatsCache.push({ id: d.id, ...d.data() }));
@@ -247,14 +251,14 @@
             let ordersCount = 0, transfersCount = 0;
 
             chatsCache.forEach(o => {
-                // *** תיקון: לא להציג מחוקים או ארכיון ***
+                // *** סינון קריטי: לא להציג מחוקים או ארכיון ***
                 if (o.status === 'deleted' || o.status === 'archived') return;
 
-                // Counters
+                // מונים ל-Badge
                 if (!o.isTask && o.status === 'new') ordersCount++;
                 if (o.isTask && o.status === 'new') transfersCount++;
 
-                // STORIES (Show only if NOT done)
+                // STORIES (רק מה שפעיל ולא סגור)
                 if (o.status !== 'done') {
                     let ringClass = 'ring-order'; 
                     let iconHtml = `<img src="${o.clientAvatar||`https://ui-avatars.com/api/?name=${encodeURIComponent(o.clientName)}`}" class="story-avatar">`;
@@ -272,7 +276,7 @@
                     </div>`;
                 }
 
-                // LIST Filter
+                // LIST FILTERING
                 if (currentFilter === 'orders' && o.isTask) return;
                 if (currentFilter === 'transfers' && !o.isTask) return;
                 
@@ -288,7 +292,7 @@
                             ${o.clientName}
                             <span class="text-[10px] text-gray-400">${o.lastActive ? new Date(o.lastActive.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : ''}</span>
                         </div>
-                        <div class="text-xs text-gray-500 truncate">${o.isTask ? 'ממתין לשיבוץ...' : (o.currentProject || 'הזמנה כללית')}</div>
+                        <div class="text-xs text-gray-500 truncate">${o.isTask ? 'ממתין לשיבוץ...' : (o.currentProject || 'הזמנה חדשה')}</div>
                     </div>
                 </div>`;
             });
@@ -306,7 +310,7 @@
             renderAll();
         };
 
-        // --- Chat ---
+        // --- 3. CHAT LOGIC ---
         window.loadChat = (id, title, isTask) => {
             currentChatId = id;
             document.getElementById('active-chat').classList.remove('hidden');
@@ -336,7 +340,7 @@
                     <div class="transfer-head"><i class="fas fa-info-circle"></i> פרטי משימה</div>
                     <div class="order-body">${m.text}</div>
                     <div class="order-actions">
-                        <div class="action-btn text-blue-600" onclick="alert('בטיפול')">👤 בטיפול</div>
+                        <div class="action-btn text-blue-600" onclick="alert('בטיפול')">👤 שייך לנהג</div>
                         <div class="action-btn text-green-600" onclick="window.updateStatus('${orderId}', 'done')">✅ בוצע וסגור</div>
                     </div>
                 </div>`;
@@ -360,9 +364,9 @@
             document.getElementById('messages-area').innerHTML += `<div class="msg-bubble ${isMe ? 'msg-out' : 'msg-in'} ${m.isVisibleToClient===false?'msg-internal':''}"><div>${content}</div><div class="msg-meta"><span>${new Date(m.createdAt?.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div></div>`;
         }
 
-        // --- Actions ---
+        // --- 4. ACTIONS ---
         window.updateStatus = async (oid, status) => {
-            if(!confirm('לעדכן סטטוס?')) return;
+            if(!confirm('לעדכן סטטוס ולשלוח הודעה?')) return;
             await updateDoc(doc(db, "orders", oid), { status: status, lastUpdate: serverTimestamp() });
             
             let msg = "";
@@ -378,6 +382,7 @@
             await addDoc(collection(db, `orders/${currentChatId}/internal_chat`), { text: t, sender: currentUser.name, createdAt: serverTimestamp(), isVisibleToClient: !isGhostMode });
         };
 
+        // --- DOCS & HELPERS ---
         const API_URL = "https://script.google.com/macros/s/AKfycbwzf-dHQRZZ9msG-SffH5dQo0obCvwcOGc6nsV82s3Kw33m2rhNMn7Jt9AaWjGy4_4M/exec";
         window.openDocSelector = async () => {
             document.getElementById('docSelectModal').style.display='flex';
