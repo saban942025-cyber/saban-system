@@ -6,29 +6,22 @@
     <title>Saban Center | חמ"ל</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     
     <style>
         :root { --wa-green: #00a884; --wa-bg: #efeae2; }
         body { background: #d1d7db; height: 100dvh; display: flex; overflow: hidden; font-family: -apple-system, sans-serif; }
         .app-layout { display: flex; width: 100%; max-width: 1800px; margin: 0 auto; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        
-        /* Sidebar */
         .sidebar { width: 380px; border-left: 1px solid #e9edef; display: flex; flex-direction: column; background: white; }
         .chat-item { padding: 12px 15px; cursor: pointer; display: flex; align-items: center; border-bottom: 1px solid #f0f2f5; transition: 0.2s; }
         .chat-item:hover { background: #f5f6f6; }
         .chat-item.active { background: #f0f2f5; border-right: 4px solid var(--wa-green); }
-
-        /* Main Chat */
         .chat-area { flex: 1; display: flex; flex-direction: column; background: var(--wa-bg); position: relative; background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); }
-        
-        /* Messages */
         .msg-bubble { max-width: 60%; padding: 6px 10px; border-radius: 8px; font-size: 14px; margin-bottom: 6px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
         .msg-in { align-self: flex-start; background: white; border-top-right-radius: 0; }
         .msg-out { align-self: flex-end; background: #d9fdd3; border-top-left-radius: 0; }
         .msg-internal { background: #f3e8ff !important; border: 1px dashed #d8b4fe; opacity: 0.95; }
         .msg-internal::after { content: '👁️ נסתר (פנימי)'; display: block; font-size: 10px; color: #9333ea; margin-top: 4px; font-weight: bold; }
-        
-        /* Media */
         .pdf-card { background: #fef2f2; border: 1px solid #fecaca; padding: 8px; border-radius: 6px; display: flex; items-center; gap: 8px; color: #991b1b; font-size: 12px; text-decoration: none; margin-top: 5px; }
         .link-text { display: block; font-size: 11px; color: #2563eb; text-decoration: underline; margin-top: 4px; }
         .ghost-active { color: #9333ea !important; background: #f3e8ff; animation: pulse 2s infinite; }
@@ -43,7 +36,7 @@
                     <span id="myName" class="font-bold text-gray-700">...</span>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="toggleMute()" id="muteBtn" class="text-gray-500 hover:text-gray-700"><i class="fas fa-volume-up"></i></button>
+                    <button onclick="window.toggleMute()" id="muteBtn" class="text-gray-500 hover:text-gray-700"><i class="fas fa-volume-up"></i></button>
                 </div>
             </div>
             <div id="chat-list" class="flex-1 overflow-y-auto"></div>
@@ -64,19 +57,15 @@
                 <div id="messages-area" class="flex-1 overflow-y-auto p-4 flex flex-col gap-1 custom-scroll"></div>
 
                 <div class="bg-[#f0f2f5] p-2 flex items-center gap-2 border-t">
-                    <input type="file" id="staffFile" hidden accept="image/*,application/pdf" onchange="staffFileUpload(this)">
-                    
+                    <input type="file" id="staffFile" hidden accept="image/*,application/pdf" onchange="window.staffFileUpload(this)">
                     <button onclick="document.getElementById('staffFile').click()" class="p-2 text-gray-500 hover:text-gray-700">
                         <i class="fas fa-paperclip text-lg"></i>
                     </button>
-                    
-                    <button id="ghostBtn" onclick="toggleGhostMode()" class="w-10 h-10 rounded-full text-gray-500 hover:bg-gray-200 transition" title="מצב נסתר">
+                    <button id="ghostBtn" onclick="window.toggleGhostMode()" class="w-10 h-10 rounded-full text-gray-500 hover:bg-gray-200 transition" title="מצב נסתר">
                         <i class="fas fa-eye-slash text-lg"></i>
                     </button>
-                    
-                    <input id="msgInput" type="text" class="flex-1 bg-white rounded-lg h-10 px-4 text-sm border-none outline-none" placeholder="הקלד הודעה..." onkeydown="if(event.key==='Enter') sendMessage()">
-                    
-                    <button onclick="sendMessage()" class="p-2 text-[#00a884] hover:bg-gray-100 rounded-full">
+                    <input id="msgInput" type="text" class="flex-1 bg-white rounded-lg h-10 px-4 text-sm border-none outline-none" placeholder="הקלד הודעה..." onkeydown="if(event.key==='Enter') window.sendMessage()">
+                    <button onclick="window.sendMessage()" class="p-2 text-[#00a884] hover:bg-gray-100 rounded-full">
                         <i class="fas fa-paper-plane text-xl"></i>
                     </button>
                 </div>
@@ -84,18 +73,17 @@
         </div>
     </div>
 
-    <audio id="soundAlert" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.m4a" preload="auto"></audio>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { SabanSounds } from './js/sounds.js';          // <--- חיבור הסאונד
+        import { SabanPush } from './js/notifications.js';    // <--- חיבור ההתראות
 
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
-        // User Setup
+        // Init Data
         const currentUser = JSON.parse(localStorage.getItem('saban_user')) || { name: 'מנהל', role: 'admin', avatar: '' };
         document.getElementById('myName').innerText = currentUser.name;
-        // My Avatar Logic
         const myAv = currentUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=00a884&color=fff`;
         document.getElementById('myAvatar').src = myAv;
 
@@ -103,7 +91,9 @@
         let isGhostMode = false;
         let isMuted = false;
 
-        // --- Window functions ---
+        SabanPush.init('staff', currentUser.phone || 'admin');
+
+        // --- Window Functions ---
 
         window.toggleMute = () => {
             isMuted = !isMuted;
@@ -116,12 +106,10 @@
             document.getElementById('empty-state').classList.add('hidden');
             document.getElementById('active-chat').classList.remove('hidden');
             document.getElementById('chatTitle').innerText = title;
-            document.getElementById('chatAvatar').src = avatarUrl; // Use passed avatar
+            document.getElementById('chatAvatar').src = avatarUrl; 
 
-            // Unlock Audio Hack
-            const audio = document.getElementById('soundAlert');
-            audio.muted = true;
-            audio.play().then(()=>{ audio.pause(); audio.currentTime=0; audio.muted=false; }).catch(e=>{});
+            // Unlock attempt
+            try { SabanSounds.playMessage(); } catch(e){}
 
             const q = query(collection(db, `orders/${id}/internal_chat`), orderBy("createdAt", "asc"));
             onSnapshot(q, (snap) => {
@@ -131,7 +119,7 @@
                     const m = d.data();
                     
                     if(!isMuted && m.sender === 'client' && !snap.metadata.hasPendingWrites) {
-                        document.getElementById('soundAlert').play().catch(()=>{});
+                        SabanSounds.playMessage(); // <--- Module
                     }
                     renderMsg(m, area);
                 });
@@ -143,7 +131,6 @@
             isGhostMode = !isGhostMode;
             const btn = document.getElementById('ghostBtn');
             const input = document.getElementById('msgInput');
-            
             if(isGhostMode) {
                 btn.innerHTML = '<i class="fas fa-eye text-lg"></i>';
                 btn.classList.add('ghost-active');
@@ -171,7 +158,7 @@
                 type: 'text',
                 isVisibleToClient: !isGhostMode
             });
-            if(isGhostMode) toggleGhostMode();
+            if(isGhostMode) window.toggleGhostMode();
         };
 
         window.staffFileUpload = (input) => {
@@ -199,12 +186,10 @@
             list.innerHTML = '';
             snap.forEach(d => {
                 const o = d.data();
-                
-                // Avatar Logic (Custom or Default)
                 const av = o.clientAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(o.clientName)}&background=random`;
                 
                 list.innerHTML += `
-                <div class="chat-item" onclick="loadChat('${d.id}', '${o.clientName}', '${av}')">
+                <div class="chat-item" onclick="window.loadChat('${d.id}', '${o.clientName}', '${av}')">
                     <img src="${av}" class="w-12 h-12 rounded-full ml-3 border border-gray-200 object-cover">
                     <div class="flex-1">
                         <div class="font-bold text-sm text-gray-800">${o.clientName}</div>
