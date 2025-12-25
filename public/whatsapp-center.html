@@ -11,26 +11,39 @@
     <style>
         :root { --wa-green: #00a884; --wa-bg: #efeae2; }
         body { background: #d1d7db; height: 100dvh; display: flex; overflow: hidden; font-family: -apple-system, sans-serif; }
-        .app-layout { display: flex; width: 100%; max-width: 1900px; margin: 0 auto; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .sidebar { width: 380px; border-left: 1px solid #e9edef; display: flex; flex-direction: column; background: white; }
+        
+        /* Layout */
+        .app-layout { display: flex; width: 100%; max-width: 1900px; margin: 0 auto; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); position: relative; }
+        .sidebar { width: 380px; border-left: 1px solid #e9edef; display: flex; flex-direction: column; background: white; flex-shrink: 0; }
         .chat-area { flex: 1; display: flex; flex-direction: column; background: var(--wa-bg); position: relative; background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); }
         
-        .chat-item { padding: 12px; cursor: pointer; display: flex; align-items: center; border-bottom: 1px solid #f0f2f5; transition: 0.2s; }
+        /* Chat Items */
+        .chat-item { padding: 12px 15px; cursor: pointer; display: flex; align-items: center; border-bottom: 1px solid #f0f2f5; transition: 0.2s; }
         .chat-item:hover { background: #f5f6f6; }
         .chat-item.active { background: #f0f2f5; border-right: 4px solid var(--wa-green); }
-        .msg-bubble { max-width: 65%; padding: 6px 10px; border-radius: 8px; font-size: 14px; margin-bottom: 6px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+        
+        /* Messages */
+        .msg-bubble { max-width: 65%; padding: 6px 10px; border-radius: 8px; font-size: 14px; margin-bottom: 6px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); position: relative; }
         .msg-in { align-self: flex-start; background: white; border-top-right-radius: 0; }
         .msg-out { align-self: flex-end; background: #d9fdd3; border-top-left-radius: 0; }
         .msg-internal { background: #fff7ed !important; border: 1px dashed #fdba74; }
-        
-        /* Popup Notification Style */
-        #newOrderPopup { position: absolute; top: 80px; right: 20px; width: 300px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px); border-right: 4px solid #25d366; padding: 15px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 50; display: none; transform: translateX(120%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        #newOrderPopup.show { display: block; transform: translateX(0); }
-        .popup-pulse { animation: softPulse 2s infinite; }
-        @keyframes softPulse { 0% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(37, 211, 102, 0); } 100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); } }
+        .msg-internal::after { content: '👁️ נסתר'; display: block; font-size: 10px; color: #c2410c; margin-top: 4px; font-weight: bold; }
 
-        .media-preview { border-radius: 6px; max-width: 200px; cursor: pointer; border: 1px solid #ddd; }
-        .waze-btn { background: #eef2ff; color: #3730a3; padding: 5px 10px; border-radius: 6px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; border: 1px solid #c7d2fe; }
+        /* Order Card */
+        .order-card { background: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; width: 100%; min-width: 250px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-top: 4px; }
+        .order-header { background: #f0fdf4; padding: 10px; border-bottom: 1px solid #dcfce7; display: flex; justify-content: space-between; align-items: center; }
+        .order-body { padding: 12px; font-family: monospace; font-size: 14px; line-height: 1.5; white-space: pre-wrap; color: #374151; background: #fafafa; }
+        .order-footer { padding: 8px; border-top: 1px solid #f3f4f6; display: flex; gap: 8px; background: white; }
+        .action-btn { flex: 1; padding: 6px; font-size: 12px; border-radius: 6px; border: 1px solid #e5e7eb; background: white; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: 0.2s; color: #4b5563; }
+        .action-btn:hover { background: #f3f4f6; color: #1f2937; border-color: #d1d5db; }
+
+        /* Popup */
+        #newOrderPopup { position: absolute; top: 80px; right: 20px; width: 300px; background: rgba(255,255,255,0.95); border-right: 4px solid #25d366; padding: 15px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 50; display: none; transform: translateX(120%); transition: 0.4s; }
+        #newOrderPopup.show { display: block; transform: translateX(0); }
+        
+        .info-panel { width: 0; transition: 0.3s; background: #f0f2f5; border-right: 1px solid #e9edef; overflow: hidden; }
+        .info-panel.open { width: 320px; }
+        .media-preview { border-radius: 6px; max-width: 200px; cursor: pointer; border: 1px solid #ddd; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -39,33 +52,32 @@
             <div class="h-[60px] bg-[#f0f2f5] p-3 flex justify-between items-center border-b">
                 <div class="flex items-center gap-2">
                     <img id="myAvatar" src="" class="w-9 h-9 rounded-full object-cover">
-                    <span id="myName" class="font-bold text-gray-700 text-sm">...</span>
+                    <div>
+                        <span id="myName" class="font-bold text-gray-700 text-sm">...</span>
+                        <span class="text-[10px] text-green-600 font-bold">● אונליין</span>
+                    </div>
                 </div>
-                <button onclick="window.toggleMute()" id="muteBtn" class="text-gray-500 hover:text-gray-700"><i class="fas fa-volume-up"></i></button>
+                <button onclick="window.toggleMute()" id="muteBtn" class="w-9 h-9 rounded-full text-gray-500 hover:bg-gray-200"><i class="fas fa-volume-up"></i></button>
             </div>
             <div id="chat-list" class="flex-1 overflow-y-auto"></div>
         </div>
 
         <div class="chat-area">
-            <div id="newOrderPopup" class="popup-pulse">
-                <div class="flex justify-between items-start">
-                    <div class="font-bold text-green-700 text-sm mb-1"><i class="fas fa-bell"></i> הזמנה חדשה!</div>
-                    <button onclick="document.getElementById('newOrderPopup').classList.remove('show')" class="text-gray-400 hover:text-red-500"><i class="fas fa-times"></i></button>
-                </div>
-                <div id="popupContent" class="text-sm text-gray-700 font-medium"></div>
-                <div class="text-xs text-gray-400 mt-2 flex justify-between">
-                    <span id="popupProject"></span>
-                    <span id="popupTime">לפני רגע</span>
-                </div>
+            <div id="newOrderPopup">
+                <div class="flex justify-between font-bold text-green-700 text-sm mb-1"><span><i class="fas fa-bell"></i> הזמנה חדשה!</span><i class="fas fa-times cursor-pointer" onclick="this.parentElement.parentElement.classList.remove('show')"></i></div>
+                <div id="popupContent" class="text-sm font-medium"></div>
+                <div class="text-xs text-gray-400 mt-1 flex justify-between"><span id="popupProject"></span><span>כרגע</span></div>
             </div>
 
+            <div id="empty-state" class="flex flex-col items-center justify-center h-full text-gray-400"><i class="fas fa-comments text-4xl mb-4 opacity-20"></i><p>בחר שיחה</p></div>
+
             <div id="active-chat" class="hidden flex flex-col h-full">
-                <div class="h-[60px] bg-[#f0f2f5] p-3 flex items-center gap-3 border-b shadow-sm z-10 cursor-pointer" onclick="window.toggleInfoPanel()">
-                    <img id="chatAvatar" src="" class="w-10 h-10 rounded-full object-cover border">
-                    <div>
-                        <span id="chatTitle" class="font-bold text-gray-800 block text-sm"></span>
-                        <span id="chatSub" class="text-xs text-gray-500">לחץ לפרטי לקוח</span>
+                <div class="h-[60px] bg-[#f0f2f5] p-3 flex items-center justify-between border-b shadow-sm z-10 cursor-pointer" onclick="window.toggleInfoPanel()">
+                    <div class="flex items-center gap-3">
+                        <img id="chatAvatar" src="" class="w-10 h-10 rounded-full object-cover">
+                        <div><span id="chatTitle" class="font-bold text-gray-800 text-sm block"></span><span class="text-xs text-gray-500">לחץ לפרטי לקוח</span></div>
                     </div>
+                    <i class="fas fa-info-circle text-gray-400 hover:text-blue-500"></i>
                 </div>
                 <div id="messages-area" class="flex-1 overflow-y-auto p-4 flex flex-col gap-1"></div>
                 <div class="bg-[#f0f2f5] p-2 flex items-center gap-2 border-t">
@@ -75,12 +87,9 @@
                 </div>
             </div>
         </div>
-        
-        <div id="info-panel" class="w-0 transition-all duration-300 bg-gray-50 border-r overflow-hidden flex flex-col">
-            <div class="p-4 border-b bg-white flex justify-between items-center">
-                <span class="font-bold">תיק לקוח</span>
-                <button onclick="window.toggleInfoPanel()"><i class="fas fa-times"></i></button>
-            </div>
+
+        <div id="info-panel" class="info-panel flex flex-col">
+            <div class="h-[60px] flex items-center px-4 border-b bg-white"><button onclick="window.toggleInfoPanel()" class="mr-4"><i class="fas fa-times"></i></button><span class="font-bold">תיק לקוח</span></div>
             <div class="p-6 text-center">
                 <img id="crmAvatar" class="w-20 h-20 rounded-full mx-auto mb-2 shadow-sm">
                 <h3 id="crmName" class="font-bold text-lg"></h3>
@@ -94,10 +103,10 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { SabanSounds } from './js/sounds.js';
-        
+        import { SabanDesktop } from './js/notifications.js';
+
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
         
-        // --- Auth & Init ---
         const urlUid = new URLSearchParams(window.location.search).get('uid');
         let currentUser = JSON.parse(localStorage.getItem('saban_user')) || { name: 'אורח', role: 'guest' };
         if(urlUid) getDoc(doc(db, "users", urlUid)).then(s => { if(s.exists()){ currentUser=s.data(); localStorage.setItem('saban_user',JSON.stringify(currentUser)); initUI(); }});
@@ -106,40 +115,49 @@
         function initUI() {
             document.getElementById('myName').innerText = currentUser.name;
             document.getElementById('myAvatar').src = currentUser.avatar || `https://ui-avatars.com/api/?name=${currentUser.name}`;
-            try { SabanSounds.init(); } catch(e){}
+            SabanSounds.init(); // Auto unlock attempt
         }
 
         let currentChatId = null, isMuted = true, isGhostMode = false;
 
-        // --- Functions ---
         window.toggleMute = () => {
             isMuted = !isMuted;
             const btn = document.getElementById('muteBtn');
             if(!isMuted) {
-                SabanSounds.init(); SabanSounds.playMessage();
-                btn.innerHTML = '<i class="fas fa-volume-up"></i>';
-                btn.classList.add('text-green-600');
+                SabanSounds.init(); SabanSounds.playMessage(); SabanDesktop.requestPermission();
+                btn.innerHTML = '<i class="fas fa-volume-up"></i>'; btn.classList.add('text-green-600');
             } else {
-                btn.innerHTML = '<i class="fas fa-volume-mute"></i>';
-                btn.classList.remove('text-green-600');
+                btn.innerHTML = '<i class="fas fa-volume-mute"></i>'; btn.classList.remove('text-green-600');
             }
         };
 
         window.toggleInfoPanel = async () => {
             const p = document.getElementById('info-panel');
-            p.style.width = p.style.width === '320px' ? '0' : '320px';
-            if(p.style.width === '320px' && currentChatId) {
+            p.classList.toggle('open');
+            if(p.classList.contains('open') && currentChatId) {
                 const s = await getDoc(doc(db, "users", currentChatId));
                 const d = s.exists() ? s.data() : { name: document.getElementById('chatTitle').innerText, clientNum: '---' };
                 document.getElementById('crmName').innerText = d.name;
-                document.getElementById('crmNum').innerText = `לקוח: ${d.clientNum}`;
+                document.getElementById('crmNum').innerText = `ID: ${d.clientNum}`;
                 document.getElementById('crmAvatar').src = d.avatar || `https://ui-avatars.com/api/?name=${d.name}`;
                 document.getElementById('crmProjects').innerHTML = (d.projects||['כללי']).map(x=>`<span class="text-xs border px-1 rounded bg-white">${x}</span>`).join('');
             }
         };
 
+        // --- פונקציות להדפסה ושיתוף ---
+        window.printOrder = (name, proj, items, date) => {
+            const w = window.open('','','width=600,height=600');
+            w.document.write(`<html dir="rtl"><body style="font-family:sans-serif;padding:40px;text-align:center"><h1>ח.סבן חומרי בנין</h1><hr><h3>הזמנה מ: ${name}</h3><p>פרויקט: ${proj} | ${date}</p><div style="border:1px solid #000;padding:20px;text-align:right;white-space:pre-wrap;font-size:18px;margin:20px 0">${items}</div><script>window.print()<\/script></body></html>`);
+            w.document.close();
+        };
+
+        window.shareOrder = (name, proj, items) => {
+            navigator.clipboard.writeText(`*הזמנה חדשה - ח.סבן*\n👤 ${name}\n🏗️ ${proj}\n\n🛒 *פירוט:*\n${items}`).then(()=>alert('הועתק!'));
+        };
+
         window.loadChat = (id, title, avatar) => {
             currentChatId = id;
+            document.getElementById('empty-state').classList.add('hidden');
             document.getElementById('active-chat').classList.remove('hidden');
             document.getElementById('chatTitle').innerText = title;
             document.getElementById('chatAvatar').src = avatar;
@@ -151,23 +169,16 @@
                 snap.docs.forEach(d => renderMsg(d.data(), area));
                 area.scrollTop = area.scrollHeight;
                 
-                // Sound logic
                 snap.docChanges().forEach(c => {
                     if(c.type==='added' && !snap.metadata.fromCache && !snap.metadata.hasPendingWrites) {
                         const m = c.doc.data();
-                        if(m.sender==='client' && !isMuted) SabanSounds.playMessage();
+                        if(m.sender==='client' && !isMuted) {
+                            SabanSounds.playMessage();
+                            SabanDesktop.show(`הודעה מ-${title}`, m.text);
+                        }
                     }
                 });
             });
-        };
-
-        window.toggleGhostMode = () => {
-            isGhostMode = !isGhostMode;
-            const btn = document.getElementById('ghostBtn');
-            const inp = document.getElementById('msgInput');
-            if(isGhostMode) { btn.classList.add('text-orange-600'); inp.style.background = '#fff7ed'; inp.placeholder = 'פנימי (נסתר)...'; }
-            else { btn.classList.remove('text-orange-600'); inp.style.background = 'white'; inp.placeholder = 'הקלד...'; }
-            inp.focus();
         };
 
         window.sendMessage = async () => {
@@ -181,46 +192,34 @@
             if(isGhostMode) window.toggleGhostMode();
         };
 
-        // --- Listeners & Popup Logic ---
+        window.toggleGhostMode = () => {
+            isGhostMode = !isGhostMode;
+            const inp = document.getElementById('msgInput');
+            const btn = document.getElementById('ghostBtn');
+            if(isGhostMode) { btn.classList.add('text-orange-600'); inp.style.background = '#fff7ed'; inp.placeholder = 'פנימי...'; }
+            else { btn.classList.remove('text-orange-600'); inp.style.background = 'white'; inp.placeholder = 'הקלד...'; }
+            inp.focus();
+        };
+
         onSnapshot(query(collection(db, "orders"), orderBy("lastActive", "desc")), (snap) => {
             const list = document.getElementById('chat-list');
             list.innerHTML = '';
-            
             snap.docChanges().forEach(c => {
-                // Popup Trigger: New Order or Update
-                if(c.type !== 'removed' && !snap.metadata.fromCache) {
-                    const o = c.doc.data();
-                    // אם הסטטוס חדש וזה קרה עכשיו (ב-30 שניות האחרונות)
-                    const now = Date.now() / 1000;
-                    if (o.status === 'new' && o.lastActive && (now - o.lastActive.seconds < 30)) {
-                        const popup = document.getElementById('newOrderPopup');
-                        document.getElementById('popupContent').innerText = `${o.clientName}`;
-                        document.getElementById('popupProject').innerText = `פרויקט: ${o.currentProject || 'כללי'}`;
-                        popup.classList.add('show');
-                        if(!isMuted) SabanSounds.playAlert(); // צליל מיוחד לפופאפ
-                        setTimeout(() => popup.classList.remove('show'), 8000); // נעלם אחרי 8 שניות
-                    }
+                const o = c.doc.data();
+                if(c.type!=='removed' && o.status==='new' && !snap.metadata.fromCache && (Date.now()/1000 - o.lastActive?.seconds < 60)) {
+                    const pop = document.getElementById('newOrderPopup');
+                    document.getElementById('popupContent').innerText = o.clientName;
+                    document.getElementById('popupProject').innerText = o.currentProject;
+                    pop.classList.add('show');
+                    if(!isMuted) SabanSounds.playAlert();
+                    setTimeout(()=>pop.classList.remove('show'),8000);
                 }
             });
-
             snap.forEach(d => {
                 const o = d.data();
-                const active = d.id === currentChatId ? 'active' : '';
+                const act = d.id === currentChatId ? 'active' : '';
                 const av = o.clientAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(o.clientName)}`;
-                list.innerHTML += `
-                <div class="chat-item ${active}" onclick="window.loadChat('${d.id}', '${o.clientName}', '${av}')">
-                    <img src="${av}" class="w-12 h-12 rounded-full ml-2 border">
-                    <div class="flex-1">
-                        <div class="font-bold text-sm flex justify-between">
-                            ${o.clientName}
-                            <span class="text-[10px] font-normal text-gray-400">${o.lastActive ? new Date(o.lastActive.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : ''}</span>
-                        </div>
-                        <div class="text-xs text-gray-500 flex justify-between items-center">
-                            <span>${o.currentProject || ''}</span>
-                            ${o.status === 'new' ? '<span class="text-[9px] bg-green-100 text-green-700 px-1 rounded">חדש</span>' : ''}
-                        </div>
-                    </div>
-                </div>`;
+                list.innerHTML += `<div class="chat-item ${act}" onclick="window.loadChat('${d.id}','${o.clientName}','${av}')"><img src="${av}" class="w-12 h-12 rounded-full ml-2 border"><div class="flex-1"><div class="font-bold text-sm flex justify-between">${o.clientName}<span class="text-[10px] text-gray-400">${o.lastActive?new Date(o.lastActive.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):''}</span></div><div class="text-xs text-gray-500 flex justify-between"><span>${o.currentProject||''}</span>${o.status==='new'?'<span class="text-[9px] bg-green-100 text-green-700 px-1 rounded">● חדש</span>':''}</div></div></div>`;
             });
         });
 
@@ -228,18 +227,16 @@
             const isMe = m.sender !== 'client';
             const isInternal = m.isVisibleToClient === false;
             let content = m.text;
-            
-            if(m.type === 'location') content = `<a href="${m.url}" target="_blank" class="waze-btn"><i class="fab fa-waze"></i> נווט לכתובת (Waze)</a>`;
-            if(m.type === 'image') content = `<img src="${m.url}" class="media-preview" onclick="window.open('${m.url}')">`;
-            if(m.type === 'pdf') content = `<a href="${m.url}" target="_blank" class="text-red-600 flex items-center gap-2 border p-2 rounded bg-red-50"><i class="fas fa-file-pdf"></i> מסמך PDF</a>`;
 
-            container.innerHTML += `
-            <div class="msg-bubble ${isMe ? 'msg-out' : 'msg-in'} ${isInternal ? 'msg-internal' : ''}">
-                ${isInternal ? '<div class="text-[9px] text-orange-600 font-bold mb-1"><i class="fas fa-eye-slash"></i> פנימי</div>' : ''}
-                ${!isMe ? '<div class="text-[10px] font-bold text-green-700 mb-1">לקוח</div>' : ''}
-                <div>${content}</div>
-                <div class="text-[9px] text-gray-400 text-left mt-1">${new Date(m.createdAt?.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
-            </div>`;
+            if(m.type === 'order') {
+                const safeName = (m.clientName||'לקוח').replace(/"/g,'&quot;'), safeProj = (m.project||'כללי').replace(/"/g,'&quot;'), safeItems = m.text.replace(/"/g,'&quot;').replace(/\n/g,'\\n'), date = new Date(m.createdAt?.seconds*1000).toLocaleString();
+                content = `<div class="order-card"><div class="order-header"><div><div class="font-bold text-sm text-green-800">📜 הזמנה</div><div class="text-[10px] text-gray-500">${m.project||'כללי'}</div></div></div><div class="order-body">${m.text}</div><div class="order-footer"><button class="action-btn" onclick="window.printOrder('${safeName}','${safeProj}','${safeItems}','${date}')"><i class="fas fa-print"></i> הדפס</button><button class="action-btn" onclick="window.shareOrder('${safeName}','${safeProj}','${safeItems}')"><i class="fas fa-share-alt"></i> שתף</button></div></div>`;
+            }
+            else if(m.type === 'location') content = `<a href="${m.url}" target="_blank" class="block bg-blue-50 p-2 rounded text-blue-700 text-center text-xs border"><i class="fab fa-waze"></i> נווט ליעד</a>`;
+            else if(m.type === 'image') content = `<img src="${m.url}" class="media-preview" onclick="window.open('${m.url}')">`;
+            else if(m.type === 'pdf') content = `<a href="${m.url}" target="_blank" class="text-red-600 flex items-center gap-2 border p-2 rounded bg-red-50 text-xs"><i class="fas fa-file-pdf"></i> PDF</a>`;
+
+            container.innerHTML += `<div class="msg-bubble ${isMe?'msg-out':'msg-in'} ${isInternal?'msg-internal':''}">${isInternal?'<div class="text-[9px] text-orange-600 font-bold">פנימי</div>':''}${!isMe?'<div class="text-[10px] font-bold text-green-700">לקוח</div>':''}<div>${content}</div><div class="text-[9px] text-gray-400 text-left mt-1">${new Date(m.createdAt?.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div></div>`;
         }
     </script>
 </body>
