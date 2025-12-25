@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>הרשמה - סבן חומרי בניין</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: #f0f2f5; font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .card { background: white; width: 90%; max-width: 400px; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; }
+        .input-field { width: 100%; padding: 15px; margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 16px; outline: none; transition: 0.3s; background: #f8fafc; }
+        .input-field:focus { border-color: #00a884; background: white; box-shadow: 0 0 0 3px rgba(0, 168, 132, 0.1); }
+        .btn-start { background: #00a884; color: white; width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 18px; box-shadow: 0 5px 15px rgba(0, 168, 132, 0.3); transition: 0.2s; }
+        .btn-start:active { transform: scale(0.98); }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <div class="flex justify-center mb-6">
+            <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center text-4xl text-green-600 shadow-sm">
+                <i class="fas fa-truck-loading"></i>
+            </div>
+        </div>
+        
+        <h1 class="text-2xl font-bold text-gray-800 mb-2">ברוכים הבאים לסבן! 🏗️</h1>
+        <p class="text-gray-500 mb-8 text-sm">מערכת ההזמנות החדשה והמהירה.<br>מלא פרטים והתחל להזמין.</p>
+
+        <form onsubmit="event.preventDefault(); register();">
+            <input type="text" id="name" class="input-field" placeholder="שם העסק / שם מלא" required>
+            <input type="tel" id="phone" class="input-field" placeholder="מספר טלפון (לזיהוי)" required>
+            <button type="submit" class="btn-start">כנס למערכת <i class="fas fa-arrow-left mr-2"></i></button>
+        </form>
+        
+        <p class="text-xs text-gray-400 mt-6">
+            לאחר הכניסה, לחץ על <b>"שתף"</b> ו-<b>"הוסף למסך הבית"</b><br>כדי לשמור כאפליקציה.
+        </p>
+    </div>
+
+    <script>
+        function register() {
+            const name = document.getElementById('name').value.trim();
+            const phone = document.getElementById('phone').value.trim().replace(/\D/g,''); // רק מספרים
+
+            if(name.length < 2 || phone.length < 9) {
+                alert("נא למלא שם מלא וטלפון תקין");
+                return;
+            }
+
+            // 1. יצירת אובייקט משתמש
+            const user = {
+                name: name,
+                uid: phone, // הטלפון משמש כמזהה ייחודי
+                joinedAt: new Date().toISOString()
+            };
+
+            // 2. שמירה בזיכרון של הטלפון (LocalStorage)
+            localStorage.setItem('saban_client', JSON.stringify(user));
+
+            // 3. מעבר לאפליקציה הראשית
+            // אנחנו לא צריכים יותר פרמטרים ב-URL כי זה שמור בזיכרון!
+            window.location.href = 'client-smart.html';
+        }
+    </script>
+</body>
+</html>
