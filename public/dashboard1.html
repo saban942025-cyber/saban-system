@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saban | לוח תכנון</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        body { background: #f1f5f9; font-family: 'Segoe UI', system-ui, sans-serif; }
+        
+        /* Stats Cards */
+        .stat-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between; border-bottom: 4px solid transparent; }
+        .stat-card.red { border-color: #ef4444; }
+        .stat-card.blue { border-color: #3b82f6; }
+        .stat-card.green { border-color: #10b981; }
+        
+        /* Date Group Header */
+        .date-header { display: flex; align-items: center; gap: 10px; margin: 25px 0 15px; padding-bottom: 10px; border-bottom: 2px solid #e2e8f0; }
+        .date-badge { background: #1e293b; color: white; padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; }
+        .day-name { font-size: 18px; font-weight: 700; color: #334155; }
+
+        /* Order Row */
+        .plan-row { background: white; margin-bottom: 10px; border-radius: 10px; padding: 15px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: 0.2s; border-right: 5px solid transparent; }
+        .plan-row:hover { transform: translateX(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        
+        .plan-row.status-new { border-right-color: #22c55e; } /* ירוק - חדש */
+        .plan-row.status-work { border-right-color: #3b82f6; } /* כחול - בעבודה */
+        .plan-row.is-task { border-right-color: #0ea5e9; background: #f0f9ff; } /* תכלת - העברה */
+
+        .avatar { width: 40px; height: 40px; rounded: 50%; object-fit: cover; border: 1px solid #cbd5e1; }
+        
+        /* Print Styles */
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; }
+            .plan-row { border: 1px solid #ccc; box-shadow: none; break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="bg-white border-b border-gray-200 h-[60px] flex items-center justify-between px-6 sticky top-0 z-50 no-print">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white"><i class="fas fa-calendar-alt"></i></div>
+            <h1 class="font-bold text-lg text-slate-700">לוח תכנון מבצעי</h1>
+        </div>
+        <div class="flex gap-3">
+            <button onclick="window.location.href='whatsapp-center.html'" class="text-gray-500 hover:text-blue-600 font-bold text-sm">חזרה לחמ"ל <i class="fas fa-arrow-left"></i></button>
+        </div>
+    </nav>
+
+    <div class="max-w-6xl mx-auto p-6">
+        
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 no-print">
+            <div class="stat-card red">
+                <div>
+                    <div class="text-gray-500 text-xs font-bold uppercase">דחוף / ללא תאריך</div>
+                    <div class="text-3xl font-black text-slate-800" id="count-urgent">0</div>
+                </div>
+                <div class="bg-red-50 p-3 rounded-full text-red-500"><i class="fas fa-exclamation-circle text-xl"></i></div>
+            </div>
+            <div class="stat-card blue">
+                <div>
+                    <div class="text-gray-500 text-xs font-bold uppercase">הזמנות למחר</div>
+                    <div class="text-3xl font-black text-slate-800" id="count-tomorrow">0</div>
+                </div>
+                <div class="bg-blue-50 p-3 rounded-full text-blue-500"><i class="fas fa-truck-moving text-xl"></i></div>
+            </div>
+            <div class="stat-card green">
+                <div>
+                    <div class="text-gray-500 text-xs font-bold uppercase">סה"כ השבוע</div>
+                    <div class="text-3xl font-black text-slate-800" id="count-week">0</div>
+                </div>
+                <div class="bg-green-50 p-3 rounded-full text-green-500"><i class="fas fa-calendar-week text-xl"></i></div>
+            </div>
+            <div class="stat-card cursor-pointer hover:bg-gray-50" onclick="window.print()">
+                <div>
+                    <div class="text-gray-500 text-xs font-bold uppercase">דוח לנהגים</div>
+                    <div class="text-lg font-bold text-slate-800">הדפס סידור</div>
+                </div>
+                <div class="bg-gray-100 p-3 rounded-full text-gray-600"><i class="fas fa-print text-xl"></i></div>
+            </div>
+        </div>
+
+        <div id="planning-board">
+            <div class="text-center text-gray-400 mt-10"><i class="fas fa-circle-notch fa-spin text-3xl"></i><br>טוען נתונים...</div>
+        </div>
+
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
+
+        // Listener: Fetch ALL active orders
+        const q = query(collection(db, "orders"), where("status", "!=", "done"));
+        
+        onSnapshot(q, (snap) => {
+            const orders = [];
+            snap.forEach(d => orders.push({ id: d.id, ...d.data() }));
+            processOrders(orders);
+        });
+
+        function processOrders(orders) {
+            const board = document.getElementById('planning-board');
+            board.innerHTML = '';
+
+            // 1. הגדרת תאריכים
+            const today = new Date();
+            const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+            
+            const strToday = today.toISOString().split('T')[0];
+            const strTomorrow = tomorrow.toISOString().split('T')[0];
+
+            // 2. מיון וקיבוץ (Buckets)
+            const buckets = {
+                urgent: [],   // ללא תאריך
+                today: [],    // היום (דחוף!)
+                tomorrow: [], // מחר (לתכנון)
+                future: []    // עתידי
+            };
+
+            orders.forEach(o => {
+                if (!o.supplyDate) { buckets.urgent.push(o); return; }
+                if (o.supplyDate === strToday) { buckets.today.push(o); return; }
+                if (o.supplyDate === strTomorrow) { buckets.tomorrow.push(o); return; }
+                buckets.future.push(o);
+            });
+
+            // מיון עתידי לפי תאריך
+            buckets.future.sort((a, b) => new Date(a.supplyDate) - new Date(b.supplyDate));
+
+            // 3. עדכון מונים
+            document.getElementById('count-urgent').innerText = buckets.urgent.length;
+            document.getElementById('count-tomorrow').innerText = buckets.tomorrow.length;
+            document.getElementById('count-week').innerText = orders.length;
+
+            // 4. רינדור הקבוצות
+            if(buckets.urgent.length > 0) renderGroup('🚨 דחוף / ללא תאריך', buckets.urgent, board, 'text-red-600');
+            if(buckets.today.length > 0) renderGroup(`📅 היום (${formatDate(strToday)})`, buckets.today, board, 'text-orange-600');
+            if(buckets.tomorrow.length > 0) renderGroup(`🚚 מחר (${formatDate(strTomorrow)})`, buckets.tomorrow, board, 'text-blue-600');
+            
+            // עתידי - נקבץ לפי תאריכים
+            if(buckets.future.length > 0) {
+                // לוגיקה פשוטה: רשימה עתידית
+                renderGroup('🗓️ המשך השבוע / עתידי', buckets.future, board, 'text-gray-600');
+            }
+
+            if(orders.length === 0) {
+                board.innerHTML = '<div class="text-center py-20 text-gray-400">אין הזמנות פתוחות 🎉<br>הכל סופק!</div>';
+            }
+        }
+
+        function renderGroup(title, list, container, colorClass) {
+            let html = `
+            <div class="date-header">
+                <span class="day-name ${colorClass}">${title}</span>
+                <span class="bg-gray-200 text-gray-600 px-2 rounded-full text-xs font-bold">${list.length}</span>
+            </div>
+            <div>`;
+
+            list.forEach(o => {
+                const isTask = o.isTask;
+                const statusClass = isTask ? 'is-task' : (o.status === 'work' ? 'status-work' : 'status-new');
+                const icon = isTask ? '<i class="fas fa-truck-loading text-blue-500"></i>' : '<i class="fas fa-user text-green-500"></i>';
+                
+                // תצוגת פריטים מקוצרת
+                const itemsShort = o.itemsText ? o.itemsText.substring(0, 50) + (o.itemsText.length>50?'...':'') : 'ללא פירוט';
+
+                html += `
+                <div class="plan-row ${statusClass}">
+                    <div class="flex items-center gap-4 flex-1">
+                        <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-xl shadow-sm border border-white">
+                            ${icon}
+                        </div>
+                        <div>
+                            <div class="font-bold text-slate-800 text-lg">${o.clientName}</div>
+                            <div class="text-sm text-gray-500 flex items-center gap-2">
+                                <i class="fas fa-map-marker-alt"></i> ${o.address || 'לא צוין'} 
+                                <span class="bg-gray-100 px-2 rounded text-xs font-bold">${o.supplyTime || 'מיידי'}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex-1 px-4 text-sm text-gray-600 font-mono hidden md:block">
+                        ${itemsShort}
+                    </div>
+
+                    <div class="flex gap-2">
+                        ${o.status === 'new' ? '<span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded font-bold">חדש</span>' : ''}
+                        ${o.status === 'work' ? '<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded font-bold">בליקוט</span>' : ''}
+                        <button onclick="alert('פתיחת הזמנה ${o.orderNum}')" class="text-gray-400 hover:text-blue-600 no-print"><i class="fas fa-eye"></i></button>
+                    </div>
+                </div>`;
+            });
+
+            html += `</div>`;
+            container.innerHTML += html;
+        }
+
+        function formatDate(dateString) {
+            const d = new Date(dateString);
+            return d.toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'numeric' });
+        }
+    </script>
+</body>
+</html>
