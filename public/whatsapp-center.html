@@ -6,12 +6,11 @@
     <title>Saban Center | חמ"ל</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     
     <style>
-        :root { --wa-green: #00a884; --wa-bg: #efeae2; --wa-header: #f0f2f5; }
+        :root { --wa-green: #00a884; --wa-bg: #efeae2; }
         body { background: #d1d7db; height: 100dvh; display: flex; overflow: hidden; font-family: -apple-system, sans-serif; }
-        .app-layout { display: flex; width: 100%; max-width: 1700px; margin: 0 auto; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .app-layout { display: flex; width: 100%; max-width: 1800px; margin: 0 auto; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         
         /* Sidebar */
         .sidebar { width: 380px; border-left: 1px solid #e9edef; display: flex; flex-direction: column; background: white; }
@@ -23,18 +22,17 @@
         .chat-area { flex: 1; display: flex; flex-direction: column; background: var(--wa-bg); position: relative; background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); }
         
         /* Messages */
-        .msg-bubble { max-width: 70%; padding: 6px 10px; border-radius: 8px; font-size: 14px; margin-bottom: 6px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+        .msg-bubble { max-width: 60%; padding: 6px 10px; border-radius: 8px; font-size: 14px; margin-bottom: 6px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
         .msg-in { align-self: flex-start; background: white; border-top-right-radius: 0; }
         .msg-out { align-self: flex-end; background: #d9fdd3; border-top-left-radius: 0; }
+        .msg-internal { background: #f3e8ff !important; border: 1px dashed #d8b4fe; opacity: 0.95; }
+        .msg-internal::after { content: '👁️ נסתר (פנימי)'; display: block; font-size: 10px; color: #9333ea; margin-top: 4px; font-weight: bold; }
         
-        /* Ghost Mode Style */
-        .msg-internal { background: #f3e8ff !important; border: 1px dashed #d8b4fe; opacity: 0.9; }
-        .msg-internal::after { content: '👁️ נסתר'; display: block; font-size: 10px; color: #9333ea; margin-top: 4px; font-weight: bold; text-align: left; }
-        .ghost-active { color: #9333ea !important; animation: pulse 2s infinite; background: #f3e8ff; border-radius: 50%; }
-
-        /* Image Preview in Canvas style */
-        .canvas-frame { border: 4px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-radius: 4px; overflow: hidden; background: #eee; }
-        .waze-btn { background: #3b82f6; color: white; padding: 5px 10px; border-radius: 20px; font-size: 12px; display: inline-flex; items-center; gap: 5px; text-decoration: none; margin-top: 5px; }
+        /* Media */
+        .pdf-card { background: #fef2f2; border: 1px solid #fecaca; padding: 8px; border-radius: 6px; display: flex; items-center; gap: 8px; color: #991b1b; font-size: 12px; text-decoration: none; margin-top: 5px; }
+        .link-text { display: block; font-size: 11px; color: #2563eb; text-decoration: underline; margin-top: 4px; }
+        
+        .ghost-active { color: #9333ea !important; background: #f3e8ff; animation: pulse 2s infinite; }
     </style>
 </head>
 <body>
@@ -43,12 +41,9 @@
             <div class="h-[60px] bg-[#f0f2f5] p-3 flex justify-between items-center border-b">
                 <div class="flex items-center gap-2">
                     <img id="myAvatar" src="" class="w-9 h-9 rounded-full">
-                    <span id="myName" class="font-bold text-gray-700">טוען...</span>
+                    <span id="myName" class="font-bold text-gray-700">...</span>
                 </div>
-                <div class="flex gap-2">
-                    <button onclick="toggleMute()" id="muteBtn" class="text-gray-500 hover:text-gray-700"><i class="fas fa-volume-up"></i></button>
-                    <i class="fas fa-ellipsis-v text-gray-500 px-2"></i>
-                </div>
+                <button onclick="toggleMute()" id="muteBtn" class="text-gray-500 hover:text-gray-700"><i class="fas fa-volume-up"></i></button>
             </div>
             <div id="chat-list" class="flex-1 overflow-y-auto"></div>
         </div>
@@ -68,8 +63,14 @@
                 <div id="messages-area" class="flex-1 overflow-y-auto p-4 flex flex-col gap-1 custom-scroll"></div>
 
                 <div class="bg-[#f0f2f5] p-2 flex items-center gap-2 border-t">
-                    <button id="ghostBtn" onclick="toggleGhostMode()" class="w-10 h-10 rounded-full text-gray-500 hover:bg-gray-200 transition" title="מצב נסתר (עין)">
-                        <i class="fas fa-eye-slash text-xl"></i>
+                    <input type="file" id="staffFile" hidden accept="image/*,application/pdf" onchange="staffFileUpload(this)">
+                    
+                    <button onclick="document.getElementById('staffFile').click()" class="p-2 text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-paperclip text-lg"></i>
+                    </button>
+                    
+                    <button id="ghostBtn" onclick="toggleGhostMode()" class="w-10 h-10 rounded-full text-gray-500 hover:bg-gray-200 transition" title="מצב נסתר">
+                        <i class="fas fa-eye-slash text-lg"></i>
                     </button>
                     
                     <input id="msgInput" type="text" class="flex-1 bg-white rounded-lg h-10 px-4 text-sm border-none outline-none" placeholder="הקלד הודעה..." onkeydown="if(event.key==='Enter') sendMessage()">
@@ -88,43 +89,48 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Init
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
-        
-        // User Logic
+
+        // User Setup
         const currentUser = JSON.parse(localStorage.getItem('saban_user')) || { name: 'מנהל', role: 'admin' };
         document.getElementById('myName').innerText = currentUser.name;
-        document.getElementById('myAvatar').src = `https://ui-avatars.com/api/?name=${currentUser.name}&background=00a884&color=fff`;
+        // Fix for Hebrew Avatar URL
+        document.getElementById('myAvatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=00a884&color=fff`;
 
         let currentChatId = null;
         let isGhostMode = false;
-        let isMuted = localStorage.getItem('saban_center_mute') === 'true';
-        updateMuteUI();
+        let isMuted = false;
 
-        // 1. Load Chat List (Orders)
+        // Load List
         onSnapshot(query(collection(db, "orders"), orderBy("createdAt", "desc")), (snap) => {
             const list = document.getElementById('chat-list');
             list.innerHTML = '';
             snap.forEach(d => {
                 const o = d.data();
+                // Avatar Fix
+                const av = `https://ui-avatars.com/api/?name=${encodeURIComponent(o.clientName)}&background=random`;
                 list.innerHTML += `
                 <div class="chat-item" onclick="loadChat('${d.id}', '${o.clientName}')">
-                    <img src="https://ui-avatars.com/api/?name=${o.clientName}&background=random" class="w-12 h-12 rounded-full ml-2">
+                    <img src="${av}" class="w-12 h-12 rounded-full ml-3 border border-gray-200">
                     <div class="flex-1">
-                        <div class="font-bold text-sm">${o.clientName}</div>
-                        <div class="text-xs text-gray-500 truncate">${o.status === 'new' ? '🔔 הזמנה חדשה' : 'בטיפול'}</div>
+                        <div class="font-bold text-sm text-gray-800">${o.clientName}</div>
+                        <div class="text-xs text-gray-500">${o.status === 'new' ? '🔔 הודעה חדשה' : 'בטיפול'}</div>
                     </div>
                 </div>`;
             });
         });
 
-        // 2. Load Active Chat
+        // Load Chat
         window.loadChat = (id, title) => {
             currentChatId = id;
             document.getElementById('empty-state').classList.add('hidden');
             document.getElementById('active-chat').classList.remove('hidden');
             document.getElementById('chatTitle').innerText = title;
-            document.getElementById('chatAvatar').src = `https://ui-avatars.com/api/?name=${title}&background=random`;
+            document.getElementById('chatAvatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(title)}&background=random`;
+
+            // Unlock Audio Hack
+            const audio = document.getElementById('soundAlert');
+            audio.volume = 0; audio.play().then(()=>{ audio.pause(); audio.volume = 1; }).catch(e=>{});
 
             const q = query(collection(db, `orders/${id}/internal_chat`), orderBy("createdAt", "asc"));
             onSnapshot(q, (snap) => {
@@ -133,11 +139,9 @@
                 snap.docs.forEach(d => {
                     const m = d.data();
                     
-                    // Sound Alert
                     if(!isMuted && m.sender === 'client' && !snap.metadata.hasPendingWrites) {
                         document.getElementById('soundAlert').play().catch(()=>{});
                     }
-
                     renderMsg(m, area);
                 });
                 area.scrollTop = area.scrollHeight;
@@ -147,20 +151,21 @@
         function renderMsg(m, container) {
             const isMe = m.sender !== 'client';
             const isInternal = m.isVisibleToClient === false;
-            
             let content = `<span>${m.text}</span>`;
             
+            // Media Render
             if(m.type === 'image') {
-                // שימוש ב-img רגיל אבל עם סטייל של "מסגרת"
                 content = `
-                <div class="canvas-frame">
-                    <img src="${m.url}" class="max-w-[200px] block cursor-pointer" onclick="window.open('${m.url}')">
-                </div>
-                <div class="text-[10px] mt-1 text-blue-600 font-bold"><i class="fas fa-cloud"></i> Google Drive Link</div>`;
-            } else if(m.type === 'location') {
+                <img src="${m.url}" class="max-w-[200px] rounded border cursor-pointer" onclick="window.open('${m.url}')">
+                <a href="${m.url}" target="_blank" class="link-text">🖼️ פתח תמונה מקורית</a>`;
+            } else if(m.type === 'pdf') {
                 content = `
-                <a href="${m.url}" target="_blank" class="waze-btn">
-                    <i class="fab fa-waze text-white"></i> נווט עם Waze
+                <a href="${m.url}" target="_blank" class="pdf-card">
+                    <i class="fas fa-file-pdf text-red-600 text-xl"></i>
+                    <div>
+                        <div class="font-bold">קובץ PDF</div>
+                        <div class="text-[10px] opacity-70">לחץ להצגה</div>
+                    </div>
                 </a>`;
             }
 
@@ -168,26 +173,24 @@
             <div class="msg-bubble ${isMe ? 'msg-out' : 'msg-in'} ${isInternal ? 'msg-internal' : ''}">
                 ${!isMe ? `<div class="text-[10px] font-bold text-orange-600 mb-1">לקוח</div>` : `<div class="text-[10px] font-bold text-green-700 mb-1">${m.sender}</div>`}
                 ${content}
-                <div class="text-[10px] text-gray-400 text-left mt-1 flex justify-end gap-1">
+                <div class="text-[10px] text-gray-400 text-left mt-1">
                     ${new Date(m.createdAt?.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
-                    ${isMe ? '<i class="fas fa-check-double text-blue-500"></i>' : ''}
                 </div>
             </div>`;
         }
 
-        // 3. Send Logic & Ghost Mode
         window.toggleGhostMode = () => {
             isGhostMode = !isGhostMode;
             const btn = document.getElementById('ghostBtn');
             const input = document.getElementById('msgInput');
             
             if(isGhostMode) {
-                btn.innerHTML = '<i class="fas fa-eye text-xl"></i>';
+                btn.innerHTML = '<i class="fas fa-eye text-lg"></i>';
                 btn.classList.add('ghost-active');
-                input.placeholder = "הודעה פנימית לצוות (הלקוח לא יראה)...";
+                input.placeholder = "הודעה פנימית (נסתרת מהלקוח)...";
                 input.style.backgroundColor = "#f3e8ff";
             } else {
-                btn.innerHTML = '<i class="fas fa-eye-slash text-xl"></i>';
+                btn.innerHTML = '<i class="fas fa-eye-slash text-lg"></i>';
                 btn.classList.remove('ghost-active');
                 input.placeholder = "הקלד הודעה...";
                 input.style.backgroundColor = "white";
@@ -206,29 +209,34 @@
                 sender: currentUser.name,
                 createdAt: serverTimestamp(),
                 type: 'text',
-                isVisibleToClient: !isGhostMode // מפתח הקסם
+                isVisibleToClient: !isGhostMode
             });
-
-            // איפוס מצב נסתר אחרי שליחה למניעת טעויות
             if(isGhostMode) toggleGhostMode();
+        };
+
+        window.staffFileUpload = (input) => {
+            const file = input.files[0];
+            if(!file || !currentChatId) return;
+            const type = file.type.includes('pdf') ? 'pdf' : 'image';
+            
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                await addDoc(collection(db, `orders/${currentChatId}/internal_chat`), {
+                    text: type === 'pdf' ? 'מסמך נשלח' : 'תמונה נשלחה',
+                    type: type,
+                    url: e.target.result,
+                    sender: currentUser.name,
+                    createdAt: serverTimestamp(),
+                    isVisibleToClient: !isGhostMode
+                });
+            };
+            reader.readAsDataURL(file);
         };
 
         window.toggleMute = () => {
             isMuted = !isMuted;
-            localStorage.setItem('saban_center_mute', isMuted);
-            updateMuteUI();
-        };
-
-        function updateMuteUI() {
             document.getElementById('muteBtn').innerHTML = isMuted ? '<i class="fas fa-volume-mute text-red-500"></i>' : '<i class="fas fa-volume-up"></i>';
-        }
-
-        // OneSignal Init (Staff)
-        window.OneSignalDeferred = window.OneSignalDeferred || [];
-        OneSignalDeferred.push(async function(OneSignal) {
-            await OneSignal.init({ appId: "YOUR-ONESIGNAL-APP-ID", safari_web_id: "YOUR-SAFARI-ID" });
-            OneSignal.login("staff_center");
-        });
+        };
     </script>
 </body>
 </html>
