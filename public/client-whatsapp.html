@@ -3,70 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Saban Connect | לקוח</title>
+    <title>Saban Connect | מחלקת הזמנות</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
+    
     <style>
-        /* WhatsApp Theme */
         body { background-color: #efeae2; font-family: -apple-system, sans-serif; height: 100dvh; display: flex; flex-direction: column; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); }
         
-        /* Chat Bubbles */
-        .msg { max-width: 80%; padding: 8px 12px; border-radius: 8px; font-size: 14px; position: relative; margin-bottom: 8px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+        .msg { max-width: 85%; padding: 8px 12px; border-radius: 8px; font-size: 14px; position: relative; margin-bottom: 8px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
         .msg.out { align-self: flex-start; background: #d9fdd3; border-top-right-radius: 0; }
         .msg.in { align-self: flex-end; background: white; border-top-left-radius: 0; }
-        .msg-time { font-size: 10px; color: #999; text-align: left; margin-top: 4px; display: flex; align-items: center; gap: 4px; }
         
-        /* Media Styles */
-        .msg-img { border-radius: 6px; margin-bottom: 4px; max-width: 100%; display: block; }
-        .waze-card { background: #f0f4f8; padding: 10px; border-radius: 8px; border: 1px solid #dbeafe; text-align: center; cursor: pointer; }
+        .msg-time { font-size: 10px; color: #999; text-align: left; margin-top: 4px; align-self: flex-end; display: flex; align-items: center; gap: 4px; }
         
-        /* Attachments Menu */
-        .attach-menu { position: absolute; bottom: 70px; right: 10px; background: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: none; flex-direction: column; overflow: hidden; z-index: 50; }
-        .attach-menu.open { display: flex; animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .attach-item { padding: 12px 20px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.2s; font-size: 14px; color: #4b5563; }
-        .attach-item:hover { background: #f3f4f6; }
-        
-        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        /* Media & PDF */
+        .media-preview { border-radius: 6px; margin-bottom: 5px; max-width: 100%; display: block; border: 1px solid rgba(0,0,0,0.1); }
+        .pdf-card { background: #fdf2f2; border: 1px solid #fecaca; padding: 10px; border-radius: 6px; display: flex; items-center; gap: 10px; text-decoration: none; color: #991b1b; }
+        .link-preview { font-size: 12px; color: #0284c7; text-decoration: underline; margin-top: 5px; display: block; }
+
+        /* Startup Modal */
+        #startupModal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .modal-box { background: white; width: 90%; max-width: 320px; border-radius: 20px; padding: 25px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes popUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        /* Avatar */
+        .avatar-img { width: 30px; height: 30px; border-radius: 50%; margin-left: 8px; object-fit: cover; }
     </style>
 </head>
 <body>
 
-    <div class="bg-[#008069] p-3 flex items-center gap-3 text-white shadow-md z-10 sticky top-0">
-        <img src="https://ui-avatars.com/api/?name=Saban+Center&background=25D366&color=fff" class="w-10 h-10 rounded-full border border-white/20">
-        <div class="flex flex-col flex-1">
-            <span class="font-bold text-sm">חמ"ל סבן</span>
-            <span class="text-[10px] text-green-100 flex items-center gap-1">
-                <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span> מחובר
-            </span>
+    <div id="startupModal">
+        <div class="modal-box">
+            <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                <i class="fas fa-hard-hat"></i>
+            </div>
+            <h2 class="text-xl font-bold text-gray-800 mb-2">ברוכים הבאים!</h2>
+            <p class="text-gray-500 text-sm mb-6">איך נוכל לעזור היום?</p>
+            
+            <div class="grid gap-3">
+                <button onclick="startSession('הזמנה חדשה')" class="bg-[#008069] text-white py-3 rounded-xl font-bold shadow hover:bg-[#006d59] transition flex items-center justify-center gap-2">
+                    <i class="fas fa-clipboard-list"></i> אני רוצה להזמין
+                </button>
+                <button onclick="startSession('פניה כללית')" class="bg-white text-gray-700 border border-gray-300 py-3 rounded-xl font-bold hover:bg-gray-50 transition flex items-center justify-center gap-2">
+                    <i class="fas fa-question-circle"></i> שאלה / בירור
+                </button>
+            </div>
         </div>
-        <button onclick="toggleMute()" id="muteBtn" class="text-xl opacity-80 w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10">
+    </div>
+
+    <div class="bg-[#008069] p-3 flex items-center gap-2 text-white shadow-md z-10 sticky top-0">
+        <img src="https://ui-avatars.com/api/?name=%D7%9E%D7%97%D7%9C%D7%A7%D7%AA+%D7%94%D7%96%D7%9E%D7%A0%D7%95%D7%AA&background=25D366&color=fff" class="w-10 h-10 rounded-full border border-white/20">
+        <div class="flex flex-col flex-1">
+            <span class="font-bold text-base">מחלקת הזמנות</span>
+            <span class="text-[11px] text-green-100">מחובר עכשיו</span>
+        </div>
+        <button onclick="toggleMute()" id="muteBtn" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10">
             <i class="fas fa-volume-up"></i>
         </button>
     </div>
 
     <div id="chat-box" class="flex-1 overflow-y-auto p-4 flex flex-col scroll-smooth">
         <div class="bg-[#ffeba7] text-[10px] text-center p-2 rounded-lg text-amber-900 shadow-sm mx-auto mb-4 border border-amber-200 w-fit">
-            🔒 השיחה מאובטחת ומגובה בענן.
+            🔒 השיחה מאובטחת. כל ההודעות נשמרות במערכת.
         </div>
     </div>
-
-    <div id="attachMenu" class="attach-menu">
-        <div class="attach-item" onclick="document.getElementById('fileInput').click()">
-            <div class="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center"><i class="fas fa-image"></i></div>
-            <span>תמונה לדרייב</span>
-        </div>
-        <div class="attach-item" onclick="sendLocation()">
-            <div class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center"><i class="fas fa-map-marker-alt"></i></div>
-            <span>שלח מיקום (Waze)</span>
-        </div>
-    </div>
-    <input type="file" id="fileInput" hidden accept="image/*" onchange="handleImageUpload(this)">
 
     <div class="p-2 bg-[#f0f2f5] flex items-center gap-2 pb-safe">
-        <button onclick="toggleAttach()" class="w-10 h-10 rounded-full text-gray-500 hover:bg-gray-200 transition rotate-45">
+        <input type="file" id="fileInput" hidden accept="image/*,application/pdf" onchange="handleFileUpload(this)">
+        <button onclick="document.getElementById('fileInput').click()" class="w-10 h-10 rounded-full text-gray-500 hover:bg-gray-200 transition rotate-45">
             <i class="fas fa-paperclip text-xl"></i>
         </button>
         <input id="msg-input" type="text" class="flex-1 bg-white rounded-2xl py-3 px-4 text-sm outline-none border-none shadow-sm" placeholder="הקלד הודעה..." onkeydown="if(event.key==='Enter') sendMsg()">
@@ -81,71 +86,86 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" };
-        const db = getFirestore(initializeApp(firebaseConfig));
+        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
-        // State
+        // User Data
         const params = new URLSearchParams(window.location.search);
         const clientName = params.get('name') || 'אורח';
         const clientId = params.get('uid') || 'guest_' + Date.now();
-        let isMuted = localStorage.getItem('saban_mute') === 'true';
-        updateMuteIcon();
+        let isMuted = false;
 
-        // OneSignal Init
-        window.OneSignalDeferred = window.OneSignalDeferred || [];
-        OneSignalDeferred.push(async function(OneSignal) {
-            await OneSignal.init({ appId: "YOUR-ONESIGNAL-APP-ID", safari_web_id: "YOUR-SAFARI-ID" });
-            OneSignal.login(clientId); // שיוך לקוח להתראות
-        });
+        // Startup Logic
+        window.startSession = async (type) => {
+            // Unlock Audio Context
+            const audio = document.getElementById('msgSound');
+            audio.volume = 0; 
+            audio.play().then(() => { audio.pause(); audio.volume = 1; }).catch(e=>{});
 
-        // Chat Listener
+            document.getElementById('startupModal').style.display = 'none';
+            
+            // Send system message
+            await sendMessage({ 
+                text: `🏁 *התחלת שיחה:* הלקוח בחר בנושא "${type}"`, 
+                type: 'system' 
+            });
+        };
+
+        // Render Logic
         const chatRef = collection(db, `orders/${clientId}/internal_chat`);
-        
         onSnapshot(query(chatRef, orderBy("createdAt", "asc")), (snap) => {
             const box = document.getElementById('chat-box');
-            box.innerHTML = '<div class="bg-[#ffeba7] text-[10px] text-center p-2 rounded-lg text-amber-900 shadow-sm mx-auto mb-4 border border-amber-200 w-fit">🔒 השיחה מאובטחת.</div>';
+            box.innerHTML = ''; 
             
             snap.docs.forEach(d => {
-                const msg = d.data();
-                if(msg.isVisibleToClient === false) return; // Ghost Mode Filter
+                const m = d.data();
+                if(m.isVisibleToClient === false) return; // Ghost Mode
                 
-                // Play Sound if new message and not mine
-                if(!isMuted && msg.sender !== 'client' && !snap.metadata.hasPendingWrites) {
-                    document.getElementById('msgSound').play().catch(()=>{});
+                // Sound
+                if(!isMuted && m.sender !== 'client' && !snap.metadata.hasPendingWrites) {
+                    document.getElementById('msgSound').play().catch(e=>console.log('Audio blocked'));
                 }
-
-                renderMessage(msg, box);
+                
+                renderMessage(m, box);
             });
             box.scrollTop = box.scrollHeight;
         });
 
-        function renderMessage(msg, container) {
-            const isMe = msg.sender === 'client';
-            let content = `<div class="text-[15px]">${msg.text}</div>`;
+        function renderMessage(m, container) {
+            const isMe = m.sender === 'client';
+            let content = `<div class="text-[15px] whitespace-pre-wrap">${m.text}</div>`;
+            
+            // Avatar fix
+            const senderNameSafe = encodeURIComponent(m.sender);
+            const avatarUrl = isMe 
+                ? `https://ui-avatars.com/api/?name=${encodeURIComponent(clientName)}&background=d9fdd3` 
+                : `https://ui-avatars.com/api/?name=${senderNameSafe}&background=fff`;
 
-            // סוגי הודעות מיוחדים
-            if(msg.type === 'image') {
+            if(m.type === 'image') {
                 content = `
-                <div class="relative">
-                    <img src="${msg.url}" class="msg-img border" alt="תמונה">
-                    <div class="text-[10px] text-gray-500 flex items-center gap-1 mt-1"><i class="fab fa-google-drive"></i> נשמר בדרייב</div>
-                </div>`;
-            } else if(msg.type === 'location') {
+                <img src="${m.url}" class="media-preview cursor-pointer" onclick="window.open('${m.url}')">
+                <a href="${m.url}" target="_blank" class="link-preview"><i class="fas fa-external-link-alt"></i> פתח תמונה בגודל מלא</a>
+                `;
+            } else if(m.type === 'pdf') {
                 content = `
-                <a href="${msg.url}" target="_blank" class="waze-card block hover:bg-blue-50 transition">
-                    <i class="fab fa-waze text-3xl text-blue-500 mb-1"></i>
-                    <div class="font-bold text-sm text-gray-700">נווט ליעד</div>
-                    <div class="text-xs text-gray-500">לחץ לפתיחת Waze</div>
+                <a href="${m.url}" target="_blank" class="pdf-card">
+                    <i class="fas fa-file-pdf text-2xl"></i>
+                    <div class="text-left">
+                        <div class="font-bold text-sm">מסמך PDF</div>
+                        <div class="text-xs opacity-70">לחץ להורדה</div>
+                    </div>
                 </a>`;
             }
 
             container.innerHTML += `
                 <div class="msg ${isMe ? 'out' : 'in'}">
-                    ${!isMe ? `<div class="text-[10px] font-bold text-orange-600 mb-1">חמ"ל סבן</div>` : ''}
+                    <div class="flex items-center gap-2 mb-1 ${isMe ? 'flex-row-reverse' : ''}">
+                        <img src="${avatarUrl}" class="avatar-img hidden">
+                        ${!isMe ? `<div class="text-[11px] font-bold text-orange-700">מחלקת הזמנות</div>` : ''}
+                    </div>
                     ${content}
                     <div class="msg-time">
-                        ${new Date(msg.createdAt?.seconds*1000 || Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
-                        <i class="fas fa-check-double text-blue-500 text-[10px]"></i>
+                        ${new Date(m.createdAt?.seconds*1000 || Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
+                        ${isMe ? '<i class="fas fa-check-double text-blue-500 text-[10px]"></i>' : ''}
                     </div>
                 </div>`;
         }
@@ -159,45 +179,27 @@
             await sendMessage({ text: txt, type: 'text' });
         };
 
-        window.handleImageUpload = async (input) => {
+        window.handleFileUpload = (input) => {
             const file = input.files[0];
             if(!file) return;
             
-            // כאן תבוא לוגיקה אמיתית להעלאה. בסימולציה נשתמש ב-FileReader
             const reader = new FileReader();
             reader.onload = async (e) => {
-                // שולח הודעה עם ה-Base64 (במציאות לשמור URL מ-Storage/Drive)
+                const type = file.type.includes('pdf') ? 'pdf' : 'image';
                 await sendMessage({ 
-                    text: '📷 תמונה מצורפת', 
-                    type: 'image', 
-                    url: e.target.result // בדמו זה יעבוד, בחיים האמיתיים הקובץ יהיה כבד מדי
+                    text: type === 'pdf' ? '📄 מסמך מצורף' : '📷 תמונה מצורפת',
+                    type: type, 
+                    url: e.target.result // Base64 Simulation
                 });
-                toggleAttach(); // סגור תפריט
             };
             reader.readAsDataURL(file);
         };
 
-        window.sendLocation = () => {
-            if(!navigator.geolocation) return alert("אין תמיכה במיקום");
-            navigator.geolocation.getCurrentPosition(async (pos) => {
-                const { latitude, longitude } = pos.coords;
-                const wazeUrl = `https://waze.com/ul?ll=${latitude},${longitude}&navigate=yes`;
-                await sendMessage({ 
-                    text: '📍 מיקום נוכחי', 
-                    type: 'location', 
-                    url: wazeUrl 
-                });
-                toggleAttach();
-            });
-        };
-
         async function sendMessage(payload) {
-            // יצירת הזמנה אם לא קיימת
+            // Ensure order doc exists
             const orderRef = doc(db, "orders", clientId);
-            const orderSnap = await getDoc(orderRef);
-            if (!orderSnap.exists()) {
-                await setDoc(orderRef, { clientName, status: 'new', createdAt: serverTimestamp() });
-            }
+            const s = await getDoc(orderRef);
+            if(!s.exists()) await setDoc(orderRef, { clientName, status: 'new', createdAt: serverTimestamp() });
 
             await addDoc(chatRef, {
                 ...payload,
@@ -206,16 +208,10 @@
             });
         }
 
-        // UI Helpers
-        window.toggleAttach = () => document.getElementById('attachMenu').classList.toggle('open');
         window.toggleMute = () => {
             isMuted = !isMuted;
-            localStorage.setItem('saban_mute', isMuted);
-            updateMuteIcon();
+            document.getElementById('muteBtn').innerHTML = isMuted ? '<i class="fas fa-volume-mute text-red-200"></i>' : '<i class="fas fa-volume-up"></i>';
         };
-        function updateMuteIcon() {
-            document.getElementById('muteBtn').innerHTML = isMuted ? '<i class="fas fa-volume-mute text-red-300"></i>' : '<i class="fas fa-volume-up"></i>';
-        }
     </script>
 </body>
 </html>
