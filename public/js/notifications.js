@@ -1,58 +1,43 @@
 // public/js/notifications.js
-export const SabanPush = {
-    init: async (role, uid) => {
-        try {
-            console.log(`Push Service Init for ${role}:${uid}`);
-            // כאן תהיה האינטגרציה המלאה ל-OneSignal בעתיד
-            // כרגע זה מונע שגיאות בקונסול
-        } catch (e) {
-            console.warn("Push notifications not supported/blocked");
-        }
-    },
-    
-    send: async (title, body) => {
-        // סימולציה של שליחת התראה
-        console.log(`🔔 PUSH: ${title} - ${body}`);
-    }
-};
-// public/js/notifications.js
 
-const SabanDesktop = {
-    // בקשת אישור מהמשתמש (חובה לבצע בלחיצת כפתור)
-    requestPermission: () => {
+export const SabanDesktop = {
+    // 1. בקשת אישור (חייב לקרות בלחיצת כפתור)
+    requestPermission: async () => {
         if (!("Notification" in window)) {
-            console.log("הדפדפן לא תומך בהתראות");
+            console.log("❌ הדפדפן לא תומך בהתראות");
             return;
         }
 
         if (Notification.permission !== "granted") {
-            Notification.requestPermission().then(permission => {
-                if (permission === "granted") {
-                    new Notification("Saban System", { body: "התראות הופעלו בהצלחה! 🔔" });
-                }
-            });
+            const permission = await Notification.requestPermission();
+            if (permission === "granted") {
+                new Notification("Saban System", { 
+                    body: "🔔 מעולה! התראות הופעלו בהצלחה.",
+                    icon: "https://cdn-icons-png.flaticon.com/512/3670/3670157.png"
+                });
+            }
         }
     },
 
-    // הצגת ההתראה בפועל
-    show: (title, body, icon = null) => {
-        if (Notification.permission === "granted") {
-            // אם החלון לא בפוקוס - שלח התראה
-            if (document.hidden) { 
-                const notif = new Notification(title, {
-                    body: body,
-                    icon: icon || "https://cdn-icons-png.flaticon.com/512/733/733585.png", // אייקון ברירת מחדל
-                    dir: "rtl"
-                });
-                
-                // לחיצה על ההתראה תפתח את החלון
-                notif.onclick = () => {
-                    window.focus();
-                    notif.close();
-                };
-            }
+    // 2. הצגת התראה (רק אם הדף לא בפוקוס)
+    show: (title, body) => {
+        if (Notification.permission === "granted" && document.hidden) {
+            const notif = new Notification(title, {
+                body: body,
+                icon: "https://cdn-icons-png.flaticon.com/512/733/733585.png", // אייקון וואטסאפ ירוק
+                tag: "saban-msg", // מונע הצפה של התראות זהות
+                dir: "rtl"
+            });
+
+            // לחיצה על ההתראה פותחת את החלון
+            notif.onclick = () => {
+                window.focus();
+                notif.close();
+            };
+            
+            // סאונד של מערכת ההפעלה (אופציונלי, לפעמים קורה אוטומטית)
+        } else {
+            console.log("Skipping notification: Focused or no permission");
         }
     }
 };
-
-export { SabanDesktop };
