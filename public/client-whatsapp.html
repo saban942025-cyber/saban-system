@@ -3,40 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Saban Connect</title>
+    <title>Saban Connect | לקוח</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <style>
+        /* WhatsApp Theme */
         body { background-color: #efeae2; font-family: -apple-system, sans-serif; height: 100dvh; display: flex; flex-direction: column; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); }
+        
+        /* Chat Bubbles */
         .msg { max-width: 80%; padding: 8px 12px; border-radius: 8px; font-size: 14px; position: relative; margin-bottom: 8px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
         .msg.out { align-self: flex-start; background: #d9fdd3; border-top-right-radius: 0; }
         .msg.in { align-self: flex-end; background: white; border-top-left-radius: 0; }
-        .msg-time { font-size: 10px; color: #999; text-align: left; margin-top: 2px; }
+        .msg-time { font-size: 10px; color: #999; text-align: left; margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+        
+        /* Media Styles */
+        .msg-img { border-radius: 6px; margin-bottom: 4px; max-width: 100%; display: block; }
+        .waze-card { background: #f0f4f8; padding: 10px; border-radius: 8px; border: 1px solid #dbeafe; text-align: center; cursor: pointer; }
+        
+        /* Attachments Menu */
+        .attach-menu { position: absolute; bottom: 70px; right: 10px; background: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: none; flex-direction: column; overflow: hidden; z-index: 50; }
+        .attach-menu.open { display: flex; animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .attach-item { padding: 12px 20px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.2s; font-size: 14px; color: #4b5563; }
+        .attach-item:hover { background: #f3f4f6; }
+        
+        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body>
 
-    <div class="bg-[#008069] p-3 flex items-center gap-3 text-white shadow-md z-10">
+    <div class="bg-[#008069] p-3 flex items-center gap-3 text-white shadow-md z-10 sticky top-0">
         <img src="https://ui-avatars.com/api/?name=Saban+Center&background=25D366&color=fff" class="w-10 h-10 rounded-full border border-white/20">
-        <div class="flex flex-col">
-            <span class="font-bold text-sm">חמ"ל סבן (הזמנות)</span>
-            <span class="text-[10px] text-green-100">מחובר • מענה אנושי</span>
+        <div class="flex flex-col flex-1">
+            <span class="font-bold text-sm">חמ"ל סבן</span>
+            <span class="text-[10px] text-green-100 flex items-center gap-1">
+                <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span> מחובר
+            </span>
         </div>
-        <div class="mr-auto text-xl opacity-80"><i class="fas fa-phone"></i></div>
+        <button onclick="toggleMute()" id="muteBtn" class="text-xl opacity-80 w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10">
+            <i class="fas fa-volume-up"></i>
+        </button>
     </div>
 
-    <div id="chat-box" class="flex-1 overflow-y-auto p-4 flex flex-col">
+    <div id="chat-box" class="flex-1 overflow-y-auto p-4 flex flex-col scroll-smooth">
         <div class="bg-[#ffeba7] text-[10px] text-center p-2 rounded-lg text-amber-900 shadow-sm mx-auto mb-4 border border-amber-200 w-fit">
-            🔒 השיחה מאובטחת ומגיעה ישירות למנהל ההזמנות.
+            🔒 השיחה מאובטחת ומגובה בענן.
         </div>
     </div>
 
-    <div class="p-2 bg-[#f0f2f5] flex items-center gap-2">
-        <input id="msg-input" type="text" class="flex-1 bg-white rounded-full py-3 px-5 text-sm outline-none border-none shadow-sm" placeholder="כתוב הזמנה כאן..." onkeydown="if(event.key==='Enter') sendMsg()">
-        <button onclick="sendMsg()" class="w-11 h-11 bg-[#008069] rounded-full text-white shadow-sm flex items-center justify-center">
+    <div id="attachMenu" class="attach-menu">
+        <div class="attach-item" onclick="document.getElementById('fileInput').click()">
+            <div class="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center"><i class="fas fa-image"></i></div>
+            <span>תמונה לדרייב</span>
+        </div>
+        <div class="attach-item" onclick="sendLocation()">
+            <div class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center"><i class="fas fa-map-marker-alt"></i></div>
+            <span>שלח מיקום (Waze)</span>
+        </div>
+    </div>
+    <input type="file" id="fileInput" hidden accept="image/*" onchange="handleImageUpload(this)">
+
+    <div class="p-2 bg-[#f0f2f5] flex items-center gap-2 pb-safe">
+        <button onclick="toggleAttach()" class="w-10 h-10 rounded-full text-gray-500 hover:bg-gray-200 transition rotate-45">
+            <i class="fas fa-paperclip text-xl"></i>
+        </button>
+        <input id="msg-input" type="text" class="flex-1 bg-white rounded-2xl py-3 px-4 text-sm outline-none border-none shadow-sm" placeholder="הקלד הודעה..." onkeydown="if(event.key==='Enter') sendMsg()">
+        <button onclick="sendMsg()" class="w-11 h-11 bg-[#008069] rounded-full text-white shadow-sm flex items-center justify-center hover:scale-105 transition">
             <i class="fas fa-paper-plane"></i>
         </button>
     </div>
+
+    <audio id="msgSound" src="https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.m4a"></audio>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -45,59 +84,138 @@
         const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" };
         const db = getFirestore(initializeApp(firebaseConfig));
 
-        // 1. זיהוי הלקוח מהלינק
+        // State
         const params = new URLSearchParams(window.location.search);
         const clientName = params.get('name') || 'אורח';
         const clientId = params.get('uid') || 'guest_' + Date.now();
+        let isMuted = localStorage.getItem('saban_mute') === 'true';
+        updateMuteIcon();
 
-        // 2. האזנה להודעות
+        // OneSignal Init
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        OneSignalDeferred.push(async function(OneSignal) {
+            await OneSignal.init({ appId: "YOUR-ONESIGNAL-APP-ID", safari_web_id: "YOUR-SAFARI-ID" });
+            OneSignal.login(clientId); // שיוך לקוח להתראות
+        });
+
+        // Chat Listener
         const chatRef = collection(db, `orders/${clientId}/internal_chat`);
         
         onSnapshot(query(chatRef, orderBy("createdAt", "asc")), (snap) => {
             const box = document.getElementById('chat-box');
-            box.innerHTML = '<div class="bg-[#ffeba7] text-[10px] text-center p-2 rounded-lg text-amber-900 shadow-sm mx-auto mb-4 border border-amber-200 w-fit">🔒 השיחה מאובטחת.</div>'; // Reset header
+            box.innerHTML = '<div class="bg-[#ffeba7] text-[10px] text-center p-2 rounded-lg text-amber-900 shadow-sm mx-auto mb-4 border border-amber-200 w-fit">🔒 השיחה מאובטחת.</div>';
             
-            snap.forEach(d => {
+            snap.docs.forEach(d => {
                 const msg = d.data();
-                const isMe = msg.sender === 'client'; // לקוח
-                box.innerHTML += `
-                    <div class="msg ${isMe ? 'out' : 'in'}">
-                        ${!isMe ? `<div class="text-[10px] font-bold text-orange-600 mb-1">חמ"ל סבן</div>` : ''}
-                        ${msg.text}
-                        <div class="msg-time">${new Date(msg.createdAt?.seconds*1000 || Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
-                    </div>`;
+                if(msg.isVisibleToClient === false) return; // Ghost Mode Filter
+                
+                // Play Sound if new message and not mine
+                if(!isMuted && msg.sender !== 'client' && !snap.metadata.hasPendingWrites) {
+                    document.getElementById('msgSound').play().catch(()=>{});
+                }
+
+                renderMessage(msg, box);
             });
             box.scrollTop = box.scrollHeight;
         });
 
-        // 3. שליחת הודעה
+        function renderMessage(msg, container) {
+            const isMe = msg.sender === 'client';
+            let content = `<div class="text-[15px]">${msg.text}</div>`;
+
+            // סוגי הודעות מיוחדים
+            if(msg.type === 'image') {
+                content = `
+                <div class="relative">
+                    <img src="${msg.url}" class="msg-img border" alt="תמונה">
+                    <div class="text-[10px] text-gray-500 flex items-center gap-1 mt-1"><i class="fab fa-google-drive"></i> נשמר בדרייב</div>
+                </div>`;
+            } else if(msg.type === 'location') {
+                content = `
+                <a href="${msg.url}" target="_blank" class="waze-card block hover:bg-blue-50 transition">
+                    <i class="fab fa-waze text-3xl text-blue-500 mb-1"></i>
+                    <div class="font-bold text-sm text-gray-700">נווט ליעד</div>
+                    <div class="text-xs text-gray-500">לחץ לפתיחת Waze</div>
+                </a>`;
+            }
+
+            container.innerHTML += `
+                <div class="msg ${isMe ? 'out' : 'in'}">
+                    ${!isMe ? `<div class="text-[10px] font-bold text-orange-600 mb-1">חמ"ל סבן</div>` : ''}
+                    ${content}
+                    <div class="msg-time">
+                        ${new Date(msg.createdAt?.seconds*1000 || Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
+                        <i class="fas fa-check-double text-blue-500 text-[10px]"></i>
+                    </div>
+                </div>`;
+        }
+
+        // Actions
         window.sendMsg = async () => {
             const input = document.getElementById('msg-input');
             const txt = input.value.trim();
             if(!txt) return;
-            
             input.value = '';
+            await sendMessage({ text: txt, type: 'text' });
+        };
 
-            // בדיקה אם ההזמנה קיימת, אם לא - יוצרים אותה
-            const orderDoc = doc(db, "orders", clientId);
-            const orderSnap = await getDoc(orderDoc);
+        window.handleImageUpload = async (input) => {
+            const file = input.files[0];
+            if(!file) return;
             
-            if (!orderSnap.exists()) {
-                await setDoc(orderDoc, {
-                    clientName: clientName,
-                    status: 'new',
-                    createdAt: serverTimestamp(),
-                    itemsText: "נפתחה בשיחה"
+            // כאן תבוא לוגיקה אמיתית להעלאה. בסימולציה נשתמש ב-FileReader
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                // שולח הודעה עם ה-Base64 (במציאות לשמור URL מ-Storage/Drive)
+                await sendMessage({ 
+                    text: '📷 תמונה מצורפת', 
+                    type: 'image', 
+                    url: e.target.result // בדמו זה יעבוד, בחיים האמיתיים הקובץ יהיה כבד מדי
                 });
-            }
+                toggleAttach(); // סגור תפריט
+            };
+            reader.readAsDataURL(file);
+        };
 
-            // הוספת ההודעה לצ'אט
-            await addDoc(chatRef, {
-                text: txt,
-                sender: 'client', // סימון שזה הלקוח
-                createdAt: serverTimestamp()
+        window.sendLocation = () => {
+            if(!navigator.geolocation) return alert("אין תמיכה במיקום");
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                const { latitude, longitude } = pos.coords;
+                const wazeUrl = `https://waze.com/ul?ll=${latitude},${longitude}&navigate=yes`;
+                await sendMessage({ 
+                    text: '📍 מיקום נוכחי', 
+                    type: 'location', 
+                    url: wazeUrl 
+                });
+                toggleAttach();
             });
         };
+
+        async function sendMessage(payload) {
+            // יצירת הזמנה אם לא קיימת
+            const orderRef = doc(db, "orders", clientId);
+            const orderSnap = await getDoc(orderRef);
+            if (!orderSnap.exists()) {
+                await setDoc(orderRef, { clientName, status: 'new', createdAt: serverTimestamp() });
+            }
+
+            await addDoc(chatRef, {
+                ...payload,
+                sender: 'client',
+                createdAt: serverTimestamp()
+            });
+        }
+
+        // UI Helpers
+        window.toggleAttach = () => document.getElementById('attachMenu').classList.toggle('open');
+        window.toggleMute = () => {
+            isMuted = !isMuted;
+            localStorage.setItem('saban_mute', isMuted);
+            updateMuteIcon();
+        };
+        function updateMuteIcon() {
+            document.getElementById('muteBtn').innerHTML = isMuted ? '<i class="fas fa-volume-mute text-red-300"></i>' : '<i class="fas fa-volume-up"></i>';
+        }
     </script>
 </body>
 </html>
