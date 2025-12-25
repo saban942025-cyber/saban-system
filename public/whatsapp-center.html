@@ -3,119 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Saban Command | חמ"ל</title>
-    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/733/733585.png">
+    <title>Saban Command | חמ"ל מבצעי</title>
     
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/733/733585.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     
     <style>
-        :root { --wa-header: #f0f2f5; --wa-bg: #efeae2; --wa-green: #00a884; }
+        :root { --wa-green: #00a884; --wa-bg: #efeae2; --sidebar-w: 420px; }
+        body { background: #d1d7db; height: 100dvh; display: flex; overflow: hidden; font-family: 'Segoe UI', system-ui, sans-serif; }
         
-        /* --- Layout Reset --- */
-        body { margin: 0; padding: 0; background: #d1d7db; height: 100dvh; font-family: 'Segoe UI', system-ui, sans-serif; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-        .app-container { display: flex; width: 100%; height: 100%; max-width: 1920px; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.1); position: relative; overflow: hidden; }
-        
-        /* Sidebar */
-        .sidebar { width: 400px; min-width: 350px; display: flex; flex-direction: column; border-left: 1px solid #e9edef; background: white; z-index: 20; }
-        
-        /* Chat Area */
+        /* --- Layout --- */
+        .app-container { display: flex; width: 100%; height: 100%; max-width: 1920px; margin: 0 auto; background: white; box-shadow: 0 0 20px rgba(0,0,0,0.15); position: relative; }
+        .sidebar { width: var(--sidebar-w); border-left: 1px solid #e9edef; display: flex; flex-direction: column; background: white; z-index: 20; position: relative; }
         .chat-area { flex: 1; display: flex; flex-direction: column; background-color: var(--wa-bg); background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); position: relative; min-width: 0; }
 
         /* --- Tabs --- */
-        .tabs { display: flex; background: white; border-bottom: 1px solid #e9edef; }
-        .tab { flex: 1; text-align: center; padding: 14px; cursor: pointer; color: #54656f; font-weight: 600; border-bottom: 3px solid transparent; transition: 0.2s; position: relative; font-size: 14px; }
-        .tab:hover { background: #f5f6f6; }
-        .tab.active { color: var(--wa-green); border-bottom-color: var(--wa-green); }
-        .badge { position: absolute; top: 10px; left: 20px; background: #25d366; color: white; font-size: 10px; padding: 0 6px; border-radius: 10px; min-width: 18px; display: flex; align-items: center; justify-content: center; }
+        .tabs-header { display: flex; background: white; border-bottom: 1px solid #e9edef; padding: 0 10px; }
+        .tab-btn { flex: 1; padding: 14px; text-align: center; cursor: pointer; color: #54656f; font-weight: 600; font-size: 13px; border-bottom: 3px solid transparent; transition: 0.2s; position: relative; }
+        .tab-btn:hover { background: #f5f6f6; }
+        .tab-btn.active { color: var(--wa-green); border-bottom-color: var(--wa-green); background: #f0fdf4; }
+        .tab-badge { position: absolute; top: 10px; left: 20px; background: #ef4444; color: white; font-size: 10px; padding: 0 5px; border-radius: 10px; min-width: 18px; }
 
-        /* --- Chat Items --- */
-        .chat-item { display: flex; align-items: center; padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #f5f6f6; transition: 0.2s; background: white; }
+        /* --- Chat List --- */
+        .chat-item { padding: 12px 16px; cursor: pointer; display: flex; align-items: center; border-bottom: 1px solid #f0f2f5; transition: 0.2s; }
         .chat-item:hover { background: #f5f6f6; }
         .chat-item.active { background: #f0f2f5; border-right: 4px solid var(--wa-green); }
         .avatar { width: 45px; height: 45px; rounded: 50%; object-fit: cover; border: 1px solid #e9edef; margin-left: 12px; }
 
         /* --- Messages --- */
-        .msg-bubble { max-width: 65%; padding: 8px 10px; border-radius: 8px; font-size: 14px; margin-bottom: 6px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); position: relative; line-height: 1.4; }
+        .msg-bubble { max-width: 70%; padding: 8px 12px; border-radius: 8px; font-size: 14px; margin-bottom: 6px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); position: relative; line-height: 1.5; }
         .msg-in { align-self: flex-start; background: white; border-top-right-radius: 0; }
         .msg-out { align-self: flex-end; background: #d9fdd3; border-top-left-radius: 0; }
         .msg-internal { background: #fff7ed !important; border: 1px dashed #fdba74; }
-        .msg-meta { font-size: 10px; color: #667781; text-align: left; margin-top: 4px; display: flex; justify-content: flex-end; gap: 4px; }
-        .system-msg { align-self: center; background: #eef2ff; color: #3730a3; font-size: 11px; padding: 4px 10px; border-radius: 10px; border: 1px dashed #c7d2fe; margin: 8px 0; font-weight: 600; text-align: center; }
+        .msg-internal::after { content: '🔒 פנימי לצוות'; display: block; font-size: 10px; color: #c2410c; margin-top: 2px; font-weight: bold; }
+        .msg-system { align-self: center; background: #e0f2fe; color: #0369a1; font-size: 11px; padding: 4px 12px; border-radius: 12px; margin: 8px 0; border: 1px dashed #7dd3fc; font-weight: 600; text-align: center; width: auto; }
 
-        /* --- Order Card (Control) --- */
-        .order-card { background: white; border-radius: 8px; overflow: hidden; width: 320px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-top: 5px; border: 1px solid #e5e7eb; }
-        .order-header { background: #f0fdf4; padding: 10px 15px; border-bottom: 1px solid #dcfce7; display: flex; justify-content: space-between; align-items: center; }
-        .order-body { padding: 15px; font-family: monospace; white-space: pre-wrap; font-size: 13px; background: #fafafa; color: #333; border-bottom: 1px solid #f3f4f6; }
+        /* --- Mentions --- */
+        .mention { color: #2563eb; background: #eff6ff; padding: 0 4px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        .quick-tags { display: flex; gap: 6px; padding: 8px 16px; background: #f8fafc; border-top: 1px solid #e2e8f0; overflow-x: auto; }
+        .tag-chip { font-size: 11px; background: white; border: 1px solid #cbd5e1; padding: 4px 10px; border-radius: 12px; cursor: pointer; color: #475569; font-weight: 600; white-space: nowrap; transition: 0.2s; }
+        .tag-chip:hover { background: #e2e8f0; color: #0f172a; border-color: #94a3b8; }
+
+        /* --- Order Card (The Diamond) --- */
+        .order-card { background: white; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden; width: 340px; margin-top: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .order-head { background: linear-gradient(to left, #f0fdf4, #ffffff); padding: 10px 15px; border-bottom: 1px solid #dcfce7; display: flex; justify-content: space-between; align-items: center; }
+        .order-body { padding: 15px; font-family: monospace; white-space: pre-wrap; font-size: 13px; color: #333; background: #fafafa; border-bottom: 1px solid #f1f5f9; }
+        .order-actions { display: flex; gap: 1px; background: #e5e7eb; border-top: 1px solid #e5e7eb; }
+        .action-btn { flex: 1; padding: 10px; background: white; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; transition: 0.2s; color: #64748b; }
+        .action-btn:hover { background: #f8fafc; color: #0f172a; }
+        .action-btn.active { color: #16a34a; background: #f0fdf4; }
+
+        /* Status Strip */
+        .status-strip { height: 4px; display: flex; width: 100%; }
+        .strip-seg { flex: 1; margin-right: 1px; background: #e2e8f0; transition: 0.3s; }
+        .status-new .strip-seg:nth-child(1) { background: #22c55e; }
+        .status-work .strip-seg:nth-child(1), .status-work .strip-seg:nth-child(2) { background: #3b82f6; }
+        .status-done .strip-seg { background: #10b981; }
+
+        /* --- Document Modal & Bar --- */
+        #docSelectModal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+        .doc-box { background: white; width: 450px; border-radius: 12px; overflow: hidden; box-shadow: 0 25px 50px rgba(0,0,0,0.3); display: flex; flex-direction: column; animation: popIn 0.3s; }
+        .pending-bar { background: #fff7ed; border-bottom: 2px solid #fdba74; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 15; box-shadow: 0 4px 6px rgba(0,0,0,0.05); animation: slideDown 0.3s; position: absolute; width: 100%; top: 64px; left: 0; }
         
-        .order-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px; background: #e5e7eb; }
-        .action-btn { background: white; padding: 10px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; transition: 0.2s; color: #4b5563; }
-        .action-btn:hover { background: #f9fafb; color: #111827; }
-        .action-btn.work { color: #2563eb; } .action-btn.work:hover { background: #eff6ff; }
-        .action-btn.done { color: #16a34a; } .action-btn.done:hover { background: #f0fdf4; }
-
-        /* --- Pending Doc Bar --- */
-        .pending-bar { position: absolute; top: 60px; left: 0; width: 100%; background: #fff7ed; border-bottom: 2px solid #fdba74; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 15; box-shadow: 0 4px 6px rgba(0,0,0,0.05); animation: slideDown 0.3s; }
+        @keyframes popIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
 
-        /* --- Mentions Toolbar --- */
-        .tools-bar { display: flex; gap: 8px; padding: 8px 16px; background: #f0f2f5; overflow-x: auto; border-top: 1px solid #e9edef; align-items: center; }
-        .chip { font-size: 11px; background: white; border: 1px solid #cbd5e1; padding: 4px 10px; border-radius: 12px; cursor: pointer; color: #475569; font-weight: 600; white-space: nowrap; transition: 0.2s; }
-        .chip:hover { background: #e2e8f0; color: #0f172a; }
-        .mention-tag { color: #2563eb; font-weight: bold; background: #eff6ff; padding: 0 4px; border-radius: 4px; cursor: pointer; }
-
-        /* --- Document Modal --- */
-        .modal-wrap { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 999; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
-        .modal-box { background: white; width: 450px; max-height: 80vh; border-radius: 12px; overflow: hidden; box-shadow: 0 25px 50px rgba(0,0,0,0.25); display: flex; flex-direction: column; animation: popIn 0.3s; }
-        @keyframes popIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-
         /* --- Info Panel --- */
-        .info-panel { width: 0; background: #f7f8fa; border-right: 1px solid #e9edef; transition: width 0.3s ease; overflow: hidden; display: flex; flex-direction: column; }
+        .info-panel { width: 0; transition: width 0.3s ease; background: #f0f2f5; border-right: 1px solid #e9edef; overflow: hidden; display: flex; flex-direction: column; }
         .info-panel.open { width: 380px; }
     </style>
 </head>
 <body>
 
-    <div id="docSelectModal" class="modal-wrap">
-        <div class="modal-box">
+    <div id="docSelectModal">
+        <div class="doc-box">
             <div class="p-4 border-b bg-gray-50 flex justify-between items-center">
-                <h3 class="font-bold text-gray-700 flex items-center gap-2"><i class="fas fa-file-import text-blue-600"></i> ייבוא מסמך (Comax)</h3>
+                <h3 class="font-bold text-gray-700 flex items-center gap-2"><i class="fas fa-cloud-download-alt text-blue-600"></i> מסמכים נכנסים (Comax)</h3>
                 <button onclick="document.getElementById('docSelectModal').style.display='none'" class="text-gray-400 hover:text-red-500"><i class="fas fa-times text-xl"></i></button>
             </div>
-            <div id="docsList" class="flex-1 overflow-y-auto p-0"></div>
-            <div class="p-3 bg-gray-50 text-center text-xs text-gray-400 border-t">מוצגים 5 מסמכים אחרונים</div>
+            <div id="docsList" class="flex-1 overflow-y-auto p-0 max-h-[400px]"></div>
+            <div class="p-3 bg-gray-50 text-center text-xs text-gray-400 border-t">מסמכים אחרונים מהמערכת</div>
         </div>
     </div>
 
     <div class="app-container">
         
         <div class="sidebar">
-            <div class="h-[60px] bg-[#f0f2f5] p-3 flex justify-between items-center border-b flex-shrink-0">
+            <div class="h-[64px] bg-[#f0f2f5] p-3 flex justify-between items-center border-b flex-shrink-0">
                 <div class="flex items-center gap-3">
                     <img id="myAvatar" src="" class="w-10 h-10 rounded-full border border-gray-300 object-cover">
                     <div>
-                        <span id="myName" class="font-bold text-gray-800 text-sm block">...</span>
-                        <span class="text-[10px] text-green-600 font-bold">● מחובר</span>
+                        <span id="myName" class="font-bold text-gray-700 text-sm block">...</span>
+                        <span class="text-[10px] text-green-600 font-bold">● ONLINE</span>
                     </div>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="window.openDocSelector()" class="w-10 h-10 rounded-full bg-white border border-gray-200 text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition shadow-sm" title="ייבוא מסמך"><i class="fas fa-cloud-download-alt"></i></button>
+                    <button onclick="window.openDocSelector()" class="w-10 h-10 rounded-full bg-white border border-gray-200 text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition shadow-sm" title="יבא מסמך"><i class="fas fa-file-import"></i></button>
                     <button onclick="window.toggleMute()" id="muteBtn" class="w-10 h-10 rounded-full bg-white border border-gray-200 text-gray-600 hover:text-gray-800 transition shadow-sm"><i class="fas fa-volume-up"></i></button>
                 </div>
             </div>
 
-            <div class="tabs">
-                <div class="tab active" onclick="window.switchTab('all')" id="tab-all">צ'אטים</div>
-                <div class="tab" onclick="window.switchTab('orders')" id="tab-orders">
-                    הזמנות פתוחות <span id="ordersBadge" class="badge hidden">0</span>
+            <div class="tabs-header flex-shrink-0">
+                <div class="tab-btn active" onclick="window.switchTab('all')" id="tab-all">כל הצ'אטים</div>
+                <div class="tab-btn" onclick="window.switchTab('orders')" id="tab-orders">
+                    הזמנות פתוחות <span id="ordersBadge" class="tab-badge hidden">0</span>
                 </div>
             </div>
 
             <div class="p-2 border-b bg-white flex-shrink-0">
                 <div class="bg-[#f0f2f5] rounded-lg flex items-center px-3 h-9">
                     <i class="fas fa-search text-gray-400 text-xs ml-2"></i>
-                    <input type="text" placeholder="חיפוש או התחלת צ'אט..." class="bg-transparent border-none outline-none text-sm w-full font-sans">
+                    <input type="text" placeholder="חיפוש לקוח..." class="bg-transparent border-none outline-none text-sm w-full font-sans">
                 </div>
             </div>
 
@@ -124,21 +123,25 @@
 
         <div class="chat-area">
             <div id="empty-state" class="flex flex-col items-center justify-center h-full text-gray-400 select-none">
-                <div class="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center mb-6 opacity-50"><i class="fas fa-comments text-4xl text-gray-500"></i></div>
-                <h2 class="text-xl font-light text-gray-500">חמ"ל סבן - בחר שיחה</h2>
+                <div class="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mb-6 opacity-30"><i class="fas fa-satellite-dish text-5xl"></i></div>
+                <h2 class="text-xl font-light text-gray-500">Saban Command Center</h2>
+                <p class="text-sm opacity-60 mt-2">המערכת מוכנה לפעולה</p>
             </div>
 
             <div id="active-chat" class="hidden flex flex-col h-full relative">
                 
-                <div class="h-[60px] bg-[#f0f2f5] p-3 flex items-center justify-between border-b shadow-sm z-20 cursor-pointer" onclick="window.toggleInfoPanel()">
+                <div class="h-[64px] bg-[#f0f2f5] p-3 flex items-center justify-between border-b shadow-sm z-20 cursor-pointer" onclick="window.toggleInfoPanel()">
                     <div class="flex items-center gap-3">
-                        <img id="chatAvatar" src="" class="w-10 h-10 rounded-full border bg-white object-cover">
+                        <img id="chatAvatar" src="" class="w-10 h-10 rounded-full bg-white border object-cover">
                         <div>
                             <span id="chatTitle" class="font-bold text-gray-800 block text-sm"></span>
-                            <span class="text-xs text-gray-500">לחץ לפרטי לקוח</span>
+                            <span class="text-xs text-gray-500 flex items-center gap-1"><i class="fas fa-info-circle"></i> פרטי לקוח והיסטוריה</span>
                         </div>
                     </div>
-                    <i class="fas fa-info-circle text-gray-400 hover:text-blue-500 text-lg transition"></i>
+                    <div class="flex gap-3 text-gray-500">
+                        <i class="fas fa-search hover:text-gray-700"></i>
+                        <i class="fas fa-ellipsis-v hover:text-gray-700 px-2"></i>
+                    </div>
                 </div>
 
                 <div id="pendingDocBar" class="pending-bar hidden">
@@ -159,39 +162,38 @@
 
                 <div id="messages-area" class="flex-1 overflow-y-auto p-5 flex flex-col gap-1 custom-scroll"></div>
 
-                <div class="tools-bar">
-                    <div class="text-[10px] text-gray-400 font-bold uppercase mr-2">תיוג מהיר:</div>
-                    <span class="chip" onclick="window.addTag('מחסנאי')">@מחסנאי</span>
-                    <span class="chip" onclick="window.addTag('נהג')">@נהג</span>
-                    <span class="chip" onclick="window.addTag('ליקוט')">@ליקוט</span>
-                    <span class="chip" onclick="window.addTag('מנהל')">@מנהל</span>
+                <div class="quick-tags">
+                    <span class="tag-chip" onclick="window.addTag('מחסנאי')">@מחסנאי</span>
+                    <span class="tag-chip" onclick="window.addTag('נהג')">@נהג</span>
+                    <span class="tag-chip" onclick="window.addTag('ליקוט')">@ליקוט</span>
+                    <span class="tag-chip" onclick="window.addTag('חשבוניות')">@חשבוניות</span>
                 </div>
 
-                <div class="bg-[#f0f2f5] p-3 flex items-center gap-2 z-20">
+                <div class="bg-[#f0f2f5] p-3 flex items-center gap-2 border-t z-20">
                     <input type="file" id="staffFile" hidden accept="image/*,application/pdf" onchange="window.staffFileUpload(this)">
-                    <button onclick="document.getElementById('staffFile').click()" class="w-10 h-10 text-gray-500 hover:bg-gray-200 rounded-full transition flex-shrink-0"><i class="fas fa-plus text-xl"></i></button>
+                    <button onclick="document.getElementById('staffFile').click()" class="w-10 h-10 text-gray-500 hover:bg-gray-200 rounded-full transition flex-shrink-0" title="צרף קובץ"><i class="fas fa-paperclip text-lg transform rotate-45"></i></button>
                     
                     <button id="ghostBtn" onclick="window.toggleGhostMode()" class="w-10 h-10 text-gray-500 hover:bg-gray-200 rounded-full transition flex-shrink-0" title="מצב עין (פנימי)"><i class="fas fa-eye-slash text-lg"></i></button>
                     
-                    <input id="msgInput" type="text" class="flex-1 bg-white rounded-lg h-10 px-4 text-sm border-none outline-none" placeholder="הקלד הודעה..." onkeydown="if(event.key==='Enter') window.sendMessage()">
+                    <input id="msgInput" type="text" class="flex-1 bg-white rounded-xl h-10 px-4 text-sm border-none outline-none shadow-sm" placeholder="הקלד הודעה..." onkeydown="if(event.key==='Enter') window.sendMessage()">
                     
-                    <button onclick="window.sendMessage()" class="w-10 h-10 text-gray-500 hover:bg-gray-200 rounded-full transition flex-shrink-0"><i class="fas fa-paper-plane text-lg text-[#00a884]"></i></button>
+                    <button onclick="window.sendMessage()" class="w-10 h-10 text-white bg-[#00a884] rounded-full shadow hover:scale-105 transition flex-shrink-0 flex items-center justify-center"><i class="fas fa-paper-plane"></i></button>
                 </div>
             </div>
         </div>
 
         <div id="info-panel" class="info-panel">
-            <div class="h-[60px] flex items-center px-4 border-b bg-white justify-between">
+            <div class="h-[64px] flex items-center px-4 border-b bg-white justify-between">
                 <span class="font-bold text-gray-700">תיק לקוח</span>
                 <button onclick="window.toggleInfoPanel()"><i class="fas fa-times text-gray-400 hover:text-red-500"></i></button>
             </div>
-            <div class="p-6 text-center overflow-y-auto bg-[#f7f8fa] flex-1">
+            <div class="p-6 text-center overflow-y-auto bg-gray-50 flex-1">
                 <img id="crmAvatar" class="w-24 h-24 rounded-full mx-auto mb-3 shadow border-4 border-white object-cover">
                 <h3 id="crmName" class="font-bold text-xl text-gray-800"></h3>
                 <div class="mt-2"><span id="crmNum" class="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-mono font-bold"></span></div>
                 
                 <div class="mt-8 border-t pt-4 text-right">
-                    <div class="text-xs font-bold text-gray-400 uppercase mb-3">היסטוריית הזמנות</div>
+                    <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">היסטוריית הזמנות</div>
                     <div id="crmHistoryList" class="flex flex-col gap-2"></div>
                 </div>
             </div>
@@ -207,7 +209,7 @@
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwzf-dHQRZZ9msG-SffH5dQo0obCvwcOGc6nsV82s3Kw33m2rhNMn7Jt9AaWjGy4_4M/exec";
 
-        // 2. Auth & Init
+        // 2. Auth
         const urlUid = new URLSearchParams(window.location.search).get('uid');
         let currentUser = JSON.parse(localStorage.getItem('saban_user')) || { name: 'מוקדן' };
         if(urlUid) getDoc(doc(db, "users", urlUid)).then(s => { if(s.exists()){ currentUser=s.data(); localStorage.setItem('saban_user',JSON.stringify(currentUser)); initUI(); }});
@@ -225,10 +227,9 @@
         window.openDocSelector = async () => {
             document.getElementById('docSelectModal').style.display = 'flex';
             const list = document.getElementById('docsList');
-            list.innerHTML = '<div class="p-10 text-center text-gray-400"><i class="fas fa-spinner fa-spin text-2xl text-blue-500 mb-2"></i><br>מתחבר לשרת...</div>';
+            list.innerHTML = '<div class="p-10 text-center text-gray-400"><i class="fas fa-spinner fa-spin text-2xl text-blue-500 mb-2"></i><br>טוען נתונים...</div>';
 
             try {
-                // נסיון שליפה עם Timeout
                 const controller = new AbortController();
                 const id = setTimeout(() => controller.abort(), 3000);
                 const res = await fetch(GAS_API_URL, { signal: controller.signal });
@@ -237,13 +238,12 @@
                 const data = await res.json();
                 renderDocs(data, list);
             } catch (e) {
-                // Fallback (גיבוי)
+                // FALLBACK MODE
                 const mockDocs = [
                     { fileName: 'תעודת משלוח 8821.pdf', date: 'לפני דקה' },
                     { fileName: 'חשבונית מס קבלה 400.pdf', date: '08:30' },
                     { fileName: 'הזמנת רכש - מלט.pdf', date: 'אתמול' },
-                    { fileName: 'טופס החזרה - שחר.pdf', date: '24/12' },
-                    { fileName: 'הצעת מחיר ח.סבן.pdf', date: '22/12' }
+                    { fileName: 'טופס החזרה - שחר.pdf', date: '24/12' }
                 ];
                 renderDocs(mockDocs, list);
             }
@@ -269,15 +269,13 @@
             window.pendingDoc = { name, url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf' };
             document.getElementById('docSelectModal').style.display = 'none';
             document.getElementById('pendingDocName').innerText = name;
-            
             if(currentChatId) document.getElementById('pendingDocBar').classList.remove('hidden');
             if(!isMuted) try{ SabanSounds.playMessage(); }catch(e){}
         };
 
         window.attachDocToChat = async () => {
             if(!window.pendingDoc || !currentChatId) return;
-            
-            // שליחה ל-Firebase (גם ליומן וגם ללקוח אם צריך)
+            // שליחה ל-Firebase
             await addDoc(collection(db, `orders/${currentChatId}/internal_chat`), {
                 text: `📎 שויך מסמך: ${window.pendingDoc.name}`,
                 type: 'pdf',
@@ -286,15 +284,10 @@
                 createdAt: serverTimestamp(),
                 isVisibleToClient: !isGhostMode
             });
-            
-            // עדכון הלקוח במסמך האחרון
-            if (!isGhostMode) {
-                await updateDoc(doc(db, "orders", currentChatId), { 
-                    pdfUrl: window.pendingDoc.url,
-                    chat: arrayUnion({ sender: 'system', text: `📎 צורף מסמך: ${window.pendingDoc.name}`, time: new Date().toISOString() })
-                });
+            // עדכון הלקוח
+            if(!isGhostMode) {
+                await updateDoc(doc(db, "orders", currentChatId), { pdfUrl: window.pendingDoc.url, chat: arrayUnion({ sender: 'system', text: `📎 צורף מסמך חדש: ${window.pendingDoc.name}`, time: new Date().toISOString() }) });
             }
-
             window.pendingDoc = null;
             document.getElementById('pendingDocBar').classList.add('hidden');
         };
@@ -336,36 +329,41 @@
 
         function renderMsg(m, msgId, container, orderId) {
             const isMe = m.sender !== 'client';
-            let content = m.text.replace(/@([\u0590-\u05FF\w]+)/g, '<span class="mention-tag">@$1</span>');
+            let content = m.text.replace(/@([\u0590-\u05FF\w]+)/g, '<span class="mention">@$1</span>');
 
             if(m.type === 'order') {
                 const safeName = (m.clientName||'').replace(/"/g,'&quot;');
                 const safeProj = (m.project||'').replace(/"/g,'&quot;');
                 const safeText = m.text.replace(/"/g,'&quot;').replace(/\n/g,'\\n');
                 
+                // חישוב סטטוס לפס
+                const status = m.status || 'new'; // new, work, done
+                const statusClass = status === 'new' ? 'status-new' : (status === 'work' ? 'status-work' : 'status-done');
+
                 content = `
-                <div class="order-card">
-                    <div class="order-header">
+                <div class="order-card ${statusClass}">
+                    <div class="status-strip"><div class="strip-seg"></div><div class="strip-seg"></div><div class="strip-seg"></div></div>
+                    <div class="order-head">
                         <div class="font-bold text-green-800 text-sm flex items-center gap-2"><i class="fas fa-clipboard-list"></i> הזמנה חדשה</div>
-                        <div class="text-[10px] text-gray-500 bg-white border px-1 rounded">${m.project||'כללי'}</div>
+                        <div class="text-[10px] text-gray-500 bg-white border px-2 rounded">${m.project||'כללי'}</div>
                     </div>
                     <div class="order-body">${m.text}</div>
                     <div class="order-actions">
-                        <div class="action-btn work" onclick="window.updateStatus('${msgId}', 'work', '${orderId}')"><i class="fas fa-tools"></i> לליקוט</div>
-                        <div class="action-btn done" onclick="window.updateStatus('${msgId}', 'approved', '${orderId}')"><i class="fas fa-check-double"></i> מוכן</div>
+                        <div class="action-btn" onclick="window.updateStatus('${msgId}', 'work', '${orderId}')"><i class="fas fa-tools text-blue-600"></i> לליקוט</div>
+                        <div class="action-btn" onclick="window.updateStatus('${msgId}', 'approved', '${orderId}')"><i class="fas fa-check-double text-green-600"></i> מוכן</div>
                         <div class="action-btn" onclick="window.printOrder('${safeName}','${safeProj}',\`${safeText}\`,'${msgId}','${new Date().toLocaleDateString()}')"><i class="fas fa-print"></i> הדפס</div>
                     </div>
                 </div>`;
             } else if (m.type === 'system') {
-                container.innerHTML += `<div class="system-msg">${m.text}</div>`; return;
+                container.innerHTML += `<div class="msg-system">${m.text}</div>`; return;
             } else if (m.type === 'pdf') {
                 content = `<a href="${m.url}" target="_blank" class="flex items-center gap-2 p-2 bg-red-50 border border-red-100 rounded text-red-700 text-sm font-bold no-underline hover:bg-red-100"><i class="fas fa-file-pdf"></i> מסמך PDF מצורף</a>`;
             }
 
             container.innerHTML += `
             <div class="msg-bubble ${isMe ? 'msg-out' : 'msg-in'} ${m.isVisibleToClient===false?'msg-internal':''}">
-                ${m.isVisibleToClient===false ? '<div class="text-[10px] text-orange-600 font-bold mb-1"><i class="fas fa-eye-slash"></i> פנימי</div>' : ''}
-                ${!isMe ? '<div class="text-[10px] font-bold text-green-700 mb-1">לקוח</div>' : ''}
+                ${m.isVisibleToClient===false ? '' : ''} 
+                ${!isMe && m.type!=='order' ? '<div class="text-[10px] font-bold text-green-700 mb-1">לקוח</div>' : ''}
                 <div>${content}</div>
                 <div class="msg-meta">
                     <span>${new Date(m.createdAt?.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span>
@@ -374,17 +372,18 @@
             </div>`;
         }
 
-        // --- 5. Update Status Engine (Real Time) ---
+        // --- 5. Update Status Logic ---
         window.updateStatus = async (msgId, status, orderId) => {
             if(!confirm("לעדכן סטטוס ולשלוח הודעה ללקוח?")) return;
-
+            
             let msgText = "";
             if(status === 'work') msgText = "🚧 *עדכון:* ההזמנה עברה לליקוט במחסן.";
             if(status === 'approved') msgText = "✅ *מוכן!* ההזמנה אושרה וממתינה להעמסה.";
             
-            // עדכון כפול (DB + Chat)
+            // עדכון DB (הפס הירוק אצל הלקוח יזוז)
             await updateDoc(doc(db, "orders", orderId), { status: status, lastUpdate: serverTimestamp() });
             
+            // הודעה בצ'אט
             await addDoc(collection(db, `orders/${orderId}/internal_chat`), {
                 text: msgText, type: 'system', sender: 'מערכת', createdAt: serverTimestamp(), isVisibleToClient: true
             });
@@ -419,15 +418,15 @@
                 
                 list.innerHTML += `
                 <div class="chat-item ${active}" onclick="window.loadChat('${o.id}', '${o.clientName}', '${av}')">
-                    <img src="${av}" class="w-12 h-12 rounded-full border ml-3 bg-white">
-                    <div class="flex-1 min-w-0">
+                    <img src="${av}" class="avatar">
+                    <div class="flex-1 mr-3 min-w-0">
                         <div class="flex justify-between font-bold text-sm text-gray-800">
                             ${o.clientName}
                             <span class="text-[10px] font-normal text-gray-400">${o.lastActive ? new Date(o.lastActive.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : ''}</span>
                         </div>
                         <div class="flex justify-between items-center text-xs mt-1 text-gray-500">
                             <span class="truncate">${o.currentProject || ''}</span>
-                            ${o.status === 'new' ? '<span class="bg-green-100 text-green-700 px-1.5 rounded-full font-bold text-[10px]">●</span>' : ''}
+                            ${o.status === 'new' ? '<span class="bg-green-100 text-green-700 px-1.5 rounded-full font-bold text-[9px]">1</span>' : ''}
                         </div>
                     </div>
                 </div>`;
@@ -437,7 +436,7 @@
         }
 
         window.addTag = (tag) => { const i = document.getElementById('msgInput'); i.value += `@${tag} `; i.focus(); };
-        window.toggleMute = () => { isMuted = !isMuted; const b = document.getElementById('muteBtn'); if(!isMuted){ try{SabanSounds.init(); SabanSounds.playMessage();}catch(e){} b.innerHTML='<i class="fas fa-volume-up"></i>'; b.classList.add('text-green-600'); } else { b.innerHTML='<i class="fas fa-volume-mute"></i>'; b.classList.remove('text-green-600'); } };
+        window.toggleMute = () => { isMuted = !isMuted; const b = document.getElementById('muteBtn'); if(!isMuted){ try{SabanSounds.init(); SabanSounds.playMessage();}catch(e){} b.innerHTML='<i class="fas fa-volume-up"></i>'; b.classList.add('text-green-600', 'border-green-200'); } else { b.innerHTML='<i class="fas fa-volume-mute"></i>'; b.classList.remove('text-green-600', 'border-green-200'); } };
         window.toggleInfoPanel = () => document.getElementById('info-panel').classList.toggle('open');
         window.toggleGhostMode = () => { isGhostMode = !isGhostMode; const b=document.getElementById('ghostBtn'); const i=document.getElementById('msgInput'); if(isGhostMode){ b.className='w-10 h-10 text-orange-600 bg-orange-100 rounded-full transition'; i.style.background='#fff7ed'; i.placeholder='הערה פנימית...'; } else { b.className='w-10 h-10 text-gray-500 hover:bg-gray-200 rounded-full transition'; i.style.background='white'; i.placeholder='הקלד...'; } i.focus(); };
         
@@ -459,7 +458,7 @@
             onSnapshot(q, s => {
                 if(!l) return;
                 l.innerHTML = s.empty ? '<div class="text-xs text-gray-400">אין נתונים</div>' : '';
-                s.forEach(d => { const o=d.data(); l.innerHTML+=`<div class="bg-white p-2 border rounded text-xs mb-1 text-right"><div class="font-bold text-gray-700">${new Date(o.createdAt?.seconds*1000).toLocaleDateString()}</div><div class="truncate text-gray-500">${o.text}</div></div>`; });
+                s.forEach(d => { const o=d.data(); l.innerHTML+=`<div class="bg-white p-2 border rounded text-xs mb-1 text-right hover:bg-blue-50 cursor-pointer"><div class="font-bold text-gray-700">${new Date(o.createdAt?.seconds*1000).toLocaleDateString()}</div><div class="truncate text-gray-500">${o.text}</div></div>`; });
             });
         }
         
