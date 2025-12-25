@@ -3,42 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ניהול משתמשים | Saban Admin</title>
+    <title>ניהול תיקי לקוחות | Saban Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="bg-slate-100 font-sans p-6">
 
-    <div class="max-w-4xl mx-auto">
+    <div class="max-w-6xl mx-auto">
         <h1 class="text-3xl font-black text-slate-800 mb-6 flex items-center gap-3">
-            <i class="fas fa-users-cog text-blue-600"></i> ניהול משתמשים וגישות
+            <i class="fas fa-id-card-alt text-blue-600"></i> ניהול תיקי לקוחות
         </h1>
 
-        <div class="bg-white p-6 rounded-2xl shadow-lg mb-8">
-            <h2 class="font-bold text-lg mb-4">הוסף משתמש חדש</h2>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <input id="uName" type="text" placeholder="שם מלא" class="border p-3 rounded-xl bg-slate-50 outline-none focus:border-blue-500">
-                <input id="uPhone" type="tel" placeholder="מספר טלפון (מזהה)" class="border p-3 rounded-xl bg-slate-50 outline-none focus:border-blue-500 text-left" dir="ltr">
-                <select id="uRole" class="border p-3 rounded-xl bg-slate-50 outline-none">
-                    <option value="client">לקוח</option>
-                    <option value="staff">איש צוות</option>
-                    <option value="admin">מנהל על</option>
-                </select>
-                <input id="uImg" type="text" placeholder="לינק לתמונה (אופציונלי)" class="border p-3 rounded-xl bg-slate-50 outline-none text-left" dir="ltr">
+        <div class="bg-white p-6 rounded-2xl shadow-lg mb-8 border-t-4 border-blue-500">
+            <h2 class="font-bold text-lg mb-4 text-gray-700">הגדרת לקוח / איש צוות</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-gray-400">פרטים אישיים</label>
+                    <input id="uName" type="text" placeholder="שם מלא / שם העסק" class="w-full border p-3 rounded-xl bg-slate-50 outline-none focus:border-blue-500">
+                    <input id="uPhone" type="tel" placeholder="טלפון (מזהה כניסה)" class="w-full border p-3 rounded-xl bg-slate-50 outline-none focus:border-blue-500 text-left" dir="ltr">
+                    <select id="uRole" class="w-full border p-3 rounded-xl bg-slate-50 outline-none">
+                        <option value="client">לקוח</option>
+                        <option value="staff">איש צוות</option>
+                        <option value="admin">מנהל מערכת</option>
+                    </select>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-gray-400">פרטי חשבון (ללקוחות בלבד)</label>
+                    <input id="uClientNum" type="text" placeholder="מספר לקוח (ח.פ/ת.ז)" class="w-full border p-3 rounded-xl bg-slate-50 outline-none focus:border-blue-500">
+                    <input id="uContact" type="text" placeholder="שם איש קשר" class="w-full border p-3 rounded-xl bg-slate-50 outline-none focus:border-blue-500">
+                    <input id="uImg" type="text" placeholder="לינק לתמונת לוגו" class="w-full border p-3 rounded-xl bg-slate-50 outline-none text-left" dir="ltr">
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-gray-400">פרויקטים (מופרד בפסיקים)</label>
+                    <textarea id="uProjects" placeholder="לדוגמה: אבן יהודה, וילה סביון, הרצליה פיתוח" class="w-full h-[124px] border p-3 rounded-xl bg-slate-50 outline-none focus:border-blue-500 resize-none"></textarea>
+                </div>
             </div>
-            <button onclick="addUser()" class="mt-4 w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 shadow-lg transition">
-                <i class="fas fa-plus"></i> צור משתמש במערכת
-            </button>
+            
+            <div class="mt-6 flex justify-end">
+                <button onclick="addUser()" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-blue-700 shadow-lg transition flex items-center gap-2">
+                    <i class="fas fa-save"></i> שמור משתמש
+                </button>
+            </div>
         </div>
 
         <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
             <table class="w-full text-sm text-right">
                 <thead class="bg-slate-50 text-slate-500 font-bold uppercase">
                     <tr>
-                        <th class="p-4">משתמש</th>
-                        <th class="p-4">טלפון (כניסה)</th>
-                        <th class="p-4">תפקיד</th>
+                        <th class="p-4">לקוח</th>
+                        <th class="p-4">פרטי זיהוי</th>
+                        <th class="p-4">פרויקטים פעילים</th>
                         <th class="p-4">פעולות</th>
                     </tr>
                 </thead>
@@ -51,51 +69,66 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, setDoc, doc, onSnapshot, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
+        // תדביק כאן את הקונפיג שלך
+        const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" };
+        const db = getFirestore(initializeApp(firebaseConfig));
 
-        // הוספת משתמש
         window.addUser = async () => {
             const name = document.getElementById('uName').value;
             const phone = document.getElementById('uPhone').value;
             const role = document.getElementById('uRole').value;
-            const img = document.getElementById('uImg').value || `https://ui-avatars.com/api/?name=${name}&background=random`;
+            const clientNum = document.getElementById('uClientNum').value || '---';
+            const contact = document.getElementById('uContact').value || name;
+            const avatar = document.getElementById('uImg').value;
+            
+            // המרת פרויקטים למערך
+            const projectsStr = document.getElementById('uProjects').value;
+            const projects = projectsStr ? projectsStr.split(',').map(p => p.trim()) : ['כללי'];
 
             if(!name || !phone) return Swal.fire('שגיאה', 'חובה למלא שם וטלפון', 'error');
 
             try {
-                // המזהה הוא הטלפון - כדי למנוע כפילויות
                 await setDoc(doc(db, "users", phone), {
-                    name, phone, role, avatar: img, createdAt: serverTimestamp()
+                    name, phone, role, clientNum, contact, projects, avatar,
+                    createdAt: serverTimestamp()
                 });
-                Swal.fire('בוצע!', 'המשתמש נוצר בהצלחה', 'success');
-                document.getElementById('uName').value = '';
-                document.getElementById('uPhone').value = '';
+                Swal.fire('נשמר!', 'התיק עודכן בהצלחה', 'success');
+                // Clear fields (optional)
             } catch(e) {
                 console.error(e);
-                Swal.fire('שגיאה', 'לא ניתן לשמור נתונים', 'error');
+                Swal.fire('שגיאה', 'בעיה בשמירה', 'error');
             }
         };
 
-        // מחיקה
         window.delUser = async (phone) => {
-            if(confirm('למחוק את המשתמש?')) await deleteDoc(doc(db, "users", phone));
+            if(confirm('למחוק לצמיתות?')) await deleteDoc(doc(db, "users", phone));
         };
 
-        // טעינה בזמן אמת
         onSnapshot(collection(db, "users"), (snap) => {
             const list = document.getElementById('usersList');
             list.innerHTML = '';
             snap.forEach(d => {
                 const u = d.data();
-                const badgeColor = u.role === 'client' ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700';
+                const badge = u.role === 'client' ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700';
+                
                 list.innerHTML += `
                 <tr class="hover:bg-slate-50 transition">
                     <td class="p-4 flex items-center gap-3">
-                        <img src="${u.avatar}" class="w-10 h-10 rounded-full border border-gray-200 object-cover">
-                        <span class="font-bold text-slate-700">${u.name}</span>
+                        <img src="${u.avatar || `https://ui-avatars.com/api/?name=${u.name}`}" class="w-10 h-10 rounded-full border border-gray-200 object-cover">
+                        <div>
+                            <div class="font-bold text-slate-700">${u.name}</div>
+                            <div class="text-xs text-gray-400">${u.contact}</div>
+                        </div>
                     </td>
-                    <td class="p-4 font-mono text-slate-500">${u.phone}</td>
-                    <td class="p-4"><span class="px-3 py-1 rounded-full text-xs font-bold ${badgeColor}">${u.role === 'client' ? 'לקוח' : 'צוות'}</span></td>
+                    <td class="p-4">
+                        <div class="font-mono text-slate-600">${u.phone}</div>
+                        <div class="text-xs font-bold text-blue-600">לקוח #${u.clientNum}</div>
+                    </td>
+                    <td class="p-4">
+                        <div class="flex flex-wrap gap-1">
+                            ${(u.projects || []).map(p => `<span class="px-2 py-0.5 bg-gray-100 rounded text-xs">${p}</span>`).join('')}
+                        </div>
+                    </td>
                     <td class="p-4">
                         <button onclick="delUser('${u.phone}')" class="text-red-400 hover:text-red-600"><i class="fas fa-trash"></i></button>
                     </td>
