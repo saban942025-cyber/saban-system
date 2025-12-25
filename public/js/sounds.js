@@ -1,44 +1,27 @@
 // public/js/sounds.js
-
-// יצירת הקשר סאונד (Audio Context)
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 export const SabanSounds = {
-    // פונקציית אתחול - נקראת בלחיצה הראשונה על כפתור הרמקול
     init: () => {
         if (audioCtx.state === 'suspended') {
-            audioCtx.resume().then(() => {
-                console.log("🔊 AudioContext שוחרר בהצלחה!");
-            });
+            audioCtx.resume().then(() => console.log("🔊 Audio System Unlocked"));
         }
     },
-
-    // פונקציה שמייצרת צליל דיגיטלי (ללא קובץ)
-    beep: () => {
+    beep: (freq = 800, type = 'sine') => {
         try {
-            // אם הסאונד חסום - נסה לשחרר אותו שוב
             if (audioCtx.state === 'suspended') audioCtx.resume();
-
-            const oscillator = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-
-            oscillator.type = 'sine'; // צליל עגול ונעים
-            oscillator.frequency.setValueAtTime(800, audioCtx.currentTime); // תדר התחלה
-            oscillator.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.1); // אפקט ירידה (כמו טיפה)
-
-            gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-
-            oscillator.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-
-            oscillator.start();
-            oscillator.stop(audioCtx.currentTime + 0.5);
-        } catch (e) {
-            console.error("Audio Error:", e);
-        }
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.5);
+        } catch (e) { console.error(e); }
     },
-
-    // הפונקציה שהדף קורא לה
-    playMessage: () => SabanSounds.beep()
+    playMessage: () => SabanSounds.beep(800, 'sine'),
+    playAlert: () => SabanSounds.beep(400, 'square')
 };
