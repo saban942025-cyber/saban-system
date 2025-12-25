@@ -1,7 +1,5 @@
 // public/js/sounds.js
 
-// public/js/sounds.js
-
 // צליל הודעה נכנסת (קצר ונעים) - Base64 אמיתי
 const NOTIFICATION_SOUND = "data:audio/mp3;base64,//uQRAAAAWMSLwUIYAAsYkXgoQwAEaYLWfkWgAI0wWs/ItAAAG1xisiAAf+PEQEAAAH4kQEA//uQZAAABQAABAAAAAAAAAAABAAAAAAAAAAABAAAAAAAAAAABAAAAAAAAAAABAAAAAAAAAAABAAAA"; 
 // (הערה: זהו סטרינג מקוצר לדוגמה. כדי שזה יעבוד מושלם, הנה סטרינג מלא של 'Beep':)
