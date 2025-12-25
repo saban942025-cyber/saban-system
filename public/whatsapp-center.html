@@ -31,7 +31,6 @@
         /* Media */
         .pdf-card { background: #fef2f2; border: 1px solid #fecaca; padding: 8px; border-radius: 6px; display: flex; items-center; gap: 8px; color: #991b1b; font-size: 12px; text-decoration: none; margin-top: 5px; }
         .link-text { display: block; font-size: 11px; color: #2563eb; text-decoration: underline; margin-top: 4px; }
-        
         .ghost-active { color: #9333ea !important; background: #f3e8ff; animation: pulse 2s infinite; }
     </style>
 </head>
@@ -40,10 +39,12 @@
         <div class="sidebar">
             <div class="h-[60px] bg-[#f0f2f5] p-3 flex justify-between items-center border-b">
                 <div class="flex items-center gap-2">
-                    <img id="myAvatar" src="" class="w-9 h-9 rounded-full">
+                    <img id="myAvatar" src="" class="w-9 h-9 rounded-full object-cover">
                     <span id="myName" class="font-bold text-gray-700">...</span>
                 </div>
-                <button onclick="toggleMute()" id="muteBtn" class="text-gray-500 hover:text-gray-700"><i class="fas fa-volume-up"></i></button>
+                <div class="flex gap-2">
+                    <button onclick="toggleMute()" id="muteBtn" class="text-gray-500 hover:text-gray-700"><i class="fas fa-volume-up"></i></button>
+                </div>
             </div>
             <div id="chat-list" class="flex-1 overflow-y-auto"></div>
         </div>
@@ -56,7 +57,7 @@
 
             <div id="active-chat" class="hidden flex flex-col h-full">
                 <div class="h-[60px] bg-[#f0f2f5] p-3 flex items-center gap-3 border-b shadow-sm z-10">
-                    <img id="chatAvatar" src="" class="w-10 h-10 rounded-full">
+                    <img id="chatAvatar" src="" class="w-10 h-10 rounded-full object-cover">
                     <span id="chatTitle" class="font-bold text-gray-800"></span>
                 </div>
 
@@ -83,7 +84,7 @@
         </div>
     </div>
 
-    <audio id="soundAlert" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.m4a"></audio>
+    <audio id="soundAlert" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.m4a" preload="auto"></audio>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -92,45 +93,35 @@
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
         // User Setup
-        const currentUser = JSON.parse(localStorage.getItem('saban_user')) || { name: 'מנהל', role: 'admin' };
+        const currentUser = JSON.parse(localStorage.getItem('saban_user')) || { name: 'מנהל', role: 'admin', avatar: '' };
         document.getElementById('myName').innerText = currentUser.name;
-        // Fix for Hebrew Avatar URL
-        document.getElementById('myAvatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=00a884&color=fff`;
+        // My Avatar Logic
+        const myAv = currentUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=00a884&color=fff`;
+        document.getElementById('myAvatar').src = myAv;
 
         let currentChatId = null;
         let isGhostMode = false;
         let isMuted = false;
 
-        // Load List
-        onSnapshot(query(collection(db, "orders"), orderBy("createdAt", "desc")), (snap) => {
-            const list = document.getElementById('chat-list');
-            list.innerHTML = '';
-            snap.forEach(d => {
-                const o = d.data();
-                // Avatar Fix
-                const av = `https://ui-avatars.com/api/?name=${encodeURIComponent(o.clientName)}&background=random`;
-                list.innerHTML += `
-                <div class="chat-item" onclick="loadChat('${d.id}', '${o.clientName}')">
-                    <img src="${av}" class="w-12 h-12 rounded-full ml-3 border border-gray-200">
-                    <div class="flex-1">
-                        <div class="font-bold text-sm text-gray-800">${o.clientName}</div>
-                        <div class="text-xs text-gray-500">${o.status === 'new' ? '🔔 הודעה חדשה' : 'בטיפול'}</div>
-                    </div>
-                </div>`;
-            });
-        });
+        // --- Window functions ---
 
-        // Load Chat
-        window.loadChat = (id, title) => {
+        window.toggleMute = () => {
+            isMuted = !isMuted;
+            const btn = document.getElementById('muteBtn');
+            btn.innerHTML = isMuted ? '<i class="fas fa-volume-mute text-red-500"></i>' : '<i class="fas fa-volume-up"></i>';
+        };
+
+        window.loadChat = (id, title, avatarUrl) => {
             currentChatId = id;
             document.getElementById('empty-state').classList.add('hidden');
             document.getElementById('active-chat').classList.remove('hidden');
             document.getElementById('chatTitle').innerText = title;
-            document.getElementById('chatAvatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(title)}&background=random`;
+            document.getElementById('chatAvatar').src = avatarUrl; // Use passed avatar
 
             // Unlock Audio Hack
             const audio = document.getElementById('soundAlert');
-            audio.volume = 0; audio.play().then(()=>{ audio.pause(); audio.volume = 1; }).catch(e=>{});
+            audio.muted = true;
+            audio.play().then(()=>{ audio.pause(); audio.currentTime=0; audio.muted=false; }).catch(e=>{});
 
             const q = query(collection(db, `orders/${id}/internal_chat`), orderBy("createdAt", "asc"));
             onSnapshot(q, (snap) => {
@@ -147,37 +138,6 @@
                 area.scrollTop = area.scrollHeight;
             });
         };
-
-        function renderMsg(m, container) {
-            const isMe = m.sender !== 'client';
-            const isInternal = m.isVisibleToClient === false;
-            let content = `<span>${m.text}</span>`;
-            
-            // Media Render
-            if(m.type === 'image') {
-                content = `
-                <img src="${m.url}" class="max-w-[200px] rounded border cursor-pointer" onclick="window.open('${m.url}')">
-                <a href="${m.url}" target="_blank" class="link-text">🖼️ פתח תמונה מקורית</a>`;
-            } else if(m.type === 'pdf') {
-                content = `
-                <a href="${m.url}" target="_blank" class="pdf-card">
-                    <i class="fas fa-file-pdf text-red-600 text-xl"></i>
-                    <div>
-                        <div class="font-bold">קובץ PDF</div>
-                        <div class="text-[10px] opacity-70">לחץ להצגה</div>
-                    </div>
-                </a>`;
-            }
-
-            container.innerHTML += `
-            <div class="msg-bubble ${isMe ? 'msg-out' : 'msg-in'} ${isInternal ? 'msg-internal' : ''}">
-                ${!isMe ? `<div class="text-[10px] font-bold text-orange-600 mb-1">לקוח</div>` : `<div class="text-[10px] font-bold text-green-700 mb-1">${m.sender}</div>`}
-                ${content}
-                <div class="text-[10px] text-gray-400 text-left mt-1">
-                    ${new Date(m.createdAt?.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
-                </div>
-            </div>`;
-        }
 
         window.toggleGhostMode = () => {
             isGhostMode = !isGhostMode;
@@ -233,10 +193,56 @@
             reader.readAsDataURL(file);
         };
 
-        window.toggleMute = () => {
-            isMuted = !isMuted;
-            document.getElementById('muteBtn').innerHTML = isMuted ? '<i class="fas fa-volume-mute text-red-500"></i>' : '<i class="fas fa-volume-up"></i>';
-        };
+        // --- Load List ---
+        onSnapshot(query(collection(db, "orders"), orderBy("createdAt", "desc")), (snap) => {
+            const list = document.getElementById('chat-list');
+            list.innerHTML = '';
+            snap.forEach(d => {
+                const o = d.data();
+                
+                // Avatar Logic (Custom or Default)
+                const av = o.clientAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(o.clientName)}&background=random`;
+                
+                list.innerHTML += `
+                <div class="chat-item" onclick="loadChat('${d.id}', '${o.clientName}', '${av}')">
+                    <img src="${av}" class="w-12 h-12 rounded-full ml-3 border border-gray-200 object-cover">
+                    <div class="flex-1">
+                        <div class="font-bold text-sm text-gray-800">${o.clientName}</div>
+                        <div class="text-xs text-gray-500">${o.status === 'new' ? '🔔 הודעה חדשה' : 'בטיפול'}</div>
+                    </div>
+                </div>`;
+            });
+        });
+
+        function renderMsg(m, container) {
+            const isMe = m.sender !== 'client';
+            const isInternal = m.isVisibleToClient === false;
+            let content = `<span>${m.text}</span>`;
+            
+            if(m.type === 'image') {
+                content = `
+                <img src="${m.url}" class="max-w-[200px] rounded border cursor-pointer" onclick="window.open('${m.url}')">
+                <a href="${m.url}" target="_blank" class="link-text">🖼️ פתח תמונה מקורית</a>`;
+            } else if(m.type === 'pdf') {
+                content = `
+                <a href="${m.url}" target="_blank" class="pdf-card">
+                    <i class="fas fa-file-pdf text-red-600 text-xl"></i>
+                    <div>
+                        <div class="font-bold">קובץ PDF</div>
+                        <div class="text-[10px] opacity-70">לחץ להורדה</div>
+                    </div>
+                </a>`;
+            }
+
+            container.innerHTML += `
+            <div class="msg-bubble ${isMe ? 'msg-out' : 'msg-in'} ${isInternal ? 'msg-internal' : ''}">
+                ${!isMe ? `<div class="text-[10px] font-bold text-orange-600 mb-1">לקוח</div>` : `<div class="text-[10px] font-bold text-green-700 mb-1">${m.sender}</div>`}
+                ${content}
+                <div class="text-[10px] text-gray-400 text-left mt-1">
+                    ${new Date(m.createdAt?.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
+                </div>
+            </div>`;
+        }
     </script>
 </body>
 </html>
