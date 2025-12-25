@@ -3,53 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Saban Connect | מחלקת הזמנות</title>
+    <title>מחלקת הזמנות | Saban Connect</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     
     <style>
-        body { background-color: #efeae2; font-family: -apple-system, sans-serif; height: 100dvh; display: flex; flex-direction: column; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); }
+        /* --- WhatsApp Theme --- */
+        body { background-color: #efeae2; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; height: 100dvh; display: flex; flex-direction: column; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); }
+        
+        /* Messages */
         .msg { max-width: 85%; padding: 8px 12px; border-radius: 8px; font-size: 14px; position: relative; margin-bottom: 8px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
         .msg.out { align-self: flex-start; background: #d9fdd3; border-top-right-radius: 0; }
         .msg.in { align-self: flex-end; background: white; border-top-left-radius: 0; }
-        .msg-time { font-size: 10px; color: #999; text-align: left; margin-top: 4px; align-self: flex-end; display: flex; align-items: center; gap: 4px; }
-        .media-preview { border-radius: 6px; margin-bottom: 5px; max-width: 100%; display: block; border: 1px solid rgba(0,0,0,0.1); }
-        .pdf-card { background: #fdf2f2; border: 1px solid #fecaca; padding: 10px; border-radius: 6px; display: flex; items-center; gap: 10px; text-decoration: none; color: #991b1b; }
-        .link-preview { font-size: 12px; color: #0284c7; text-decoration: underline; margin-top: 5px; display: block; }
         
-        /* Modal & Avatar */
+        .msg-time { font-size: 10px; color: #999; text-align: left; margin-top: 4px; align-self: flex-end; display: flex; align-items: center; gap: 4px; }
+        
+        /* Media & PDF */
+        .media-preview { border-radius: 6px; margin-bottom: 5px; max-width: 100%; display: block; border: 1px solid rgba(0,0,0,0.1); cursor: pointer; }
+        .pdf-card { background: #fdf2f2; border: 1px solid #fecaca; padding: 10px; border-radius: 6px; display: flex; items-center; gap: 10px; text-decoration: none; color: #991b1b; transition: 0.2s; }
+        .pdf-card:hover { background: #fee2e2; }
+        .link-preview { font-size: 12px; color: #0284c7; text-decoration: underline; margin-top: 5px; display: block; }
+
+        /* Modal Styles */
         #startupModal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-        .modal-box { background: white; width: 90%; max-width: 320px; border-radius: 20px; padding: 25px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .modal-box { background: white; width: 90%; max-width: 340px; border-radius: 20px; padding: 25px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes popUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .avatar-img { width: 30px; height: 30px; border-radius: 50%; margin-left: 8px; object-fit: cover; }
+
+        /* Project Select */
+        .project-select { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 12px; margin-bottom: 15px; background: #f8fafc; font-weight: bold; color: #334155; outline: none; text-align: center; appearance: none; background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007CB2%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat; background-position: right 12px top 50%; background-size: 12px auto; }
+        
+        .avatar-img { width: 32px; height: 32px; border-radius: 50%; margin-left: 8px; object-fit: cover; border: 1px solid rgba(0,0,0,0.1); }
+        .system-msg { background: #e1f5fe; border: 1px dashed #0288d1; color: #01579b; align-self: center; width: auto; max-width: 90%; text-align: center; }
     </style>
 </head>
 <body>
 
     <div id="startupModal">
         <div class="modal-box">
-            <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+            <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-inner">
                 <i class="fas fa-hard-hat"></i>
             </div>
-            <h2 class="text-xl font-bold text-gray-800 mb-2">ברוכים הבאים!</h2>
-            <p class="text-gray-500 text-sm mb-6">איך נוכל לעזור היום?</p>
-            <div class="grid gap-3">
-                <button onclick="window.startSession('הזמנה חדשה')" class="bg-[#008069] text-white py-3 rounded-xl font-bold shadow hover:bg-[#006d59] transition flex items-center justify-center gap-2">
-                    <i class="fas fa-clipboard-list"></i> אני רוצה להזמין
-                </button>
-                <button onclick="window.startSession('פניה כללית')" class="bg-white text-gray-700 border border-gray-300 py-3 rounded-xl font-bold hover:bg-gray-50 transition flex items-center justify-center gap-2">
-                    <i class="fas fa-question-circle"></i> שאלה / בירור
-                </button>
+            <h2 class="text-xl font-bold text-gray-800 mb-1" id="welcomeTitle">ברוכים הבאים</h2>
+            <p class="text-gray-500 text-sm mb-5">לאיזה פרויקט נרשום את ההזמנה?</p>
+            
+            <div class="relative">
+                <select id="projectSelect" class="project-select">
+                    <option value="כללי">טוען נתונים...</option>
+                </select>
             </div>
+
+            <button onclick="window.startSession()" class="w-full bg-[#008069] text-white py-3.5 rounded-xl font-bold shadow-lg hover:bg-[#006d59] transition flex items-center justify-center gap-2 transform active:scale-95">
+                <i class="fas fa-check"></i> התחל עבודה
+            </button>
         </div>
     </div>
 
-    <div class="bg-[#008069] p-3 flex items-center gap-2 text-white shadow-md z-10 sticky top-0">
-        <img src="https://ui-avatars.com/api/?name=%D7%9E%D7%97%D7%9C%D7%A7%D7%AA+%D7%94%D7%96%D7%9E%D7%A0%D7%95%D7%AA&background=25D366&color=fff" class="w-10 h-10 rounded-full border border-white/20">
+    <div class="bg-[#008069] p-3 flex items-center gap-3 text-white shadow-md z-10 sticky top-0">
+        <img src="https://ui-avatars.com/api/?name=%D7%9E%D7%97%D7%9C%D7%A7%D7%AA+%D7%94%D7%96%D7%9E%D7%A0%D7%95%D7%AA&background=25D366&color=fff" class="w-10 h-10 rounded-full border-2 border-white/20">
         <div class="flex flex-col flex-1">
-            <span class="font-bold text-base">מחלקת הזמנות</span>
-            <span class="text-[11px] text-green-100">מחובר עכשיו</span>
+            <span class="font-bold text-base leading-tight">מחלקת הזמנות</span>
+            <span class="text-[11px] text-green-100 flex items-center gap-1">
+                <span class="w-2 h-2 bg-green-300 rounded-full animate-pulse"></span> מחובר עכשיו
+            </span>
         </div>
         <button onclick="window.toggleMute()" id="muteBtn" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 transition">
             <i class="fas fa-volume-up"></i>
@@ -57,55 +73,107 @@
     </div>
 
     <div id="chat-box" class="flex-1 overflow-y-auto p-4 flex flex-col scroll-smooth">
-        <div class="bg-[#ffeba7] text-[10px] text-center p-2 rounded-lg text-amber-900 shadow-sm mx-auto mb-4 border border-amber-200 w-fit">
-            🔒 השיחה מאובטחת. כל ההודעות נשמרות במערכת.
+        <div class="bg-[#ffeba7] text-[10px] text-center p-2 rounded-lg text-amber-900 shadow-sm mx-auto mb-4 border border-amber-200 w-fit select-none">
+            🔒 השיחה מאובטחת ומנוטרת ע"י מערכת SabanOS.
         </div>
     </div>
 
-    <div class="p-2 bg-[#f0f2f5] flex items-center gap-2 pb-safe">
+    <div class="p-2 bg-[#f0f2f5] flex items-center gap-2 pb-safe border-t border-gray-200">
         <input type="file" id="fileInput" hidden accept="image/*,application/pdf" onchange="window.handleFileUpload(this)">
-        <button onclick="document.getElementById('fileInput').click()" class="w-10 h-10 rounded-full text-gray-500 hover:bg-gray-200 transition rotate-45">
+        
+        <button onclick="document.getElementById('fileInput').click()" class="w-10 h-10 rounded-full text-gray-500 hover:bg-gray-200 transition rotate-45 flex-shrink-0">
             <i class="fas fa-paperclip text-xl"></i>
         </button>
+        
         <input id="msg-input" type="text" class="flex-1 bg-white rounded-2xl py-3 px-4 text-sm outline-none border-none shadow-sm" placeholder="הקלד הודעה..." onkeydown="if(event.key==='Enter') window.sendMsg()">
-        <button onclick="window.sendMsg()" class="w-11 h-11 bg-[#008069] rounded-full text-white shadow-sm flex items-center justify-center hover:scale-105 transition">
+        
+        <button onclick="window.sendMsg()" class="w-11 h-11 bg-[#008069] rounded-full text-white shadow-sm flex items-center justify-center hover:scale-105 transition flex-shrink-0">
             <i class="fas fa-paper-plane"></i>
         </button>
     </div>
 
     <script type="module">
-        // Import Modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { SabanSounds } from './js/sounds.js';          // <--- חיבור הסאונד
-        import { SabanPush } from './js/notifications.js';    // <--- חיבור ההתראות
+        import { SabanSounds } from './js/sounds.js';
+        import { SabanPush } from './js/notifications.js';
 
+        // Firebase Config
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
-        // User Data
+        // State & Params
         const params = new URLSearchParams(window.location.search);
-        const clientName = params.get('name') || 'אורח';
-        const clientId = params.get('uid') || 'guest_' + Date.now();
-        const clientAvatarUrl = params.get('img') || '';
+        const clientId = params.get('uid'); 
+        
+        // נתונים התחלתיים (אם אין UID, זה אורח)
+        let clientData = { 
+            name: params.get('name') || 'אורח', 
+            clientNum: '---', 
+            projects: ['כללי'],
+            avatar: null
+        };
         let isMuted = false;
 
-        // Init Push
-        SabanPush.init('client', clientId);
+        // 1. אתחול מהיר: בדיקה אם המשתמש קיים במערכת (Admin Users)
+        if(clientId) {
+            getDoc(doc(db, "users", clientId)).then(snap => {
+                if(snap.exists()) {
+                    const data = snap.data();
+                    // מיזוג נתונים
+                    clientData = { ...clientData, ...data };
+                    // אם למשתמש אין פרויקטים מוגדרים, ניתן לו ברירת מחדל
+                    if(!clientData.projects || clientData.projects.length === 0) clientData.projects = ['כללי'];
+                }
+                updateStartupModal();
+            });
+        } else {
+            // אם אין UID בלינק, נייצר אחד זמני
+            // (בפרודקשן עדיף לחייב כניסה דרך login-gateway)
+            console.warn("No UID provided, using guest mode");
+            updateStartupModal();
+        }
 
-        // --- Window functions (Expose to HTML) ---
+        function updateStartupModal() {
+            document.getElementById('welcomeTitle').innerText = `היי, ${clientData.name}`;
+            const select = document.getElementById('projectSelect');
+            select.innerHTML = '';
+            
+            clientData.projects.forEach(p => {
+                select.innerHTML += `<option value="${p}">${p}</option>`;
+            });
+        }
 
-        window.startSession = async (type) => {
-            // ניסיון ראשוני לניגון שקט כדי לשחרר חסימת דפדפן (שימוש בפונקציה מהמודול)
-            // הערה: sounds.js יוצר Audio חדש, אז זה פחות קריטי כאן, אבל עצם האינטראקציה חשובה
-            try { SabanSounds.playMessage(); } catch(e){} 
+        // --- Window Functions ---
 
+        window.startSession = async () => {
+            // 1. שחרור חסימת אודיו (Unlock)
+            try { SabanSounds.playMessage(); } catch(e){}
+
+            // 2. סגירת מודל
             document.getElementById('startupModal').style.display = 'none';
             
+            // 3. שמירת הפרויקט שנבחר
+            const selectedProject = document.getElementById('projectSelect').value;
+            
+            // 4. שליחת הודעת מערכת לחמ"ל ("נוצרה הזמנה")
             await sendMessage({ 
-                text: `🏁 *התחלת שיחה:* הלקוח בחר בנושא "${type}"`, 
+                text: `🔔 *הזמנה חדשה נפתחה*\n👤 לקוח: ${clientData.name}\n🔢 מס' לקוח: ${clientData.clientNum}\n🏗️ פרויקט: ${selectedProject}`, 
                 type: 'system',
-                isVisibleToClient: false 
+                isVisibleToClient: true, // שהלקוח יראה שזה נקלט
+                isSystem: true
             });
+
+            // 5. עדכון מסמך ההזמנה הראשי עם הפרטים העדכניים
+            // זה קריטי כדי שהחמ"ל יראה את הפרויקט מיד ברשימה
+            const orderId = clientId || 'guest_' + Date.now();
+            await setDoc(doc(db, "orders", orderId), { 
+                clientName: clientData.name,
+                clientNum: clientData.clientNum,
+                currentProject: selectedProject,
+                clientAvatar: clientData.avatar || null,
+                status: 'new',
+                lastActive: serverTimestamp()
+            }, { merge: true });
         };
 
         window.toggleMute = () => {
@@ -127,6 +195,8 @@
         window.handleFileUpload = (input) => {
             const file = input.files[0];
             if(!file) return;
+            
+            // המרה ל-Base64 (לצורך דמו, בפרודקשן עדיף Storage)
             const reader = new FileReader();
             reader.onload = async (e) => {
                 const type = file.type.includes('pdf') ? 'pdf' : 'image';
@@ -139,37 +209,41 @@
             reader.readAsDataURL(file);
         };
 
+        // Internal Helpers
         async function sendMessage(payload) {
-            const orderRef = doc(db, "orders", clientId);
-            const s = await getDoc(orderRef);
+            const orderId = clientId || 'guest_temp';
             
-            const orderData = { 
-                clientName, status: 'new', createdAt: serverTimestamp(), clientAvatar: clientAvatarUrl 
-            };
+            // וידוא שהמסמך אב קיים (למקרה של התאוששות משגיאה)
+            const orderRef = doc(db, "orders", orderId);
+            // אנחנו מעדכנים את ה-TimeStamp כדי שהשיחה תקפוץ למעלה בחמ"ל
+            await setDoc(orderRef, { lastActive: serverTimestamp() }, { merge: true });
 
-            if(!s.exists()) await setDoc(orderRef, orderData);
-            else if(clientAvatarUrl) await setDoc(orderRef, { clientAvatar: clientAvatarUrl }, { merge: true });
-
-            await addDoc(collection(db, `orders/${clientId}/internal_chat`), {
+            await addDoc(collection(db, `orders/${orderId}/internal_chat`), {
                 ...payload,
                 sender: 'client',
+                clientName: clientData.name, // ליתר ביטחון
+                clientNum: clientData.clientNum,
                 createdAt: serverTimestamp()
             });
         }
 
         // --- Chat Listener ---
-        const chatRef = collection(db, `orders/${clientId}/internal_chat`);
-        onSnapshot(query(chatRef, orderBy("createdAt", "asc")), (snap) => {
+        const orderId = clientId || 'guest_temp';
+        const chatQuery = query(collection(db, `orders/${orderId}/internal_chat`), orderBy("createdAt", "asc"));
+        
+        onSnapshot(chatQuery, (snap) => {
             const box = document.getElementById('chat-box');
-            box.innerHTML = ''; 
+            // שומרים על ההודעה העליונה של "שיחה מאובטחת"
+            // אז ננקה הכל ונבנה מחדש, או רק נוסיף חדשים. לביצועים טובים ולמניעת כפילויות פשוט נרנדר הכל מחדש כרגע (בצ'אטים קצרים זה בסדר)
+            box.innerHTML = '<div class="bg-[#ffeba7] text-[10px] text-center p-2 rounded-lg text-amber-900 shadow-sm mx-auto mb-4 border border-amber-200 w-fit select-none">🔒 השיחה מאובטחת.</div>';
             
             snap.docs.forEach(d => {
                 const m = d.data();
-                if(m.isVisibleToClient === false) return; 
+                if(m.isVisibleToClient === false) return; // הסתרת הודעות "עין" של הצוות
                 
-                // Sound Logic via Module
+                // Sound logic (רק אם ההודעה לא ממני והיא חדשה)
                 if(!isMuted && m.sender !== 'client' && !snap.metadata.hasPendingWrites) {
-                    SabanSounds.playMessage(); // <--- שימוש ב-Module
+                    SabanSounds.playMessage();
                 }
                 
                 renderMessage(m, box);
@@ -179,27 +253,43 @@
 
         function renderMessage(m, container) {
             const isMe = m.sender === 'client';
-            let content = `<div class="text-[15px] whitespace-pre-wrap">${m.text}</div>`;
+            const isSystem = m.type === 'system';
             
-            let avatarUrl = '';
-            if (!isMe) {
-                 avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(m.sender)}&background=fff&color=000`;
-            } else {
-                 avatarUrl = clientAvatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(clientName)}&background=d9fdd3`;
+            // תצוגת הודעת מערכת (מרכזית)
+            if (isSystem) {
+                container.innerHTML += `
+                <div class="msg system-msg">
+                    <div class="text-[11px] font-bold">${m.text.replace(/\n/g, '<br>')}</div>
+                    <div class="text-[9px] opacity-60 mt-1">${new Date(m.createdAt?.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
+                </div>`;
+                return;
             }
 
+            let content = `<div class="text-[15px] whitespace-pre-wrap leading-relaxed">${m.text}</div>`;
+            
+            // Avatar Logic
+            let avatarUrl = '';
+            if (isMe) {
+                 avatarUrl = clientData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(clientData.name)}&background=d9fdd3`;
+            } else {
+                 // תמונת נציג הזמנות
+                 avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(m.sender)}&background=fff&color=000&bold=true`;
+            }
+
+            // Media Rendering
             if(m.type === 'image') {
                 content = `
-                <img src="${m.url}" class="media-preview cursor-pointer" onclick="window.open('${m.url}')">
-                <a href="${m.url}" target="_blank" class="link-preview"><i class="fas fa-external-link-alt"></i> פתח תמונה בגודל מלא</a>`;
+                <img src="${m.url}" class="media-preview" onclick="window.open('${m.url}')">
+                <a href="${m.url}" target="_blank" class="link-preview"><i class="fas fa-expand"></i> הצג בגודל מלא</a>`;
             } else if(m.type === 'pdf') {
                 content = `
                 <a href="${m.url}" target="_blank" class="pdf-card">
                     <i class="fas fa-file-pdf text-2xl text-red-600"></i>
-                    <div class="text-left">
-                        <div class="font-bold text-sm">מסמך PDF</div>
-                        <div class="text-xs opacity-70">לחץ להורדה</div>
+                    <div class="text-left flex-1">
+                        <div class="font-bold text-sm text-gray-800">קובץ PDF</div>
+                        <div class="text-xs text-red-500">לחץ לצפייה</div>
                     </div>
+                    <i class="fas fa-chevron-left text-gray-300 text-xs"></i>
                 </a>`;
             }
 
