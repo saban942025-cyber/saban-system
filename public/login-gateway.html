@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saban Secure Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-900 h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl text-center relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-green-500"></div>
+        
+        <div class="w-24 h-24 bg-gray-100 rounded-full mx-auto mb-6 flex items-center justify-center text-4xl shadow-inner">
+            🔐
+        </div>
+        
+        <h1 class="text-2xl font-black text-gray-800 mb-2">הזדהות</h1>
+        <p class="text-gray-500 text-sm mb-8">הכנס מספר טלפון לכניסה למערכת</p>
+
+        <div class="relative mb-6">
+            <i class="fas fa-phone absolute top-4 right-4 text-gray-400"></i>
+            <input id="phoneInput" type="tel" class="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 pr-10 pl-4 outline-none focus:border-blue-500 focus:bg-white transition text-lg font-bold tracking-widest" placeholder="050..." dir="ltr">
+        </div>
+
+        <button onclick="handleLogin()" id="loginBtn" class="w-full bg-gray-900 text-white font-bold py-4 rounded-xl hover:bg-black transition flex items-center justify-center gap-2">
+            כניסה למערכת <i class="fas fa-arrow-left"></i>
+        </button>
+
+        <div id="loader" class="hidden mt-4 text-sm text-gray-400 font-bold animate-pulse">בודק הרשאות...</div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
+
+        window.handleLogin = async () => {
+            const phone = document.getElementById('phoneInput').value;
+            const btn = document.getElementById('loginBtn');
+            const loader = document.getElementById('loader');
+
+            if(!phone) return alert("נא להזין מספר");
+
+            btn.disabled = true;
+            btn.classList.add('opacity-50');
+            loader.classList.remove('hidden');
+
+            try {
+                // 1. חיפוש המשתמש בבסיס הנתונים
+                const userDoc = await getDoc(doc(db, "users", phone));
+                
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    
+                    // שמירת סשן
+                    localStorage.setItem('saban_user', JSON.stringify(userData));
+
+                    // 2. ניתוב חכם (Smart Routing)
+                    setTimeout(() => {
+                        if (userData.role === 'client') {
+                            // הפניית לקוח לאזור האישי
+                            window.location.href = `client-whatsapp.html?uid=${userData.phone}&name=${encodeURIComponent(userData.name)}`;
+                        } else {
+                            // הפניית צוות לחמ"ל
+                            window.location.href = `whatsapp-center.html`; // וודא שהקובץ הזה קורא מ-localStorage
+                        }
+                    }, 1000);
+
+                } else {
+                    alert("מספר לא מזוהה במערכת. פנה למנהל.");
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50');
+                    loader.classList.add('hidden');
+                }
+            } catch (error) {
+                console.error(error);
+                alert("שגיאת התחברות");
+            }
+        };
+    </script>
+</body>
+</html>
