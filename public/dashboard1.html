@@ -3,209 +3,264 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saban | לוח תכנון</title>
+    <title>Saban | סידור עבודה</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
     <style>
-        body { background: #f1f5f9; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background: #f8fafc; font-family: 'Segoe UI', sans-serif; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
         
-        /* Stats Cards */
-        .stat-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between; border-bottom: 4px solid transparent; }
-        .stat-card.red { border-color: #ef4444; }
-        .stat-card.blue { border-color: #3b82f6; }
-        .stat-card.green { border-color: #10b981; }
+        /* Header */
+        nav { background: white; border-bottom: 1px solid #e2e8f0; height: 60px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; px: 20px; }
         
-        /* Date Group Header */
-        .date-header { display: flex; align-items: center; gap: 10px; margin: 25px 0 15px; padding-bottom: 10px; border-bottom: 2px solid #e2e8f0; }
-        .date-badge { background: #1e293b; color: white; padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; }
-        .day-name { font-size: 18px; font-weight: 700; color: #334155; }
+        /* Layout */
+        .board-container { flex: 1; display: flex; overflow-x: auto; padding: 20px; gap: 20px; align-items: flex-start; }
+        
+        /* Columns */
+        .col-bank { width: 350px; flex-shrink: 0; display: flex; flex-direction: column; max-height: 100%; }
+        .col-driver { width: 320px; flex-shrink: 0; background: white; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; max-height: 100%; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        
+        .col-header { padding: 15px; border-bottom: 1px solid #f1f5f9; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+        .driver-name { font-size: 18px; color: #1e293b; }
+        .bank-title { font-size: 18px; color: #64748b; font-weight: 800; }
 
-        /* Order Row */
-        .plan-row { background: white; margin-bottom: 10px; border-radius: 10px; padding: 15px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: 0.2s; border-right: 5px solid transparent; }
-        .plan-row:hover { transform: translateX(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        /* Items Container */
+        .items-list { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 10px; min-height: 200px; background: #f8fafc; }
         
-        .plan-row.status-new { border-right-color: #22c55e; } /* ירוק - חדש */
-        .plan-row.status-work { border-right-color: #3b82f6; } /* כחול - בעבודה */
-        .plan-row.is-task { border-right-color: #0ea5e9; background: #f0f9ff; } /* תכלת - העברה */
+        /* Card Style */
+        .task-card { background: white; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); position: relative; transition: 0.2s; border-right: 4px solid transparent; }
+        .task-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        
+        .card-new { border-right-color: #22c55e; } /* ירוק - הזמנה */
+        .card-task { border-right-color: #3b82f6; background: #f0f9ff; } /* כחול - העברה */
+        .card-manual { border-right-color: #f59e0b; background: #fffbeb; } /* כתום - ידני */
 
-        .avatar { width: 40px; height: 40px; rounded: 50%; object-fit: cover; border: 1px solid #cbd5e1; }
+        .card-title { font-weight: bold; font-size: 14px; color: #334155; margin-bottom: 4px; display: flex; justify-content: space-between; }
+        .card-detail { font-size: 12px; color: #64748b; display: flex; items-center; gap: 5px; }
         
-        /* Print Styles */
-        @media print {
-            .no-print { display: none !important; }
-            body { background: white; }
-            .plan-row { border: 1px solid #ccc; box-shadow: none; break-inside: avoid; }
-        }
+        /* Assign Buttons */
+        .assign-controls { margin-top: 10px; display: flex; gap: 5px; flex-wrap: wrap; border-top: 1px dashed #e2e8f0; pt: 5px; }
+        .assign-btn { font-size: 10px; padding: 4px 8px; background: #e2e8f0; border-radius: 4px; cursor: pointer; transition: 0.2s; }
+        .assign-btn:hover { background: #cbd5e1; }
+        .assign-btn.active { background: #3b82f6; color: white; }
+
+        /* WhatsApp Button */
+        .wa-btn { background: #25d366; color: white; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; display: flex; align-items: center; gap: 5px; cursor: pointer; transition: 0.2s; text-decoration: none; }
+        .wa-btn:hover { background: #16a34a; }
+
+        /* Manual Input */
+        .manual-box { background: white; padding: 15px; border-radius: 12px; border: 1px dashed #94a3b8; margin-bottom: 20px; }
+        .input-line { display: flex; gap: 5px; margin-bottom: 5px; }
+        .mini-input { flex: 1; border: 1px solid #e2e8f0; padding: 6px; border-radius: 4px; font-size: 13px; }
+        .add-btn { background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 13px; cursor: pointer; width: 100%; font-weight: bold; }
+        
+        /* Remove Button */
+        .remove-icon { position: absolute; top: 10px; left: 10px; color: #ef4444; cursor: pointer; display: none; }
+        .task-card:hover .remove-icon { display: block; }
     </style>
 </head>
 <body>
 
-    <nav class="bg-white border-b border-gray-200 h-[60px] flex items-center justify-between px-6 sticky top-0 z-50 no-print">
-        <div class="flex items-center gap-3">
-            <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white"><i class="fas fa-calendar-alt"></i></div>
-            <h1 class="font-bold text-lg text-slate-700">לוח תכנון מבצעי</h1>
+    <nav>
+        <div class="flex items-center gap-3 px-6">
+            <div class="w-8 h-8 bg-slate-800 rounded flex items-center justify-center text-white"><i class="fas fa-network-wired"></i></div>
+            <h1 class="font-bold text-xl text-slate-700">סידור עבודה - בוקר</h1>
         </div>
-        <div class="flex gap-3">
-            <button onclick="window.location.href='whatsapp-center.html'" class="text-gray-500 hover:text-blue-600 font-bold text-sm">חזרה לחמ"ל <i class="fas fa-arrow-left"></i></button>
+        <div class="px-6">
+            <button onclick="window.location.href='whatsapp-center.html'" class="text-gray-500 font-bold text-sm hover:text-blue-600">חזרה לחמ"ל <i class="fas fa-arrow-left"></i></button>
         </div>
     </nav>
 
-    <div class="max-w-6xl mx-auto p-6">
+    <div class="board-container">
         
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 no-print">
-            <div class="stat-card red">
-                <div>
-                    <div class="text-gray-500 text-xs font-bold uppercase">דחוף / ללא תאריך</div>
-                    <div class="text-3xl font-black text-slate-800" id="count-urgent">0</div>
+        <div class="col-bank">
+            <div class="manual-box">
+                <div class="text-xs font-bold text-gray-400 uppercase mb-2">➕ הוספה ידנית לסידור</div>
+                <div class="input-line">
+                    <input type="text" id="manClient" class="mini-input" placeholder="לקוח / משימה">
+                    <input type="text" id="manCity" class="mini-input" placeholder="עיר / יעד">
                 </div>
-                <div class="bg-red-50 p-3 rounded-full text-red-500"><i class="fas fa-exclamation-circle text-xl"></i></div>
+                <input type="text" id="manDetails" class="mini-input mb-2 w-full" placeholder="פרטים (מלט, ברזל...)">
+                <button onclick="addManualTask()" class="add-btn">צור כרטיס</button>
             </div>
-            <div class="stat-card blue">
-                <div>
-                    <div class="text-gray-500 text-xs font-bold uppercase">הזמנות למחר</div>
-                    <div class="text-3xl font-black text-slate-800" id="count-tomorrow">0</div>
-                </div>
-                <div class="bg-blue-50 p-3 rounded-full text-blue-500"><i class="fas fa-truck-moving text-xl"></i></div>
+
+            <div class="flex justify-between items-center mb-2 px-2">
+                <span class="bank-title">מאגר משימות</span>
+                <span class="bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-full font-bold" id="bank-count">0</span>
             </div>
-            <div class="stat-card green">
-                <div>
-                    <div class="text-gray-500 text-xs font-bold uppercase">סה"כ השבוע</div>
-                    <div class="text-3xl font-black text-slate-800" id="count-week">0</div>
-                </div>
-                <div class="bg-green-50 p-3 rounded-full text-green-500"><i class="fas fa-calendar-week text-xl"></i></div>
-            </div>
-            <div class="stat-card cursor-pointer hover:bg-gray-50" onclick="window.print()">
-                <div>
-                    <div class="text-gray-500 text-xs font-bold uppercase">דוח לנהגים</div>
-                    <div class="text-lg font-bold text-slate-800">הדפס סידור</div>
-                </div>
-                <div class="bg-gray-100 p-3 rounded-full text-gray-600"><i class="fas fa-print text-xl"></i></div>
+            
+            <div id="bank-list" class="items-list rounded-xl border border-gray-200 bg-white">
+                <div class="text-center text-gray-400 mt-10"><i class="fas fa-spinner fa-spin"></i> טוען...</div>
             </div>
         </div>
 
-        <div id="planning-board">
-            <div class="text-center text-gray-400 mt-10"><i class="fas fa-circle-notch fa-spin text-3xl"></i><br>טוען נתונים...</div>
-        </div>
+        <div id="drivers-container" class="flex gap-5 h-full"></div>
 
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, query, where, orderBy, onSnapshot, doc, updateDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
-        // Listener: Fetch ALL active orders
+        // 1. הגדרת נהגים - אפשר להוסיף/לשנות כאן
+        const DRIVERS = [
+            { id: 'ali', name: 'עלי', phone: '972500000000' }, // שים טלפון אמיתי
+            { id: 'hicmat', name: 'חכמת', phone: '972500000000' },
+            { id: 'truck3', name: 'משאית גדולה', phone: '' },
+            { id: 'truck4', name: 'טנדר שירות', phone: '' }
+        ];
+
+        // 2. Init Drivers Columns
+        const driversContainer = document.getElementById('drivers-container');
+        DRIVERS.forEach(d => {
+            driversContainer.innerHTML += `
+            <div class="col-driver">
+                <div class="col-header bg-gray-50">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">${d.name[0]}</div>
+                        <span class="driver-name">${d.name}</span>
+                    </div>
+                    <button onclick="sendWhatsapp('${d.id}', '${d.name}')" class="wa-btn">
+                        <i class="fab fa-whatsapp"></i> שלח סידור
+                    </button>
+                </div>
+                <div id="list-${d.id}" class="items-list"></div>
+            </div>`;
+        });
+
+        // 3. Listener: Load Tasks
         const q = query(collection(db, "orders"), where("status", "!=", "done"));
         
         onSnapshot(q, (snap) => {
-            const orders = [];
-            snap.forEach(d => orders.push({ id: d.id, ...d.data() }));
-            processOrders(orders);
+            const bankList = document.getElementById('bank-list');
+            
+            // Clear all lists
+            bankList.innerHTML = '';
+            DRIVERS.forEach(d => document.getElementById(`list-${d.id}`).innerHTML = '');
+            
+            let bankCount = 0;
+
+            snap.forEach(docSnap => {
+                const o = { id: docSnap.id, ...docSnap.data() };
+                const cardHtml = createCardHtml(o);
+
+                // מיון: אם יש נהג משויך -> לטור הנהג. אחרת -> לבנק.
+                if (o.driverId && document.getElementById(`list-${o.driverId}`)) {
+                    document.getElementById(`list-${o.driverId}`).innerHTML += cardHtml;
+                } else {
+                    bankList.innerHTML += cardHtml;
+                    bankCount++;
+                }
+            });
+            document.getElementById('bank-count').innerText = bankCount;
         });
 
-        function processOrders(orders) {
-            const board = document.getElementById('planning-board');
-            board.innerHTML = '';
-
-            // 1. הגדרת תאריכים
-            const today = new Date();
-            const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+        // 4. HTML Generator for Card
+        function createCardHtml(o) {
+            const isTask = o.isTask;
+            const isManual = o.isManual;
             
-            const strToday = today.toISOString().split('T')[0];
-            const strTomorrow = tomorrow.toISOString().split('T')[0];
+            let borderClass = 'card-new'; // ירוק
+            let icon = '<i class="fas fa-box text-green-600"></i>';
+            
+            if (isTask) { borderClass = 'card-task'; icon = '<i class="fas fa-truck-loading text-blue-600"></i>'; }
+            if (isManual) { borderClass = 'card-manual'; icon = '<i class="fas fa-keyboard text-orange-500"></i>'; }
 
-            // 2. מיון וקיבוץ (Buckets)
-            const buckets = {
-                urgent: [],   // ללא תאריך
-                today: [],    // היום (דחוף!)
-                tomorrow: [], // מחר (לתכנון)
-                future: []    // עתידי
-            };
-
-            orders.forEach(o => {
-                if (!o.supplyDate) { buckets.urgent.push(o); return; }
-                if (o.supplyDate === strToday) { buckets.today.push(o); return; }
-                if (o.supplyDate === strTomorrow) { buckets.tomorrow.push(o); return; }
-                buckets.future.push(o);
+            // כפתורי שיבוץ
+            let buttonsHtml = '';
+            DRIVERS.forEach(d => {
+                const isActive = o.driverId === d.id ? 'active' : '';
+                buttonsHtml += `<div class="assign-btn ${isActive}" onclick="window.assignDriver('${o.id}', '${d.id}')">${d.name}</div>`;
             });
-
-            // מיון עתידי לפי תאריך
-            buckets.future.sort((a, b) => new Date(a.supplyDate) - new Date(b.supplyDate));
-
-            // 3. עדכון מונים
-            document.getElementById('count-urgent').innerText = buckets.urgent.length;
-            document.getElementById('count-tomorrow').innerText = buckets.tomorrow.length;
-            document.getElementById('count-week').innerText = orders.length;
-
-            // 4. רינדור הקבוצות
-            if(buckets.urgent.length > 0) renderGroup('🚨 דחוף / ללא תאריך', buckets.urgent, board, 'text-red-600');
-            if(buckets.today.length > 0) renderGroup(`📅 היום (${formatDate(strToday)})`, buckets.today, board, 'text-orange-600');
-            if(buckets.tomorrow.length > 0) renderGroup(`🚚 מחר (${formatDate(strTomorrow)})`, buckets.tomorrow, board, 'text-blue-600');
-            
-            // עתידי - נקבץ לפי תאריכים
-            if(buckets.future.length > 0) {
-                // לוגיקה פשוטה: רשימה עתידית
-                renderGroup('🗓️ המשך השבוע / עתידי', buckets.future, board, 'text-gray-600');
+            // כפתור החזרה לבנק
+            if (o.driverId) {
+                buttonsHtml += `<div class="assign-btn text-red-500" onclick="window.assignDriver('${o.id}', null)"><i class="fas fa-times"></i> הסר</div>`;
             }
 
-            if(orders.length === 0) {
-                board.innerHTML = '<div class="text-center py-20 text-gray-400">אין הזמנות פתוחות 🎉<br>הכל סופק!</div>';
-            }
-        }
+            // תוכן מקוצר
+            const details = o.itemsText || o.text || 'ללא פירוט';
+            const shortDetails = details.length > 40 ? details.substring(0, 40) + '...' : details;
 
-        function renderGroup(title, list, container, colorClass) {
-            let html = `
-            <div class="date-header">
-                <span class="day-name ${colorClass}">${title}</span>
-                <span class="bg-gray-200 text-gray-600 px-2 rounded-full text-xs font-bold">${list.length}</span>
-            </div>
-            <div>`;
-
-            list.forEach(o => {
-                const isTask = o.isTask;
-                const statusClass = isTask ? 'is-task' : (o.status === 'work' ? 'status-work' : 'status-new');
-                const icon = isTask ? '<i class="fas fa-truck-loading text-blue-500"></i>' : '<i class="fas fa-user text-green-500"></i>';
+            return `
+            <div class="task-card ${borderClass}" id="card-${o.id}">
+                ${o.isManual ? `<i class="fas fa-trash remove-icon" onclick="window.deleteTask('${o.id}')" title="מחק"></i>` : ''}
+                <div class="card-title">
+                    <span>${icon} ${o.clientName}</span>
+                    <span class="text-xs bg-gray-100 px-1 rounded">${o.address || o.supplyTime || ''}</span>
+                </div>
+                <div class="card-detail mb-2"><i class="fas fa-align-left text-gray-400"></i> ${shortDetails}</div>
                 
-                // תצוגת פריטים מקוצרת
-                const itemsShort = o.itemsText ? o.itemsText.substring(0, 50) + (o.itemsText.length>50?'...':'') : 'ללא פירוט';
+                <div class="assign-controls">
+                    ${buttonsHtml}
+                </div>
+            </div>`;
+        }
 
-                html += `
-                <div class="plan-row ${statusClass}">
-                    <div class="flex items-center gap-4 flex-1">
-                        <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-xl shadow-sm border border-white">
-                            ${icon}
-                        </div>
-                        <div>
-                            <div class="font-bold text-slate-800 text-lg">${o.clientName}</div>
-                            <div class="text-sm text-gray-500 flex items-center gap-2">
-                                <i class="fas fa-map-marker-alt"></i> ${o.address || 'לא צוין'} 
-                                <span class="bg-gray-100 px-2 rounded text-xs font-bold">${o.supplyTime || 'מיידי'}</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="flex-1 px-4 text-sm text-gray-600 font-mono hidden md:block">
-                        ${itemsShort}
-                    </div>
+        // 5. Actions (Global Scope)
+        window.assignDriver = async (orderId, driverId) => {
+            // עדכון ה-DB מזיז את הכרטיס אוטומטית בזכות המאזין
+            await updateDoc(doc(db, "orders", orderId), { 
+                driverId: driverId,
+                lastActive: serverTimestamp()
+            });
+        };
 
-                    <div class="flex gap-2">
-                        ${o.status === 'new' ? '<span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded font-bold">חדש</span>' : ''}
-                        ${o.status === 'work' ? '<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded font-bold">בליקוט</span>' : ''}
-                        <button onclick="alert('פתיחת הזמנה ${o.orderNum}')" class="text-gray-400 hover:text-blue-600 no-print"><i class="fas fa-eye"></i></button>
-                    </div>
-                </div>`;
+        window.addManualTask = async () => {
+            const client = document.getElementById('manClient').value;
+            const city = document.getElementById('manCity').value;
+            const det = document.getElementById('manDetails').value;
+            
+            if(!client) return alert('חובה למלא שם לקוח/משימה');
+
+            await addDoc(collection(db, "orders"), {
+                clientName: client,
+                address: city,
+                itemsText: det,
+                status: 'new',
+                isManual: true, // דגל לזיהוי ידני
+                createdAt: serverTimestamp(),
+                lastActive: serverTimestamp()
             });
 
-            html += `</div>`;
-            container.innerHTML += html;
-        }
+            // ניקוי טופס
+            document.getElementById('manClient').value = '';
+            document.getElementById('manCity').value = '';
+            document.getElementById('manDetails').value = '';
+        };
 
-        function formatDate(dateString) {
-            const d = new Date(dateString);
-            return d.toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'numeric' });
-        }
+        window.deleteTask = async (id) => {
+            if(confirm('למחוק משימה ידנית זו?')) {
+                // במחיקה אמיתית משתמשים ב-deleteDoc
+                // כאן נסמן כ-done כדי להעלים מהלוח
+                await updateDoc(doc(db, "orders", id), { status: 'done' });
+            }
+        };
+
+        // 6. WhatsApp Generator
+        window.sendWhatsapp = (driverId, driverName) => {
+            const container = document.getElementById(`list-${driverId}`);
+            const cards = container.querySelectorAll('.task-card');
+            
+            if(cards.length === 0) return alert('אין משימות לנהג זה');
+
+            let msg = `*סידור עבודה למחר - ${driverName}* 🚚\nתאריך: ${new Date().toLocaleDateString()}\n------------------\n`;
+            
+            cards.forEach((card, i) => {
+                // שאיבת מידע מה-HTML (פשוט ויעיל)
+                const title = card.querySelector('.card-title span').innerText;
+                const addr = card.querySelector('.card-title .text-xs').innerText;
+                const body = card.querySelector('.card-detail').innerText;
+                
+                msg += `*${i+1}. ${title}*\n📍 ${addr}\n📝 ${body}\n\n`;
+            });
+
+            msg += `\nבהצלחה! סע בזהירות.`;
+            
+            // פתיחת ווצאף
+            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+        };
     </script>
 </body>
 </html>
