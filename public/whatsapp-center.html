@@ -3,684 +3,232 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Saban WhatsApp | חמ"ל</title>
+    <title>Saban Center | חמ"ל</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     
     <style>
-        /* --- WhatsApp Clone Theme --- */
-        :root {
-            --wa-green: #008069;
-            --wa-green-dark: #005c4b;
-            --wa-light: #f0f2f5;
-            --wa-chat-bg: #efeae2;
-            --wa-white: #ffffff;
-            --wa-border: #e9edef;
-        }
-
-        body { 
-            background-color: #d1d7db; 
-            font-family: 'Heebo', sans-serif; 
-            height: 100dvh; 
-            display: flex; 
-            overflow: hidden; 
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        /* --- LAYOUT SYSTEM --- */
-        .app-container {
-            display: flex; width: 100%; height: 100%; max-width: 1600px; margin: 0 auto;
-            background: var(--wa-white); box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        }
-
-        /* Sidebar (Right) */
-        .sidebar {
-            width: 400px; display: flex; flex-direction: column; 
-            border-left: 1px solid var(--wa-border); background: var(--wa-white);
-            transition: transform 0.3s ease; z-index: 20;
-        }
-
-        /* Main Chat (Left) */
-        .main-chat {
-            flex: 1; display: flex; flex-direction: column; 
-            background: var(--wa-chat-bg); position: relative;
-            background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png");
-            opacity: 0.6; /* Placeholder opacity until chat opens */
-            transition: all 0.3s ease;
-        }
-        .main-chat.active { opacity: 1; }
-
-        /* --- MOBILE RESPONSIVE --- */
-        @media (max-width: 768px) {
-            .sidebar { width: 100%; position: absolute; inset: 0; }
-            .main-chat { 
-                position: absolute; inset: 0; z-index: 30; 
-                transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            }
-            .main-chat.open { transform: translateX(0); }
-        }
-
-        /* --- COMPONENTS --- */
+        :root { --wa-green: #00a884; --wa-bg: #efeae2; --wa-header: #f0f2f5; }
+        body { background: #d1d7db; height: 100dvh; display: flex; overflow: hidden; font-family: -apple-system, sans-serif; }
+        .app-layout { display: flex; width: 100%; max-width: 1700px; margin: 0 auto; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         
-        /* Header */
-        .wa-header {
-            height: 60px; background: var(--wa-light); padding: 10px 16px;
-            display: flex; align-items: center; justify-content: space-between;
-            border-bottom: 1px solid var(--wa-border); flex-shrink: 0;
-        }
-        
-        /* Tabs */
-        .wa-tabs { display: flex; background: var(--wa-white); border-bottom: 1px solid var(--wa-border); }
-        .wa-tab { flex: 1; text-align: center; padding: 12px; cursor: pointer; color: #54656f; font-weight: 500; border-bottom: 3px solid transparent; transition: 0.2s; }
-        .wa-tab.active { color: var(--wa-green); border-bottom-color: var(--wa-green); }
-        .wa-tab:hover { background: #f5f6f6; }
-
-        /* Lists */
-        .chat-list { overflow-y: auto; flex: 1; }
-        .chat-item {
-            display: flex; align-items: center; padding: 12px 15px; cursor: pointer;
-            border-bottom: 1px solid #f5f6f6; transition: 0.1s; background: var(--wa-white);
-        }
+        /* Sidebar */
+        .sidebar { width: 380px; border-left: 1px solid #e9edef; display: flex; flex-direction: column; background: white; }
+        .chat-item { padding: 12px 15px; cursor: pointer; display: flex; align-items: center; border-bottom: 1px solid #f0f2f5; transition: 0.2s; }
         .chat-item:hover { background: #f5f6f6; }
-        .chat-item.active { background: #f0f2f5; }
+        .chat-item.active { background: #f0f2f5; border-right: 4px solid var(--wa-green); }
+
+        /* Main Chat */
+        .chat-area { flex: 1; display: flex; flex-direction: column; background: var(--wa-bg); position: relative; background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); }
         
-        .avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; flex-shrink: 0; margin-left: 15px; }
-        
-        /* Message Bubbles */
-        .msg-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-        .msg-bubble {
-            max-width: 75%; padding: 8px 12px; border-radius: 8px; font-size: 14px; line-height: 1.4;
-            position: relative; box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
-        }
-        .msg-in { align-self: flex-start; background: var(--wa-white); border-top-right-radius: 0; }
+        /* Messages */
+        .msg-bubble { max-width: 70%; padding: 6px 10px; border-radius: 8px; font-size: 14px; margin-bottom: 6px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+        .msg-in { align-self: flex-start; background: white; border-top-right-radius: 0; }
         .msg-out { align-self: flex-end; background: #d9fdd3; border-top-left-radius: 0; }
         
-        /* Floating Action Button (New Group) */
-        .fab {
-            position: absolute; bottom: 20px; left: 20px; 
-            width: 50px; height: 50px; background: var(--wa-green); color: white;
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer; transition: transform 0.2s; z-index: 25;
-        }
-        .fab:active { transform: scale(0.9); }
+        /* Ghost Mode Style */
+        .msg-internal { background: #f3e8ff !important; border: 1px dashed #d8b4fe; opacity: 0.9; }
+        .msg-internal::after { content: '👁️ נסתר'; display: block; font-size: 10px; color: #9333ea; margin-top: 4px; font-weight: bold; text-align: left; }
+        .ghost-active { color: #9333ea !important; animation: pulse 2s infinite; background: #f3e8ff; border-radius: 50%; }
 
-        /* Modal */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; display: none; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
-        .modal-box { background: white; width: 90%; max-width: 400px; border-radius: 12px; padding: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); animation: popIn 0.2s; }
-        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-
-        /* Transfer Card Style */
-        .transfer-card { border-right: 4px solid #f59e0b; background: #fffbeb; }
+        /* Image Preview in Canvas style */
+        .canvas-frame { border: 4px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-radius: 4px; overflow: hidden; background: #eee; }
+        .waze-btn { background: #3b82f6; color: white; padding: 5px 10px; border-radius: 20px; font-size: 12px; display: inline-flex; items-center; gap: 5px; text-decoration: none; margin-top: 5px; }
     </style>
 </head>
 <body>
-
-    <div class="app-container">
-        
-        <div class="sidebar" id="sidebar">
-            <div class="wa-header">
-                <div class="flex items-center gap-3">
-                    <img src="https://ui-avatars.com/api/?name=Rami+Saban&background=00a884&color=fff" class="w-10 h-10 rounded-full cursor-pointer">
-                    <span class="font-bold text-gray-700">חמ"ל סבן</span>
+    <div class="app-layout">
+        <div class="sidebar">
+            <div class="h-[60px] bg-[#f0f2f5] p-3 flex justify-between items-center border-b">
+                <div class="flex items-center gap-2">
+                    <img id="myAvatar" src="" class="w-9 h-9 rounded-full">
+                    <span id="myName" class="font-bold text-gray-700">טוען...</span>
                 </div>
-                <div class="flex gap-4 text-gray-500">
-                    <i class="fas fa-circle-notch cursor-pointer"></i>
-                    <i class="fas fa-comment-alt cursor-pointer"></i>
-                    <i class="fas fa-ellipsis-v cursor-pointer"></i>
-                </div>
-            </div>
-
-            <div class="p-2 bg-white border-b border-gray-100">
-                <div class="bg-[#f0f2f5] rounded-lg flex items-center px-3 py-1.5">
-                    <i class="fas fa-search text-gray-500 text-sm ml-3"></i>
-                    <input type="text" placeholder="חיפוש או התחלת שיחה חדשה" class="bg-transparent border-none outline-none text-sm w-full h-8" oninput="filterList(this.value)">
-                </div>
-            </div>
-
-            <div class="wa-tabs">
-                <div onclick="switchTab('orders')" class="wa-tab active" id="tab-orders">📦 הזמנות</div>
-                <div onclick="switchTab('transfers')" class="wa-tab" id="tab-transfers">🚚 העברות</div>
-            </div>
-
-            <div id="list-container" class="chat-list bg-white">
-                </div>
-
-            <div onclick="openModal()" class="fab">
-                <i class="fas fa-plus text-xl"></i>
-            </div>
-        </div>
-
-        <div class="main-chat" id="mainChat">
-            <div id="emptyState" class="flex flex-col items-center justify-center h-full text-center p-10">
-                <div class="w-64 h-64 bg-contain bg-no-repeat bg-center opacity-30 mb-4" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg');"></div>
-                <h2 class="text-3xl font-light text-gray-600 mb-2">Saban Web</h2>
-                <p class="text-sm text-gray-500">שלח וקבל הזמנות מבלי לחבר את הטלפון.<br>השתמש ב-Saban Web לעבודה מהירה וסנכרון מלא.</p>
-            </div>
-
-            <div id="activeChatContent" class="flex flex-col h-full hidden">
-                <div class="wa-header bg-[#f0f2f5]">
-                    <div class="flex items-center gap-3">
-                        <i onclick="closeMobileChat()" class="fas fa-arrow-right text-gray-500 text-xl md:hidden cursor-pointer mr-2"></i>
-                        <img id="chatAvatar" src="" class="w-10 h-10 rounded-full cursor-pointer">
-                        <div class="flex flex-col cursor-pointer">
-                            <span id="chatTitle" class="font-bold text-gray-800 text-sm"></span>
-                            <span id="chatSubtitle" class="text-xs text-gray-500">הקש לפרטי קבוצה</span>
-                        </div>
-                    </div>
-                    <div class="flex gap-5 text-gray-500">
-                        <i class="fas fa-search cursor-pointer"></i>
-                        <i class="fas fa-paperclip cursor-pointer"></i>
-                        <i class="fas fa-ellipsis-v cursor-pointer"></i>
-                    </div>
-                </div>
-
-                <div id="messagesArea" class="msg-container custom-scroll"></div>
-
-                <div class="h-16 bg-[#f0f2f5] px-4 py-2 flex items-center gap-3">
-                    <i class="far fa-smile text-2xl text-gray-500 cursor-pointer"></i>
-                    <i class="fas fa-plus text-2xl text-gray-500 cursor-pointer"></i>
-                    <input id="msgInput" type="text" class="flex-1 bg-white rounded-lg h-10 px-4 text-sm border-none outline-none" placeholder="הקלד הודעה" onkeydown="if(event.key==='Enter') sendMessage()">
-                    <i onclick="sendMessage()" class="fas fa-paper-plane text-2xl text-gray-500 cursor-pointer hover:text-[#008069]"></i>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <div id="createModal" class="modal-overlay" onclick="if(event.target===this) closeModal()">
-        <div class="modal-box">
-            <h3 class="font-bold text-lg mb-4 text-[#008069]">יצירת קבוצה חדשה</h3>
-            <div class="space-y-4">
-                <input id="newGroupName" class="w-full bg-gray-100 p-3 rounded-lg outline-none border focus:border-[#008069]" placeholder="שם הקבוצה (למשל: צוות צפון)">
-                
-                <div>
-                    <label class="text-xs font-bold text-gray-500 mb-1 block">הוסף משתמשים (סמן V)</label>
-                    <div class="h-32 overflow-y-auto border rounded p-2 bg-gray-50 space-y-2">
-                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="accent-[#008069]"> רמי (מנהל)</label>
-                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="accent-[#008069]"> אורן (מחסן)</label>
-                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="accent-[#008069]"> עלי (נהג)</label>
-                    </div>
-                </div>
-
                 <div class="flex gap-2">
-                    <button onclick="closeModal()" class="flex-1 py-2 text-gray-500 font-bold hover:bg-gray-100 rounded">ביטול</button>
-                    <button onclick="createGroup()" class="flex-1 py-2 bg-[#008069] text-white font-bold rounded shadow">צור קבוצה</button>
+                    <button onclick="toggleMute()" id="muteBtn" class="text-gray-500 hover:text-gray-700"><i class="fas fa-volume-up"></i></button>
+                    <i class="fas fa-ellipsis-v text-gray-500 px-2"></i>
+                </div>
+            </div>
+            <div id="chat-list" class="flex-1 overflow-y-auto"></div>
+        </div>
+
+        <div class="chat-area">
+            <div id="empty-state" class="flex flex-col items-center justify-center h-full text-gray-500">
+                <i class="fas fa-comments text-4xl mb-4 opacity-30"></i>
+                <p>בחר שיחה כדי להתחיל</p>
+            </div>
+
+            <div id="active-chat" class="hidden flex flex-col h-full">
+                <div class="h-[60px] bg-[#f0f2f5] p-3 flex items-center gap-3 border-b shadow-sm z-10">
+                    <img id="chatAvatar" src="" class="w-10 h-10 rounded-full">
+                    <span id="chatTitle" class="font-bold text-gray-800"></span>
+                </div>
+
+                <div id="messages-area" class="flex-1 overflow-y-auto p-4 flex flex-col gap-1 custom-scroll"></div>
+
+                <div class="bg-[#f0f2f5] p-2 flex items-center gap-2 border-t">
+                    <button id="ghostBtn" onclick="toggleGhostMode()" class="w-10 h-10 rounded-full text-gray-500 hover:bg-gray-200 transition" title="מצב נסתר (עין)">
+                        <i class="fas fa-eye-slash text-xl"></i>
+                    </button>
+                    
+                    <input id="msgInput" type="text" class="flex-1 bg-white rounded-lg h-10 px-4 text-sm border-none outline-none" placeholder="הקלד הודעה..." onkeydown="if(event.key==='Enter') sendMessage()">
+                    
+                    <button onclick="sendMessage()" class="p-2 text-[#00a884] hover:bg-gray-100 rounded-full">
+                        <i class="fas fa-paper-plane text-xl"></i>
+                    </button>
                 </div>
             </div>
         </div>
     </div>
+
+    <audio id="soundAlert" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.m4a"></audio>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // CONFIG
-        const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        // Init
+        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
+        
+        // User Logic
+        const currentUser = JSON.parse(localStorage.getItem('saban_user')) || { name: 'מנהל', role: 'admin' };
+        document.getElementById('myName').innerText = currentUser.name;
+        document.getElementById('myAvatar').src = `https://ui-avatars.com/api/?name=${currentUser.name}&background=00a884&color=fff`;
 
-        // STATE
-        let activeTab = 'orders';
         let currentChatId = null;
+        let isGhostMode = false;
+        let isMuted = localStorage.getItem('saban_center_mute') === 'true';
+        updateMuteUI();
 
-        // --- 1. TABS & LISTS ---
-        window.switchTab = (tab) => {
-            activeTab = tab;
-            document.querySelectorAll('.wa-tab').forEach(t => t.classList.remove('active'));
-            document.getElementById(`tab-${tab}`).classList.add('active');
-            
-            // טעינת הנתונים לפי הטאב
-            if(tab === 'orders') loadOrders();
-            else loadTransfers();
-        };
-
-        function loadOrders() {
-            const list = document.getElementById('list-container');
-            const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
-            
-            onSnapshot(q, (snap) => {
-                list.innerHTML = "";
-                snap.forEach(docSnap => {
-                    const o = docSnap.data();
-                    const time = o.createdAt ? new Date(o.createdAt.seconds*1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
-                    
-                    list.innerHTML += `
-                    <div class="chat-item" onclick="openChat('${docSnap.id}', '${o.clientName}', 'order')">
-                        <img src="https://ui-avatars.com/api/?name=${o.clientName}&background=random" class="avatar">
-                        <div class="flex-1 mr-3 border-b border-gray-100 pb-3 h-full">
-                            <div class="flex justify-between items-center mb-1">
-                                <span class="font-bold text-gray-800 text-sm">${o.clientName}</span>
-                                <span class="text-xs text-gray-400">${time}</span>
-                            </div>
-                            <div class="text-xs text-gray-500 truncate flex items-center gap-1">
-                                ${o.status === 'new' ? '<i class="fas fa-circle text-green-500 text-[8px]"></i>' : '<i class="fas fa-check-double text-blue-500"></i>'}
-                                הזמנה חדשה: ${o.items ? o.items.length : 0} פריטים
-                            </div>
-                        </div>
-                    </div>`;
-                });
+        // 1. Load Chat List (Orders)
+        onSnapshot(query(collection(db, "orders"), orderBy("createdAt", "desc")), (snap) => {
+            const list = document.getElementById('chat-list');
+            list.innerHTML = '';
+            snap.forEach(d => {
+                const o = d.data();
+                list.innerHTML += `
+                <div class="chat-item" onclick="loadChat('${d.id}', '${o.clientName}')">
+                    <img src="https://ui-avatars.com/api/?name=${o.clientName}&background=random" class="w-12 h-12 rounded-full ml-2">
+                    <div class="flex-1">
+                        <div class="font-bold text-sm">${o.clientName}</div>
+                        <div class="text-xs text-gray-500 truncate">${o.status === 'new' ? '🔔 הזמנה חדשה' : 'בטיפול'}</div>
+                    </div>
+                </div>`;
             });
-        }
+        });
 
-        function loadTransfers() {
-            const list = document.getElementById('list-container');
-            const q = query(collection(db, "transfers"), orderBy("createdAt", "desc"));
-            
-            onSnapshot(q, (snap) => {
-                list.innerHTML = "";
-                snap.forEach(docSnap => {
-                    const t = docSnap.data();
-                    const isHigh = t.priority === 'high';
-                    
-                    list.innerHTML += `
-                    <div class="chat-item ${isHigh ? 'transfer-card' : ''}" onclick="openChat('${docSnap.id}', 'העברה ${t.comaxNum}', 'transfer')">
-                        <div class="avatar bg-yellow-100 flex items-center justify-center text-yellow-600">
-                            <i class="fas fa-truck-loading"></i>
-                        </div>
-                        <div class="flex-1 mr-3">
-                            <div class="flex justify-between">
-                                <span class="font-bold text-gray-800 text-sm">העברה: ${t.comaxNum}</span>
-                                ${isHigh ? '<span class="text-xs text-red-500 font-bold">דחוף!</span>' : ''}
-                            </div>
-                            <div class="text-xs text-gray-500">
-                                ${t.direction === 'harash_to_talmid' ? 'החרש -> תלמיד' : 'תלמיד -> החרש'}
-                            </div>
-                        </div>
-                    </div>`;
-                });
-            });
-        }
-
-        // --- 2. CHAT AREA ---
-        window.openChat = (id, title, type) => {
+        // 2. Load Active Chat
+        window.loadChat = (id, title) => {
             currentChatId = id;
-            
-            // UI Switch
-            document.getElementById('emptyState').classList.add('hidden');
-            document.getElementById('activeChatContent').classList.remove('hidden');
-            document.getElementById('mainChat').classList.add('open'); // Mobile Slide
-            
-            // Header Info
+            document.getElementById('empty-state').classList.add('hidden');
+            document.getElementById('active-chat').classList.remove('hidden');
             document.getElementById('chatTitle').innerText = title;
-            document.getElementById('chatSubtitle').innerText = type === 'order' ? 'לחץ לצפייה בפרטי הזמנה' : 'דיון העברה פנימי';
             document.getElementById('chatAvatar').src = `https://ui-avatars.com/api/?name=${title}&background=random`;
 
-            // Load Messages
-            const messagesArea = document.getElementById('messagesArea');
-            messagesArea.innerHTML = '';
-            
-            const coll = type === 'order' ? `orders/${id}/internal_chat` : `transfers/${id}/chat`;
-            const q = query(collection(db, coll), orderBy("createdAt", "asc"));
-            
+            const q = query(collection(db, `orders/${id}/internal_chat`), orderBy("createdAt", "asc"));
             onSnapshot(q, (snap) => {
-                messagesArea.innerHTML = "";
-                snap.forEach(doc => {
-                    const m = doc.data();
-                    const isMe = m.sender === 'אני'; // לוגיקה פשוטה לדמו
-                    const div = document.createElement('div');
-                    div.className = `msg-bubble ${isMe ? 'msg-out' : 'msg-in'}`;
-                    div.innerHTML = `
-                        <div class="text-[10px] font-bold text-purple-600 mb-0.5">${m.sender}</div>
-                        ${m.text}
-                        <div class="text-[9px] text-gray-400 text-left mt-1">${new Date(m.createdAt?.seconds*1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
-                    `;
-                    messagesArea.appendChild(div);
+                const area = document.getElementById('messages-area');
+                area.innerHTML = '';
+                snap.docs.forEach(d => {
+                    const m = d.data();
+                    
+                    // Sound Alert
+                    if(!isMuted && m.sender === 'client' && !snap.metadata.hasPendingWrites) {
+                        document.getElementById('soundAlert').play().catch(()=>{});
+                    }
+
+                    renderMsg(m, area);
                 });
-                messagesArea.scrollTop = messagesArea.scrollHeight;
+                area.scrollTop = area.scrollHeight;
             });
         };
 
-        window.closeMobileChat = () => {
-            document.getElementById('mainChat').classList.remove('open');
+        function renderMsg(m, container) {
+            const isMe = m.sender !== 'client';
+            const isInternal = m.isVisibleToClient === false;
+            
+            let content = `<span>${m.text}</span>`;
+            
+            if(m.type === 'image') {
+                // שימוש ב-img רגיל אבל עם סטייל של "מסגרת"
+                content = `
+                <div class="canvas-frame">
+                    <img src="${m.url}" class="max-w-[200px] block cursor-pointer" onclick="window.open('${m.url}')">
+                </div>
+                <div class="text-[10px] mt-1 text-blue-600 font-bold"><i class="fas fa-cloud"></i> Google Drive Link</div>`;
+            } else if(m.type === 'location') {
+                content = `
+                <a href="${m.url}" target="_blank" class="waze-btn">
+                    <i class="fab fa-waze text-white"></i> נווט עם Waze
+                </a>`;
+            }
+
+            container.innerHTML += `
+            <div class="msg-bubble ${isMe ? 'msg-out' : 'msg-in'} ${isInternal ? 'msg-internal' : ''}">
+                ${!isMe ? `<div class="text-[10px] font-bold text-orange-600 mb-1">לקוח</div>` : `<div class="text-[10px] font-bold text-green-700 mb-1">${m.sender}</div>`}
+                ${content}
+                <div class="text-[10px] text-gray-400 text-left mt-1 flex justify-end gap-1">
+                    ${new Date(m.createdAt?.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
+                    ${isMe ? '<i class="fas fa-check-double text-blue-500"></i>' : ''}
+                </div>
+            </div>`;
+        }
+
+        // 3. Send Logic & Ghost Mode
+        window.toggleGhostMode = () => {
+            isGhostMode = !isGhostMode;
+            const btn = document.getElementById('ghostBtn');
+            const input = document.getElementById('msgInput');
+            
+            if(isGhostMode) {
+                btn.innerHTML = '<i class="fas fa-eye text-xl"></i>';
+                btn.classList.add('ghost-active');
+                input.placeholder = "הודעה פנימית לצוות (הלקוח לא יראה)...";
+                input.style.backgroundColor = "#f3e8ff";
+            } else {
+                btn.innerHTML = '<i class="fas fa-eye-slash text-xl"></i>';
+                btn.classList.remove('ghost-active');
+                input.placeholder = "הקלד הודעה...";
+                input.style.backgroundColor = "white";
+            }
+            input.focus();
         };
 
         window.sendMessage = async () => {
             const input = document.getElementById('msgInput');
-            const txt = input.value;
+            const txt = input.value.trim();
             if(!txt || !currentChatId) return;
-            
+
             input.value = '';
-            const coll = activeTab === 'orders' ? `orders/${currentChatId}/internal_chat` : `transfers/${currentChatId}/chat`;
-            
-            await addDoc(collection(db, coll), {
+            await addDoc(collection(db, `orders/${currentChatId}/internal_chat`), {
                 text: txt,
-                sender: "ראמי", // בדמו קבוע, בפועל מה-User
-                createdAt: serverTimestamp()
-            });
-        };
-
-        // --- 3. MODAL LOGIC ---
-        window.openModal = () => document.getElementById('createModal').style.display = 'flex';
-        window.closeModal = () => document.getElementById('createModal').style.display = 'none';
-        
-        window.createGroup = async () => {
-            const name = document.getElementById('newGroupName').value;
-            if(!name) return alert("חובה לתת שם");
-            
-            // יצירת קבוצה "פיקטיבית" כרגע כהעברה כללית
-            await addDoc(collection(db, "transfers"), {
-                comaxNum: name,
-                direction: "general",
-                priority: "low",
-                desc: "קבוצת עבודה חדשה",
-                createdAt: serverTimestamp()
-            });
-            
-            closeModal();
-            if(activeTab === 'transfers') loadTransfers(); // Refresh if needed
-            alert("קבוצה נוצרה!");
-        };
-
-        // Init
-        loadOrders();
-
-    </script>
-</body>
-</html>
-        .transfer-card { 
-            background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; 
-            border-right: 5px solid #cbd5e1; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative;
-            transition: transform 0.2s;
-        }
-        .transfer-card:hover { transform: translateX(-5px); }
-        .prio-high { border-right-color: #ef4444; background: #fef2f2; }
-        .prio-med { border-right-color: #f59e0b; background: #fffbeb; }
-        .prio-low { border-right-color: #10b981; background: #f0fdf4; }
-
-        /* Modal Wizard */
-        .wizard-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-        .wizard-box { background: white; width: 500px; border-radius: 20px; padding: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); position: relative; animation: slideUp 0.3s; }
-        
-        .wiz-step { display: none; }
-        .wiz-step.active { display: block; }
-        
-        .big-btn { 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            padding: 20px; border: 2px solid #e2e8f0; border-radius: 15px; cursor: pointer; 
-            transition: 0.2s; font-weight: bold; color: #475569; width: 100%;
-        }
-        .big-btn:hover { border-color: #3b82f6; background: #eff6ff; color: #3b82f6; }
-        .big-btn.selected { border-color: #2563eb; background: #dbeafe; color: #1e40af; }
-
-        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    </style>
-</head>
-<body>
-
-    <div class="sidebar">
-        <div class="story-bar" id="storyBar">
-            </div>
-
-        <div class="nav-tabs">
-            <div class="nav-item active" onclick="switchView('orders')">📦 הזמנות</div>
-            <div class="nav-item" onclick="promptPassword('transfers')">🚚 העברות</div>
-        </div>
-
-        <div id="list-orders" class="flex-1 overflow-y-auto p-2 bg-slate-50">
-            </div>
-        
-        <div id="list-transfers" class="flex-1 overflow-y-auto p-2 bg-slate-100 hidden">
-            <div class="p-4">
-                <button onclick="openWizard()" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-slate-700 flex items-center justify-center gap-2">
-                    <i class="fas fa-plus-square text-yellow-400"></i> פתח משימת העברה
-                </button>
-            </div>
-            <div id="transfersContainer"></div>
-        </div>
-    </div>
-
-    <div class="main-area" id="workspace">
-        <div class="flex flex-col items-center justify-center h-full text-slate-400">
-            <i class="fas fa-network-wired text-6xl mb-4"></i>
-            <h2 class="text-2xl font-bold">חמ"ל לוגיסטי סבן</h2>
-            <p>בחר לשונית להתחלת עבודה</p>
-        </div>
-    </div>
-
-    <div id="wizardModal" class="wizard-overlay">
-        <div class="wizard-box">
-            <button onclick="closeWizard()" class="absolute top-4 left-4 text-gray-400 hover:text-red-500"><i class="fas fa-times text-xl"></i></button>
-            
-            <div id="step1" class="wiz-step active">
-                <h2 class="text-xl font-bold mb-6 text-center">מה המשימה?</h2>
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="big-btn" onclick="setWizData('type', 'transfer'); nextStep(2)">
-                        <i class="fas fa-truck-loading text-3xl mb-2 text-blue-500"></i>
-                        העברה בין סניפים
-                    </div>
-                    <div class="big-btn" onclick="setWizData('type', 'order'); nextStep(2)">
-                        <i class="fas fa-file-invoice text-3xl mb-2 text-green-500"></i>
-                        הזמנת לקוח
-                    </div>
-                </div>
-            </div>
-
-            <div id="step2" class="wiz-step">
-                <h2 class="text-xl font-bold mb-4 text-center">האם הופקה תעודה בקומקס?</h2>
-                <div class="flex flex-col gap-4">
-                    <button onclick="setWizData('hasComax', true); document.getElementById('comaxInputDiv').classList.remove('hidden')" class="bg-blue-50 text-blue-700 py-3 rounded-lg font-bold border border-blue-200">
-                        ✅ כן, יש לי מספר
-                    </button>
-                    
-                    <div id="comaxInputDiv" class="hidden">
-                        <input id="wizComaxNum" type="number" class="w-full border-2 border-blue-500 rounded-lg p-3 text-center text-xl font-mono font-bold" placeholder="הקלד מספר תעודה (למשל 47128)">
-                        <button onclick="nextStep(3)" class="w-full mt-2 bg-blue-600 text-white py-2 rounded-lg font-bold">המשך</button>
-                    </div>
-
-                    <button onclick="setWizData('hasComax', false); nextStep(3)" class="bg-gray-100 text-gray-600 py-3 rounded-lg font-bold border border-gray-300">
-                        ❌ לא, פתח ללא מספר (טיוטה)
-                    </button>
-                </div>
-            </div>
-
-            <div id="step3" class="wiz-step">
-                <h2 class="text-xl font-bold mb-4 text-center">פרטי העברה</h2>
-                
-                <div class="grid grid-cols-2 gap-2 mb-4">
-                    <div class="big-btn p-2" id="btnHarashToTalmid" onclick="selectDirection('harash_to_talmid')">
-                        <span class="text-xs">החרש ➡ תלמיד</span>
-                    </div>
-                    <div class="big-btn p-2" id="btnTalmidToHarash" onclick="selectDirection('talmid_to_harash')">
-                        <span class="text-xs">תלמיד ➡ החרש</span>
-                    </div>
-                </div>
-
-                <textarea id="wizDesc" class="w-full border p-3 rounded-lg bg-slate-50 text-sm mb-3 h-20" placeholder="מה מעבירים? (למשל: משטח מלט לבן)"></textarea>
-                
-                <div class="flex gap-2 mb-4">
-                    <select id="wizAssignee" class="flex-1 border p-2 rounded text-sm">
-                        <option value="">בחר איש צוות (@)</option>
-                        <option value="ali">עלי (נהג)</option>
-                        <option value="oren">אורן (מחסן)</option>
-                        <option value="rami">רמי (מנהל)</option>
-                    </select>
-                    <select id="wizPrio" class="flex-1 border p-2 rounded text-sm">
-                        <option value="low">רגיל</option>
-                        <option value="high">🔥 דחוף אש</option>
-                    </select>
-                </div>
-
-                <button onclick="finishWizard()" class="w-full bg-slate-900 text-white py-3 rounded-xl font-bold shadow-lg">
-                    🚀 שגר משימה
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        const firebaseConfig = { apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0", storageBucket: "saban94-eb5f0.firebasestorage.app", messagingSenderId: "656829273946", appId: "1:656829273946:web:8ebcb440ed280aff014563" };
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
-        // State
-        let wizardData = {};
-        let activeView = 'orders';
-
-        // --- 1. Story Logic ---
-        function renderStories(transfers) {
-            const bar = document.getElementById('storyBar');
-            const urgentCount = transfers.filter(t => t.priority === 'high' && t.status !== 'done').length;
-            
-            let html = `
-            <div class="flex flex-col items-center gap-1" onclick="switchView('orders')">
-                <div class="story-circle ring-green border-green-500"><img src="https://ui-avatars.com/api/?name=Lobby&background=10b981&color=fff"></div>
-                <div class="story-label">לובי הזמנות</div>
-            </div>`;
-
-            // הסטורי המיוחד של ההעברות
-            const alertClass = urgentCount > 0 ? 'story-alert' : '';
-            html += `
-            <div class="flex flex-col items-center gap-1" onclick="promptPassword('transfers')">
-                <div class="story-circle ${alertClass} border-orange-500">
-                    <img src="https://ui-avatars.com/api/?name=Transfers&background=f59e0b&color=fff">
-                    ${urgentCount > 0 ? `<div class="absolute -top-1 -right-1 bg-red-600 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold animate-bounce">${urgentCount}</div>` : ''}
-                </div>
-                <div class="story-label">העברות</div>
-            </div>`;
-
-            bar.innerHTML = html;
-        }
-
-        // --- 2. Navigation & Security ---
-        window.switchView = (view) => {
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            if(view === 'orders') {
-                document.getElementById('list-orders').classList.remove('hidden');
-                document.getElementById('list-transfers').classList.add('hidden');
-                document.querySelectorAll('.nav-item')[0].classList.add('active');
-            } else {
-                document.getElementById('list-orders').classList.add('hidden');
-                document.getElementById('list-transfers').classList.remove('hidden');
-                document.querySelectorAll('.nav-item')[1].classList.add('active');
-            }
-            activeView = view;
-        };
-
-        window.promptPassword = (target) => {
-            if(target === 'transfers') {
-                // בדיקה פשוטה, במציאות אפשר לשמור סשן
-                const pass = prompt("🔒 אזור מוגבל! הזמן סיסמת מנהל:");
-                if(pass === "1125") {
-                    switchView('transfers');
-                } else {
-                    alert("⛔ סיסמה שגויה. הגישה נחסמה.");
-                }
-            }
-        };
-
-        // --- 3. Wizard Logic ---
-        window.openWizard = () => {
-            wizardData = {};
-            document.getElementById('wizardModal').style.display = 'flex';
-            showStep(1);
-        };
-        window.closeWizard = () => document.getElementById('wizardModal').style.display = 'none';
-        
-        window.nextStep = (n) => showStep(n);
-        
-        function showStep(n) {
-            document.querySelectorAll('.wiz-step').forEach(el => el.classList.remove('active'));
-            document.getElementById(`step${n}`).classList.add('active');
-        }
-
-        window.setWizData = (key, val) => wizardData[key] = val;
-        
-        window.selectDirection = (dir) => {
-            wizardData.direction = dir;
-            document.querySelectorAll('#step3 .big-btn').forEach(b => b.classList.remove('selected'));
-            if(dir === 'harash_to_talmid') document.getElementById('btnHarashToTalmid').classList.add('selected');
-            else document.getElementById('btnTalmidToHarash').classList.add('selected');
-        };
-
-        window.finishWizard = async () => {
-            const comax = document.getElementById('wizComaxNum').value;
-            const desc = document.getElementById('wizDesc').value;
-            const assignee = document.getElementById('wizAssignee').value;
-            const prio = document.getElementById('wizPrio').value;
-
-            if(!desc) return alert("חובה למלא תיאור!");
-
-            const task = {
-                type: wizardData.type,
-                hasComax: wizardData.hasComax,
-                comaxNum: wizardData.hasComax ? comax : "ממתין למספר",
-                direction: wizardData.direction || "general",
-                desc: desc,
-                assignee: assignee,
-                priority: prio,
-                status: 'open',
+                sender: currentUser.name,
                 createdAt: serverTimestamp(),
-                createdBy: "Admin"
-            };
-
-            await addDoc(collection(db, "transfers"), task);
-            closeWizard();
-            alert("WOW! המשימה נפתחה בהצלחה 🎉");
-        };
-
-        // --- 4. Listeners ---
-        
-        // Transfers Listener
-        const qTransfers = query(collection(db, "transfers"), orderBy("createdAt", "desc"));
-        onSnapshot(qTransfers, (snap) => {
-            const list = document.getElementById('transfersContainer');
-            list.innerHTML = "";
-            let items = [];
-            
-            snap.forEach(docSnap => {
-                const t = docSnap.data();
-                items.push(t);
-                
-                const prioClass = t.priority === 'high' ? 'prio-high' : (t.priority === 'medium' ? 'prio-med' : 'prio-low');
-                const icon = t.type === 'transfer' ? '<i class="fas fa-exchange-alt"></i>' : '<i class="fas fa-box"></i>';
-                
-                list.innerHTML += `
-                <div class="transfer-card ${prioClass}">
-                    <div class="flex justify-between items-start mb-2">
-                        <span class="text-xs font-bold text-gray-500 flex items-center gap-1">${icon} ${t.comaxNum}</span>
-                        ${t.priority==='high' ? '<span class="text-[10px] bg-red-500 text-white px-2 py-0.5 rounded-full animate-pulse">דחוף!</span>' : ''}
-                    </div>
-                    <div class="font-bold text-slate-800 text-sm mb-1">${t.direction === 'harash_to_talmid' ? 'החרש ➡ תלמיד' : (t.direction === 'talmid_to_harash' ? 'תלמיד ➡ החרש' : 'כללי')}</div>
-                    <div class="text-sm text-slate-600 mb-3">${t.desc}</div>
-                    
-                    <div class="flex justify-between items-center border-t pt-2">
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs bg-slate-200 px-2 py-1 rounded">@${t.assignee || 'צוות'}</span>
-                        </div>
-                        <button onclick="closeTask('${docSnap.id}')" class="text-xs text-blue-600 font-bold hover:underline">סגור משימה ✓</button>
-                    </div>
-                </div>`;
+                type: 'text',
+                isVisibleToClient: !isGhostMode // מפתח הקסם
             });
 
-            // Update Story Bar based on transfers
-            renderStories(items);
-        });
-
-        // Orders Listener (Existing)
-        const qOrders = query(collection(db, "orders"), orderBy("createdAt", "desc"));
-        onSnapshot(qOrders, (snap) => {
-            const list = document.getElementById('list-orders');
-            list.innerHTML = "";
-            snap.forEach(docSnap => {
-                const o = docSnap.data();
-                list.innerHTML += `
-                <div class="bg-white p-3 border-b cursor-pointer hover:bg-gray-50" onclick="alert('פתח הזמנה ${docSnap.id}')">
-                    <div class="font-bold text-sm">${o.clientName}</div>
-                    <div class="text-xs text-gray-500">${new Date(o.createdAt?.seconds*1000).toLocaleTimeString()}</div>
-                </div>`;
-            });
-        });
-
-        window.closeTask = async (id) => {
-            if(confirm("לסגור משימה?")) {
-                await updateDoc(doc(db, "transfers", id), { status: 'done' });
-            }
+            // איפוס מצב נסתר אחרי שליחה למניעת טעויות
+            if(isGhostMode) toggleGhostMode();
         };
 
+        window.toggleMute = () => {
+            isMuted = !isMuted;
+            localStorage.setItem('saban_center_mute', isMuted);
+            updateMuteUI();
+        };
+
+        function updateMuteUI() {
+            document.getElementById('muteBtn').innerHTML = isMuted ? '<i class="fas fa-volume-mute text-red-500"></i>' : '<i class="fas fa-volume-up"></i>';
+        }
+
+        // OneSignal Init (Staff)
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        OneSignalDeferred.push(async function(OneSignal) {
+            await OneSignal.init({ appId: "YOUR-ONESIGNAL-APP-ID", safari_web_id: "YOUR-SAFARI-ID" });
+            OneSignal.login("staff_center");
+        });
     </script>
 </body>
 </html>
