@@ -6,161 +6,122 @@
     <title>Saban Center | חמ"ל</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     
     <style>
         :root { --wa-green: #00a884; --wa-bg: #efeae2; }
-        body { background: #d1d7db; height: 100dvh; display: flex; overflow: hidden; font-family: -apple-system, sans-serif; }
-        .app-layout { display: flex; width: 100%; max-width: 1800px; margin: 0 auto; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .sidebar { width: 380px; border-left: 1px solid #e9edef; display: flex; flex-direction: column; background: white; }
+        body { background: #d1d7db; height: 100dvh; display: flex; overflow: hidden; font-family: sans-serif; }
+        .app-layout { display: flex; width: 100%; max-width: 1800px; margin: 0 auto; background: white; }
+        .sidebar { width: 380px; border-left: 1px solid #e9edef; display: flex; flex-direction: column; }
         .chat-area { flex: 1; display: flex; flex-direction: column; background: var(--wa-bg); position: relative; background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); }
         
-        /* UI Components */
-        .chat-item { padding: 12px 15px; cursor: pointer; display: flex; align-items: center; border-bottom: 1px solid #f0f2f5; transition: 0.2s; }
+        .chat-item { padding: 12px; cursor: pointer; display: flex; align-items: center; border-bottom: 1px solid #f0f2f5; }
         .chat-item:hover { background: #f5f6f6; }
         .chat-item.active { background: #f0f2f5; border-right: 4px solid var(--wa-green); }
-        .msg-bubble { max-width: 65%; padding: 6px 10px; border-radius: 8px; font-size: 14px; margin-bottom: 6px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
-        .msg-in { align-self: flex-start; background: white; border-top-right-radius: 0; }
-        .msg-out { align-self: flex-end; background: #d9fdd3; border-top-left-radius: 0; }
-        .msg-internal { background: #fff7ed !important; border: 1px dashed #fdba74; }
-        .info-panel { width: 0; transition: 0.3s; background: #f0f2f5; border-right: 1px solid #e9edef; overflow: hidden; display: flex; flex-direction: column; }
-        .info-panel.open { width: 320px; }
         
-        .pdf-card { background: #fef2f2; border: 1px solid #fecaca; padding: 8px; border-radius: 6px; display: flex; items-center; gap: 8px; color: #991b1b; font-size: 12px; text-decoration: none; margin-top: 5px; }
-        .media-preview { border-radius: 6px; margin-top: 5px; max-width: 200px; cursor: pointer; border: 1px solid #ddd; }
-        .mention-tag { background-color: #dbeafe; color: #1e40af; padding: 0 4px; border-radius: 4px; font-weight: bold; }
+        .msg-bubble { max-width: 65%; padding: 6px 10px; border-radius: 8px; font-size: 14px; margin-bottom: 6px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); background: white; }
+        .msg-out { align-self: flex-end; background: #d9fdd3; }
+        
+        /* CRM Panel */
+        .info-panel { width: 0; transition: 0.3s; background: #f0f2f5; border-right: 1px solid #e9edef; overflow: hidden; }
+        .info-panel.open { width: 320px; }
     </style>
 </head>
 <body>
+
     <div class="app-layout">
         <div class="sidebar">
             <div class="h-[60px] bg-[#f0f2f5] p-3 flex justify-between items-center border-b">
                 <div class="flex items-center gap-2">
-                    <img id="myAvatar" src="" class="w-9 h-9 rounded-full object-cover">
-                    <div>
-                        <span id="myName" class="font-bold text-gray-700 block leading-tight text-sm">...</span>
-                        <span class="text-[10px] text-green-600 font-bold">מחובר</span>
-                    </div>
+                    <img id="myAvatar" src="" class="w-9 h-9 rounded-full bg-gray-300">
+                    <span id="myName" class="font-bold text-gray-700">...</span>
                 </div>
-                <button onclick="window.toggleMute()" id="muteBtn" class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-200 text-gray-500"><i class="fas fa-volume-up"></i></button>
+                <button onclick="window.toggleMute()" id="muteBtn" class="w-9 h-9 rounded-full text-red-500 hover:bg-gray-200 transition" title="לחץ להפעלת סאונד והתראות">
+                    <i class="fas fa-volume-mute"></i>
+                </button>
             </div>
             <div id="chat-list" class="flex-1 overflow-y-auto"></div>
         </div>
 
         <div class="chat-area">
             <div id="empty-state" class="flex flex-col items-center justify-center h-full text-gray-400">
-                <i class="fas fa-comments text-4xl mb-4 opacity-20"></i>
                 <p>בחר שיחה מהרשימה</p>
             </div>
-
             <div id="active-chat" class="hidden flex flex-col h-full">
-                <div class="h-[60px] bg-[#f0f2f5] p-3 flex items-center justify-between border-b shadow-sm z-10 cursor-pointer" onclick="window.toggleInfoPanel()">
-                    <div class="flex items-center gap-3">
-                        <img id="chatAvatar" src="" class="w-10 h-10 rounded-full object-cover">
-                        <span id="chatTitle" class="font-bold text-gray-800"></span>
-                    </div>
-                    <i class="fas fa-info-circle text-gray-400 hover:text-blue-500"></i>
+                <div class="h-[60px] bg-[#f0f2f5] p-3 flex items-center justify-between border-b shadow-sm z-10" onclick="window.toggleInfoPanel()">
+                    <span id="chatTitle" class="font-bold cursor-pointer"></span>
+                    <i class="fas fa-info-circle text-blue-500 cursor-pointer"></i>
                 </div>
-
                 <div id="messages-area" class="flex-1 overflow-y-auto p-4 flex flex-col gap-1"></div>
-
                 <div class="bg-[#f0f2f5] p-2 flex items-center gap-2 border-t">
-                    <input type="file" id="staffFile" hidden accept="image/*,application/pdf" onchange="window.staffFileUpload(this)">
-                    <button onclick="document.getElementById('staffFile').click()" class="p-2 text-gray-500 hover:text-gray-700"><i class="fas fa-paperclip text-xl"></i></button>
-                    <button id="ghostBtn" onclick="window.toggleGhostMode()" class="w-10 h-10 rounded-full text-gray-500 hover:bg-gray-200"><i class="fas fa-eye-slash"></i></button>
-                    <input id="msgInput" type="text" class="flex-1 bg-white rounded-lg h-10 px-4 text-sm border-none outline-none" placeholder="הקלד הודעה..." onkeydown="if(event.key==='Enter') window.sendMessage()">
+                    <input id="msgInput" type="text" class="flex-1 bg-white rounded-lg h-10 px-4 text-sm outline-none" placeholder="הקלד..." onkeydown="if(event.key==='Enter') window.sendMessage()">
                     <button onclick="window.sendMessage()" class="p-2 text-[#00a884]"><i class="fas fa-paper-plane text-xl"></i></button>
                 </div>
             </div>
         </div>
 
-        <div id="info-panel" class="info-panel">
-            <div class="h-[60px] flex items-center px-4 border-b bg-white">
-                <button onclick="window.toggleInfoPanel()" class="mr-4"><i class="fas fa-times"></i></button>
-                <span class="font-bold">תיק לקוח</span>
-            </div>
-            <div class="p-6 text-center">
-                <img id="crmAvatar" src="" class="w-24 h-24 rounded-full mx-auto mb-4">
-                <h2 id="crmName" class="text-xl font-bold"></h2>
-                <div id="crmNum" class="text-sm text-gray-500 mb-4"></div>
-                <div id="crmProjects" class="flex flex-wrap gap-2 justify-center"></div>
-            </div>
+        <div id="info-panel" class="info-panel p-4">
+            <h2 class="font-bold mb-4">תיק לקוח</h2>
+            <div id="crmContent"></div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { SabanSounds } from './js/sounds.js';     // התיקון נמצא כאן
-        import { SabanPush } from './js/notifications.js'; // התראות דפדפן
+        
+        // ייבוא המודולים שיצרנו
+        import { SabanSounds } from './js/sounds.js';
+        import { SabanDesktop } from './js/notifications.js';
 
-        // Firebase Setup
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
-        // Auth
+        // זיהוי משתמש
         const urlParams = new URLSearchParams(window.location.search);
         const urlUid = urlParams.get('uid');
-        let currentUser = JSON.parse(localStorage.getItem('saban_user')) || { name: 'אורח', role: 'guest' };
+        let currentUser = JSON.parse(localStorage.getItem('saban_user')) || { name: 'אורח' };
 
         if(urlUid) {
             getDoc(doc(db, "users", urlUid)).then(snap => {
                 if(snap.exists()) {
                     currentUser = snap.data();
                     localStorage.setItem('saban_user', JSON.stringify(currentUser));
-                    initUI();
+                    document.getElementById('myName').innerText = currentUser.name;
+                    document.getElementById('myAvatar').src = currentUser.avatar || `https://ui-avatars.com/api/?name=${currentUser.name}`;
                 }
             });
         } else {
-            initUI();
-        }
-
-        function initUI() {
             document.getElementById('myName').innerText = currentUser.name;
-            document.getElementById('myAvatar').src = currentUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}`;
-            SabanSounds.init(); // שחרור סאונד ראשוני
-            if(currentUser.phone) SabanPush.init('staff', currentUser.phone);
         }
 
-        // State
-        let currentChatId = null;
-        let isMuted = false;
-        let isGhostMode = false;
-
-        // --- Functions ---
+        // --- לוגיקת סאונד והתראות ---
+        let isMuted = true; // מתחילים מושתק כדי למנוע שגיאות
 
         window.toggleMute = () => {
-            isMuted = !isMuted;
             const btn = document.getElementById('muteBtn');
-            if(!isMuted) {
+            
+            if (isMuted) {
+                // *** רגע האמת: המשתמש לחץ ***
+                isMuted = false;
+                
+                // 1. שחרור חסימת הסאונד
+                SabanSounds.init(); 
+                SabanSounds.playMessage(); // ניגון בדיקה
+                
+                // 2. בקשת אישור להתראות דפדפן
+                SabanDesktop.requestPermission();
+
+                // עדכון אייקון
                 btn.innerHTML = '<i class="fas fa-volume-up"></i>';
-                // כאן אנחנו מנסים לנגן כדי לוודא שזה עובד
-                if(SabanSounds && typeof SabanSounds.playMessage === 'function') {
-                    SabanSounds.playMessage();
-                } else {
-                    console.error("SabanSounds not ready yet");
-                }
+                btn.className = "w-9 h-9 rounded-full text-green-600 hover:bg-green-100 transition shadow-sm border border-green-200";
             } else {
-                btn.innerHTML = '<i class="fas fa-volume-mute text-red-500"></i>';
+                isMuted = true;
+                btn.innerHTML = '<i class="fas fa-volume-mute"></i>';
+                btn.className = "w-9 h-9 rounded-full text-red-500 hover:bg-red-100 transition";
             }
         };
 
-        window.toggleInfoPanel = async () => {
-            const panel = document.getElementById('info-panel');
-            panel.classList.toggle('open');
-            
-            if(panel.classList.contains('open') && currentChatId) {
-                const userSnap = await getDoc(doc(db, "users", currentChatId));
-                const data = userSnap.exists() ? userSnap.data() : { name: document.getElementById('chatTitle').innerText, clientNum: '---' };
-                
-                document.getElementById('crmName').innerText = data.name;
-                document.getElementById('crmNum').innerText = data.clientNum;
-                document.getElementById('crmAvatar').src = data.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name)}`;
-                
-                const projs = document.getElementById('crmProjects');
-                projs.innerHTML = '';
-                (data.projects || []).forEach(p => projs.innerHTML += `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">${p}</span>`);
-            }
-        };
+        // --- שאר הלוגיקה של הצ'אט ---
+        let currentChatId = null;
 
         window.loadChat = (id, title, avatar) => {
             currentChatId = id;
@@ -170,23 +131,46 @@
             document.getElementById('chatAvatar').src = avatar;
 
             const q = query(collection(db, `orders/${id}/internal_chat`), orderBy("createdAt", "asc"));
+            
             onSnapshot(q, (snap) => {
                 const area = document.getElementById('messages-area');
                 area.innerHTML = '';
-                snap.docs.forEach(d => renderMsg(d.data(), area));
+                
+                // רינדור הודעות
+                snap.docs.forEach(d => {
+                    const m = d.data();
+                    const isMe = m.sender !== 'client';
+                    area.innerHTML += `
+                        <div class="msg-bubble ${isMe ? 'msg-out' : 'msg-in'} flex flex-col">
+                            ${!isMe ? '<span class="text-[10px] font-bold text-green-700">לקוח</span>' : ''}
+                            <span>${m.text}</span>
+                            <span class="text-[9px] text-gray-400 self-end">${new Date(m.createdAt?.seconds*1000).toLocaleTimeString()}</span>
+                        </div>`;
+                });
                 area.scrollTop = area.scrollHeight;
 
-                snap.docChanges().forEach(c => {
-                    if(c.type === 'added' && !snap.metadata.hasPendingWrites) {
-                        const m = c.doc.data();
-                        if(m.sender === 'client' && !isMuted) {
-                            SabanSounds.playMessage(); // קריאה לפונקציה המתוקנת
-                            // התראת דפדפן (אם הוגדר)
-                            if(typeof SabanDesktop !== 'undefined') SabanDesktop.show(`הודעה מ-${title}`, m.text);
+                // --- בדיקת הודעות חדשות עבור סאונד והתראות ---
+                snap.docChanges().forEach(change => {
+                    // התנאים:
+                    // 1. הודעה חדשה (added)
+                    // 2. לא נטענה מהזיכרון (metadata.fromCache === false)
+                    // 3. לא אני כתבתי (hasPendingWrites === false)
+                    // 4. ההודעה נשלחה ע"י הלקוח
+                    if (change.type === 'added' && !snap.metadata.fromCache && !snap.metadata.hasPendingWrites) {
+                        const m = change.doc.data();
+                        if (m.sender === 'client' && !isMuted) {
+                            console.log("🔔 הודעה חדשה התקבלה!");
+                            SabanSounds.playMessage();
+                            SabanDesktop.show(`הודעה מ-${title}`, m.text);
                         }
                     }
                 });
             });
+        };
+
+        window.toggleInfoPanel = () => {
+            document.getElementById('info-panel').classList.toggle('open');
+            // כאן אפשר להוסיף לוגיקת משיכת נתונים ל-CRM
         };
 
         window.sendMessage = async () => {
@@ -199,69 +183,27 @@
                 text: txt,
                 sender: currentUser.name,
                 createdAt: serverTimestamp(),
-                type: 'text',
-                isVisibleToClient: !isGhostMode
+                isVisibleToClient: true
             });
-            if(isGhostMode) window.toggleGhostMode();
         };
 
-        window.toggleGhostMode = () => {
-            isGhostMode = !isGhostMode;
-            const btn = document.getElementById('ghostBtn');
-            const input = document.getElementById('msgInput');
-            if(isGhostMode) {
-                btn.classList.add('text-orange-600');
-                input.style.background = '#fff7ed';
-                input.placeholder = "הודעה פנימית (נסתרת)...";
-            } else {
-                btn.classList.remove('text-orange-600');
-                input.style.background = 'white';
-                input.placeholder = "הקלד הודעה...";
-            }
-            input.focus();
-        };
-
-        window.staffFileUpload = (input) => { /* קוד העלאה רגיל */ };
-
-        // Chat List
+        // טעינת רשימת צ'אטים
         onSnapshot(query(collection(db, "orders"), orderBy("lastActive", "desc")), (snap) => {
             const list = document.getElementById('chat-list');
             list.innerHTML = '';
             snap.forEach(d => {
                 const o = d.data();
-                const active = d.id === currentChatId ? 'active' : '';
-                const av = o.clientAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(o.clientName)}`;
-                
+                const avatar = o.clientAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(o.clientName)}`;
                 list.innerHTML += `
-                <div class="chat-item ${active}" onclick="window.loadChat('${d.id}', '${o.clientName}', '${av}')">
-                    <img src="${av}" class="w-12 h-12 rounded-full ml-2 border">
-                    <div class="flex-1">
+                <div class="chat-item" onclick="window.loadChat('${d.id}', '${o.clientName}', '${avatar}')">
+                    <img src="${avatar}" class="w-10 h-10 rounded-full ml-3 border">
+                    <div>
                         <div class="font-bold text-sm">${o.clientName}</div>
-                        <div class="text-xs text-gray-500 flex justify-between">
-                            <span>${o.currentProject || ''}</span>
-                            ${o.status === 'new' ? '<span class="text-green-600 font-bold">● חדש</span>' : ''}
-                        </div>
+                        <div class="text-xs text-gray-500">${o.currentProject || ''}</div>
                     </div>
                 </div>`;
             });
         });
-
-        function renderMsg(m, container) {
-            const isMe = m.sender !== 'client';
-            const isInternal = m.isVisibleToClient === false;
-            let content = m.text;
-            
-            if(m.type === 'image') content = `<img src="${m.url}" class="media-preview" onclick="window.open('${m.url}')">`;
-            if(m.type === 'pdf') content = `<a href="${m.url}" target="_blank" class="pdf-card">📄 PDF</a>`;
-
-            container.innerHTML += `
-            <div class="msg-bubble ${isMe ? 'msg-out' : 'msg-in'} ${isInternal ? 'msg-internal' : ''}">
-                ${isInternal ? '<div class="text-[9px] text-orange-600 font-bold">פנימי</div>' : ''}
-                ${!isMe ? '<div class="text-[10px] font-bold text-green-700">לקוח</div>' : ''}
-                <div>${content}</div>
-                <div class="text-[9px] text-gray-400 text-left">${new Date(m.createdAt?.seconds*1000).toLocaleTimeString()}</div>
-            </div>`;
-        }
     </script>
 </body>
 </html>
