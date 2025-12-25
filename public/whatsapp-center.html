@@ -18,24 +18,28 @@
         .sidebar { width: 420px; min-width: 350px; display: flex; flex-direction: column; border-left: 1px solid #e9edef; background: white; z-index: 20; }
         .chat-area { flex: 1; display: flex; flex-direction: column; background-color: var(--wa-bg); background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); position: relative; min-width: 0; }
 
-        /* Stories */
-        .stories-container { padding: 10px 0; background: #fff; border-bottom: 1px solid #f0f2f5; overflow-x: auto; display: flex; gap: 12px; scrollbar-width: none; }
+        /* --- Stories (סטוריז) --- */
+        .stories-container { padding: 12px 0; background: #fff; border-bottom: 1px solid #f0f2f5; overflow-x: auto; display: flex; gap: 14px; scrollbar-width: none; }
         .stories-container::-webkit-scrollbar { display: none; }
-        .story-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; min-width: 65px; transition: transform 0.2s; }
+        .story-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; min-width: 68px; transition: transform 0.2s; }
         .story-item:hover { transform: scale(1.05); }
-        .story-ring { width: 52px; height: 52px; border-radius: 50%; padding: 2px; display: flex; align-items: center; justify-content: center; position: relative; }
+        .story-ring { width: 56px; height: 56px; border-radius: 50%; padding: 2px; display: flex; align-items: center; justify-content: center; position: relative; }
+        
+        /* אנימציות וצבעים לסטורי */
         .ring-order { border: 2px solid #25d366; animation: pulse-green 2s infinite; }
         .ring-urgent { border: 2px solid #ef4444; background: #fee2e2; animation: pulse-red 1.5s infinite; }
         .ring-transfer { border: 2px solid #3b82f6; background: #dbeafe; animation: pulse-blue 2s infinite; }
+        .ring-pickup { border: 2px solid #f97316; background: #ffedd5; animation: pulse-orange 2s infinite; }
+
         .story-avatar { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 2px solid white; }
-        .story-icon { font-size: 20px; }
-        .story-name { font-size: 10px; color: #54656f; margin-top: 4px; max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
-        
+        .story-name { font-size: 11px; color: #54656f; margin-top: 4px; max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+
         @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(37, 211, 102, 0); } 100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); } }
         @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
         @keyframes pulse-blue { 0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(59, 130, 246, 0); } 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } }
+        @keyframes pulse-orange { 0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(249, 115, 22, 0); } 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); } }
 
-        /* Tabs */
+        /* --- Tabs --- */
         .tabs { display: flex; background: white; border-bottom: 1px solid #e9edef; padding: 0 5px; }
         .tab { flex: 1; text-align: center; padding: 14px 0; cursor: pointer; color: #54656f; font-weight: 600; border-bottom: 3px solid transparent; transition: 0.2s; font-size: 13px; }
         .tab.active { color: var(--wa-green); border-bottom-color: var(--wa-green); }
@@ -43,7 +47,7 @@
         .badge { position: absolute; top: 8px; left: 20%; background: #25d366; color: white; font-size: 10px; padding: 0 5px; border-radius: 10px; min-width: 16px; display: none; }
         .badge.show { display: flex; align-items: center; justify-content: center; }
 
-        /* Chat List */
+        /* --- Chat List --- */
         .chat-item { display: flex; align-items: center; padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #f5f6f6; transition: 0.2s; background: white; }
         .chat-item:hover { background: #f5f6f6; }
         .chat-item.active { background: #f0f2f5; border-right: 4px solid var(--wa-green); }
@@ -51,28 +55,32 @@
         .task-icon { width: 45px; height: 45px; background: #bae6fd; color: #0369a1; border-radius: 50%; display: flex; items-center; justify-content: center; margin-left: 12px; font-size: 18px; }
         .avatar { width: 45px; height: 45px; rounded: 50%; object-fit: cover; border: 1px solid #e9edef; margin-left: 12px; }
 
-        /* Cards */
+        /* --- Cards --- */
         .order-card { background: white; border-radius: 8px; overflow: hidden; width: 320px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-top: 5px; border: 1px solid #e5e7eb; }
         .order-head { background: linear-gradient(to left, #f0fdf4, white); padding: 10px; border-bottom: 1px solid #dcfce7; display: flex; justify-content: space-between; align-items: center; font-weight: bold; color: #166534; }
         .order-body { padding: 15px; font-family: monospace; white-space: pre-wrap; font-size: 13px; background: #fafafa; color: #333; }
+        
+        /* כפתורי פעולה בכרטיס */
         .order-actions { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1px; background: #e5e7eb; border-top: 1px solid #e5e7eb; }
         .action-btn { background: white; padding: 10px; font-size: 11px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; transition: 0.2s; color: #4b5563; }
         .action-btn:hover { background: #f9fafb; color: #111827; }
 
+        /* כרטיס משימה כחול */
         .transfer-card { background: white; border-radius: 8px; overflow: hidden; width: 320px; margin-top: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid #bae6fd; }
         .transfer-head { background: linear-gradient(to left, #e0f2fe, white); padding: 10px; border-bottom: 1px solid #bae6fd; display: flex; justify-content: space-between; align-items: center; font-weight: bold; color: #0369a1; }
 
-        /* Messages */
+        /* --- Messages --- */
         .msg-bubble { max-width: 70%; padding: 8px 10px; border-radius: 8px; font-size: 14px; margin-bottom: 6px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); position: relative; }
         .msg-in { align-self: flex-start; background: white; border-top-right-radius: 0; }
         .msg-out { align-self: flex-end; background: #d9fdd3; border-top-left-radius: 0; }
         .msg-internal { background: #fff7ed !important; border: 1px dashed #fdba74; }
         .msg-system { align-self: center; background: #eef2ff; color: #3730a3; font-size: 11px; padding: 4px 10px; border-radius: 10px; margin: 8px 0; font-weight: 600; text-align: center; }
 
-        /* UI */
+        /* --- Modals & UI --- */
         .modal-wrap { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 999; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
         .modal-box { background: white; width: 450px; border-radius: 12px; overflow: hidden; animation: popIn 0.3s; }
         @keyframes popIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
         .form-input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; rounded: 8px; background: #f8fafc; margin-bottom: 10px; outline: none; }
         .pending-bar { position: absolute; top: 60px; left: 0; width: 100%; background: #fff7ed; border-bottom: 2px solid #fdba74; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 15; }
         .info-panel { width: 0; background: #f7f8fa; border-right: 1px solid #e9edef; transition: width 0.3s ease; overflow: hidden; display: flex; flex-direction: column; }
@@ -111,6 +119,7 @@
     </div>
 
     <div class="app-container">
+        
         <div class="sidebar">
             <div class="h-[60px] bg-[#f0f2f5] p-3 flex justify-between items-center border-b flex-shrink-0">
                 <div class="flex items-center gap-3">
@@ -118,8 +127,8 @@
                     <span id="myName" class="font-bold text-gray-700">...</span>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="document.getElementById('taskModal').style.display='flex'" class="w-10 h-10 rounded-full bg-blue-50 border border-blue-200 text-blue-600 hover:bg-blue-100"><i class="fas fa-plus"></i></button>
-                    <button onclick="window.openDocSelector()" class="w-10 h-10 rounded-full bg-white border hover:text-blue-600"><i class="fas fa-file-import"></i></button>
+                    <button onclick="document.getElementById('taskModal').style.display='flex'" class="w-10 h-10 rounded-full bg-blue-50 border border-blue-200 text-blue-600 hover:bg-blue-100" title="משימה פנימית"><i class="fas fa-plus"></i></button>
+                    <button onclick="window.openDocSelector()" class="w-10 h-10 rounded-full bg-white border hover:text-blue-600" title="מסמך"><i class="fas fa-file-import"></i></button>
                 </div>
             </div>
 
@@ -136,6 +145,10 @@
             </div>
 
             <div id="chat-list" class="flex-1 overflow-y-auto custom-scroll"></div>
+            
+            <div class="p-2 bg-gray-50 border-t">
+                <button onclick="window.open('dashboard.html', '_blank')" class="w-full bg-slate-800 text-white py-2 rounded text-sm font-bold shadow hover:bg-slate-900 transition"><i class="fas fa-calendar-alt"></i> פתח לוח תכנון וסידור</button>
+            </div>
         </div>
 
         <div class="chat-area">
@@ -203,20 +216,22 @@
 
         let currentChatId = null, currentFilter = 'all', pendingDoc = null, chatsCache = [];
 
-        // --- Task Logic ---
+        // --- 1. Task Logic ---
         window.submitTask = async () => {
             const type = document.getElementById('taskType').value;
             const desc = document.getElementById('taskDesc').value;
             if(!desc) return;
+
+            const typeMap = { 'transfer': 'העברה', 'pickup': 'איסוף', 'urgent': 'דחוף', 'admin': 'משרדי' };
             const docRef = await addDoc(collection(db, "orders"), {
-                clientName: `משימה`, isTask: true, taskType: type, status: 'new', lastActive: serverTimestamp(), chat: []
+                clientName: `משימה: ${typeMap[type]}`, isTask: true, taskType: type, status: 'new', lastActive: serverTimestamp(), chat: []
             });
             await addDoc(collection(db, `orders/${docRef.id}/internal_chat`), { text: desc, sender: currentUser.name, type: 'task_desc', createdAt: serverTimestamp(), isVisibleToClient: false });
             document.getElementById('taskModal').style.display = 'none';
             document.getElementById('taskDesc').value = '';
         };
 
-        // --- Render Logic (עם תיקון הסינון) ---
+        // --- 2. Render Logic (כולל סינון מחוקים) ---
         onSnapshot(query(collection(db, "orders"), orderBy("lastActive", "desc")), (snap) => {
             chatsCache = [];
             snap.forEach(d => chatsCache.push({ id: d.id, ...d.data() }));
@@ -232,14 +247,14 @@
             let ordersCount = 0, transfersCount = 0;
 
             chatsCache.forEach(o => {
-                // *** התיקון הגדול: סינון מחוקים/ארכיון ***
+                // *** תיקון: לא להציג מחוקים או ארכיון ***
                 if (o.status === 'deleted' || o.status === 'archived') return;
 
                 // Counters
                 if (!o.isTask && o.status === 'new') ordersCount++;
                 if (o.isTask && o.status === 'new') transfersCount++;
 
-                // STORIES
+                // STORIES (Show only if NOT done)
                 if (o.status !== 'done') {
                     let ringClass = 'ring-order'; 
                     let iconHtml = `<img src="${o.clientAvatar||`https://ui-avatars.com/api/?name=${encodeURIComponent(o.clientName)}`}" class="story-avatar">`;
@@ -257,7 +272,7 @@
                     </div>`;
                 }
 
-                // LIST
+                // LIST Filter
                 if (currentFilter === 'orders' && o.isTask) return;
                 if (currentFilter === 'transfers' && !o.isTask) return;
                 
@@ -316,7 +331,15 @@
             let content = m.text;
 
             if (m.type === 'task_desc') {
-                content = `<div class="transfer-card"><div class="transfer-head"><i class="fas fa-info-circle"></i> פרטי משימה</div><div class="order-body">${m.text}</div><div class="order-actions"><div class="action-btn text-blue-600" onclick="alert('בטיפול')">👤 בטיפול</div><div class="action-btn text-green-600" onclick="window.updateStatus('${orderId}', 'done')">✅ בוצע וסגור</div></div></div>`;
+                content = `
+                <div class="transfer-card">
+                    <div class="transfer-head"><i class="fas fa-info-circle"></i> פרטי משימה</div>
+                    <div class="order-body">${m.text}</div>
+                    <div class="order-actions">
+                        <div class="action-btn text-blue-600" onclick="alert('בטיפול')">👤 בטיפול</div>
+                        <div class="action-btn text-green-600" onclick="window.updateStatus('${orderId}', 'done')">✅ בוצע וסגור</div>
+                    </div>
+                </div>`;
             }
             else if (m.type === 'order') {
                 content = `
@@ -326,7 +349,7 @@
                     <div class="order-actions">
                         <div class="action-btn text-blue-600" onclick="window.updateStatus('${orderId}','work')"><i class="fas fa-tools"></i> ליקוט</div>
                         <div class="action-btn text-orange-600" onclick="window.updateStatus('${orderId}','approved')"><i class="fas fa-box-open"></i> מוכן</div>
-                        <div class="action-btn text-green-600" onclick="window.updateStatus('${orderId}','done')"><i class="fas fa-check-double"></i> נמסר</div>
+                        <div class="action-btn text-green-600" onclick="window.updateStatus('${orderId}','done')"><i class="fas fa-check-double"></i> נמסר (סגור)</div>
                         <div class="action-btn" onclick="window.printOrder(...)"><i class="fas fa-print"></i> הדפס</div>
                     </div>
                 </div>`;
@@ -345,7 +368,7 @@
             let msg = "";
             if(status==='work') msg = "🚧 עבר לליקוט";
             if(status==='approved') msg = "✅ מוכן למשלוח";
-            if(status==='done') msg = "🏁 נמסר בהצלחה";
+            if(status==='done') msg = "🏁 נמסר בהצלחה (נסגר)";
             
             await addDoc(collection(db, `orders/${oid}/internal_chat`), { text: msg, type: 'system', sender: 'מערכת', createdAt: serverTimestamp(), isVisibleToClient: true });
         };
