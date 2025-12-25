@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Saban Command | חמ"ל</title>
+    <title>Saban Command | חמ"ל צבעוני</title>
     <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/733/733585.png">
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -14,36 +14,48 @@
         :root { --wa-header: #f0f2f5; --wa-bg: #efeae2; --wa-green: #00a884; --task-blue: #0ea5e9; }
         body { margin: 0; padding: 0; background: #d1d7db; height: 100dvh; font-family: 'Segoe UI', system-ui, sans-serif; overflow: hidden; display: flex; align-items: center; justify-content: center; }
         
-        .app-container { display: flex; width: 100%; height: 100%; max-width: 1920px; margin: 0 auto; background: white; box-shadow: 0 0 20px rgba(0,0,0,0.15); position: relative; }
+        .app-container { display: flex; width: 100%; height: 100%; max-width: 1920px; margin: 0 auto; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.15); position: relative; }
         .sidebar { width: 420px; min-width: 350px; display: flex; flex-direction: column; border-left: 1px solid #e9edef; background: white; z-index: 20; }
         .chat-area { flex: 1; display: flex; flex-direction: column; background-color: var(--wa-bg); background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); position: relative; min-width: 0; }
 
-        /* --- Stories Bar (The New Feature) --- */
-        .stories-container { padding: 10px 0; background: #fff; border-bottom: 1px solid #f0f2f5; overflow-x: auto; display: flex; gap: 12px; scrollbar-width: none; -ms-overflow-style: none; }
+        /* --- Stories Bar (The Color Logic) --- */
+        .stories-container { padding: 12px 0; background: #fff; border-bottom: 1px solid #f0f2f5; overflow-x: auto; display: flex; gap: 14px; scrollbar-width: none; }
         .stories-container::-webkit-scrollbar { display: none; }
         
-        .story-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; min-width: 65px; position: relative; transition: transform 0.2s; }
+        .story-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; min-width: 68px; transition: transform 0.2s; }
         .story-item:hover { transform: scale(1.05); }
         
-        .story-ring { width: 52px; height: 52px; border-radius: 50%; padding: 2px; position: relative; display: flex; align-items: center; justify-content: center; }
-        /* הזמנה - ירוק מהבהב */
-        .ring-order { border: 2px solid #25d366; box-shadow: 0 0 0 2px white inset; animation: pulse-green 2s infinite; }
-        /* משימה - כחול */
-        .ring-task { border: 2px solid #0ea5e9; box-shadow: 0 0 0 2px white inset; }
-        
+        .story-ring { width: 56px; height: 56px; border-radius: 50%; padding: 2px; display: flex; align-items: center; justify-content: center; position: relative; }
         .story-avatar { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 2px solid white; }
-        .story-icon { font-size: 20px; }
-        .story-name { font-size: 10px; color: #54656f; margin-top: 4px; max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+        .story-icon { font-size: 22px; color: white; }
+        .story-name { font-size: 11px; color: #54656f; margin-top: 4px; max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 
+        /* --- Pulse Animations per Type --- */
+        
+        /* 1. GREEN (Order) */
+        .ring-order { border: 2px solid #25d366; animation: pulse-green 2s infinite; }
         @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(37, 211, 102, 0); } 100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); } }
+
+        /* 2. RED (Urgent) */
+        .ring-urgent { border: 2px solid #ef4444; background: #fee2e2; animation: pulse-red 1.5s infinite; }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+
+        /* 3. BLUE (Transfer) */
+        .ring-transfer { border: 2px solid #3b82f6; background: #dbeafe; animation: pulse-blue 2s infinite; }
+        @keyframes pulse-blue { 0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(59, 130, 246, 0); } 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } }
+
+        /* 4. ORANGE (Pickup) */
+        .ring-pickup { border: 2px solid #f97316; background: #ffedd5; animation: pulse-orange 2s infinite; }
+        @keyframes pulse-orange { 0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(249, 115, 22, 0); } 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); } }
+
 
         /* --- Tabs --- */
         .tabs { display: flex; background: white; border-bottom: 1px solid #e9edef; padding: 0 5px; }
-        .tab { flex: 1; text-align: center; padding: 14px 0; cursor: pointer; color: #54656f; font-weight: 600; border-bottom: 3px solid transparent; transition: 0.2s; position: relative; font-size: 13px; }
+        .tab { flex: 1; text-align: center; padding: 14px 0; cursor: pointer; color: #54656f; font-weight: 600; border-bottom: 3px solid transparent; transition: 0.2s; font-size: 13px; }
         .tab:hover { background: #f5f6f6; }
         .tab.active { color: var(--wa-green); border-bottom-color: var(--wa-green); }
         .tab.transfer-tab.active { color: var(--task-blue); border-bottom-color: var(--task-blue); }
-        .badge { position: absolute; top: 8px; left: 20%; background: #25d366; color: white; font-size: 10px; padding: 0 5px; border-radius: 10px; min-width: 16px; display: none; }
+        .badge { position: absolute; top: 10px; left: 20%; background: #25d366; color: white; font-size: 10px; padding: 0 5px; border-radius: 10px; min-width: 16px; display: none; }
         .badge.show { display: flex; align-items: center; justify-content: center; }
 
         /* --- Chat List --- */
@@ -54,25 +66,26 @@
         .task-icon { width: 45px; height: 45px; background: #bae6fd; color: #0369a1; border-radius: 50%; display: flex; items-center; justify-content: center; margin-left: 12px; font-size: 18px; }
         .avatar { width: 45px; height: 45px; rounded: 50%; object-fit: cover; border: 1px solid #e9edef; margin-left: 12px; }
 
-        /* --- Cards --- */
+        /* --- Order Card --- */
         .order-card { background: white; border-radius: 8px; overflow: hidden; width: 320px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-top: 5px; border: 1px solid #e5e7eb; }
         .order-head { background: linear-gradient(to left, #f0fdf4, white); padding: 10px; border-bottom: 1px solid #dcfce7; display: flex; justify-content: space-between; align-items: center; font-weight: bold; color: #166534; }
         .order-body { padding: 15px; font-family: monospace; white-space: pre-wrap; font-size: 13px; background: #fafafa; color: #333; }
-        .order-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px; background: #e5e7eb; border-top: 1px solid #e5e7eb; }
-        .action-btn { background: white; padding: 10px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; transition: 0.2s; color: #4b5563; }
+        .order-actions { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1px; background: #e5e7eb; border-top: 1px solid #e5e7eb; }
+        .action-btn { background: white; padding: 10px; font-size: 11px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; transition: 0.2s; color: #4b5563; }
         .action-btn:hover { background: #f9fafb; color: #111827; }
 
+        /* Task Card */
         .transfer-card { background: white; border-radius: 8px; overflow: hidden; width: 320px; margin-top: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid #bae6fd; }
         .transfer-head { background: linear-gradient(to left, #e0f2fe, white); padding: 10px; border-bottom: 1px solid #bae6fd; display: flex; justify-content: space-between; align-items: center; font-weight: bold; color: #0369a1; }
 
-        /* --- Messages --- */
+        /* Messages */
         .msg-bubble { max-width: 70%; padding: 8px 10px; border-radius: 8px; font-size: 14px; margin-bottom: 6px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); position: relative; }
         .msg-in { align-self: flex-start; background: white; border-top-right-radius: 0; }
         .msg-out { align-self: flex-end; background: #d9fdd3; border-top-left-radius: 0; }
         .msg-internal { background: #fff7ed !important; border: 1px dashed #fdba74; }
         .msg-system { align-self: center; background: #eef2ff; color: #3730a3; font-size: 11px; padding: 4px 10px; border-radius: 10px; margin: 8px 0; font-weight: 600; text-align: center; }
 
-        /* --- Modals & UI --- */
+        /* Modals & UI */
         .modal-wrap { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 999; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
         .modal-box { background: white; width: 450px; border-radius: 12px; overflow: hidden; animation: popIn 0.3s; }
         @keyframes popIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -88,17 +101,18 @@
     <div id="taskModal" class="modal-wrap">
         <div class="modal-box">
             <div class="p-4 border-b bg-blue-50 flex justify-between items-center">
-                <h3 class="font-bold text-blue-800"><i class="fas fa-truck-loading"></i> משימה לסידור</h3>
+                <h3 class="font-bold text-blue-800"><i class="fas fa-shipping-fast"></i> משימה לסידור</h3>
                 <button onclick="document.getElementById('taskModal').style.display='none'"><i class="fas fa-times text-gray-400"></i></button>
             </div>
             <div class="p-4">
                 <select id="taskType" class="form-input">
-                    <option value="transfer">🔄 העברה בין סניפים</option>
-                    <option value="pickup">📦 איסוף מספק</option>
-                    <option value="urgent">🚨 הקפצה דחופה</option>
+                    <option value="transfer">🔄 העברה בין סניפים (כחול)</option>
+                    <option value="pickup">📦 איסוף מספק (כתום)</option>
+                    <option value="urgent">🚨 דחוף / הקפצה (אדום)</option>
+                    <option value="admin">📄 משרדי (אפור)</option>
                 </select>
                 <textarea id="taskDesc" class="form-input h-24" placeholder="פירוט המשימה..."></textarea>
-                <button onclick="window.submitTask()" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold shadow hover:bg-blue-700">שגר לביצוע 🚀</button>
+                <button onclick="window.submitTask()" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold shadow hover:bg-blue-700">שגר ללוח 🚀</button>
             </div>
         </div>
     </div>
@@ -127,8 +141,7 @@
                 </div>
             </div>
 
-            <div id="stories-bar" class="stories-container bg-white border-b p-2 flex gap-3 overflow-x-auto">
-                </div>
+            <div id="stories-bar" class="stories-container"></div>
 
             <div class="tabs">
                 <div class="tab active" onclick="window.switchTab('all')" id="tab-all">הכל</div>
@@ -145,7 +158,7 @@
 
         <div class="chat-area">
             <div id="empty-state" class="flex flex-col items-center justify-center h-full text-gray-400 select-none">
-                <i class="fas fa-boxes text-6xl mb-4 opacity-20"></i>
+                <i class="fas fa-satellite-dish text-6xl mb-4 opacity-20"></i>
                 <h2 class="text-xl font-light">Saban Command Center</h2>
             </div>
 
@@ -169,7 +182,7 @@
                 <div id="messages-area" class="flex-1 overflow-y-auto p-5 flex flex-col gap-1 custom-scroll"></div>
 
                 <div class="bg-[#f0f2f5] p-3 flex items-center gap-2 border-t z-20">
-                    <button id="ghostBtn" onclick="window.toggleGhostMode()" class="w-10 h-10 text-gray-500 hover:bg-gray-200 rounded-full transition"><i class="fas fa-eye-slash text-lg"></i></button>
+                    <button id="ghostBtn" onclick="window.toggleGhostMode()" class="w-10 h-10 text-gray-500 hover:bg-gray-200 rounded-full transition" title="עין (פנימי)"><i class="fas fa-eye-slash text-lg"></i></button>
                     <input id="msgInput" type="text" class="flex-1 bg-white rounded-xl h-10 px-4 text-sm border-none outline-none shadow-sm" placeholder="הקלד הודעה..." onkeydown="if(event.key==='Enter') window.sendMessage()">
                     <button onclick="window.sendMessage()" class="w-10 h-10 rounded-full bg-[#00a884] text-white shadow"><i class="fas fa-paper-plane"></i></button>
                 </div>
@@ -213,7 +226,8 @@
             const type = document.getElementById('taskType').value;
             const desc = document.getElementById('taskDesc').value;
             if(!desc) return;
-            const typeMap = { 'transfer': 'העברה', 'pickup': 'איסוף', 'urgent': 'דחוף' };
+
+            const typeMap = { 'transfer': 'העברה', 'pickup': 'איסוף', 'urgent': 'דחוף', 'admin': 'משרדי' };
             const docRef = await addDoc(collection(db, "orders"), {
                 clientName: `משימה: ${typeMap[type]}`, isTask: true, taskType: type, status: 'new', lastActive: serverTimestamp(), chat: []
             });
@@ -222,7 +236,7 @@
             document.getElementById('taskDesc').value = '';
         };
 
-        // --- 2. List & Stories Logic ---
+        // --- 2. Render List & Stories (With Colors) ---
         onSnapshot(query(collection(db, "orders"), orderBy("lastActive", "desc")), (snap) => {
             chatsCache = [];
             snap.forEach(d => chatsCache.push({ id: d.id, ...d.data() }));
@@ -235,39 +249,43 @@
             list.innerHTML = '';
             stories.innerHTML = '';
             
-            let ordersCount = 0;
-            let transfersCount = 0;
+            let ordersCount = 0, transfersCount = 0;
 
             chatsCache.forEach(o => {
                 // Counters
                 if (!o.isTask && o.status === 'new') ordersCount++;
                 if (o.isTask && o.status === 'new') transfersCount++;
 
-                // Stories Renderer (Only Active Items)
+                // STORIES LOGIC (Color Coded)
                 if (o.status !== 'done') {
-                    const ringClass = o.isTask ? 'ring-task' : 'ring-order';
-                    const icon = o.isTask ? '<i class="fas fa-truck text-blue-500 text-xl"></i>' : `<img src="${o.clientAvatar||`https://ui-avatars.com/api/?name=${o.clientName}`}" class="story-avatar">`;
-                    
+                    let ringClass = 'ring-order'; // Default Green (Order)
+                    let iconHtml = `<img src="${o.clientAvatar||`https://ui-avatars.com/api/?name=${encodeURIComponent(o.clientName)}`}" class="story-avatar">`;
+
+                    if (o.isTask) {
+                        if(o.taskType === 'urgent') { ringClass = 'ring-urgent'; iconHtml = '<i class="fas fa-exclamation-triangle text-red-600"></i>'; }
+                        else if(o.taskType === 'pickup') { ringClass = 'ring-pickup'; iconHtml = '<i class="fas fa-box-open text-orange-600"></i>'; }
+                        else if(o.taskType === 'transfer') { ringClass = 'ring-transfer'; iconHtml = '<i class="fas fa-truck text-blue-600"></i>'; }
+                        else { ringClass = 'ring-transfer'; iconHtml = '<i class="fas fa-clipboard text-gray-600"></i>'; }
+                    }
+
                     stories.innerHTML += `
                     <div class="story-item" onclick="window.loadChat('${o.id}', '${o.clientName}', ${o.isTask})">
-                        <div class="story-ring ${ringClass}">
-                            ${icon}
-                        </div>
+                        <div class="story-ring ${ringClass}">${iconHtml}</div>
                         <span class="story-name">${o.clientName}</span>
                     </div>`;
                 }
 
-                // List Filter
+                // LIST LOGIC
                 if (currentFilter === 'orders' && o.isTask) return;
                 if (currentFilter === 'transfers' && !o.isTask) return;
                 
                 const active = o.id === currentChatId ? 'active' : '';
                 const taskClass = o.isTask ? 'task-item' : '';
-                let iconHtml = o.isTask ? `<div class="task-icon"><i class="fas fa-clipboard-list"></i></div>` : `<img src="${o.clientAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(o.clientName)}`}" class="avatar">`;
+                let listIcon = o.isTask ? `<div class="task-icon"><i class="fas fa-clipboard-list"></i></div>` : `<img src="${o.clientAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(o.clientName)}`}" class="avatar">`;
 
                 list.innerHTML += `
                 <div class="chat-item ${active} ${taskClass}" onclick="window.loadChat('${o.id}', '${o.clientName}', ${o.isTask})">
-                    ${iconHtml}
+                    ${listIcon}
                     <div class="flex-1 mr-3 min-w-0">
                         <div class="flex justify-between font-bold text-gray-800 text-sm">
                             ${o.clientName}
@@ -278,7 +296,7 @@
                 </div>`;
             });
 
-            // Update Badges
+            // Badges
             const bOrders = document.getElementById('badge-orders');
             const bTransfers = document.getElementById('badge-transfers');
             if(ordersCount>0) { bOrders.innerText=ordersCount; bOrders.classList.add('show'); } else bOrders.classList.remove('show');
@@ -317,10 +335,20 @@
             let content = m.text;
 
             if (m.type === 'task_desc') {
-                content = `<div class="transfer-card"><div class="transfer-head"><i class="fas fa-info-circle"></i> פרטי משימה</div><div class="order-body">${m.text}</div><div class="order-actions"><div class="action-btn text-blue-600" onclick="alert('בטיפול')">👤 בטיפול</div><div class="action-btn text-green-600" onclick="window.updateStatus('${orderId}', 'done')">✅ בוצע</div></div></div>`;
+                content = `<div class="transfer-card"><div class="transfer-head"><i class="fas fa-info-circle"></i> פרטי משימה</div><div class="order-body">${m.text}</div><div class="order-actions"><div class="action-btn text-blue-600" onclick="alert('בטיפול')">👤 בטיפול</div><div class="action-btn text-green-600" onclick="window.updateStatus('${orderId}', 'done')">✅ בוצע וסגור</div></div></div>`;
             }
             else if (m.type === 'order') {
-                content = `<div class="order-card"><div class="order-head"><span>📦 הזמנה</span><span class="text-xs bg-white border px-1 rounded">${m.project||'כללי'}</span></div><div class="order-body">${m.text}</div><div class="order-actions"><div class="action-btn text-blue-600" onclick="window.updateStatus('${orderId}','work')"><i class="fas fa-tools"></i> ליקוט</div><div class="action-btn text-green-600" onclick="window.updateStatus('${orderId}','approved')"><i class="fas fa-check"></i> מוכן</div><div class="action-btn" onclick="window.printOrder(...)"><i class="fas fa-print"></i> הדפס</div></div></div>`;
+                content = `
+                <div class="order-card">
+                    <div class="order-head"><span>📦 הזמנה</span><span class="text-xs bg-white border px-1 rounded">${m.project||'כללי'}</span></div>
+                    <div class="order-body">${m.text}</div>
+                    <div class="order-actions">
+                        <div class="action-btn text-blue-600" onclick="window.updateStatus('${orderId}','work')"><i class="fas fa-tools"></i> ליקוט</div>
+                        <div class="action-btn text-orange-600" onclick="window.updateStatus('${orderId}','approved')"><i class="fas fa-box-open"></i> מוכן</div>
+                        <div class="action-btn text-green-600" onclick="window.updateStatus('${orderId}','done')"><i class="fas fa-check-double"></i> נמסר</div>
+                        <div class="action-btn" onclick="window.printOrder(...)"><i class="fas fa-print"></i> הדפס</div>
+                    </div>
+                </div>`;
             }
             else if (m.type === 'system') { document.getElementById('messages-area').innerHTML += `<div class="msg-system">${m.text}</div>`; return; }
             else if (m.type === 'pdf') { content = `<a href="${m.url}" target="_blank" class="flex items-center gap-2 p-2 bg-red-50 border border-red-100 rounded text-red-700 font-bold text-sm"><i class="fas fa-file-pdf"></i> מסמך PDF</a>`; }
@@ -332,7 +360,13 @@
         window.updateStatus = async (oid, status) => {
             if(!confirm('לעדכן סטטוס?')) return;
             await updateDoc(doc(db, "orders", oid), { status: status, lastUpdate: serverTimestamp() });
-            const msg = status==='work'?"🚧 עבר לליקוט":"✅ מוכן למשלוח";
+            
+            // הודעה מותאמת
+            let msg = "";
+            if(status==='work') msg = "🚧 עבר לליקוט";
+            if(status==='approved') msg = "✅ מוכן למשלוח";
+            if(status==='done') msg = "🏁 נמסר בהצלחה";
+            
             await addDoc(collection(db, `orders/${oid}/internal_chat`), { text: msg, type: 'system', sender: 'מערכת', createdAt: serverTimestamp(), isVisibleToClient: true });
         };
 
