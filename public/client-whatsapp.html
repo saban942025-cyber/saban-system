@@ -27,7 +27,6 @@
         .modal-box { background: white; width: 90%; max-width: 320px; border-radius: 20px; padding: 25px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes popUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-        /* Avatar */
         .avatar-img { width: 30px; height: 30px; border-radius: 50%; margin-left: 8px; object-fit: cover; }
     </style>
 </head>
@@ -58,7 +57,7 @@
             <span class="font-bold text-base">מחלקת הזמנות</span>
             <span class="text-[11px] text-green-100">מחובר עכשיו</span>
         </div>
-        <button onclick="toggleMute()" id="muteBtn" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10">
+        <button onclick="toggleMute()" id="muteBtn" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 transition">
             <i class="fas fa-volume-up"></i>
         </button>
     </div>
@@ -80,7 +79,7 @@
         </button>
     </div>
 
-    <audio id="msgSound" src="https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.m4a"></audio>
+    <audio id="msgSound" src="https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.m4a" preload="auto"></audio>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -92,85 +91,43 @@
         const params = new URLSearchParams(window.location.search);
         const clientName = params.get('name') || 'אורח';
         const clientId = params.get('uid') || 'guest_' + Date.now();
+        const clientAvatarUrl = params.get('img') || ''; // קבלת תמונה מהלינק אם יש
+
         let isMuted = false;
 
-        // Startup Logic
+        // --- Functions attached to WINDOW for HTML access ---
+
         window.startSession = async (type) => {
-            // Unlock Audio Context
+            // Unlock Audio Logic (Critical fix)
             const audio = document.getElementById('msgSound');
-            audio.volume = 0; 
-            audio.play().then(() => { audio.pause(); audio.volume = 1; }).catch(e=>{});
+            audio.muted = true;
+            try {
+                await audio.play();
+                audio.pause();
+                audio.currentTime = 0;
+                audio.muted = false;
+            } catch(e) { console.log("Audio unlock failed", e); }
 
             document.getElementById('startupModal').style.display = 'none';
             
             // Send system message
             await sendMessage({ 
                 text: `🏁 *התחלת שיחה:* הלקוח בחר בנושא "${type}"`, 
-                type: 'system' 
+                type: 'system',
+                isVisibleToClient: false // System msg hidden from client view
             });
         };
 
-        // Render Logic
-        const chatRef = collection(db, `orders/${clientId}/internal_chat`);
-        onSnapshot(query(chatRef, orderBy("createdAt", "asc")), (snap) => {
-            const box = document.getElementById('chat-box');
-            box.innerHTML = ''; 
-            
-            snap.docs.forEach(d => {
-                const m = d.data();
-                if(m.isVisibleToClient === false) return; // Ghost Mode
-                
-                // Sound
-                if(!isMuted && m.sender !== 'client' && !snap.metadata.hasPendingWrites) {
-                    document.getElementById('msgSound').play().catch(e=>console.log('Audio blocked'));
-                }
-                
-                renderMessage(m, box);
-            });
-            box.scrollTop = box.scrollHeight;
-        });
+        window.toggleMute = () => {
+            isMuted = !isMuted;
+            const btn = document.getElementById('muteBtn');
+            const icon = isMuted ? '<i class="fas fa-volume-mute text-red-200"></i>' : '<i class="fas fa-volume-up"></i>';
+            btn.innerHTML = icon;
+            // Visual feedback
+            btn.classList.add('scale-110');
+            setTimeout(() => btn.classList.remove('scale-110'), 200);
+        };
 
-        function renderMessage(m, container) {
-            const isMe = m.sender === 'client';
-            let content = `<div class="text-[15px] whitespace-pre-wrap">${m.text}</div>`;
-            
-            // Avatar fix
-            const senderNameSafe = encodeURIComponent(m.sender);
-            const avatarUrl = isMe 
-                ? `https://ui-avatars.com/api/?name=${encodeURIComponent(clientName)}&background=d9fdd3` 
-                : `https://ui-avatars.com/api/?name=${senderNameSafe}&background=fff`;
-
-            if(m.type === 'image') {
-                content = `
-                <img src="${m.url}" class="media-preview cursor-pointer" onclick="window.open('${m.url}')">
-                <a href="${m.url}" target="_blank" class="link-preview"><i class="fas fa-external-link-alt"></i> פתח תמונה בגודל מלא</a>
-                `;
-            } else if(m.type === 'pdf') {
-                content = `
-                <a href="${m.url}" target="_blank" class="pdf-card">
-                    <i class="fas fa-file-pdf text-2xl"></i>
-                    <div class="text-left">
-                        <div class="font-bold text-sm">מסמך PDF</div>
-                        <div class="text-xs opacity-70">לחץ להורדה</div>
-                    </div>
-                </a>`;
-            }
-
-            container.innerHTML += `
-                <div class="msg ${isMe ? 'out' : 'in'}">
-                    <div class="flex items-center gap-2 mb-1 ${isMe ? 'flex-row-reverse' : ''}">
-                        <img src="${avatarUrl}" class="avatar-img hidden">
-                        ${!isMe ? `<div class="text-[11px] font-bold text-orange-700">מחלקת הזמנות</div>` : ''}
-                    </div>
-                    ${content}
-                    <div class="msg-time">
-                        ${new Date(m.createdAt?.seconds*1000 || Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
-                        ${isMe ? '<i class="fas fa-check-double text-blue-500 text-[10px]"></i>' : ''}
-                    </div>
-                </div>`;
-        }
-
-        // Actions
         window.sendMsg = async () => {
             const input = document.getElementById('msg-input');
             const txt = input.value.trim();
@@ -195,23 +152,98 @@
             reader.readAsDataURL(file);
         };
 
+        // Internal Helper
         async function sendMessage(payload) {
-            // Ensure order doc exists
             const orderRef = doc(db, "orders", clientId);
             const s = await getDoc(orderRef);
-            if(!s.exists()) await setDoc(orderRef, { clientName, status: 'new', createdAt: serverTimestamp() });
+            
+            // שמירת אווטאר הלקוח בהזמנה אם אין
+            const orderData = { 
+                clientName, 
+                status: 'new', 
+                createdAt: serverTimestamp(),
+                clientAvatar: clientAvatarUrl // שומר את הלינק לתמונה
+            };
 
-            await addDoc(chatRef, {
+            if(!s.exists()) {
+                await setDoc(orderRef, orderData);
+            } else {
+                // עדכון תמונה אם השתנתה
+                 if(clientAvatarUrl) await setDoc(orderRef, { clientAvatar: clientAvatarUrl }, { merge: true });
+            }
+
+            await addDoc(collection(db, `orders/${clientId}/internal_chat`), {
                 ...payload,
                 sender: 'client',
                 createdAt: serverTimestamp()
             });
         }
 
-        window.toggleMute = () => {
-            isMuted = !isMuted;
-            document.getElementById('muteBtn').innerHTML = isMuted ? '<i class="fas fa-volume-mute text-red-200"></i>' : '<i class="fas fa-volume-up"></i>';
-        };
+        // --- Chat Listener ---
+        const chatRef = collection(db, `orders/${clientId}/internal_chat`);
+        onSnapshot(query(chatRef, orderBy("createdAt", "asc")), (snap) => {
+            const box = document.getElementById('chat-box');
+            box.innerHTML = ''; 
+            
+            snap.docs.forEach(d => {
+                const m = d.data();
+                if(m.isVisibleToClient === false) return; // Ghost Mode
+                
+                // Sound Play Logic
+                if(!isMuted && m.sender !== 'client' && !snap.metadata.hasPendingWrites) {
+                    const audio = document.getElementById('msgSound');
+                    audio.currentTime = 0;
+                    audio.play().catch(e => console.log('Autoplay blocked'));
+                }
+                
+                renderMessage(m, box);
+            });
+            box.scrollTop = box.scrollHeight;
+        });
+
+        function renderMessage(m, container) {
+            const isMe = m.sender === 'client';
+            let content = `<div class="text-[15px] whitespace-pre-wrap">${m.text}</div>`;
+            
+            // Avatar Logic
+            let avatarUrl = '';
+            if (!isMe) {
+                 // תמונת צוות (אפשר לשכלל אם הצוות שולח את התמונה שלו בהודעה)
+                 avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(m.sender)}&background=fff&color=000`;
+            } else {
+                 // תמונת לקוח - מהלינק או ברירת מחדל
+                 avatarUrl = clientAvatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(clientName)}&background=d9fdd3`;
+            }
+
+            if(m.type === 'image') {
+                content = `
+                <img src="${m.url}" class="media-preview cursor-pointer" onclick="window.open('${m.url}')">
+                <a href="${m.url}" target="_blank" class="link-preview"><i class="fas fa-external-link-alt"></i> פתח תמונה בגודל מלא</a>
+                `;
+            } else if(m.type === 'pdf') {
+                content = `
+                <a href="${m.url}" target="_blank" class="pdf-card">
+                    <i class="fas fa-file-pdf text-2xl text-red-600"></i>
+                    <div class="text-left">
+                        <div class="font-bold text-sm">מסמך PDF</div>
+                        <div class="text-xs opacity-70">לחץ להורדה</div>
+                    </div>
+                </a>`;
+            }
+
+            container.innerHTML += `
+                <div class="msg ${isMe ? 'out' : 'in'}">
+                    <div class="flex items-center gap-2 mb-1 ${isMe ? 'flex-row-reverse' : ''}">
+                        <img src="${avatarUrl}" class="avatar-img">
+                        ${!isMe ? `<div class="text-[11px] font-bold text-orange-700">מחלקת הזמנות (${m.sender})</div>` : ''}
+                    </div>
+                    ${content}
+                    <div class="msg-time">
+                        ${new Date(m.createdAt?.seconds*1000 || Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
+                        ${isMe ? '<i class="fas fa-check-double text-blue-500 text-[10px]"></i>' : ''}
+                    </div>
+                </div>`;
+        }
     </script>
 </body>
 </html>
