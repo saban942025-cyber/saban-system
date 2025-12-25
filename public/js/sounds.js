@@ -1,72 +1,49 @@
 // public/js/sounds.js
 
-const SabanSounds = {
-    // מאגר לינקים יציבים
-    sources: {
-        message: "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.m4a",
-        alert: "https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.m4a"
+// יצירת הקשר סאונד (Audio Context)
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+export const SabanSounds = {
+    // פונקציה שמייצרת צליל דיגיטלי (ללא קובץ)
+    beep: (frequency = 1000, type = 'sine') => {
+        try {
+            // אם הסאונד במצב "מושהה" (בגלל חסימת דפדפן) - נסה לשחרר אותו
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.type = type; // 'sine' = צליל עגול ונעים
+            oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime); // תדר הצליל
+
+            // יצירת אפקט דעיכה (Fade Out) כדי שיישמע כמו פעמון ולא סתם צפצוף
+            gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.6);
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.6); // אורך הצליל
+        } catch (e) {
+            console.error("Audio Context Error:", e);
+        }
     },
 
-    cache: {},
-    isUnlocked: false,
+    // צליל הודעה רגילה (גבוה ונעים)
+    playMessage: () => SabanSounds.beep(850, 'sine'),
 
-    // 1. אתחול: שחרור חסימת דפדפן (חובה לקרוא לזה בטעינת הדף)
+    // צליל התראה/חירום (נמוך ומרובע)
+    playAlert: () => SabanSounds.beep(400, 'square'),
+    
+    // פונקציית אתחול - נקראת בלחיצה הראשונה על כפתור הרמקול
     init: () => {
-        const unlock = () => {
-            if (SabanSounds.isUnlocked) return;
-            
-            // מנגן צליל ריק כדי לפתוח את ה-AudioContext
-            const audio = new Audio(SabanSounds.sources.message);
-            audio.volume = 0;
-            
-            audio.play().then(() => {
-                SabanSounds.isUnlocked = true;
-                console.log("🔊 סאונד שוחרר בהצלחה");
-                // ניקוי מאזינים כדי לא להכביד
-                document.removeEventListener('click', unlock);
-                document.removeEventListener('keydown', unlock);
-                document.removeEventListener('touchstart', unlock);
-            }).catch(e => {
-                // התעלמות שקטה אם עדיין חסום
-            });
-        };
-
-        // מאזין לכל סוג של אינטראקציה
-        document.addEventListener('click', unlock);
-        document.addEventListener('keydown', unlock);
-        document.addEventListener('touchstart', unlock);
-    },
-
-    // 2. הפונקציה הראשית לניגון
-    play: (type) => {
-        const url = SabanSounds.sources[type] || SabanSounds.sources.message;
-        
-        // יצירה חדשה או שליפה מהזיכרון
-        if (!SabanSounds.cache[url]) {
-            SabanSounds.cache[url] = new Audio(url);
-        }
-        
-        const audio = SabanSounds.cache[url];
-        audio.currentTime = 0;
-        audio.volume = 0.8;
-
-        const playPromise = audio.play();
-        
-        if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                // לוג שקט יותר כדי לא להפציץ את הקונסול
-                if(!SabanSounds.isUnlocked) {
-                    console.warn("🔇 סאונד מושתק ע''י הדפדפן - ממתין ללחיצה ראשונה של המשתמש.");
-                } else {
-                    console.error("Audio Error:", error);
-                }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume().then(() => {
+                console.log("🔊 AudioContext Resumed by user gesture");
             });
         }
-    },
-
-    // --- התיקון הקריטי: חשיפת הפונקציות החסרות ---
-    playMessage: () => SabanSounds.play('message'),
-    playAlert: () => SabanSounds.play('alert')
+    }
 };
-
-export { SabanSounds };
