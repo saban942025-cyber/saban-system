@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>כניסת צוות | Saban System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-slate-900 flex items-center justify-center h-screen">
+
+    <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center">
+        <div class="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg border-4 border-slate-100">
+            <i class="fas fa-user-astronaut text-3xl text-white"></i>
+        </div>
+        
+        <h1 class="text-2xl font-black text-slate-800 mb-1">היי, מי זה?</h1>
+        <p class="text-slate-500 text-sm mb-6">מערכת ניהול ח.סבן 2025</p>
+
+        <div class="space-y-3">
+            <button onclick="login('ראמי סבן', 'admin')" class="w-full bg-slate-100 hover:bg-blue-50 hover:border-blue-500 border border-transparent p-4 rounded-xl flex items-center gap-4 transition group">
+                <img src="https://ui-avatars.com/api/?name=Rami+Saban&background=0f172a&color=fff" class="w-10 h-10 rounded-full">
+                <div class="text-right">
+                    <div class="font-bold text-slate-700 group-hover:text-blue-700">ראמי סבן</div>
+                    <div class="text-xs text-slate-400">מנהל חמ"ל</div>
+                </div>
+            </button>
+
+            <button onclick="login('אורן המחסנאי', 'warehouse')" class="w-full bg-slate-100 hover:bg-orange-50 hover:border-orange-500 border border-transparent p-4 rounded-xl flex items-center gap-4 transition group">
+                <img src="https://ui-avatars.com/api/?name=Oren&background=f97316&color=fff" class="w-10 h-10 rounded-full">
+                <div class="text-right">
+                    <div class="font-bold text-slate-700 group-hover:text-orange-700">אורן</div>
+                    <div class="text-xs text-slate-400">אחראי לוגיסטיקה</div>
+                </div>
+            </button>
+
+            <button onclick="login('עלי הנהג', 'driver')" class="w-full bg-slate-100 hover:bg-green-50 hover:border-green-500 border border-transparent p-4 rounded-xl flex items-center gap-4 transition group">
+                <img src="https://ui-avatars.com/api/?name=Ali&background=10b981&color=fff" class="w-10 h-10 rounded-full">
+                <div class="text-right">
+                    <div class="font-bold text-slate-700 group-hover:text-green-700">עלי</div>
+                    <div class="text-xs text-slate-400">הפצה ושינוע</div>
+                </div>
+            </button>
+        </div>
+
+        <div class="mt-6 border-t pt-4">
+            <input type="text" id="customName" placeholder="או הקלד שם אורח..." class="w-full text-center text-sm p-2 bg-gray-50 rounded border mb-2 outline-none focus:border-blue-500">
+            <button onclick="manualLogin()" class="text-xs font-bold text-blue-600 hover:underline">כניסה כאורח</button>
+        </div>
+    </div>
+
+    <script>
+        function login(name, role) {
+            // שמירת המשתמש בזיכרון הדפדפן
+            const user = { name: name, role: role, loginTime: new Date() };
+            localStorage.setItem('saban_user', JSON.stringify(user));
+            
+            // הפניה לדף המתאים לפי התפקיד
+            if(role === 'admin') window.location.href = 'hamal-master.html'; // מנהל לחמ"ל
+            else window.location.href = 'whatsapp-center.html'; // עובדים לוואטסאפ
+        }
+
+        function manualLogin() {
+            const val = document.getElementById('customName').value;
+            if(val) login(val, 'guest');
+        }
+    </script>
+</body>
+</html>
