@@ -8,49 +8,40 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
     <style>
-        /* --- WhatsApp Theme --- */
-        body { background-color: #efeae2; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; height: 100dvh; display: flex; flex-direction: column; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); }
-        
-        /* Startup Modal */
-        #startupModal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-        .modal-box { background: white; width: 90%; max-width: 340px; border-radius: 20px; padding: 25px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        @keyframes popUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-
-        /* Project Select */
-        .project-select { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 12px; margin-bottom: 15px; background: #f8fafc; font-weight: bold; color: #334155; outline: none; text-align: center; }
+        body { background-color: #efeae2; font-family: -apple-system, sans-serif; height: 100dvh; display: flex; flex-direction: column; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); }
         
         /* Messages */
         .msg { max-width: 85%; padding: 8px 12px; border-radius: 8px; font-size: 14px; position: relative; margin-bottom: 8px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
         .msg.out { align-self: flex-start; background: #d9fdd3; border-top-right-radius: 0; }
         .msg.in { align-self: flex-end; background: white; border-top-left-radius: 0; }
-        
         .msg-time { font-size: 10px; color: #999; text-align: left; margin-top: 4px; align-self: flex-end; display: flex; align-items: center; gap: 4px; }
         
-        /* Media */
-        .media-preview { border-radius: 6px; margin-bottom: 5px; max-width: 100%; display: block; border: 1px solid rgba(0,0,0,0.1); cursor: pointer; }
-        .pdf-card { background: #fdf2f2; border: 1px solid #fecaca; padding: 10px; border-radius: 6px; display: flex; items-center; gap: 10px; text-decoration: none; color: #991b1b; }
+        /* Attachment Menu (The Pin) */
+        .attach-menu { position: absolute; bottom: 70px; right: 10px; background: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: none; flex-direction: column; overflow: hidden; z-index: 50; animation: popIn 0.2s ease-out; }
+        .attach-menu.open { display: flex; }
+        .attach-item { padding: 12px 20px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.2s; font-size: 14px; color: #4b5563; }
+        .attach-item:hover { background: #f3f4f6; }
+        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        /* Waze Card */
+        .waze-card { background: #eef2ff; border: 1px solid #c7d2fe; padding: 10px; border-radius: 8px; text-align: center; text-decoration: none; color: #3730a3; display: block; margin-top: 5px; }
+        .media-preview { border-radius: 6px; margin-bottom: 5px; max-width: 100%; border: 1px solid rgba(0,0,0,0.1); }
         
-        .system-msg { background: #e1f5fe; border: 1px dashed #0288d1; color: #01579b; align-self: center; width: auto; max-width: 90%; text-align: center; padding: 8px; border-radius: 8px; font-size: 12px; margin: 10px 0; }
-        .avatar-img { width: 28px; height: 28px; border-radius: 50%; margin-left: 8px; object-fit: cover; }
+        /* Modal & Select */
+        #startupModal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
+        .modal-box { background: white; width: 90%; max-width: 320px; border-radius: 20px; padding: 25px; text-align: center; }
+        .project-select { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 12px; margin-bottom: 15px; background: #f8fafc; font-weight: bold; color: #334155; outline: none; }
     </style>
 </head>
 <body>
 
     <div id="startupModal">
         <div class="modal-box">
-            <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-inner">
-                <i class="fas fa-hard-hat"></i>
-            </div>
+            <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl"><i class="fas fa-hard-hat"></i></div>
             <h2 class="text-xl font-bold text-gray-800 mb-1" id="welcomeTitle">ברוכים הבאים</h2>
             <p class="text-gray-500 text-sm mb-5">לאיזה פרויקט נרשום את ההזמנה?</p>
-            
-            <div class="relative">
-                <select id="projectSelect" class="project-select">
-                    <option value="כללי">טוען נתונים...</option>
-                </select>
-            </div>
-
-            <button onclick="window.startSession()" class="w-full bg-[#008069] text-white py-3.5 rounded-xl font-bold shadow-lg hover:bg-[#006d59] transition flex items-center justify-center gap-2 active:scale-95">
+            <select id="projectSelect" class="project-select"><option value="כללי">טוען...</option></select>
+            <button onclick="window.startSession()" class="w-full bg-[#008069] text-white py-3.5 rounded-xl font-bold shadow-lg hover:bg-[#006d59] transition flex items-center justify-center gap-2">
                 <i class="fas fa-check"></i> התחל הזמנה
             </button>
         </div>
@@ -59,131 +50,78 @@
     <div class="bg-[#008069] p-3 flex items-center gap-3 text-white shadow-md z-10 sticky top-0">
         <img src="https://ui-avatars.com/api/?name=%D7%9E%D7%97%D7%9C%D7%A7%D7%AA+%D7%94%D7%96%D7%9E%D7%A0%D7%95%D7%AA&background=25D366&color=fff" class="w-10 h-10 rounded-full border-2 border-white/20">
         <div class="flex flex-col flex-1">
-            <span class="font-bold text-base leading-tight">מחלקת הזמנות</span>
-            <span class="text-[11px] text-green-100 flex items-center gap-1">
-                <span class="w-2 h-2 bg-green-300 rounded-full animate-pulse"></span> מחובר אונליין
-            </span>
+            <span class="font-bold text-base">מחלקת הזמנות</span>
+            <span class="text-[11px] text-green-100 flex items-center gap-1"><span class="w-2 h-2 bg-green-300 rounded-full animate-pulse"></span> מחובר אונליין</span>
         </div>
-        <button onclick="window.toggleMute()" id="muteBtn" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 transition">
-            <i class="fas fa-volume-up"></i>
-        </button>
+        <button onclick="window.toggleMute()" id="muteBtn" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10"><i class="fas fa-volume-up"></i></button>
     </div>
 
-    <div id="chat-box" class="flex-1 overflow-y-auto p-4 flex flex-col scroll-smooth">
-        <div class="bg-[#ffeba7] text-[10px] text-center p-2 rounded-lg text-amber-900 shadow-sm mx-auto mb-4 border border-amber-200 w-fit select-none">
-            🔒 השיחה מאובטחת ומנוטרת ע"י מערכת SabanOS.
+    <div id="chat-box" class="flex-1 overflow-y-auto p-4 flex flex-col scroll-smooth"></div>
+
+    <div id="attachMenu" class="attach-menu">
+        <div class="attach-item" onclick="document.getElementById('fileInput').click()">
+            <div class="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center"><i class="fas fa-image"></i></div>
+            <span>תמונה/PDF</span>
+        </div>
+        <div class="attach-item" onclick="window.sendLocation()">
+            <div class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center"><i class="fas fa-map-marker-alt"></i></div>
+            <span>שלח מיקום (Waze)</span>
         </div>
     </div>
 
     <div class="p-2 bg-[#f0f2f5] flex items-center gap-2 pb-safe border-t border-gray-200">
         <input type="file" id="fileInput" hidden accept="image/*,application/pdf" onchange="window.handleFileUpload(this)">
-        
-        <button onclick="document.getElementById('fileInput').click()" class="w-10 h-10 rounded-full text-gray-500 hover:bg-gray-200 transition rotate-45 flex-shrink-0">
-            <i class="fas fa-paperclip text-xl"></i>
-        </button>
-        
+        <button onclick="document.getElementById('attachMenu').classList.toggle('open')" class="w-10 h-10 rounded-full text-gray-500 hover:bg-gray-200 transition rotate-45"><i class="fas fa-paperclip text-xl"></i></button>
         <input id="msg-input" type="text" class="flex-1 bg-white rounded-2xl py-3 px-4 text-sm outline-none border-none shadow-sm" placeholder="הקלד הודעה..." onkeydown="if(event.key==='Enter') window.sendMsg()">
-        
-        <button onclick="window.sendMsg()" class="w-11 h-11 bg-[#008069] rounded-full text-white shadow-sm flex items-center justify-center hover:scale-105 transition flex-shrink-0">
-            <i class="fas fa-paper-plane"></i>
-        </button>
+        <button onclick="window.sendMsg()" class="w-11 h-11 bg-[#008069] rounded-full text-white shadow-sm flex items-center justify-center hover:scale-105 transition"><i class="fas fa-paper-plane"></i></button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        
-        // --- 1. ייבוא הסאונד החדש (אותו קובץ שעובד אצל הצוות) ---
         import { SabanSounds } from './js/sounds.js';
 
-        // Firebase Config
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
-
-        // State & Params
         const params = new URLSearchParams(window.location.search);
         const clientId = params.get('uid'); 
-        
-        let clientData = { 
-            name: params.get('name') || 'אורח', 
-            clientNum: '---', 
-            projects: ['כללי'],
-            avatar: null
-        };
+        let clientData = { name: params.get('name') || 'אורח', clientNum: '---', projects: ['כללי'], avatar: null };
         let isMuted = false;
 
-        // --- Auth & Data Loading ---
         if(clientId) {
             getDoc(doc(db, "users", clientId)).then(snap => {
                 if(snap.exists()) {
-                    const data = snap.data();
-                    clientData = { ...clientData, ...data };
-                    if(!clientData.projects || clientData.projects.length === 0) clientData.projects = ['כללי'];
+                    clientData = { ...clientData, ...snap.data() };
+                    if(!clientData.projects || !clientData.projects.length) clientData.projects = ['כללי'];
                 }
-                updateStartupModal();
+                const select = document.getElementById('projectSelect');
+                select.innerHTML = '';
+                clientData.projects.forEach(p => select.innerHTML += `<option value="${p}">${p}</option>`);
+                document.getElementById('welcomeTitle').innerText = `היי, ${clientData.name}`;
             });
-        } else {
-            console.warn("Guest Mode");
-            updateStartupModal();
         }
-
-        function updateStartupModal() {
-            document.getElementById('welcomeTitle').innerText = `היי, ${clientData.name}`;
-            const select = document.getElementById('projectSelect');
-            select.innerHTML = '';
-            
-            if(clientData.projects && clientData.projects.length > 0) {
-                clientData.projects.forEach(p => {
-                    select.innerHTML += `<option value="${p}">${p}</option>`;
-                });
-            } else {
-                select.innerHTML = `<option value="כללי">כללי</option>`;
-            }
-        }
-
-        // --- Window Functions ---
 
         window.startSession = async () => {
-            // *** רגע האמת: שחרור הסאונד ***
-            // ברגע שהלקוח לוחץ "התחל", אנחנו מפעילים את ה-AudioContext
-            SabanSounds.init(); 
-            // מנגנים צליל קצר לבדיקה (זה מה שמשחרר את החסימה)
-            SabanSounds.playMessage(); 
-
-            // הסתרת המודל
+            SabanSounds.init(); SabanSounds.playMessage(); // Unlock Audio
             document.getElementById('startupModal').style.display = 'none';
-            
-            // לוגיקה עסקית רגילה
-            const selectedProject = document.getElementById('projectSelect').value;
+            const proj = document.getElementById('projectSelect').value;
             const orderId = clientId || 'guest_' + Date.now();
-
-            // יצירת/עדכון הזמנה
+            
             await setDoc(doc(db, "orders", orderId), { 
-                clientName: clientData.name,
-                clientNum: clientData.clientNum,
-                currentProject: selectedProject,
-                clientAvatar: clientData.avatar || null,
-                status: 'new',
-                lastActive: serverTimestamp()
+                clientName: clientData.name, clientNum: clientData.clientNum, currentProject: proj, 
+                clientAvatar: clientData.avatar || null, status: 'new', lastActive: serverTimestamp()
             }, { merge: true });
 
-            // הודעת מערכת
-            await sendMessage({ 
-                text: `🔔 *הזמנה חדשה*\n👤 לקוח: ${clientData.name}\n🏗️ פרויקט: ${selectedProject}`, 
-                type: 'system',
-                isVisibleToClient: true, 
-                isSystem: true
-            });
+            await sendMessage({ text: `🔔 *פתיחת הזמנה*\n👤 לקוח: ${clientData.name}\n🏗️ פרויקט: ${proj}`, type: 'system' });
         };
 
-        window.toggleMute = () => {
-            isMuted = !isMuted;
-            const btn = document.getElementById('muteBtn');
-            if (!isMuted) {
-                btn.innerHTML = '<i class="fas fa-volume-up"></i>';
-                SabanSounds.playMessage(); // בדיקה בלחיצה
-            } else {
-                btn.innerHTML = '<i class="fas fa-volume-mute text-red-300"></i>';
-            }
+        window.sendLocation = () => {
+            document.getElementById('attachMenu').classList.remove('open');
+            if(!navigator.geolocation) return alert("הדפדפן לא תומך במיקום");
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                const { latitude, longitude } = pos.coords;
+                const wazeUrl = `https://waze.com/ul?ll=${latitude},${longitude}&navigate=yes`;
+                await sendMessage({ text: '📍 מיקום נשלח', type: 'location', url: wazeUrl });
+            });
         };
 
         window.sendMsg = async () => {
@@ -195,101 +133,62 @@
         };
 
         window.handleFileUpload = (input) => {
+            document.getElementById('attachMenu').classList.remove('open');
             const file = input.files[0];
             if(!file) return;
             const reader = new FileReader();
             reader.onload = async (e) => {
                 const type = file.type.includes('pdf') ? 'pdf' : 'image';
-                await sendMessage({ 
-                    text: type === 'pdf' ? '📄 מסמך מצורף' : '📷 תמונה מצורפת',
-                    type: type, 
-                    url: e.target.result 
-                });
+                await sendMessage({ text: type==='pdf'?'📄 מסמך':'📷 תמונה', type: type, url: e.target.result });
             };
             reader.readAsDataURL(file);
         };
 
-        // --- Internal Logic ---
         async function sendMessage(payload) {
             const orderId = clientId || 'guest_temp';
-            // הקפצת השיחה למעלה בחמ"ל
             const orderRef = doc(db, "orders", orderId);
             setDoc(orderRef, { lastActive: serverTimestamp() }, { merge: true });
-
             await addDoc(collection(db, `orders/${orderId}/internal_chat`), {
-                ...payload,
-                sender: 'client',
-                clientName: clientData.name,
-                createdAt: serverTimestamp()
+                ...payload, sender: 'client', clientName: clientData.name, createdAt: serverTimestamp()
             });
         }
 
-        // --- Listener ---
         const orderId = clientId || 'guest_temp';
-        const chatQuery = query(collection(db, `orders/${orderId}/internal_chat`), orderBy("createdAt", "asc"));
-        
-        onSnapshot(chatQuery, (snap) => {
+        onSnapshot(query(collection(db, `orders/${orderId}/internal_chat`), orderBy("createdAt", "asc")), (snap) => {
             const box = document.getElementById('chat-box');
-            // ניקוי ובנייה מחדש (פשוט ובטוח)
-            box.innerHTML = '<div class="bg-[#ffeba7] text-[10px] text-center p-2 rounded-lg text-amber-900 shadow-sm mx-auto mb-4 border border-amber-200 w-fit select-none">🔒 השיחה מאובטחת.</div>';
+            box.innerHTML = '<div class="bg-[#ffeba7] text-[10px] text-center p-2 rounded-lg text-amber-900 shadow-sm mx-auto mb-4 border border-amber-200 w-fit">🔒 השיחה מאובטחת.</div>';
             
             snap.docs.forEach(d => {
                 const m = d.data();
-                if(m.isVisibleToClient === false) return; // Ghost Mode Filter
+                if(m.isVisibleToClient === false) return; 
+                if(!isMuted && m.sender !== 'client' && !snap.metadata.hasPendingWrites) SabanSounds.playMessage();
                 
-                renderMessage(m, box);
-            });
-            box.scrollTop = box.scrollHeight;
+                let content = `<div class="text-[15px] whitespace-pre-wrap">${m.text}</div>`;
+                if(m.type === 'system') content = `<div class="bg-blue-50 text-blue-800 text-xs p-2 rounded text-center border border-blue-100 font-bold">${m.text.replace(/\n/g, '<br>')}</div>`;
+                else if(m.type === 'image') content = `<img src="${m.url}" class="media-preview" onclick="window.open('${m.url}')">`;
+                else if(m.type === 'pdf') content = `<a href="${m.url}" target="_blank" class="waze-card text-red-600"><i class="fas fa-file-pdf"></i> קובץ PDF</a>`;
+                else if(m.type === 'location') content = `<a href="${m.url}" target="_blank" class="waze-card"><i class="fab fa-waze text-2xl"></i><br>נווט למיקום (Waze)</a>`;
 
-            // --- זיהוי הודעה חדשה לניגון סאונד ---
-            snap.docChanges().forEach(change => {
-                // התנאים לניגון:
-                // 1. הודעה חדשה (added)
-                // 2. לא נטענה מהקאש (metadata.fromCache === false)
-                // 3. לא אני שלחתי (m.sender !== 'client') - כלומר הודעה מהחמ"ל
-                // 4. המשתמש לא בהשתק
-                if (change.type === 'added' && !snap.metadata.fromCache && !snap.metadata.hasPendingWrites) {
-                    const m = change.doc.data();
-                    if (m.sender !== 'client' && !isMuted) {
-                        console.log("🔊 הודעה מהחמ\"ל התקבלה!");
-                        SabanSounds.playMessage();
-                    }
+                const isMe = m.sender === 'client';
+                if(!m.type || m.type !== 'system') {
+                    box.innerHTML += `
+                    <div class="msg ${isMe ? 'out' : 'in'}">
+                        ${!isMe ? '<div class="text-[11px] font-bold text-orange-700 mb-1">מחלקת הזמנות</div>' : ''}
+                        ${content}
+                        <div class="msg-time">${new Date(m.createdAt?.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
+                    </div>`;
+                } else {
+                    box.innerHTML += content;
                 }
             });
+            box.scrollTop = box.scrollHeight;
         });
 
-        function renderMessage(m, container) {
-            const isMe = m.sender === 'client';
-            const isSystem = m.type === 'system';
-            
-            if (isSystem) {
-                container.innerHTML += `
-                <div class="msg system-msg">
-                    <div class="text-[11px] font-bold whitespace-pre-wrap">${m.text}</div>
-                    <div class="text-[9px] opacity-60 mt-1">${new Date(m.createdAt?.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
-                </div>`;
-                return;
-            }
-
-            let content = `<div class="text-[15px] whitespace-pre-wrap leading-relaxed">${m.text}</div>`;
-            let avatarUrl = isMe ? (clientData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(clientData.name)}&background=d9fdd3`) : `https://ui-avatars.com/api/?name=%D7%97%D7%9E%D7%9C&background=fff`;
-
-            if(m.type === 'image') content = `<img src="${m.url}" class="media-preview" onclick="window.open('${m.url}')">`;
-            if(m.type === 'pdf') content = `<a href="${m.url}" target="_blank" class="pdf-card">📄 קובץ PDF</a>`;
-
-            container.innerHTML += `
-                <div class="msg ${isMe ? 'out' : 'in'}">
-                    <div class="flex items-center gap-2 mb-1 ${isMe ? 'flex-row-reverse' : ''}">
-                        <img src="${avatarUrl}" class="avatar-img">
-                        ${!isMe ? `<div class="text-[11px] font-bold text-orange-700">מחלקת הזמנות</div>` : ''}
-                    </div>
-                    ${content}
-                    <div class="msg-time">
-                        ${new Date(m.createdAt?.seconds*1000 || Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
-                        ${isMe ? '<i class="fas fa-check-double text-blue-500 text-[10px]"></i>' : ''}
-                    </div>
-                </div>`;
-        }
+        window.toggleMute = () => {
+            isMuted = !isMuted;
+            document.getElementById('muteBtn').innerHTML = isMuted ? '<i class="fas fa-volume-mute text-red-300"></i>' : '<i class="fas fa-volume-up"></i>';
+            if(!isMuted) SabanSounds.playMessage();
+        };
     </script>
 </body>
 </html>
