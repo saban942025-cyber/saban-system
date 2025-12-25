@@ -6,297 +6,122 @@
     <meta name="theme-color" content="#008069">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <title>פורטל לקוחות | סבן</title>
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
     <style>
-        body { background: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding-bottom: 90px; -webkit-tap-highlight-color: transparent; }
-        
-        /* Magic Card Style */
-        .magic-card {
-            background: white; border-radius: 20px; overflow: hidden;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.06);
-            margin: 16px; position: relative; border: 1px solid #e5e7eb;
-        }
-        
-        /* Progress Track */
-        .progress-track { display: flex; justify-content: space-between; padding: 20px 20px 10px; position: relative; }
-        .progress-track::before { content: ''; position: absolute; top: 35px; left: 25px; right: 25px; height: 3px; background: #f3f4f6; z-index: 0; }
-        .step { position: relative; z-index: 1; text-align: center; flex: 1; }
-        .step-dot { width: 32px; height: 32px; background: #e5e7eb; border-radius: 50%; display: flex; items-center; justify-content: center; margin: 0 auto 6px; color: white; transition: 0.3s; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .step.active .step-dot { background: #10b981; transform: scale(1.1); box-shadow: 0 0 0 3px #d1fae5; }
-        .step-label { font-size: 10px; color: #9ca3af; font-weight: 700; }
+        body { background: #f3f4f6; font-family: sans-serif; padding-bottom: 90px; }
+        .magic-card { background: white; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.06); margin: 16px; overflow: hidden; border: 1px solid #e5e7eb; }
+        .step-dot { width: 32px; height: 32px; background: #e5e7eb; border-radius: 50%; display: flex; items-center; justify-content: center; margin: 0 auto 6px; }
+        .step.active .step-dot { background: #10b981; color: white; transform: scale(1.1); box-shadow: 0 0 0 3px #d1fae5; }
+        .step-label { font-size: 10px; color: #9ca3af; font-weight: 700; text-align: center; }
         .step.active .step-label { color: #10b981; }
-
-        /* Doc Preview */
-        .doc-preview { background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 12px; margin: 15px; padding: 15px; text-align: center; cursor: pointer; position: relative; }
-        .doc-badge { position: absolute; top: -10px; right: -10px; background: #3b82f6; color: white; font-size: 10px; padding: 4px 8px; border-radius: 20px; font-weight: bold; }
-
-        /* Chat */
-        .chat-container { background: #f1f5f9; margin: 0 15px 15px; border-radius: 12px; padding: 10px; }
-        .chat-box { max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
-        .msg { padding: 8px 12px; border-radius: 12px; font-size: 13px; max-width: 85%; position: relative; word-wrap: break-word; }
-        .msg.me { background: #dcfce7; color: #14532d; align-self: flex-start; border-bottom-right-radius: 2px; }
-        .msg.rami { background: white; border: 1px solid #e2e8f0; align-self: flex-end; border-bottom-left-radius: 2px; }
-
-        /* Lock Button */
-        .lock-btn { background: #1e293b; color: white; width: 100%; padding: 18px; font-weight: 700; font-size: 16px; border: none; display: flex; justify-content: center; items-center; gap: 10px; cursor: pointer; transition: 0.3s; }
-        .lock-btn:active { background: #0f172a; }
-        .lock-btn.locked { background: #10b981; pointer-events: none; }
-        .lock-btn.updated { background: #2563eb; animation: pulse 2s infinite; }
-
-        /* Bottom Tabs */
-        .bottom-tabs { position: fixed; bottom: 0; left: 0; right: 0; background: white; height: 80px; display: flex; justify-content: space-around; align-items: flex-start; padding-top: 12px; border-top: 1px solid #f1f5f9; z-index: 50; padding-bottom: env(safe-area-inset-bottom); }
-        .tab-btn { color: #94a3b8; display: flex; flex-direction: column; items-center; font-size: 10px; gap: 4px; width: 60px; font-weight: 600; cursor: pointer; }
+        .msg { padding: 8px 12px; border-radius: 12px; font-size: 13px; max-width: 85%; margin-bottom: 5px; }
+        .msg.me { background: #dcfce7; align-self: flex-start; }
+        .msg.rami { background: white; border: 1px solid #e2e8f0; align-self: flex-end; }
+        .msg.system { background: #eff6ff; color: #1e40af; font-size: 11px; text-align: center; align-self: center; width: 100%; border: 1px dashed #bfdbfe; }
+        .bottom-tabs { position: fixed; bottom: 0; width: 100%; background: white; height: 70px; display: flex; justify-content: space-around; padding-top: 10px; border-top: 1px solid #eee; z-index: 50; }
+        .tab-btn { color: #94a3b8; display: flex; flex-direction: column; items-center; font-size: 10px; font-weight: bold; }
         .tab-btn.active { color: #008069; }
-        .tab-btn i { font-size: 22px; transition: 0.2s; }
-
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
-
-    <div class="bg-white px-5 py-4 flex justify-between items-center shadow-sm sticky top-0 z-40">
-        <div class="flex items-center gap-3">
-            <img src="" id="client-avatar" class="w-10 h-10 rounded-full border-2 border-white shadow-sm bg-gray-200">
-            <div>
-                <h1 class="text-lg font-black text-slate-800 leading-none" id="client-greeting">טוען...</h1>
-                <p class="text-[10px] text-gray-500 font-bold mt-1">אזור אישי מאובטח</p>
-            </div>
-        </div>
-        <div class="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center text-green-600">
-            <i class="fas fa-bell"></i>
-        </div>
+    <div class="bg-white px-5 py-4 shadow-sm sticky top-0 z-40 flex justify-between items-center">
+        <h1 class="text-lg font-black text-slate-800" id="client-greeting">שלום...</h1>
+        <i class="fas fa-bell text-green-600 bg-green-50 p-2 rounded-full"></i>
     </div>
 
-    <div id="view-active" class="view-section">
-        <div id="magic-container">
-            <div class="flex flex-col items-center justify-center mt-20 text-gray-400 gap-4">
-                <i class="fas fa-circle-notch fa-spin text-3xl"></i>
-                <span class="text-sm">טוען נתונים...</span>
-            </div>
-        </div>
+    <div id="view-active" class="block">
+        <div id="magic-container" class="pb-4"></div>
     </div>
 
-    <div id="view-new" class="view-section p-4 hidden">
-        <h2 class="font-bold text-xl mb-4 text-slate-800">הזמנה חדשה</h2>
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-            <label class="text-xs font-bold text-gray-400 uppercase block mb-2">מה להזמין?</label>
-            <textarea id="new-items" class="w-full bg-gray-50 border-none rounded-xl p-4 h-32 mb-4 text-sm focus:ring-2 focus:ring-green-500 outline-none resize-none" placeholder="לדוגמה: 5 מלט, 2 חול..."></textarea>
-            
-            <div class="grid grid-cols-2 gap-3 mb-4">
-                <div><label class="text-xs font-bold text-gray-400 uppercase block mb-2">תאריך אספקה</label><input type="date" id="new-date" class="w-full bg-gray-50 p-3 rounded-xl text-sm border-none"></div>
-                <div><label class="text-xs font-bold text-gray-400 uppercase block mb-2">שעה מועדפת</label><input type="time" id="new-time" class="w-full bg-gray-50 p-3 rounded-xl text-sm border-none"></div>
-            </div>
-            <input type="text" id="new-address" class="w-full bg-gray-50 p-3 rounded-xl border-none mb-6 text-sm" placeholder="כתובת / אתר (לא חובה)">
-            
-            <button onclick="submitOrder()" class="w-full bg-[#008069] text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:bg-[#006a55] active:scale-95 transition flex justify-center items-center gap-2">
-                <span>שגר הזמנה</span> <i class="fas fa-paper-plane"></i>
-            </button>
+    <div id="view-new" class="hidden p-4">
+        <h2 class="font-bold text-xl mb-4">הזמנה חדשה</h2>
+        <div class="bg-white p-5 rounded-2xl shadow-sm">
+            <textarea id="new-items" class="w-full bg-gray-50 rounded-xl p-4 h-32 mb-4 text-sm" placeholder="פירוט הזמנה..."></textarea>
+            <input type="text" id="new-address" class="w-full bg-gray-50 p-3 rounded-xl mb-4 text-sm" placeholder="כתובת">
+            <button onclick="submitOrder()" class="w-full bg-[#008069] text-white py-4 rounded-xl font-bold shadow-lg">שגר לווצאף 🚀</button>
         </div>
-    </div>
-
-    <div id="view-history" class="view-section p-4 hidden">
-        <h2 class="font-bold text-xl mb-4 text-slate-800">היסטוריה</h2>
-        <div id="history-list" class="space-y-3"></div>
     </div>
 
     <div class="bottom-tabs">
-        <div class="tab-btn active" onclick="switchView('active', this)"><i class="fas fa-shipping-fast"></i><span>בטיפול</span></div>
-        <div class="tab-btn" onclick="switchView('new', this)"><i class="fas fa-plus-circle text-[#008069] text-3xl"></i><span>חדש</span></div>
-        <div class="tab-btn" onclick="switchView('history', this)"><i class="fas fa-history"></i><span>היסטוריה</span></div>
+        <div class="tab-btn active" onclick="switchView('active', this)"><i class="fas fa-box text-2xl"></i> מעקב</div>
+        <div class="tab-btn" onclick="switchView('new', this)"><i class="fas fa-plus-circle text-3xl text-[#008069]"></i> חדש</div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, where, orderBy, onSnapshot, updateDoc, doc, serverTimestamp, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, where, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Config
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
-
-        // URL Params
         const params = new URLSearchParams(window.location.search);
-        const CLIENT_ID = params.get('uid') || 'guest_' + Math.floor(Math.random()*1000);
+        const CLIENT_ID = params.get('uid') || 'guest';
         const CLIENT_NAME = params.get('name') || 'אורח';
+        document.getElementById('client-greeting').innerText = `היי, ${CLIENT_NAME}`;
 
-        // Init UI
-        document.getElementById('client-greeting').innerText = `היי, ${CLIENT_NAME.split(' ')[0]}`;
-        document.getElementById('client-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(CLIENT_NAME)}&background=008069&color=fff`;
-
-        // --- Listener: Live Orders ---
-        const q = query(collection(db, "orders"), where("clientId", "==", CLIENT_ID), orderBy("createdAt", "desc"));
-        
-        onSnapshot(q, (snap) => {
-            const magicContainer = document.getElementById('magic-container');
-            const historyContainer = document.getElementById('history-list');
-
-            if(snap.empty) {
-                magicContainer.innerHTML = `<div class="flex flex-col items-center justify-center mt-20 opacity-50"><i class="fas fa-box-open text-6xl text-gray-300 mb-4"></i><h3 class="font-bold text-gray-500">אין הזמנות פעילות</h3><p class="text-xs text-gray-400 mt-2">לחץ על 'חדש' כדי להתחיל</p></div>`;
-                return;
-            }
-
-            // ההזמנה הכי חדשה היא ה"פעילה"
-            const latestDoc = snap.docs[0];
-            renderMagicCard(latestDoc.id, latestDoc.data(), magicContainer);
-
-            // כל השאר הולך להיסטוריה
-            historyContainer.innerHTML = "";
-            snap.docs.forEach((d, idx) => {
-                if(idx === 0) return; 
-                const o = d.data();
-                const date = o.createdAt ? new Date(o.createdAt.seconds * 1000).toLocaleDateString() : 'ממתין';
-                historyContainer.innerHTML += `
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
-                    <div>
-                        <div class="font-bold text-slate-700">#${o.orderNum || '...'}</div>
-                        <div class="text-xs text-gray-400">${date}</div>
-                    </div>
-                    <span class="text-[10px] font-bold bg-gray-100 px-2 py-1 rounded text-gray-500">${translateStatus(o.status)}</span>
-                </div>`;
-            });
+        // Live Order Listener
+        onSnapshot(query(collection(db, "orders"), where("clientId", "==", CLIENT_ID), orderBy("createdAt", "desc")), snap => {
+            const container = document.getElementById('magic-container');
+            if(snap.empty) { container.innerHTML = '<div class="text-center mt-20 text-gray-400">אין הזמנות</div>'; return; }
+            
+            const d = snap.docs[0].data(); // מציג רק אחרונה
+            renderCard(d, container);
         });
 
-        // --- Core: Submit Order & WhatsApp Loop ---
-        window.submitOrder = async () => {
-            const items = document.getElementById('new-items').value;
-            const dateVal = document.getElementById('new-date').value;
-            const timeVal = document.getElementById('new-time').value;
-            const address = document.getElementById('new-address').value;
-
-            if(!items) return Swal.fire('רגע...', 'צריך לרשום מה להזמין', 'warning');
+        function renderCard(data, container) {
+            const steps = { 'new': 1, 'work': 2, 'approved': 3, 'done': 4 };
+            const step = steps[data.status] || 1;
             
-            // 1. שמירה ב-Firebase (כדי שהחמ"ל יראה והכרטיס ייווצר)
-            await addDoc(collection(db, "orders"), { 
-                clientId: CLIENT_ID, 
-                clientName: CLIENT_NAME, 
-                itemsText: items, 
-                supplyDate: dateVal, 
-                supplyTime: timeVal, 
-                address: address, 
-                status: 'new', 
-                orderNum: Math.floor(1000 + Math.random() * 9000), 
-                createdAt: serverTimestamp(),
-                lastUpdate: serverTimestamp(),
-                chat: [] 
-            });
-            
-            // 2. ניקוי שדות
-            document.getElementById('new-items').value = '';
-            
-            // 3. מעבר מיידי למסך המעקב (שכבר יתעדכן בזכות המאזין)
-            switchView('active', document.querySelector('.bottom-tabs .tab-btn.active'));
-
-            // 4. בניית לינק חכם לווצאף
-            const sabanPhone = "972508860896"; // המספר שלך
-            // הלינק הזה יחזיר את הלקוח ישר למסך המעקב שלו
-            const trackingLink = `https://saban-system.onrender.com/client-smart.html?uid=${CLIENT_ID}&name=${encodeURIComponent(CLIENT_NAME)}`;
-            
-            const whatsappText = `*היי סבן, ביצעתי הזמנה חדשה!* 🚜\n\n📝 *פירוט:* ${items}\n📍 *לכתובת:* ${address || 'רגילה'}\n\nלינק למעקב שלי:\n${trackingLink}`;
-            
-            // 5. הקפצת הודעה ומעבר לווצאף
-            Swal.fire({
-                icon: 'success',
-                title: 'ההזמנה נקלטה!',
-                text: 'מעביר אותך לווצאף לאישור סופי מול סבן...',
-                timer: 2000,
-                showConfirmButton: false
-            }).then(() => {
-                window.open(`https://wa.me/${sabanPhone}?text=${encodeURIComponent(whatsappText)}`, '_blank');
-            });
-        };
-
-        // --- Render Functions ---
-        function renderMagicCard(id, data, container) {
-            const stepsMap = { 'new': 1, 'waiting_approval': 2, 'changes_requested': 2, 'approved': 3, 'on_route': 3, 'done': 4 };
-            const step = stepsMap[data.status] || 1;
-            const isApproved = step >= 3;
-            const isUpdated = data.pdfUrl && data.status === 'waiting_approval';
-
-            // Chat render
-            const chatHtml = (data.chat || []).map(msg => {
-                const isMe = msg.sender === 'client';
-                let content = msg.text;
-                if (msg.type === 'image' || msg.imageUrl) {
-                    content = `<div class="text-[10px] opacity-70 mb-1 font-bold">📷 תמונה:</div><img src="${msg.imageUrl || msg.text}" class="w-full rounded-lg border cursor-pointer" onclick="window.open(this.src)">`;
-                }
-                return `<div class="msg ${isMe ? 'me' : 'rami'}">${content}</div>`;
-            }).join('');
+            // Chat Loop
+            const chatHtml = (data.chat || []).map(m => `
+                <div class="msg ${m.sender==='system'?'system':(m.sender==='client'?'me':'rami')}">${m.text}</div>
+            `).join('');
 
             container.innerHTML = `
-            <div class="magic-card border-t-4 ${isUpdated ? 'border-blue-500' : 'border-transparent'}">
-                <div class="bg-slate-900 text-white p-5 flex justify-between items-center">
-                    <div>
-                        <div class="font-bold text-lg">הזמנה #${data.orderNum || '...'}</div>
-                        <div class="text-xs text-gray-400">${new Date(data.createdAt?.seconds*1000).toLocaleTimeString().slice(0,5)} • ${data.supplyTime || 'מיידי'}</div>
-                    </div>
-                    ${data.status === 'done' ? '<i class="fas fa-check-circle text-green-400 text-2xl"></i>' : (isUpdated ? '<span class="bg-blue-600 text-[10px] font-bold px-2 py-1 rounded animate-pulse">עודכן</span>' : '<i class="fas fa-shipping-fast text-gray-500"></i>')}
+            <div class="magic-card border-t-4 border-blue-500">
+                <div class="bg-slate-900 text-white p-5 flex justify-between">
+                    <div><div class="font-bold">הזמנה #${data.orderNum}</div><div class="text-xs opacity-70">${new Date(data.createdAt.seconds*1000).toLocaleDateString()}</div></div>
+                    ${step===4 ? '<i class="fas fa-check text-green-400 text-2xl"></i>' : '<i class="fas fa-clock text-yellow-400"></i>'}
                 </div>
-                
-                <div class="progress-track">
-                    <div class="step ${step >= 1 ? 'active' : ''}"><div class="step-dot"><i class="fas fa-file-alt"></i></div><div class="step-label">נקלט</div></div>
-                    <div class="step ${step >= 2 ? 'active' : ''}"><div class="step-dot"><i class="fas fa-tools"></i></div><div class="step-label">בטיפול</div></div>
-                    <div class="step ${step >= 3 ? 'active' : ''}"><div class="step-dot"><i class="fas fa-check"></i></div><div class="step-label">אושר</div></div>
-                    <div class="step ${step >= 4 ? 'active' : ''}"><div class="step-dot"><i class="fas fa-flag"></i></div><div class="step-label">נמסר</div></div>
+                <div class="flex justify-between px-6 py-4 relative">
+                    <div style="position:absolute;top:28px;left:40px;right:40px;height:2px;background:#f3f4f6;z-index:0"></div>
+                    <div class="step ${step>=1?'active':''}"><div class="step-dot relative z-10"><i class="fas fa-file"></i></div><div class="step-label">נקלט</div></div>
+                    <div class="step ${step>=2?'active':''}"><div class="step-dot relative z-10"><i class="fas fa-tools"></i></div><div class="step-label">בליקוט</div></div>
+                    <div class="step ${step>=3?'active':''}"><div class="step-dot relative z-10"><i class="fas fa-check"></i></div><div class="step-label">מוכן</div></div>
+                    <div class="step ${step>=4?'active':''}"><div class="step-dot relative z-10"><i class="fas fa-truck"></i></div><div class="step-label">בדרך</div></div>
                 </div>
-                
-                ${data.pdfUrl ? 
-                    `<div class="px-4"><div class="doc-preview ${isUpdated ? 'bg-blue-50 border-blue-300' : ''}" onclick="window.open('${data.pdfUrl}')">${isUpdated ? '<div class="doc-badge">חדש</div>' : ''}<i class="fas fa-file-pdf text-red-500 text-3xl mb-2"></i><div class="font-bold text-slate-700 text-sm">תעודת הזמנה</div><div class="text-xs text-gray-500">לחץ לצפייה</div></div></div>` : 
-                    `<div class="mx-4 mb-4 p-4 bg-gray-50 rounded-xl text-center text-xs text-gray-400 border border-gray-100 flex items-center justify-center gap-2"><i class="fas fa-circle-notch fa-spin"></i> ממתין למסמך מהמשרד...</div>`
-                }
-                
-                <div class="chat-container">
-                    <div class="text-[10px] font-bold text-gray-400 mb-2 uppercase flex justify-between"><span>צ'אט שירות</span>${isApproved ? '<span class="text-green-600"><i class="fas fa-lock"></i> סגור</span>' : '<span class="text-green-600">● פתוח</span>'}</div>
-                    <div class="chat-box" id="chat-box-${id}">
-                        ${chatHtml.length ? chatHtml : '<div class="text-center text-gray-400 text-xs py-4">הכל תקין? אשר למטה.<br>יש הערות? כתוב כאן.</div>'}
-                    </div>
-                    ${!isApproved ? `<div class="flex gap-2"><input id="chat-input-${id}" type="text" placeholder="כתוב הודעה..." class="flex-1 bg-white p-3 rounded-lg text-sm border-none outline-none shadow-sm" onkeydown="if(event.key==='Enter') window.sendChat('${id}')"><button onclick="window.sendChat('${id}')" class="bg-green-600 text-white w-10 rounded-lg shadow-sm"><i class="fas fa-paper-plane text-xs"></i></button></div>` : ''}
-                </div>
-
-                <button onclick="window.approveOrder('${id}')" class="lock-btn ${isApproved ? 'locked' : (isUpdated ? 'updated' : '')}">
-                    ${isApproved ? '<span><i class="fas fa-check-circle"></i> ההזמנה מאושרת</span>' : (isUpdated ? '<span><i class="fas fa-sync"></i> אשר מסמך מעודכן</span>' : '<span><i class="fas fa-fingerprint"></i> לחץ לאישור קבלה</span>')}
-                </button>
+                ${data.pdfUrl ? `<div class="p-4 bg-blue-50 text-center cursor-pointer border-t border-blue-100" onclick="window.open('${data.pdfUrl}')"><i class="fas fa-file-pdf text-red-500"></i> צפה במסמך</div>` : ''}
+                <div class="p-3 bg-gray-50 flex flex-col gap-1 max-h-[200px] overflow-y-auto">${chatHtml}</div>
             </div>`;
-            
-            // גלילה אוטומטית למטה בצ'אט
-            setTimeout(() => { const box = document.getElementById(`chat-box-${id}`); if(box) box.scrollTop = box.scrollHeight; }, 100);
         }
 
-        // --- Helpers ---
-        window.sendChat = async (id) => {
-            const input = document.getElementById(`chat-input-${id}`);
-            const text = input.value.trim();
-            if(!text) return;
-            input.value = '';
-            await updateDoc(doc(db, "orders", id), { chat: arrayUnion({ sender: 'client', text: text, time: new Date().toISOString() }), status: 'changes_requested', lastUpdate: serverTimestamp() });
+        window.submitOrder = async () => {
+            const items = document.getElementById('new-items').value;
+            const address = document.getElementById('new-address').value;
+            if(!items) return;
+
+            await addDoc(collection(db, "orders"), {
+                clientId: CLIENT_ID, clientName: CLIENT_NAME, itemsText: items, address: address,
+                status: 'new', orderNum: Math.floor(1000+Math.random()*9000), 
+                createdAt: serverTimestamp(), lastActive: serverTimestamp(), chat: []
+            });
+
+            document.getElementById('new-items').value = '';
+            switchView('active');
+
+            const link = `https://saban-system.onrender.com/client-smart.html?uid=${CLIENT_ID}&name=${CLIENT_NAME}`;
+            const text = `*הזמנה חדשה - סבן*\n📝 ${items}\n📍 ${address}\n\nלמעקב: ${link}`;
+            window.open(`https://wa.me/972508860896?text=${encodeURIComponent(text)}`, '_blank');
         };
 
-        window.approveOrder = async (id) => {
-            document.querySelector('.lock-btn').innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> מעדכן...';
-            setTimeout(async () => {
-                await updateDoc(doc(db, "orders", id), { status: 'approved', clientApprovedAt: serverTimestamp() });
-                Swal.fire({ icon: 'success', title: 'ההזמנה אושרה!', text: 'הפרטים נשלחו למחסן לליקוט.', timer: 2500, showConfirmButton: false });
-            }, 800);
+        window.switchView = (v, btn) => {
+            document.getElementById('view-active').style.display = v==='active'?'block':'none';
+            document.getElementById('view-new').style.display = v==='new'?'block':'none';
+            document.getElementById('view-history').style.display = v==='history'?'block':'none';
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            if(btn) btn.classList.add('active');
         };
-
-        window.switchView = (viewName, btn) => {
-            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
-            document.getElementById(`view-${viewName}`).classList.remove('hidden');
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            if(btn) btn.classList.add('active'); else document.querySelector('.bottom-tabs .tab-btn').classList.add('active'); // fallback
-        };
-
-        function translateStatus(st) {
-            const map = { 'new': 'חדש', 'waiting_approval': 'ממתין לאישור', 'approved': 'אושר', 'done': 'סופק' };
-            return map[st] || st;
-        }
-        
-        // Expose functions to window
-        window.sendChat = window.sendChat;
-        window.approveOrder = window.approveOrder;
-        window.submitOrder = window.submitOrder;
-        window.switchView = window.switchView;
+        window.switchView = window.switchView; window.submitOrder = window.submitOrder;
     </script>
 </body>
 </html>
