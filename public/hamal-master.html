@@ -2,425 +2,258 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Saban Enterprise | מערכת סידור</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 
     <style>
-        /* Enterprise CSS Setup */
-        :root {
-            --primary: #2563eb; /* Royal Blue */
-            --success: #10b981; /* Emerald */
-            --warning: #f59e0b; /* Amber */
-            --danger: #ef4444; /* Red */
-            --bg-body: #f1f5f9; /* Slate 100 */
-            --bg-card: #ffffff;
-            --text-main: #0f172a;
-            --text-sub: #64748b;
+        /* --- Saban OS Professional Theme --- */
+        :root { --primary: #2563eb; --surface: #ffffff; --bg: #f8fafc; }
+        body { background: var(--bg); color: #1e293b; height: 100dvh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; overflow: hidden; }
+
+        /* Sidebar Glass Effect */
+        .sidebar { 
+            width: 280px; background: rgba(255, 255, 255, 0.95); 
+            border-left: 1px solid #e2e8f0; display: flex; flex-direction: column; 
+            z-index: 50; box-shadow: 4px 0 24px rgba(0,0,0,0.02);
+            transition: transform 0.3s ease;
         }
 
-        body { background: var(--bg-body); color: var(--text-main); height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; overflow: hidden; }
+        @media (max-width: 768px) {
+            .sidebar { position: absolute; height: 100%; transform: translateX(100%); }
+            .sidebar.open { transform: translateX(0); }
+        }
 
-        /* --- Sidebar Navigation --- */
-        .sidebar { width: 260px; background: white; border-left: 1px solid #e2e8f0; display: flex; flex-direction: column; z-index: 20; box-shadow: 2px 0 10px rgba(0,0,0,0.02); }
-        .logo-area { height: 70px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #e2e8f0; }
-        .logo-text { font-size: 22px; font-weight: 900; color: #1e293b; letter-spacing: -1px; }
-        .logo-text span { color: var(--primary); }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 14px 20px; border-radius: 12px; color: #64748b; font-weight: 600; cursor: pointer; transition: all 0.2s; margin: 4px 10px; }
+        .nav-item:hover { background: #f1f5f9; color: var(--primary); transform: translateX(-2px); }
+        .nav-item.active { background: #eff6ff; color: var(--primary); box-shadow: 0 2px 4px rgba(37, 99, 235, 0.05); }
 
-        .nav-links { padding: 20px 10px; flex: 1; }
-        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 10px; color: var(--text-sub); font-weight: 600; cursor: pointer; transition: 0.2s; margin-bottom: 4px; }
-        .nav-item:hover { background: #f8fafc; color: var(--primary); }
-        .nav-item.active { background: #eff6ff; color: var(--primary); }
-        .nav-icon { width: 20px; text-align: center; }
+        /* Main Content */
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; width: 100%; }
+
+        /* Stories Row */
+        .stories-row { display: flex; gap: 16px; overflow-x: auto; padding: 10px 20px; scrollbar-width: none; }
+        .stories-row::-webkit-scrollbar { display: none; }
+        .story-ring { width: 56px; height: 56px; border-radius: 50%; padding: 3px; position: relative; transition: transform 0.2s; }
+        .story:hover .story-ring { transform: scale(1.1); }
+        .ring-new { background: linear-gradient(45deg, #ef4444, #f59e0b); }
+        .ring-wait { background: linear-gradient(45deg, #3b82f6, #06b6d4); }
+
+        /* Cards */
+        .dashboard-grid { flex: 1; padding: 20px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; align-content: start; }
+        .pro-card { background: white; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); border: 1px solid #f1f5f9; display: flex; flex-direction: column; cursor: pointer; transition: all 0.3s; position: relative; overflow: hidden; }
+        .pro-card:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.05); border-color: #cbd5e1; }
         
-        .badge { background: var(--danger); color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; margin-right: auto; }
+        .progress-track { height: 6px; background: #f1f5f9; border-radius: 10px; overflow: hidden; margin-top: 16px; }
+        .progress-fill { height: 100%; border-radius: 10px; transition: width 1s ease; background-image: linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent); background-size: 1rem 1rem; }
 
-        /* --- Main Content Area --- */
-        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
-
-        /* Top Bar & Stories */
-        .top-bar { background: white; border-bottom: 1px solid #e2e8f0; padding: 10px 20px; display: flex; flex-direction: column; gap: 10px; }
-        .stories-row { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 5px; }
-        .story { display: flex; flex-direction: column; align-items: center; cursor: pointer; min-width: 60px; transition: transform 0.2s; }
-        .story:hover { transform: translateY(-2px); }
-        .story-ring { width: 52px; height: 52px; border-radius: 50%; padding: 2px; position: relative; }
-        .story-ring img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 2px solid white; }
-        
-        /* Story Status Colors */
-        .ring-new { background: linear-gradient(45deg, #ef4444, #f59e0b); box-shadow: 0 0 0 2px #fee2e2; }
-        .ring-wait { background: linear-gradient(45deg, #3b82f6, #06b6d4); box-shadow: 0 0 0 2px #dbeafe; }
-        
-        /* Dashboard Grid */
-        .dashboard-grid { flex: 1; padding: 20px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; align-content: start; }
-
-        /* Pro Order Card */
-        .pro-card { background: white; border-radius: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.02), 0 1px 0 rgba(0,0,0,0.05); border: 1px solid #e2e8f0; display: flex; flex-direction: column; transition: 0.3s; position: relative; overflow: hidden; }
-        .pro-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border-color: #cbd5e1; }
-        
-        .card-header { padding: 16px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #fcfcfc; }
-        .card-body { padding: 16px; flex: 1; }
-        .card-footer { padding: 12px 16px; background: #f8fafc; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
-
-        /* Status Pills */
-        .status-pill { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .st-new { background: #ebf5ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
-        .st-proc { background: #fefce8; color: #a16207; border: 1px solid #fef08a; }
-        .st-wait { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
-        .st-done { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
-
-        /* Progress Bar */
-        .progress-track { height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin-top: 12px; }
-        .progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
-
-        /* Detail Slide-Over */
-        .detail-panel { position: absolute; top: 0; right: 0; bottom: 0; width: 500px; background: white; border-right: 1px solid #e2e8f0; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 50; box-shadow: -10px 0 25px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
+        /* Detail Panel */
+        .detail-panel { position: absolute; top: 0; right: 0; bottom: 0; width: 100%; max-width: 480px; background: white; transform: translateX(105%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); z-index: 100; box-shadow: -20px 0 50px rgba(0,0,0,0.1); }
         .detail-panel.open { transform: translateX(0); }
-
-        /* Utility */
-        .timer-badge { font-family: monospace; font-weight: bold; font-size: 13px; }
-        .btn-action { width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; text-align: center; transition: 0.2s; display: flex; justify-content: center; gap: 8px; }
-        .btn-blue { background: var(--primary); color: white; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2); }
-        .btn-blue:hover { background: #1d4ed8; }
         
-        .hidden { display: none !important; }
+        .mobile-menu-btn { display: none; font-size: 24px; color: #334155; }
+        @media (max-width: 768px) { .mobile-menu-btn { display: block; } }
     </style>
 </head>
 <body>
 
-    <div class="sidebar">
-        <div class="logo-area">
-            <div class="logo-text">סידור <span>ח.סבן</span></div>
+    <div class="sidebar" id="mainSidebar">
+        <div class="h-[70px] flex items-center justify-center border-b border-gray-100">
+            <div class="text-2xl font-black text-slate-800 tracking-tight">Saban<span class="text-blue-600">OS</span></div>
         </div>
         
-        <div class="nav-links">
-            <div class="text-xs font-bold text-gray-400 px-4 mb-2 uppercase tracking-wider">ראשי</div>
-            <div class="nav-item active"><i class="fas fa-th-large nav-icon"></i> לוח הזמנות</div>
-            <div class="nav-item"><i class="fas fa-exchange-alt nav-icon"></i> העברות סניפים <span class="badge">2</span></div>
-            <div class="nav-item"><i class="fas fa-history nav-icon"></i> היסטוריה</div>
+        <div class="flex-1 py-6 overflow-y-auto">
+            <div class="px-6 text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">תפעול</div>
+            <div class="nav-item active"><i class="fas fa-th-large w-6"></i> לוח הזמנות</div>
+            <div class="nav-item"><i class="fas fa-truck w-6"></i> הפצה ושינוע</div>
             
-            <div class="text-xs font-bold text-gray-400 px-4 mb-2 mt-6 uppercase tracking-wider">ניהול</div>
-            <div class="nav-item" onclick="openUserGenerator()"><i class="fas fa-user-plus nav-icon"></i> לינק ללקוח</div>
-            <div class="nav-item" onclick="manualSync()"><i class="fas fa-sync nav-icon"></i> סנכרון יזום</div>
+            <div class="px-6 text-xs font-bold text-gray-400 mb-2 mt-6 uppercase tracking-wider">אדמין</div>
+            <div class="nav-item" onclick="openUserGenerator()"><i class="fas fa-link w-6"></i> מחולל לינקים</div>
+            <div class="nav-item" onclick="location.href='staff-login.html'"><i class="fas fa-sign-out-alt w-6"></i> התנתק</div>
         </div>
         
-        <div class="p-4 border-t">
+        <div class="p-4 border-t bg-gray-50/50">
             <div class="flex items-center gap-3">
-                <img src="https://ui-avatars.com/api/?name=Rami+Saban&background=0f172a&color=fff" class="w-10 h-10 rounded-full">
+                <img id="userAvatar" src="" class="w-10 h-10 rounded-full shadow-sm">
                 <div>
-                    <div class="font-bold text-sm">ראמי סבן</div>
-                    <div class="text-xs text-green-600">● מחובר לחמ"ל</div>
+                    <div id="userName" class="font-bold text-sm text-slate-700">...</div>
+                    <div id="userRole" class="text-[10px] font-bold text-green-600 uppercase tracking-wide">● מחובר</div>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="main-content">
-        <div class="top-bar">
-            <div class="flex justify-between items-center mb-2">
-                <h2 class="font-bold text-xl text-slate-800">עדכונים חיים</h2>
-                <div class="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full"><i class="fas fa-circle text-green-500 text-[8px] mr-1"></i> מערכת אונליין</div>
+        <div class="h-[70px] bg-white border-b border-gray-100 px-6 flex items-center justify-between sticky top-0 z-30">
+            <div class="flex items-center gap-4">
+                <button class="mobile-menu-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+                <h2 class="font-bold text-lg text-slate-800">מרכז שליטה</h2>
             </div>
-            
-            <div class="stories-row" id="stories-container">
-                </div>
+            <div class="flex gap-2">
+                <span class="text-xs font-bold bg-green-100 text-green-700 px-3 py-1.5 rounded-full flex items-center gap-2">
+                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> אונליין
+                </span>
+            </div>
+        </div>
+
+        <div class="bg-white border-b border-gray-50 py-4">
+            <div class="stories-row" id="stories-container"></div>
         </div>
 
         <div class="dashboard-grid" id="orders-grid">
-            </div>
-
-        <div id="detail-panel" class="detail-panel">
-            <div class="h-16 border-b flex items-center justify-between px-6 bg-gray-50">
-                <h2 class="font-bold text-lg text-slate-800">ניהול הזמנה</h2>
-                <button onclick="closePanel()" class="text-gray-400 hover:text-red-500 text-xl"><i class="fas fa-times"></i></button>
-            </div>
-
-            <div class="p-6 flex-1 overflow-y-auto">
-                <div class="flex items-start gap-4 mb-6">
-                    <img id="det-avatar" class="w-16 h-16 rounded-xl shadow-sm">
-                    <div>
-                        <h1 id="det-client" class="text-2xl font-black text-slate-800 leading-tight">...</h1>
-                        <div class="text-sm text-gray-500 mt-1">מספר מערכת: <span id="det-order-num" class="font-mono text-blue-600 font-bold">...</span></div>
-                    </div>
-                </div>
-
-                <div id="action-box" class="bg-blue-50 border border-blue-100 rounded-xl p-5 mb-6">
-                    </div>
-
-                <div class="relative pl-4 border-r border-gray-200 space-y-8 pr-2">
-                    <div class="relative">
-                        <div class="absolute -right-[21px] top-1 w-4 h-4 rounded-full bg-green-500 ring-4 ring-white shadow-sm"></div>
-                        <div class="text-sm font-bold text-slate-800">התקבל באפליקציה</div>
-                        <div class="text-xs text-gray-500 mt-1" id="time-created">...</div>
-                        <div class="mt-2 bg-white p-3 rounded border border-gray-200 text-sm text-gray-600 shadow-sm" id="det-text"></div>
-                    </div>
-                    
-                    <div class="relative opacity-50" id="step-comax">
-                        <div class="absolute -right-[21px] top-1 w-4 h-4 rounded-full bg-gray-300 ring-4 ring-white"></div>
-                        <div class="text-sm font-bold text-slate-800">הקלדה וסנכרון</div>
-                        <div class="text-xs text-gray-500">הזנת מספר קומקס + קליטת PDF</div>
-                    </div>
-                    
-                    <div class="relative opacity-50" id="step-client">
-                        <div class="absolute -right-[21px] top-1 w-4 h-4 rounded-full bg-gray-300 ring-4 ring-white"></div>
-                        <div class="text-sm font-bold text-slate-800">אישור לקוח</div>
-                        <div class="text-xs text-gray-500">חתימה דיגיטלית / אישור העמסה</div>
-                    </div>
-                </div>
+            <div class="col-span-full flex flex-col items-center justify-center text-gray-300 py-20">
+                <i class="fas fa-circle-notch fa-spin text-4xl mb-4"></i>
+                <div class="text-sm font-bold">טוען נתונים מהשטח...</div>
             </div>
         </div>
-    </div>
 
-    <audio id="sound-alert" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.m4a"></audio>
+        <div id="detail-panel" class="detail-panel flex flex-col">
+            <div class="h-16 border-b flex items-center justify-between px-6 bg-gray-50/80 backdrop-blur-sm">
+                <h2 class="font-bold text-lg text-slate-800">ניהול הזמנה</h2>
+                <button onclick="closePanel()" class="w-8 h-8 rounded-full hover:bg-red-100 text-gray-400 hover:text-red-500 transition"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-6 flex-1 overflow-y-auto" id="panel-content"></div>
+        </div>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Firebase Config
+        // Config
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
         
-        // OneSignal Init
-        window.OneSignalDeferred = window.OneSignalDeferred || [];
-        OneSignalDeferred.push(function(OneSignal) {
-            OneSignal.init({ appId: "07b81f2e-e812-424f-beca-36584b12ccf2" });
-        });
-
-        // Global State for Timers
         let activeOrders = [];
 
-        // --- Bridge Logic ---
-        window.manualSync = async () => {
-            Swal.fire({title: 'מסנכרן...', didOpen: () => Swal.showLoading()});
-            try {
-                // קריאה לסקריפט הגשר
-                await fetch("https://script.google.com/macros/s/AKfycby9KVjix6KNvctLBoEAqOihyOGzyvspprG7_-1kedDDI6Xjwht7eqNO2POww77Jink/exec", { mode: 'no-cors' });
-                Swal.fire({icon: 'success', title: 'פקודת סנכרון נשלחה', timer: 1500, showConfirmButton: false});
-            } catch(e) {
-                Swal.fire({icon: 'error', title: 'שגיאה בסנכרון'});
-            }
+        // 1. User Identification
+        const currentUser = JSON.parse(localStorage.getItem('saban_user')) || {name: 'אורח', role: 'guest'};
+        if(currentUser.role !== 'admin' && currentUser.role !== 'manager') {
+           // אופציונלי: הפניה אם לא מורשה
+           // window.location.href = 'staff-login.html';
+        }
+        document.getElementById('userName').innerText = currentUser.name;
+        document.getElementById('userAvatar').src = `https://ui-avatars.com/api/?name=${currentUser.name}&background=0f172a&color=fff`;
+
+        // 2. Sidebar & UI
+        window.toggleSidebar = () => document.getElementById('mainSidebar').classList.toggle('open');
+        window.closePanel = () => document.getElementById('detail-panel').classList.remove('open');
+
+        // 3. Link Generator (הפיצ'ר החדש)
+        window.openUserGenerator = () => {
+            Swal.fire({
+                title: 'יצירת לינק ללקוח',
+                html: '<input id="swal-name" class="swal2-input" placeholder="שם הלקוח"><input id="swal-uid" class="swal2-input" placeholder="טלפון/ת.ז (באנגלית)">',
+                confirmButtonText: 'צור והעתק',
+                preConfirm: () => {
+                    const name = document.getElementById('swal-name').value;
+                    const uid = document.getElementById('swal-uid').value;
+                    if(!name || !uid) Swal.showValidationMessage('חובה למלא את כל השדות');
+                    return { name, uid };
+                }
+            }).then((result) => {
+                if(result.isConfirmed) {
+                    const url = `https://saban-system.onrender.com/client-whatsapp.html?uid=${result.value.uid}&name=${encodeURIComponent(result.value.name)}`;
+                    navigator.clipboard.writeText(url);
+                    Swal.fire('הועתק!', 'שלח את הלינק ללקוח בוואטסאפ', 'success');
+                }
+            });
         };
 
-        // --- UI Logic ---
-        
-        // האזנה להזמנות
+        // 4. Listen to Orders
         onSnapshot(query(collection(db, "orders"), orderBy("createdAt", "desc")), (snap) => {
             const grid = document.getElementById('orders-grid');
             const stories = document.getElementById('stories-container');
             
+            if(snap.empty) {
+                grid.innerHTML = `<div class="col-span-full text-center text-gray-400 mt-10">אין הזמנות פעילות</div>`;
+                return;
+            }
+
             grid.innerHTML = "";
             stories.innerHTML = "";
             activeOrders = [];
-
-            if(snap.empty) {
-                grid.innerHTML = `<div class="col-span-full text-center text-gray-400 mt-20 text-xl">אין הזמנות פעילות בחמ"ל</div>`;
-                return;
-            }
 
             snap.forEach(d => {
                 const o = d.data();
                 o.id = d.id;
                 activeOrders.push(o);
-
-                // Sound Logic
-                if(o.status === 'waiting_approval' && !o.soundPlayed) {
-                    document.getElementById('sound-alert').play();
-                    // In real app, we would update doc to set soundPlayed: true
-                }
-
                 renderStory(o, stories);
                 renderCard(o, grid);
             });
         });
 
-        // עדכון טיימרים חי
-        setInterval(() => {
-            activeOrders.forEach(o => updateCardTimer(o));
-        }, 1000);
-
+        // 5. Render Functions
         function renderStory(o, container) {
             if(o.status === 'done') return;
-            const ring = o.status === 'new' ? 'ring-new' : (o.status === 'processing' ? 'ring-proc' : 'ring-wait');
-            const avatar = `https://ui-avatars.com/api/?name=${o.clientName}&background=random`;
-            
+            const ring = o.status === 'new' ? 'ring-new' : 'ring-wait';
             container.innerHTML += `
-            <div class="story" onclick="openPanel('${o.id}')">
+            <div class="story flex flex-col items-center cursor-pointer min-w-[60px]" onclick="openPanel('${o.id}')">
                 <div class="story-ring ${ring}">
-                    <img src="${avatar}">
+                    <img src="https://ui-avatars.com/api/?name=${o.clientName}&background=random" class="w-full h-full rounded-full object-cover border-2 border-white">
                 </div>
-                <div class="text-xs font-bold mt-1 text-slate-600 truncate w-16 text-center">${o.clientName.split(' ')[0]}</div>
+                <div class="text-[10px] font-bold mt-1 text-slate-600 truncate w-14 text-center">${o.clientName.split(' ')[0]}</div>
             </div>`;
         }
 
         function renderCard(o, container) {
-            const statusInfo = getStatusInfo(o);
-            const avatar = `https://ui-avatars.com/api/?name=${o.clientName}&background=random`;
-            
+            const status = getStatusInfo(o);
             container.innerHTML += `
             <div class="pro-card" onclick="openPanel('${o.id}')">
-                <div class="card-header">
+                <div class="p-4 border-b border-slate-50 flex justify-between items-center bg-gray-50/50">
                     <div class="flex items-center gap-3">
-                        <img src="${avatar}" class="w-10 h-10 rounded-full">
+                        <img src="https://ui-avatars.com/api/?name=${o.clientName}&background=random" class="w-10 h-10 rounded-full shadow-sm">
                         <div>
-                            <div class="font-bold text-slate-800 text-sm">${o.clientName}</div>
-                            <div class="text-xs text-gray-500">#${o.orderNum}</div>
+                            <div class="font-bold text-slate-800 text-sm leading-tight">${o.clientName}</div>
+                            <div class="text-[10px] text-gray-500 font-mono">#${o.orderNum || '---'}</div>
                         </div>
                     </div>
-                    <span class="status-pill ${statusInfo.cls}">${statusInfo.txt}</span>
+                    <span class="text-[10px] font-bold px-2 py-1 rounded-md border ${status.cls}">${status.txt}</span>
                 </div>
-                
-                <div class="card-body">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-xs font-bold text-gray-400 uppercase">יעד אספקה</span>
-                        <span id="timer-${o.id}" class="timer-badge bg-gray-200 text-gray-600">--:--</span>
-                    </div>
-                    <div class="text-sm text-gray-600 line-clamp-2 h-10">${o.itemsText || 'פירוט פריטים...'}</div>
-                    
+                <div class="p-4 flex-1">
+                    <div class="text-sm text-slate-600 line-clamp-2 h-10 mb-2">${o.itemsText || 'פירוט בהודעה...'}</div>
                     <div class="progress-track">
-                        <div class="progress-fill ${statusInfo.bg}" style="width: ${statusInfo.pct}%"></div>
+                        <div class="progress-fill ${status.bg}" style="width: ${status.pct}%"></div>
                     </div>
                 </div>
-
-                <div class="card-footer">
-                    <div class="text-xs text-gray-400"><i class="far fa-clock"></i> ${new Date(o.createdAt?.seconds*1000).toLocaleTimeString().slice(0,5)}</div>
-                    <div class="text-xs font-bold text-blue-600 cursor-pointer">ניהול <i class="fas fa-arrow-left"></i></div>
+                <div class="p-3 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
+                    <div class="text-[10px] text-gray-400"><i class="far fa-clock"></i> ${new Date(o.createdAt?.seconds*1000).toLocaleTimeString().slice(0,5)}</div>
+                    <div class="text-xs font-bold text-blue-600">נהל <i class="fas fa-chevron-left text-[10px]"></i></div>
                 </div>
             </div>`;
         }
 
-        // פונקציית עדכון טיימר בכרטיסייה
-        function updateCardTimer(o) {
-            const el = document.getElementById(`timer-${o.id}`);
-            if(!el) return;
-            
-            if(o.status === 'done') {
-                el.innerText = "הושלם";
-                el.className = "timer-badge bg-green-100 text-green-700";
-                return;
-            }
-
-            // יעד: לפי תאריך בטופס או שעה מהיצירה
-            let target;
-            if(o.supplyDate && o.supplyTime) {
-                target = new Date(`${o.supplyDate}T${o.supplyTime}`);
-            } else {
-                target = new Date(o.createdAt.toDate().getTime() + 3600000); 
-            }
-
-            const diff = target - new Date();
-            if(diff <= 0) {
-                el.innerText = "-00:00!";
-                el.className = "timer-badge bg-red-500 text-white animate-pulse";
-            } else {
-                const h = Math.floor(diff/3600000);
-                const m = Math.floor((diff%3600000)/60000);
-                el.innerText = `${h}:${m.toString().padStart(2,'0')}`;
-                el.className = h < 1 ? "timer-badge bg-amber-500 text-white" : "timer-badge bg-emerald-500 text-white";
-            }
-        }
-
-        // --- Detail Panel Logic ---
-        
-        // חשיפה ל-Window כדי שה-HTML יכיר את הפונקציה
-        window.openPanel = (id) => {
-            const o = activeOrders.find(x => x.id === id);
-            if(!o) return;
-
-            document.getElementById('detail-panel').classList.add('open');
-            document.getElementById('det-client').innerText = o.clientName;
-            document.getElementById('det-order-num').innerText = o.orderNum;
-            document.getElementById('det-avatar').src = `https://ui-avatars.com/api/?name=${o.clientName}&background=random`;
-            document.getElementById('time-created').innerText = new Date(o.createdAt.seconds*1000).toLocaleString();
-            document.getElementById('det-text').innerText = o.itemsText;
-
-            const box = document.getElementById('action-box');
-            
-            if(o.status === 'new') {
-                box.innerHTML = `
-                    <div class="text-sm font-bold text-slate-700 mb-2">📌 שלב 1: חיבור לקומקס</div>
-                    <div class="flex gap-2">
-                        <input id="cx-input" type="text" placeholder="מס' הזמנה (למשל 6210496)" class="flex-1 bg-white border border-gray-300 rounded p-3 outline-none focus:border-blue-500">
-                        <button onclick="saveComax('${id}')" class="bg-blue-600 text-white px-6 rounded font-bold hover:bg-blue-700">שמור</button>
-                    </div>
-                    <div class="text-xs text-gray-500 mt-2">הזנת המספר תפעיל את האזנה למיילים</div>
-                `;
-                resetTimeline();
-            } else if(o.status === 'processing') {
-                box.innerHTML = `
-                    <div class="flex items-center gap-3 text-amber-600 bg-amber-50 p-2 rounded">
-                        <i class="fas fa-circle-notch fa-spin"></i>
-                        <span class="font-bold text-sm">המערכת מאזינה למייל עם הזמנה ${o.comaxNum}...</span>
-                    </div>
-                    <button onclick="manualSync()" class="mt-3 text-xs text-blue-600 underline">סנכרון יזום עכשיו</button>
-                `;
-                setTimelineStep('step-comax');
-            } else if(o.status === 'waiting_approval') {
-                box.innerHTML = `
-                    <div class="text-orange-600 font-bold mb-3 flex items-center gap-2"><i class="fas fa-exclamation-circle"></i> ממתין לאישור הלקוח</div>
-                    <a href="${o.pdfUrl}" target="_blank" class="btn-action btn-blue">
-                        <i class="fas fa-file-pdf"></i> צפה במסמך שנשלח ללקוח
-                    </a>
-                `;
-                setTimelineStep('step-comax');
-            } else {
-                box.innerHTML = `<div class="text-green-600 font-bold text-lg text-center bg-green-50 p-4 rounded-xl border border-green-100">✅ ההזמנה הושלמה בהצלחה</div>`;
-                setTimelineStep('step-comax');
-                setTimelineStep('step-client');
-            }
-        };
-
-        window.saveComax = async (id) => {
-            const val = document.getElementById('cx-input').value;
-            if(!val) return Swal.fire('שגיאה', 'חובה להזין מספר', 'error');
-            
-            await updateDoc(doc(db, "orders", id), { comaxNum: val, status: 'processing' });
-            Swal.fire({icon: 'success', title: 'נשמר', text: 'ממתין למייל מקומקס...', timer: 1500, showConfirmButton: false});
-            closePanel(); // סגירה לרענון תחושה
-        };
-
-        window.closePanel = () => document.getElementById('detail-panel').classList.remove('open');
-
-        // --- User Generator ---
-        window.openUserGenerator = async () => {
-            const { value: formValues } = await Swal.fire({
-                title: 'הוספת לקוח חדש',
-                html: '<input id="swal-name" class="swal2-input" placeholder="שם הלקוח"><input id="swal-id" class="swal2-input" placeholder="מספר זיהוי (ח.פ/ת.ז)">',
-                focusConfirm: false,
-                confirmButtonColor: '#2563eb',
-                confirmButtonText: 'צור לינק',
-                preConfirm: () => [document.getElementById('swal-name').value, document.getElementById('swal-id').value]
-            });
-
-            if (formValues && formValues[1]) {
-                const link = `https://saban-system.onrender.com/client-final.html?uid=${formValues[1]}`;
-                navigator.clipboard.writeText(link);
-                Swal.fire({icon: 'success', title: 'הלינק הועתק!', text: 'שלח אותו ללקוח בוואטסאפ'});
-            }
-        };
-
-        // --- Helpers ---
         function getStatusInfo(o) {
             const map = {
-                'new': { cls: 'st-new', txt: 'התקבל', pct: 25, bg: 'bg-blue-500' },
-                'processing': { cls: 'st-proc', txt: 'בטיפול', pct: 50, bg: 'bg-amber-500' },
-                'waiting_approval': { cls: 'st-wait', txt: 'ממתין', pct: 75, bg: 'bg-orange-500' },
-                'done': { cls: 'st-done', txt: 'הושלם', pct: 100, bg: 'bg-green-500' }
+                'new': { cls: 'bg-blue-50 text-blue-600 border-blue-100', txt: 'התקבל', pct: 20, bg: 'bg-blue-500' },
+                'processing': { cls: 'bg-amber-50 text-amber-600 border-amber-100', txt: 'בטיפול', pct: 50, bg: 'bg-amber-500' },
+                'waiting_approval': { cls: 'bg-orange-50 text-orange-600 border-orange-100', txt: 'אישור', pct: 80, bg: 'bg-orange-500' },
+                'done': { cls: 'bg-green-50 text-green-600 border-green-100', txt: 'הושלם', pct: 100, bg: 'bg-green-500' }
             };
             return map[o.status] || map['new'];
         }
 
-        function resetTimeline() {
-            document.getElementById('step-comax').style.opacity = '0.5';
-            document.getElementById('step-client').style.opacity = '0.5';
-        }
-
-        function setTimelineStep(id) {
-            const el = document.getElementById(id);
-            el.style.opacity = '1';
-            el.querySelector('.rounded-full').classList.replace('bg-gray-300', 'bg-green-500');
-        }
-
+        window.openPanel = (id) => {
+            const o = activeOrders.find(x => x.id === id);
+            if(!o) return;
+            const p = document.getElementById('detail-panel');
+            p.classList.add('open');
+            document.getElementById('panel-content').innerHTML = `
+                <div class="flex flex-col items-center mb-6">
+                    <img src="https://ui-avatars.com/api/?name=${o.clientName}&background=random" class="w-20 h-20 rounded-2xl shadow-lg mb-3">
+                    <h1 class="text-2xl font-black text-slate-800 text-center">${o.clientName}</h1>
+                    <div class="text-sm text-gray-500 font-mono">${o.id}</div>
+                </div>
+                <div class="bg-blue-50 border border-blue-100 rounded-xl p-5 mb-6 text-center">
+                    <div class="font-bold text-blue-800 mb-2">סטטוס: ${getStatusInfo(o).txt}</div>
+                    <div class="text-sm text-blue-600">${o.itemsText}</div>
+                </div>
+                <div class="grid gap-3">
+                    <button class="w-full py-3 bg-blue-600 text-white rounded-xl font-bold" onclick="window.open('whatsapp-center.html', '_blank')">💬 פתח וואטסאפ</button>
+                </div>
+            `;
+        };
     </script>
 </body>
 </html>
