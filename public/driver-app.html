@@ -4,21 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Saban Driver | חכמת</title>
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-    <script>
-      window.OneSignalDeferred = window.OneSignalDeferred || [];
-      OneSignalDeferred.push(function(OneSignal) {
-        OneSignal.init({
-          appId: "שים-כאן-את-הקוד-שתקבל-מ-OneSignal", // <--- כאן מדביקים את ה-ID
-        });
-      });
-    </script>
-
     <style>
         body { background: #111827; color: white; font-family: 'Segoe UI', system-ui, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         .view-section { flex: 1; display: none; flex-direction: column; overflow-y: auto; padding-bottom: 80px; }
@@ -49,9 +41,26 @@
         .nav-item.active { color: #f59e0b; }
         .nav-item i { font-size: 24px; margin-bottom: 2px; }
         .badge { position: absolute; top: 10px; right: 20%; background: red; width: 10px; height: 10px; border-radius: 50%; display: none; border: 2px solid #1f2937; }
+
+        /* THE SNITCH (Debug Console) */
+        #snitch-btn { position: fixed; bottom: 90px; left: 10px; background: rgba(0,0,0,0.5); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; z-index: 1000; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); }
+        #snitch-panel { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; display: none; flex-direction: column; font-family: monospace; font-size: 12px; padding: 10px; overflow: hidden; }
+        #snitch-logs { flex: 1; overflow-y: auto; color: #00ff00; }
+        .log-err { color: #ff4444; font-weight: bold; border-bottom: 1px solid #ff4444; padding-bottom: 5px; margin-bottom: 5px; }
+        .log-info { color: #00ffff; }
+        .close-snitch { position: absolute; top: 10px; right: 10px; background: #ff4444; color: white; padding: 5px 10px; border-radius: 5px; }
     </style>
 </head>
-<body onclick="stopAlert()"> <div class="p-4 bg-gray-800 flex justify-between items-center border-b border-gray-700">
+<body onclick="stopAlert()">
+
+    <div id="snitch-btn" onclick="toggleSnitch()">🐞</div>
+    <div id="snitch-panel">
+        <button class="close-snitch" onclick="toggleSnitch()">סגור X</button>
+        <h3 style="color:white; border-bottom:1px solid gray; padding-bottom:5px;">מלשינון מערכת (Debug)</h3>
+        <div id="snitch-logs"></div>
+    </div>
+
+    <div class="p-4 bg-gray-800 flex justify-between items-center border-b border-gray-700">
         <div>
             <div class="text-xs text-gray-400">נהג מחובר</div>
             <div class="font-bold text-lg" id="driver-name">חכמת</div>
@@ -67,6 +76,7 @@
                 <i class="fas fa-satellite-dish text-4xl text-gray-600"></i>
             </div>
             <h2 class="text-xl font-bold">ממתין למשימות...</h2>
+            <p class="text-sm opacity-50 mt-2">המערכת מאזינה (ערוץ: <span id="debug-uid">...</span>)</p>
         </div>
 
         <div id="state-mission" class="card-mission hidden theme-client">
@@ -109,25 +119,44 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, where, onSnapshot, serverTimestamp, doc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, where, onSnapshot, serverTimestamp, doc, updateDoc, setDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // --- SNITCH LOGIC ---
+        window.toggleSnitch = () => {
+            const p = document.getElementById('snitch-panel');
+            p.style.display = p.style.display === 'flex' ? 'none' : 'flex';
+        };
+        
+        function logSnitch(msg, type='info') {
+            const box = document.getElementById('snitch-logs');
+            const time = new Date().toLocaleTimeString();
+            const colorClass = type === 'error' ? 'log-err' : 'log-info';
+            box.innerHTML = `<div class="${colorClass}">[${time}] ${msg}</div>` + box.innerHTML;
+        }
 
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
-        // IDENTITY (חובה שזה יהיה תואם למנהל)
+        // IDENTITY
         const params = new URLSearchParams(window.location.search);
         let DRIVER = { 
-            uid: params.get('uid') || '0500000607', // מספר ברירת מחדל של חכמת
+            uid: params.get('uid') || '0500000607', 
             name: params.get('name') || 'חכמת' 
         };
         document.getElementById('driver-name').innerText = DRIVER.name;
+        document.getElementById('debug-uid').innerText = DRIVER.name;
+        
+        logSnitch(`Driver init: ${DRIVER.name} (${DRIVER.uid})`);
 
         // SOUNDS
         const alertAudio = new Audio('https://actions.google.com/sounds/v1/alarms/spaceship_alarm.ogg');
-        alertAudio.loop = true; // שיחפור עד שעונים
+        alertAudio.loop = true;
 
         window.stopAlert = () => {
-            alertAudio.pause();
-            alertAudio.currentTime = 0;
+            if(!alertAudio.paused) {
+                alertAudio.pause();
+                alertAudio.currentTime = 0;
+                logSnitch('Alert stopped by user');
+            }
         };
 
         // --- 1. MISSION LISTENER ---
@@ -139,33 +168,46 @@
         );
 
         onSnapshot(q, (snap) => {
-            const waitingEl = document.getElementById('state-waiting');
-            const missionEl = document.getElementById('state-mission');
-
             if (snap.empty) {
-                waitingEl.classList.remove('hidden');
-                missionEl.classList.add('hidden');
+                logSnitch('No active missions');
+                document.getElementById('state-waiting').classList.remove('hidden');
+                document.getElementById('state-mission').classList.add('hidden');
                 return;
             }
 
+            // Client-side sorting
             const tasks = snap.docs.map(d => ({id: d.id, ...d.data()}));
             tasks.sort((a,b) => b.createdAt - a.createdAt);
             const latest = tasks[0];
 
-            // התראה על משימה חדשה
+            logSnitch(`Task detected: ${latest.clientName}`);
+
             if (!currentOrder || currentOrder.id !== latest.id) {
-                alertAudio.play().catch(()=>{}); // הפעלת צלצול בלופ
+                logSnitch('New task alert!');
+                alertAudio.play().catch(e => logSnitch('Audio blocked: ' + e));
                 
-                // OneSignal / Native Notification Simulation
-                if(window.OneSignal) window.OneSignal.sendSelfNotification("משימה חדשה", "לחץ לפתיחה");
-                
+                Swal.fire({
+                    title: 'משימה חדשה!',
+                    text: 'התקבלה נסיעה מהמשרד',
+                    icon: 'info',
+                    timer: 3000,
+                    showConfirmButton: false
+                });
+
                 switchView('mission', document.querySelector('.nav-item'));
             }
 
             currentOrder = latest;
             renderMission(latest);
-            waitingEl.classList.add('hidden');
-            missionEl.classList.remove('hidden');
+            document.getElementById('state-waiting').classList.add('hidden');
+            document.getElementById('state-mission').classList.remove('hidden');
+
+        }, (error) => {
+            logSnitch(`DB ERROR: ${error.message}`, 'error');
+            if(error.message.includes("index")) {
+                logSnitch(`INDEX MISSING: Check console for link`, 'error');
+                console.error(error); // הלינק לאינדקס יופיע בקונסול הרגיל
+            }
         });
 
         function renderMission(order) {
@@ -174,10 +216,7 @@
             const icon = document.getElementById('type-icon');
             
             card.classList.remove('theme-transfer', 'theme-client', 'theme-supplier', 'theme-urgent');
-            
-            let theme = 'theme-client';
-            let txt = 'הובלה';
-            let ico = 'fa-box';
+            let theme = 'theme-client', txt = 'הובלה', ico = 'fa-box';
 
             if (order.taskType === 'urgent') { theme = 'theme-urgent'; txt = 'דחוף 🔥'; ico = 'fa-fire'; }
             else if (order.taskType === 'transfer') { theme = 'theme-transfer'; txt = 'העברה'; ico = 'fa-exchange-alt'; }
@@ -207,22 +246,23 @@
         }
 
         window.updateStatus = async (s) => {
-            stopAlert(); // עצור צלצול
+            stopAlert();
             if(!currentOrder) return;
             if (s === 'done') confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            logSnitch(`Status update: ${s}`);
             await updateDoc(doc(db, "orders", currentOrder.id), { status: s, lastUpdate: serverTimestamp() });
         };
 
         window.openWaze = () => {
-            stopAlert(); // עצור צלצול
+            stopAlert();
             if(!currentOrder) return;
             window.open(`https://waze.com/ul?q=${encodeURIComponent(currentOrder.address || '')}&navigate=yes`, '_blank');
         };
 
-        // --- 2. CHAT SYSTEM (Fix: Using Exact Chat ID) ---
-        // חייב להיות זהה למה שיש במנהל: chat_0500000607
+        // --- 2. CHAT SYSTEM ---
         const chatId = `chat_${DRIVER.uid}`; 
-        
+        logSnitch(`Chat channel: ${chatId}`);
+
         onSnapshot(query(collection(db, `chats/${chatId}/messages`)), (snap) => {
             const container = document.getElementById('chat-msgs');
             container.innerHTML = '';
@@ -231,22 +271,15 @@
             
             msgs.forEach(m => {
                 const isMe = m.sender === DRIVER.name;
-                container.innerHTML += `
-                <div class="msg-bubble ${isMe?'msg-out':'msg-in'}">
-                    ${!isMe ? `<div class="text-[10px] font-bold text-orange-600 mb-1">${m.sender}</div>` : ''}
-                    ${m.text}
-                </div>`;
+                container.innerHTML += `<div class="msg-bubble ${isMe?'msg-out':'msg-in'}">${!isMe ? `<div class="text-[10px] font-bold text-orange-600 mb-1">${m.sender}</div>` : ''}${m.text}</div>`;
             });
             container.scrollTop = container.scrollHeight;
             
-            // התראה על הודעה
             if(document.getElementById('view-chat').style.display === 'none' && !snap.empty) {
-                document.getElementById('chat-badge').style.display = 'block';
-                // צפצוף רק אם זה לא אני
                 const last = msgs[msgs.length-1];
                 if(last && last.sender !== DRIVER.name) {
-                     // צפצוף קצר
-                     new Audio('https://actions.google.com/sounds/v1/cartoon/pop.ogg').play().catch(()=>{});
+                     document.getElementById('chat-badge').style.display = 'block';
+                     logSnitch('New msg received');
                 }
             }
         });
@@ -258,6 +291,7 @@
             if(!txt) return;
             input.value = '';
             
+            logSnitch(`Sending: ${txt}`);
             await addDoc(collection(db, `chats/${chatId}/messages`), { 
                 text: txt, 
                 sender: DRIVER.name, 
@@ -275,7 +309,7 @@
                     timestamp: serverTimestamp(),
                     active: true
                 }, { merge: true });
-            }, null, { enableHighAccuracy: true });
+            }, (err) => logSnitch(`GPS: ${err.message}`, 'error'), { enableHighAccuracy: true });
         }
 
         window.switchView = (v, btn) => {
