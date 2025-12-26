@@ -35,15 +35,17 @@
         .user-name { font-weight: 800; font-size: 18px; color: #334155; margin-bottom: 2px; }
         .user-role { font-size: 12px; font-weight: 700; color: #64748b; background: #f1f5f9; padding: 4px 10px; border-radius: 20px; display: inline-block; margin-bottom: 10px; }
         
-        /* Edit Icon */
         .btn-edit-absolute { position: absolute; top: 10px; left: 10px; width: 30px; height: 30px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #64748b; border: 1px solid #e2e8f0; cursor: pointer; transition: 0.2s; z-index: 10; }
         .btn-edit-absolute:hover { background: #3b82f6; color: white; border-color: #3b82f6; }
 
-        /* --- MAGIC BUTTONS --- */
+        /* --- MAGIC BUTTONS CONTAINER --- */
         .driver-actions { display: flex; gap: 8px; margin-top: 10px; margin-bottom: 10px; }
         
         .btn-app-driver { flex: 1; background: #2563eb; color: white; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 12px; display: flex; justify-content: center; align-items: center; gap: 5px; transition: 0.2s; }
         .btn-app-driver:hover { background: #1d4ed8; }
+        
+        /* Oren's Specific Color */
+        .btn-app-oren { flex: 1; background: #475569; color: white; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 12px; display: flex; justify-content: center; align-items: center; gap: 5px; transition: 0.2s; }
         
         .btn-magic-link { flex: 1; background: #10b981; color: white; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 12px; display: flex; justify-content: center; align-items: center; gap: 5px; transition: 0.2s; }
         .btn-magic-link:hover { background: #059669; }
@@ -53,7 +55,6 @@
 
         .btn-app-manager { width: 100%; background: linear-gradient(135deg, #f97316 0%, #c2410c 100%); color: white; padding: 8px; border-radius: 10px; font-weight: bold; font-size: 13px; margin-top: 5px; box-shadow: 0 4px 6px rgba(249, 115, 22, 0.2); }
 
-        /* Comm Row */
         .comm-row { display: flex; justify-content: center; gap: 10px; margin-top: 10px; border-top: 1px solid #f1f5f9; padding-top: 10px; }
         .comm-btn { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: 0.2s; background: #f1f5f9; color: #64748b; }
         .comm-btn:hover { transform: scale(1.1); background: #e2e8f0; }
@@ -101,24 +102,39 @@
 
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
-        // --- 1. מנגנון תיקון אוטומטי (Auto-Fixer) ---
-        // פונקציה זו רצה פעם אחת ומוודאת שעלי וחכמת מוגדרים כנהגים
-        async function fixDrivers() {
-            const snap = await getDocs(collection(db, "users"));
-            snap.forEach(async (docSnap) => {
-                const p = docSnap.data();
-                if ((p.name.includes('עלי') || p.name.includes('חכמת')) && p.type !== 'driver') {
-                    console.log(`Fixing permissions for ${p.name}...`);
-                    await updateDoc(doc(db, "users", docSnap.id), { 
-                        type: 'driver',
-                        branch: 'logistics' 
-                    });
-                }
-            });
-        }
-        fixDrivers();
+        // SEED DATA
+        const FULL_STAFF_LIST = [
+            { name: "הראל אידלסון", role: "מנכ\"ל", phone: "0505227724", email: "harel@saban94.co.il", branch: "main", type: "admin" },
+            { name: "ראמי מסארוה", role: "מנהל תפעול", phone: "0508860896", email: "ramims@saban94.co.il", branch: "main", type: "admin" },
+            { name: "יואב", role: "מנהל סידור", phone: "0507855865", email: "yoav@saban94.co.il", branch: "main", type: "admin" },
+            { name: "איציק זהבי", role: "מנהל החרש", phone: "0504482285", email: "itzik@saban94.co.il", branch: "harash", type: "manager" },
+            // נהגים
+            { name: "עלי", role: "נהג מנוף", phone: "0500000606", email: "", branch: "logistics", type: "driver" },
+            { name: "חכמת", role: "נהג משאית", phone: "0500000607", email: "", branch: "logistics", type: "driver" },
+            // אורן (חובה שיהיה לו מספר להודעות)
+            { name: "אורן", role: "חצר החרש", phone: "0509001392", email: "", branch: "harash", type: "field" },
+            
+            { name: "נתנאל", role: "רכש", phone: "0548132442", branch: "main", type: "manager" },
+            { name: "ורד", role: "משרד", phone: "0506662300", branch: "main", type: "office" },
+            { name: "שי", role: "דלפק", phone: "", branch: "harash", type: "field" },
+            { name: "תמיר", role: "חצר התלמיד", phone: "0523002828", branch: "main", type: "field" }
+        ];
 
-        // --- 2. RENDER LOGIC ---
+        async function syncStaffDatabase() {
+            const snap = await getDocs(collection(db, "users"));
+            if (snap.size < 5) {
+                const existingNames = new Set();
+                snap.forEach(d => existingNames.add(d.data().name));
+                for (const staff of FULL_STAFF_LIST) {
+                    if (!existingNames.has(staff.name)) {
+                        await addDoc(collection(db, "users"), { ...staff, permissions: 'view', active: true, createdAt: new Date() });
+                    }
+                }
+            }
+        }
+        syncStaffDatabase();
+
+        // RENDER LOGIC
         onSnapshot(query(collection(db, "users"), orderBy("name")), (snap) => {
             const grid = document.getElementById('staff-grid');
             const tableBody = document.getElementById('clients-table-body');
@@ -134,8 +150,9 @@
                 const p = { id: docSnap.id, ...docSnap.data() };
                 const avatar = p.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=random&color=fff`;
                 const userJson = JSON.stringify(p).replace(/"/g, '&quot;');
+                const baseUrl = window.location.origin;
 
-                // CLIENT
+                // CLIENTS
                 if (p.type === 'client') {
                     clientCount++;
                     tableBody.innerHTML += `
@@ -154,50 +171,46 @@
                         </td>
                     </tr>`;
                 } 
-                // STAFF & DRIVERS
+                // STAFF
                 else {
                     staffCount++;
                     let stripClass = 'strip-main';
                     if(p.branch === 'harash') stripClass = 'strip-harash';
                     if(p.branch === 'logistics') stripClass = 'strip-logistics';
 
-                    // --- MAGIC BUTTONS ---
                     let specialBtn = '';
                     
-                    // 1. DRIVERS (חכמת ועלי)
+                    // --- 1. DRIVERS ---
                     if (p.type === 'driver') {
-                        // בוחר את הקובץ הנכון לנהג
-                        let appFile = 'driver-app.html'; // ברירת מחדל לחכמת/כללי
-                        if (p.name.includes('עלי')) appFile = 'ali-app.html'; // הקובץ המיוחד של עלי
-
-                        const appUrl = `${window.location.origin}/${appFile}?uid=${p.phone}&name=${encodeURIComponent(p.name)}`;
-                        const waText = `היי ${p.name}, הנה הלינק לאפליקציית הנהג שלך:\n${appUrl}`;
+                        let appFile = p.name.includes('עלי') ? 'ali-app.html' : 'driver-app.html';
+                        const appUrl = `${baseUrl}/${appFile}?uid=${p.phone}&name=${encodeURIComponent(p.name)}`;
+                        const waText = `היי ${p.name}, הנה הלינק שלך:\n${appUrl}`;
 
                         specialBtn = `
                         <div class="driver-actions">
-                            <button onclick="window.open('${appUrl}', '_blank')" class="btn-app-driver" title="פתח במחשב זה">
-                                <i class="fas fa-desktop"></i> כניסה
-                            </button>
-                            <button onclick="window.open('https://wa.me/972${p.phone?.replace(/^0/,'')}?text=${encodeURIComponent(waText)}', '_blank')" class="btn-magic-link" title="שלח לנהג בווצאף">
-                                <i class="fab fa-whatsapp"></i> שלח לינק
-                            </button>
+                            <button onclick="window.open('${appUrl}', '_blank')" class="btn-app-driver" title="פתח במחשב"><i class="fas fa-desktop"></i> כניסה</button>
+                            <button onclick="window.open('https://wa.me/972${p.phone?.replace(/^0/,'')}?text=${encodeURIComponent(waText)}', '_blank')" class="btn-magic-link" title="שלח לינק"><i class="fab fa-whatsapp"></i> קסם</button>
                         </div>
-                        <button onclick="openTaskModal('${p.name}', '${p.phone}')" class="btn-task"><i class="fas fa-tasks"></i> שגר משימה</button>
-                        `;
+                        <button onclick="openTaskModal('${p.name}', '${p.phone}')" class="btn-task"><i class="fas fa-tasks"></i> שגר משימה</button>`;
                     } 
-                    // 2. MANAGER (איציק)
+                    // --- 2. OREN (YARD) ---
+                    else if (p.name.includes('אורן')) {
+                        const orenUrl = `${baseUrl}/oren-app.html`;
+                        const waText = `היי אורן, הנה הלינק למסוף החצר:\n${orenUrl}`;
+
+                        specialBtn = `
+                        <div class="driver-actions">
+                            <button onclick="window.open('oren-app.html', '_blank')" class="btn-app-oren"><i class="fas fa-dolly"></i> מסוף חצר</button>
+                            <button onclick="window.open('https://wa.me/972${p.phone?.replace(/^0/,'')}?text=${encodeURIComponent(waText)}', '_blank')" class="btn-magic-link"><i class="fab fa-whatsapp"></i> קסם</button>
+                        </div>`;
+                    }
+                    // --- 3. MANAGER ---
                     else if (p.branch === 'harash' && p.type === 'manager') {
-                        specialBtn = `
-                        <button onclick="window.open('itzik-app.html', '_blank')" class="btn-app-manager">
-                            <i class="fas fa-store"></i> כניסה לאפליקציית מנהל
-                        </button>`;
+                        specialBtn = `<button onclick="window.open('itzik-app.html', '_blank')" class="btn-app-manager"><i class="fas fa-store"></i> אפליקציית מנהל</button>`;
                     } 
-                    // 3. OTHERS
+                    // --- 4. OTHERS ---
                     else {
-                        specialBtn = `
-                        <button onclick="openTaskModal('${p.name}', '${p.phone}')" class="btn-task">
-                            <i class="fas fa-tasks"></i> שגר משימה
-                        </button>`;
+                        specialBtn = `<button onclick="openTaskModal('${p.name}', '${p.phone}')" class="btn-task"><i class="fas fa-tasks"></i> שגר משימה</button>`;
                     }
 
                     grid.innerHTML += `
@@ -233,7 +246,6 @@
             return 'כללי';
         }
 
-        // --- TASK MODAL (Same as before) ---
         window.openTaskModal = (name, phone) => {
             Swal.fire({
                 title: `משימה ל${name}`,
@@ -251,15 +263,11 @@
             }).then(async (result) => {
                 if (result.isConfirmed) {
                     const data = result.value;
-                    const status = data.pending ? 'pending_approval' : 'assigned';
                     await addDoc(collection(db, "orders"), {
                         driverId: name, clientName: "משימה יזומה", text: data.desc, address: data.addr, taskType: data.type,
-                        status: status, lastUpdate: serverTimestamp(), createdAt: serverTimestamp()
+                        status: data.pending ? 'pending_approval' : 'assigned', lastUpdate: serverTimestamp(), createdAt: serverTimestamp()
                     });
-                    
-                    // שלח גם לווצאף
-                    const waText = `*משימה חדשה*\nסוג: ${data.type}\nפרטים: ${data.desc}\nכתובת: ${data.addr}`;
-                    window.open(`https://wa.me/972${phone.replace(/^0/,'')}?text=${encodeURIComponent(waText)}`, '_blank');
+                    window.open(`https://wa.me/972${phone.replace(/^0/,'')}?text=${encodeURIComponent(`*משימה חדשה*\n${data.desc}`)}`, '_blank');
                 }
             });
         };
@@ -267,10 +275,10 @@
         window.openEditModal = (json) => {
             const user = json ? JSON.parse(json) : null;
             Swal.fire({
-                title: user ? 'עריכת פרטים' : 'עובד חדש',
-                html: `<input id="e-name" class="swal2-input" value="${user?.name||''}" placeholder="שם"><input id="e-phone" class="swal2-input" value="${user?.phone||''}" placeholder="טלפון"><select id="e-type" class="swal2-input"><option value="staff">עובד</option><option value="driver">נהג</option><option value="manager">מנהל</option><option value="client">לקוח</option></select>`,
+                title: user ? 'עריכה' : 'חדש',
+                html: `<input id="e-name" class="swal2-input" value="${user?.name||''}" placeholder="שם"><input id="e-phone" class="swal2-input" value="${user?.phone||''}" placeholder="טלפון">`,
                 confirmButtonText: 'שמור',
-                preConfirm: () => { return { name: document.getElementById('e-name').value, phone: document.getElementById('e-phone').value, type: document.getElementById('e-type').value, branch: 'main' } }
+                preConfirm: () => { return { name: document.getElementById('e-name').value, phone: document.getElementById('e-phone').value, type: 'staff', branch: 'main' } }
             }).then(async res => {
                 if(res.isConfirmed) {
                     if(user) await updateDoc(doc(db, "users", user.id), res.value);
@@ -281,7 +289,6 @@
         };
         
         window.openBroadcastModal = () => Swal.fire('כריזה', 'הודעה נשלחה לכולם', 'success');
-        
         window.filterGrid = () => {
             const term = document.getElementById('search').value.toLowerCase();
             document.querySelectorAll('.item-row').forEach(row => row.style.display = row.getAttribute('data-name').toLowerCase().includes(term) ? (row.tagName === 'TR' ? 'table-row' : 'flex') : 'none');
