@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saban Directory</title>
+    <title>Saban Directory | ניהול צוות</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -40,17 +40,22 @@
         .status-dot { position: absolute; bottom: 5px; right: 5px; width: 16px; height: 16px; background: #10b981; border: 3px solid white; border-radius: 50%; }
 
         .user-name { font-weight: 800; font-size: 18px; color: #334155; margin-bottom: 2px; }
-        .user-role { font-size: 12px; font-weight: 700; color: #64748b; background: #f1f5f9; padding: 4px 10px; border-radius: 20px; display: inline-block; margin-bottom: 15px; }
+        .user-role { font-size: 12px; font-weight: 700; color: #64748b; background: #f1f5f9; padding: 4px 10px; border-radius: 20px; display: inline-block; margin-bottom: 10px; }
         
-        .btn-task { width: 100%; background: #f8fafc; border: 1px dashed #cbd5e1; color: #475569; padding: 8px; border-radius: 10px; font-weight: bold; font-size: 13px; margin-top: 10px; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        /* Action Buttons */
+        .btn-task { width: 100%; background: #f8fafc; border: 1px dashed #cbd5e1; color: #475569; padding: 8px; border-radius: 10px; font-weight: bold; font-size: 13px; margin-top: 5px; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
         .btn-task:hover { background: #eff6ff; border-color: #3b82f6; color: #1d4ed8; }
 
-        /* Itzik App Button */
-        .btn-app-connect { width: 100%; background: linear-gradient(135deg, #f97316 0%, #c2410c 100%); color: white; padding: 8px; border-radius: 10px; font-weight: bold; font-size: 13px; margin-top: 10px; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; box-shadow: 0 4px 6px rgba(249, 115, 22, 0.2); }
-        .btn-app-connect:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(249, 115, 22, 0.3); }
+        /* Special App Buttons */
+        .btn-app-manager { width: 100%; background: linear-gradient(135deg, #f97316 0%, #c2410c 100%); color: white; padding: 8px; border-radius: 10px; font-weight: bold; font-size: 13px; margin-top: 5px; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; box-shadow: 0 4px 6px rgba(249, 115, 22, 0.2); }
+        .btn-app-manager:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(249, 115, 22, 0.3); }
 
-        .comm-row { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
-        .comm-btn { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; transition: 0.2s; }
+        .btn-app-driver { width: 100%; background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; padding: 8px; border-radius: 10px; font-weight: bold; font-size: 13px; margin-top: 5px; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2); }
+        .btn-app-driver:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(37, 99, 235, 0.3); }
+
+        /* Comm Row */
+        .comm-row { display: flex; justify-content: center; gap: 10px; margin-top: 15px; border-top: 1px solid #f1f5f9; padding-top: 10px; }
+        .comm-btn { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: 0.2s; }
         .comm-outlook { background: #e0f2fe; color: #0369a1; }
         .comm-wa { background: #dcfce7; color: #15803d; }
         .comm-teams { background: #f3e8ff; color: #7e22ce; }
@@ -124,36 +129,31 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, updateDoc, doc, deleteDoc, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // Config
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
-        // --- 1. SEED DATA (הרשימה המלאה והמתוקנת) ---
+        // --- 1. SEED DATA (צוות הליבה) ---
         const FULL_STAFF_LIST = [
-            { name: "הראל אידלסון", role: "מנכ\"ל", phone: "0505227724", email: "harel@saban94.co.il", branch: "main", type: "admin", avatar: "https://media-mrs2-2.cdn.whatsapp.net/v/t61.24694-24/425943135_310910548378865_3167279294851460849_n.jpg?stp=dst-jpg_s96x96_tt6&ccb=11-4&oh=01_Q5Aa3QHD690LByBt92z_IAsCKeUxC5rxY0qUddugkDzSkBSqUA&oe=695B03CF&_nc_sid=5e03e0&_nc_cat=104" },
-            { name: "ראמי מסארוה", role: "מנהל תפעול (Admin)", phone: "0508860896", email: "ramims@saban94.co.il", branch: "main", type: "admin", avatar: "https://media-mrs2-2.cdn.whatsapp.net/v/t61.24694-24/490584763_1521666505466352_3860845398977059833_n.jpg?stp=dst-jpg_s96x96_tt6&ccb=11-4&oh=01_Q5Aa3QEGGv9ElRRb2Qx1Adjclex0ahijeyYdc8W8wmVuCZ6L2A&oe=695B04A6&_nc_sid=5e03e0&_nc_cat=104" },
+            { name: "הראל אידלסון", role: "מנכ\"ל", phone: "0505227724", email: "harel@saban94.co.il", branch: "main", type: "admin" },
+            { name: "ראמי מסארוה", role: "מנהל תפעול (Admin)", phone: "0508860896", email: "ramims@saban94.co.il", branch: "main", type: "admin" },
             { name: "יואב", role: "מנהל סידור", phone: "0507855865", email: "yoav@saban94.co.il", branch: "main", type: "admin" },
-            { name: "ורד", role: "מנהלת משרד/שכר", phone: "0506662300", email: "vered@saban94.co.il", branch: "main", type: "office" },
-            { name: "לינה", role: "הנה\"ח לקוחות", phone: "0507855869", email: "lina@saban94.co.il", branch: "main", type: "office" },
-            { name: "שרון", role: "הנה\"ח ספקים", phone: "", email: "sharon@saban94.co.il", branch: "main", type: "office" },
             { name: "נתנאל", role: "מנהל רכש", phone: "0548132442", email: "netanel@saban94.co.il", branch: "main", type: "manager" },
-            { name: "רמי (דלפק)", role: "מכירות דלפק", phone: "0543071181", email: "", branch: "main", type: "staff" },
-            { name: "אשר סבן", role: "מכירות", phone: "0546569115", email: "", branch: "main", type: "staff" },
-            { name: "שמעון וקנין", role: "מכירות", phone: "0547644425", email: "", branch: "main", type: "staff" },
-            { name: "חנן", role: "מכירות", phone: "", email: "", branch: "main", type: "staff" },
-            { name: "תמיר", role: "מנהל חצר התלמיד", phone: "0523002828", email: "", branch: "main", type: "field" },
-            
-            // הכרטיס של איציק
-            { name: "איציק זהבי", role: "מנהל סניף החרש", phone: "0504482285", email: "itzik@saban94.co.il", branch: "harash", type: "manager", avatar: "https://media-mrs2-2.cdn.whatsapp.net/v/t61.24694-24/138846705_247951546693089_6505800604178808158_n.jpg?stp=dst-jpg_s96x96_tt6&ccb=11-4&oh=01_Q5Aa3QE_Teyw4quA6Pany4Hj8a0LOLkFxWWSd7r__aOsnJSAug&oe=695B1F10&_nc_sid=5e03e0&_nc_cat=105" },
-            { name: "גליה", role: "פקידת החרש", phone: "", email: "galya@saban94.co.il", branch: "harash", type: "office" },
+            // איציק - מנהל סניף החרש
+            { name: "איציק זהבי", role: "מנהל סניף החרש", phone: "0504482285", email: "itzik@saban94.co.il", branch: "harash", type: "manager" },
+            // נהגים
+            { name: "עלי", role: "נהג מנוף", phone: "", email: "", branch: "logistics", type: "driver" },
+            { name: "חכמת", role: "נהג משאית", phone: "", email: "", branch: "logistics", type: "driver" },
+            // צוות נוסף
+            { name: "ורד", role: "מנהלת משרד", phone: "0506662300", email: "vered@saban94.co.il", branch: "main", type: "office" },
             { name: "אורן", role: "מנהל חצר החרש", phone: "0509001392", email: "", branch: "harash", type: "field" },
             { name: "שי", role: "דלפק/ליקוט", phone: "", email: "", branch: "harash", type: "field" },
-            { name: "עלי", role: "נהג מנוף", phone: "", email: "", branch: "logistics", type: "driver" },
-            { name: "חכמת", role: "נהג משאית", phone: "", email: "", branch: "logistics", type: "driver" }
+            { name: "תמיר", role: "מנהל חצר התלמיד", phone: "0523002828", email: "", branch: "main", type: "field" }
         ];
 
-        // Seed Logic
+        // Seed if empty
         async function syncStaffDatabase() {
             const snap = await getDocs(collection(db, "users"));
-            if (snap.size < FULL_STAFF_LIST.length) {
+            if (snap.size < 5) { // סף נמוך לטעינה ראשונית
                 const existingNames = new Set();
                 snap.forEach(d => existingNames.add(d.data().name));
                 for (const staff of FULL_STAFF_LIST) {
@@ -182,14 +182,14 @@
                 const avatar = p.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=random&color=fff`;
                 const userJson = JSON.stringify(p).replace(/"/g, '&quot;');
 
-                // 1. CLIENTS -> TABLE ROW
+                // --- Client Row ---
                 if (p.type === 'client') {
                     clientCount++;
                     tableBody.innerHTML += `
                     <tr class="item-row" data-name="${p.name}">
                         <td><img src="${avatar}" class="table-avatar"></td>
                         <td class="font-bold text-slate-800">${p.name}</td>
-                        <td class="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded inline-block">${p.role}</td>
+                        <td class="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded inline-block">${p.role || 'לקוח'}</td>
                         <td class="font-mono text-xs">${p.phone || '-'}</td>
                         <td class="text-xs text-blue-600 underline cursor-pointer">${p.email || '-'}</td>
                         <td class="text-xs">${getBranchName(p.branch)}</td>
@@ -202,7 +202,7 @@
                         </td>
                     </tr>`;
                 } 
-                // 2. STAFF -> CARD
+                // --- Staff Card ---
                 else {
                     staffCount++;
                     let stripClass = 'strip-main';
@@ -213,13 +213,29 @@
                     const teamsLink = p.email ? `https://teams.microsoft.com/l/chat/0/0?users=${p.email}` : null;
                     const waLink = p.phone ? `https://wa.me/972${p.phone?.replace(/^0/,'')}` : null;
 
-                    // --- THE SPECIAL BUTTON FOR ITZIK ---
-                    let appButtonHtml = '';
+                    // --- MAGIC BUTTONS ---
+                    let specialBtn = '';
+                    
+                    // 1. ITZIK (Manager App)
                     if (p.branch === 'harash' && p.type === 'manager') {
-                        appButtonHtml = `
-                        <button onclick="window.open('itzik-app.html', '_blank')" 
-                                class="btn-app-connect">
-                            <i class="fas fa-mobile-alt"></i> כניסה לאפליקציית מנהל
+                        specialBtn = `
+                        <button onclick="window.open('itzik-app.html', '_blank')" class="btn-app-manager">
+                            <i class="fas fa-store"></i> כניסה לאפליקציית מנהל
+                        </button>`;
+                    }
+                    // 2. DRIVERS (Driver App)
+                    else if (p.type === 'driver') {
+                        const driverLink = `driver-app.html?uid=${p.phone}&name=${encodeURIComponent(p.name)}`;
+                        specialBtn = `
+                        <button onclick="window.open('${driverLink}', '_blank')" class="btn-app-driver">
+                            <i class="fas fa-truck"></i> כניסה לאפליקציית נהג
+                        </button>`;
+                    }
+                    // 3. Regular Staff (Task Button)
+                    else {
+                        specialBtn = `
+                        <button onclick="openTaskModal('${p.id}', '${p.name}', '${p.phone}')" class="btn-task">
+                            <i class="fas fa-tasks"></i> שגר משימה
                         </button>`;
                     }
 
@@ -227,20 +243,20 @@
                     <div class="staff-card item-row" data-name="${p.name}">
                         <div class="branch-strip ${stripClass}"></div>
                         <button class="btn-edit-absolute" onclick="openEditModal('${userJson}')"><i class="fas fa-pencil-alt"></i></button>
+                        
                         <div class="card-content">
                             <div class="avatar-container">
                                 <img src="${avatar}" class="user-img"><div class="status-dot"></div>
                             </div>
                             <div class="user-name">${p.name}</div>
-                            <div class="user-role">${p.role}</div>
+                            <div class="user-role">${p.role || 'צוות'}</div>
+                            
                             <div class="text-xs text-gray-500 mt-2 flex flex-col gap-1 items-center mb-2">
                                 <span><i class="fas fa-building text-gray-300"></i> ${getBranchName(p.branch)}</span>
                                 <span><i class="fas fa-phone text-gray-300"></i> ${p.phone || '-'}</span>
                             </div>
                             
-                            ${appButtonHtml}
-
-                            ${!appButtonHtml ? `<button onclick="openTaskModal('${p.id}', '${p.name}', '${p.phone}')" class="btn-task"><i class="fas fa-tasks"></i> שגר משימה</button>` : ''}
+                            ${specialBtn}
                             
                             <div class="comm-row">
                                 ${outlookLink ? `<a href="${outlookLink}" class="comm-btn comm-outlook"><i class="fas fa-envelope"></i></a>` : ''}
