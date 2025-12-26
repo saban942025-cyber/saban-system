@@ -1,0 +1,21 @@
+{
+  "name": "Saban CEO",
+  "short_name": "Harel",
+  "start_url": "./harel-app.html",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://ui-avatars.com/api/?name=CEO&background=000&color=fff&size=192&rounded=true&font-size=0.33",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://ui-avatars.com/api/?name=CEO&background=000&color=fff&size=512&rounded=true&font-size=0.33",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
