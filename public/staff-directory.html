@@ -3,99 +3,234 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ניהול צוות</title>
+    <title>Saban Directory</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <style>body { background: #f8fafc; font-family: 'Segoe UI', sans-serif; }</style>
-</head>
-<body class="p-6">
+    
+    <style>
+        body { background: #f0f2f5; font-family: 'Segoe UI', system-ui, sans-serif; padding: 20px; }
+        
+        /* Header Style matching Dashboard */
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .page-title { font-size: 24px; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 10px; }
+        .search-bar { background: white; border: 1px solid #e2e8f0; padding: 10px 15px; border-radius: 12px; width: 300px; display: flex; align-items: center; gap: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        
+        /* Employee Card - The "Saban Style" */
+        .staff-card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; transition: 0.2s; position: relative; display: flex; flex-direction: column; }
+        .staff-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.08); border-color: #cbd5e1; }
+        
+        /* Top Strip based on Branch */
+        .branch-strip { height: 6px; width: 100%; }
+        .strip-main { background: #3b82f6; } /* התלמיד - כחול */
+        .strip-harash { background: #f97316; } /* החרש - כתום */
+        .strip-logistics { background: #22c55e; } /* לוגיסטיקה - ירוק */
 
-    <div class="flex justify-between items-center mb-6">
-        <div>
-            <h1 class="text-2xl font-bold text-slate-800">אנשי צוות</h1>
-            <p class="text-sm text-gray-500" id="status-line">טוען נתונים...</p>
+        .card-content { padding: 20px; text-align: center; flex: 1; }
+        
+        /* Avatar */
+        .avatar-container { position: relative; width: 70px; height: 70px; margin: 0 auto 15px; }
+        .user-img { width: 100%; height: 100%; rounded-full; object-fit: cover; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .status-indicator { position: absolute; bottom: 2px; right: 2px; width: 14px; height: 14px; background: #10b981; border: 2px solid white; border-radius: 50%; }
+
+        /* Typography */
+        .user-name { font-weight: 800; font-size: 16px; color: #334155; margin-bottom: 2px; }
+        .user-role { font-size: 12px; font-weight: 600; color: #64748b; background: #f1f5f9; padding: 2px 8px; border-radius: 10px; display: inline-block; margin-bottom: 12px; }
+        
+        /* Actions 365 */
+        .actions-row { display: flex; justify-content: center; gap: 8px; margin-top: 15px; padding-top: 15px; border-top: 1px dashed #e2e8f0; }
+        .action-btn { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: 0.2s; font-size: 16px; cursor: pointer; }
+        .btn-outlook { background: #e0f2fe; color: #0284c7; } /* Microsoft Blue */
+        .btn-teams { background: #f3e8ff; color: #7e22ce; } /* Teams Purple */
+        .btn-wa { background: #dcfce7; color: #16a34a; } /* WhatsApp Green */
+        .action-btn:hover { transform: scale(1.1); filter: brightness(0.95); }
+
+        /* Permissions Footer */
+        .card-footer { background: #f8fafc; padding: 10px; font-size: 11px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; }
+        .perm-badge { display: flex; align-items: center; gap: 4px; font-weight: bold; }
+        .perm-badge.admin { color: #d97706; }
+        .perm-badge.viewer { color: #64748b; }
+        
+        /* Add Button */
+        .btn-add { background: #0f172a; color: white; padding: 10px 20px; border-radius: 10px; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.2s; }
+        .btn-add:hover { background: #1e293b; transform: translateY(-2px); }
+    </style>
+</head>
+<body>
+
+    <div class="page-header">
+        <div class="page-title">
+            <i class="fas fa-address-book text-blue-600"></i>
+            <div>
+                <span>ספר הארגון</span>
+                <span class="text-xs font-normal text-gray-500 block" id="counter">טוען נתונים...</span>
+            </div>
         </div>
-        <button onclick="openAddModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold shadow hover:bg-blue-700">
-            <i class="fas fa-user-plus"></i> הוסף עובד
-        </button>
+        
+        <div class="flex gap-3">
+            <div class="search-bar">
+                <i class="fas fa-search text-gray-400"></i>
+                <input type="text" id="search" onkeyup="filterGrid()" placeholder="חפש עובד..." class="bg-transparent border-none outline-none text-sm w-full">
+            </div>
+            <button onclick="openAddModal()" class="btn-add">
+                <i class="fas fa-user-plus"></i> הוסף חדש
+            </button>
+        </div>
     </div>
 
-    <div id="staff-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+    <div id="staff-grid" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+        </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, getDocs, updateDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // Config
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
-        // 1. הנתונים מה-CSV לשתילה ראשונית
-        const INITIAL_STAFF = [
-            { name: "הראל אידלסון", role: "מנכ\"ל", phone: "0505227724", email: "harel@saban94.co.il", branch: "main", type: "admin" },
-            { name: "ראמי מסארוה", role: "מנהל תפעול", phone: "0508860896", email: "ramims@saban94.co.il", branch: "main", type: "admin" },
+        // --- 1. THE COMPLETE DATA (Seeding) ---
+        // איחדתי את כל הקבצים שלך לרשימה אחת מסודרת
+        const FULL_STAFF_LIST = [
+            // הנהלה
+            { name: "הראל אידלסון", role: "מנכ\"ל", phone: "0505227724", email: "harel@saban94.co.il", branch: "main", type: "admin", avatar: "https://media-mrs2-2.cdn.whatsapp.net/v/t61.24694-24/425943135_310910548378865_3167279294851460849_n.jpg?stp=dst-jpg_s96x96_tt6&ccb=11-4&oh=01_Q5Aa3QHD690LByBt92z_IAsCKeUxC5rxY0qUddugkDzSkBSqUA&oe=695B03CF&_nc_sid=5e03e0&_nc_cat=104" },
+            { name: "ראמי מסארוה", role: "מנהל תפעול (Admin)", phone: "0508860896", email: "ramims@saban94.co.il", branch: "main", type: "admin", avatar: "https://media-mrs2-2.cdn.whatsapp.net/v/t61.24694-24/490584763_1521666505466352_3860845398977059833_n.jpg?stp=dst-jpg_s96x96_tt6&ccb=11-4&oh=01_Q5Aa3QEGGv9ElRRb2Qx1Adjclex0ahijeyYdc8W8wmVuCZ6L2A&oe=695B04A6&_nc_sid=5e03e0&_nc_cat=104" },
             { name: "יואב", role: "מנהל סידור", phone: "0507855865", email: "yoav@saban94.co.il", branch: "main", type: "admin" },
+            
+            // משרד (התלמיד)
+            { name: "ורד", role: "מנהלת משרד/שכר", phone: "0506662300", email: "vered@saban94.co.il", branch: "main", type: "office" },
+            { name: "לינה", role: "הנה\"ח לקוחות", phone: "0507855869", email: "lina@saban94.co.il", branch: "main", type: "office" },
+            { name: "שרון", role: "הנה\"ח ספקים", phone: "", email: "sharon@saban94.co.il", branch: "main", type: "office" },
             { name: "נתנאל", role: "מנהל רכש", phone: "0548132442", email: "netanel@saban94.co.il", branch: "main", type: "manager" },
+            
+            // דלפק ראשי
+            { name: "רמי (דלפק)", role: "מכירות דלפק", phone: "0543071181", email: "", branch: "main", type: "staff" },
+            { name: "אשר סבן", role: "מכירות", phone: "0546569115", email: "", branch: "main", type: "staff" },
+            { name: "שמעון וקנין", role: "מכירות", phone: "0547644425", email: "", branch: "main", type: "staff" },
+            { name: "חנן", role: "מכירות", phone: "", email: "", branch: "main", type: "staff" },
+            { name: "תמיר", role: "מנהל חצר התלמיד", phone: "0523002828", email: "", branch: "main", type: "field" },
+
+            // סניף החרש
             { name: "איציק זהבי", role: "מנהל סניף החרש", phone: "0504482285", email: "itzik@saban94.co.il", branch: "harash", type: "manager" },
-            { name: "ורד", role: "מנהלת משרד", phone: "0506662300", email: "vered@saban94.co.il", branch: "main", type: "staff" },
-            { name: "לינה", role: "הנה\"ח לקוחות", phone: "0507855869", email: "lina@saban94.co.il", branch: "main", type: "staff" },
-            { name: "שרון", role: "הנה\"ח ספקים", phone: "", email: "sharon@saban94.co.il", branch: "main", type: "staff" },
-            { name: "אורן", role: "מנהל חצר", phone: "0509001392", email: "", branch: "harash", type: "field" },
+            { name: "גליה", role: "פקידת החרש", phone: "", email: "galya@saban94.co.il", branch: "harash", type: "office" },
+            { name: "אורן", role: "מנהל חצר החרש", phone: "0509001392", email: "", branch: "harash", type: "field" },
+            { name: "שי", role: "דלפק/ליקוט", phone: "", email: "", branch: "harash", type: "field" },
+
+            // נהגים ולוגיסטיקה
             { name: "עלי", role: "נהג מנוף", phone: "", email: "", branch: "logistics", type: "driver" },
             { name: "חכמת", role: "נהג משאית", phone: "", email: "", branch: "logistics", type: "driver" }
         ];
 
-        // 2. בדיקה וטעינה
-        async function checkAndSeed() {
+        // --- 2. SEEDER LOGIC (תיקון: טעינה חכמה) ---
+        // הפונקציה הזו רצה פעם אחת ומוודאת שכל האנשים קיימים ב-Firebase
+        async function syncStaffDatabase() {
             const snap = await getDocs(collection(db, "users"));
-            if (snap.empty) {
-                console.log("DB ריק, מבצע שתילה ראשונית...");
-                INITIAL_STAFF.forEach(async (staff) => {
-                    await addDoc(collection(db, "users"), { ...staff, createdAt: new Date() });
-                });
+            if (snap.size < FULL_STAFF_LIST.length) {
+                console.log("מבצע סנכרון וטעינת נתונים מלאה...");
+                
+                // בדיקה פשוטה כדי לא ליצור כפילויות
+                const existingNames = new Set();
+                snap.forEach(d => existingNames.add(d.data().name));
+
+                for (const staff of FULL_STAFF_LIST) {
+                    if (!existingNames.has(staff.name)) {
+                        await addDoc(collection(db, "users"), { 
+                            ...staff, 
+                            permissions: staff.type === 'admin' ? 'edit' : 'view', // ברירת מחדל
+                            active: true,
+                            createdAt: new Date() 
+                        });
+                        console.log("נוסף:", staff.name);
+                    }
+                }
             }
         }
-        checkAndSeed();
+        syncStaffDatabase(); // הפעלה
 
-        // 3. האזנה בזמן אמת
+        // --- 3. RENDER (בזמן אמת) ---
         onSnapshot(query(collection(db, "users"), orderBy("name")), (snap) => {
             const grid = document.getElementById('staff-grid');
             grid.innerHTML = '';
-            document.getElementById('status-line').innerText = `סה"כ ${snap.size} אנשי צוות פעילים`;
+            document.getElementById('counter').innerText = `סה"כ ${snap.size} אנשי קשר במערכת`;
 
-            snap.forEach(doc => {
-                const p = doc.data();
-                const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=random`;
-                const bgClass = p.type === 'admin' ? 'bg-yellow-50 border-yellow-200' : 'bg-white border-gray-200';
+            snap.forEach(docSnap => {
+                const p = { id: docSnap.id, ...docSnap.data() };
                 
+                // עיצוב לפי סניף
+                let stripClass = 'strip-main';
+                if(p.branch === 'harash') stripClass = 'strip-harash';
+                if(p.branch === 'logistics') stripClass = 'strip-logistics';
+
+                // תמונה (אם אין, מייצר אוטומטית)
+                const avatar = p.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=random&color=fff`;
+                
+                // קישורים
+                const outlookLink = p.email ? `mailto:${p.email}` : null;
+                const teamsLink = p.email ? `https://teams.microsoft.com/l/chat/0/0?users=${p.email}` : null;
+                const waLink = p.phone ? `https://wa.me/972${p.phone.replace(/^0/,'')}` : null;
+
                 grid.innerHTML += `
-                <div class="p-4 rounded-xl border ${bgClass} shadow-sm hover:shadow-md transition">
-                    <div class="flex items-center gap-3 mb-3">
-                        <img src="${avatar}" class="w-12 h-12 rounded-full border">
-                        <div>
-                            <h3 class="font-bold text-slate-800">${p.name}</h3>
-                            <span class="text-xs bg-gray-200 px-2 py-1 rounded text-gray-600">${p.role}</span>
+                <div class="staff-card group" data-name="${p.name}">
+                    <div class="branch-strip ${stripClass}"></div>
+                    
+                    <div class="card-content">
+                        <div class="avatar-container">
+                            <img src="${avatar}" class="user-img">
+                            <div class="status-indicator" title="זמין"></div>
+                        </div>
+                        
+                        <div class="user-name">${p.name}</div>
+                        <div class="user-role">${p.role}</div>
+                        
+                        <div class="text-xs text-gray-400 space-y-1 mt-2">
+                            ${p.phone ? `<div><i class="fas fa-phone ml-1"></i>${p.phone}</div>` : ''}
+                            ${p.email ? `<div><i class="fas fa-envelope ml-1"></i>${p.email}</div>` : ''}
+                        </div>
+
+                        <div class="actions-row">
+                            ${outlookLink ? `<a href="${outlookLink}" class="action-btn btn-outlook" title="Outlook"><i class="fas fa-envelope"></i></a>` : ''}
+                            ${teamsLink ? `<a href="${teamsLink}" class="action-btn btn-teams" title="Teams"><i class="fas fa-video"></i></a>` : ''}
+                            ${waLink ? `<a href="${waLink}" target="_blank" class="action-btn btn-wa" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>` : ''}
                         </div>
                     </div>
-                    <div class="space-y-1 text-sm text-gray-500">
-                        <div><i class="fas fa-phone w-5"></i> ${p.phone || '-'}</div>
-                        <div><i class="fas fa-envelope w-5"></i> ${p.email || '-'}</div>
-                    </div>
-                    <div class="mt-4 flex gap-2">
-                        <a href="mailto:${p.email}" class="flex-1 bg-blue-50 text-blue-600 py-1 rounded text-center text-xs font-bold hover:bg-blue-100">Outlook</a>
-                        <a href="https://wa.me/972${p.phone?.replace(/^0/,'')}" target="_blank" class="flex-1 bg-green-50 text-green-600 py-1 rounded text-center text-xs font-bold hover:bg-green-100">Whatsapp</a>
+
+                    <div class="card-footer">
+                        <div class="perm-badge ${p.permissions === 'edit' ? 'admin' : 'viewer'}">
+                            <i class="fas ${p.permissions === 'edit' ? 'fa-shield-alt' : 'fa-eye'}"></i>
+                            ${p.permissions === 'edit' ? 'מנהל/עורך' : 'צפייה בלבד'}
+                        </div>
+                        <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition">
+                            <i class="fas fa-cog cursor-pointer text-gray-400 hover:text-blue-500" onclick="window.editUser('${p.id}')"></i>
+                            <i class="fas fa-trash cursor-pointer text-gray-400 hover:text-red-500" onclick="window.deleteUser('${p.id}')"></i>
+                        </div>
                     </div>
                 </div>`;
             });
         });
 
-        // 4. הוספת עובד (פונקציה גלובלית)
+        // --- 4. LOGIC & ACTIONS ---
+        
+        // פילטר חיפוש
+        window.filterGrid = () => {
+            const term = document.getElementById('search').value.toLowerCase();
+            document.querySelectorAll('.staff-card').forEach(card => {
+                const name = card.getAttribute('data-name').toLowerCase();
+                card.style.display = name.includes(term) ? 'flex' : 'none';
+            });
+        };
+
+        // הוספת עובד
         window.openAddModal = async () => {
             const { value: formValues } = await Swal.fire({
-                title: 'הוספת עובד',
+                title: 'הוספת עובד חדש',
                 html: `
                     <input id="swal-name" class="swal2-input" placeholder="שם מלא">
                     <input id="swal-phone" class="swal2-input" placeholder="טלפון">
-                    <input id="swal-email" class="swal2-input" placeholder="מייל">
+                    <input id="swal-email" class="swal2-input" placeholder="מייל ארגוני">
+                    <select id="swal-branch" class="swal2-input">
+                        <option value="main">סניף התלמיד (ראשי)</option>
+                        <option value="harash">סניף החרש</option>
+                        <option value="logistics">לוגיסטיקה/נהגים</option>
+                    </select>
                     <select id="swal-role" class="swal2-input">
                         <option value="staff">עובד כללי</option>
                         <option value="driver">נהג</option>
@@ -103,27 +238,45 @@
                     </select>
                 `,
                 focusConfirm: false,
+                confirmButtonColor: '#0f172a',
                 preConfirm: () => {
-                    return [
-                        document.getElementById('swal-name').value,
-                        document.getElementById('swal-phone').value,
-                        document.getElementById('swal-email').value,
-                        document.getElementById('swal-role').value
-                    ]
+                    return {
+                        name: document.getElementById('swal-name').value,
+                        phone: document.getElementById('swal-phone').value,
+                        email: document.getElementById('swal-email').value,
+                        branch: document.getElementById('swal-branch').value,
+                        role: document.getElementById('swal-role').options[document.getElementById('swal-role').selectedIndex].text,
+                        type: document.getElementById('swal-role').value
+                    }
                 }
             });
 
             if (formValues) {
-                await addDoc(collection(db, "users"), {
-                    name: formValues[0],
-                    phone: formValues[1],
-                    email: formValues[2],
-                    type: formValues[3],
-                    createdAt: new Date()
-                });
-                Swal.fire('נוסף!', '', 'success');
+                await addDoc(collection(db, "users"), { ...formValues, permissions: 'view', createdAt: new Date() });
+                Swal.fire('בוצע!', 'העובד נוסף למערכת', 'success');
             }
         };
+
+        // מחיקת עובד
+        window.deleteUser = async (id) => {
+            if(confirm('למחוק עובד זה מהמערכת?')) {
+                await deleteDoc(doc(db, "users", id));
+            }
+        };
+
+        // עריכת הרשאות (פשוטה)
+        window.editUser = async (id) => {
+            const { isConfirmed } = await Swal.fire({
+                title: 'שינוי הרשאות',
+                text: 'האם להפוך למנהל/עורך?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'כן, תן הרשאת עריכה',
+                cancelButtonText: 'לא, צפייה בלבד'
+            });
+            await updateDoc(doc(db, "users", id), { permissions: isConfirmed ? 'edit' : 'view' });
+        };
+
     </script>
 </body>
 </html>
