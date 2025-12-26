@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saban | מערכת בקרה (המלשינון)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <style>
+        body { background: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', system-ui, sans-serif; padding: 20px; }
+        
+        .monitor-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; }
+        .log-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .log-table th { text-align: right; padding: 10px; color: #94a3b8; border-bottom: 1px solid #334155; }
+        .log-table td { padding: 10px; border-bottom: 1px solid #334155; }
+        .log-row:hover { background: #334155; }
+        
+        /* Status Lights */
+        .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-left: 8px; }
+        .online { background: #22c55e; box-shadow: 0 0 10px #22c55e; }
+        .offline { background: #ef4444; opacity: 0.5; }
+        
+        /* Exception Alert */
+        .alert-box { background: #450a0a; border: 1px solid #ef4444; color: #fca5a5; padding: 10px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; animation: flash 2s infinite; }
+        @keyframes flash { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-2xl font-bold flex items-center gap-3">
+            <i class="fas fa-eye text-blue-500"></i> מערכת בקרה ולוגים (Real-Time)
+        </h1>
+        <div class="text-sm text-gray-400">מחובר: <span class="text-white font-bold">ראמי (Admin)</span></div>
+    </div>
+
+    <div class="grid grid-cols-4 gap-6 mb-8">
+        <div class="monitor-card">
+            <h3 class="text-gray-400 text-xs font-bold uppercase mb-2">מחוברים כעת</h3>
+            <div id="online-users" class="space-y-2">
+                <div class="text-xs flex items-center"><span class="status-dot online"></span> איציק זהבי (החרש)</div>
+                <div class="text-xs flex items-center"><span class="status-dot online"></span> נתנאל (רכש)</div>
+                <div class="text-xs flex items-center"><span class="status-dot offline"></span> חכמת (נהג) - לא מחובר 20 דק'</div>
+            </div>
+        </div>
+        
+        <div class="monitor-card col-span-2">
+            <h3 class="text-gray-400 text-xs font-bold uppercase mb-2">נקודות תורפה (חריגים)</h3>
+            <div id="exceptions-area">
+                <div class="alert-box">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <div><b>חריגה:</b> לקוח "אשטרום" ממתין למענה כבר 45 דקות</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="monitor-card flex flex-col justify-center items-center">
+            <div class="text-4xl font-bold text-blue-500 mb-1" id="daily-actions">0</div>
+            <div class="text-xs text-gray-400">פעולות היום</div>
+        </div>
+    </div>
+
+    <div class="monitor-card">
+        <h3 class="text-white font-bold mb-4 flex justify-between">
+            <span>יומן אירועים מלא</span>
+            <button class="text-xs bg-blue-600 px-3 py-1 rounded hover:bg-blue-500">ייצוא לדוח</button>
+        </h3>
+        <div class="overflow-y-auto h-[400px]">
+            <table class="log-table">
+                <thead>
+                    <tr>
+                        <th>זמן</th>
+                        <th>משתמש</th>
+                        <th>פעולה</th>
+                        <th>פרטים</th>
+                        <th>מכשיר</th>
+                        <th>סטטוס</th>
+                    </tr>
+                </thead>
+                <tbody id="logs-body">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
+
+        // Listen to Logs
+        const q = query(collection(db, "system_logs"), orderBy("timestamp", "desc"), limit(50));
+        
+        onSnapshot(q, (snap) => {
+            const tbody = document.getElementById('logs-body');
+            tbody.innerHTML = '';
+            let actionsCount = 0;
+
+            snap.forEach(doc => {
+                const log = doc.data();
+                actionsCount++;
+                
+                const time = log.timestamp ? new Date(log.timestamp.seconds*1000).toLocaleTimeString() : '--:--';
+                const statusColor = log.status === 'error' ? 'text-red-400' : 'text-green-400';
+                
+                // Color code specific actions
+                let actionStyle = 'text-gray-300';
+                if(log.action === 'heartbeat') return; // Hide heartbeats from main table to reduce noise
+                if(log.action.includes('login')) actionStyle = 'text-blue-400 font-bold';
+                if(log.action.includes('create')) actionStyle = 'text-orange-400 font-bold';
+
+                tbody.innerHTML += `
+                <tr class="log-row">
+                    <td class="font-mono text-gray-500">${time}</td>
+                    <td class="font-bold">${log.user}</td>
+                    <td class="${actionStyle}">${translateAction(log.action)}</td>
+                    <td class="text-gray-400 truncate max-w-[200px]">${log.details}</td>
+                    <td><i class="fas ${log.device==='Mobile'?'fa-mobile-alt':'fa-desktop'}"></i></td>
+                    <td class="${statusColor}">${log.status}</td>
+                </tr>`;
+            });
+            
+            document.getElementById('daily-actions').innerText = actionsCount;
+        });
+
+        function translateAction(act) {
+            const dict = {
+                'login': '🔓 התחברות',
+                'create_request': '📝 יצירת בקשה',
+                'add_user': '👤 הוספת משתמש',
+                'open_chat': '💬 פתיחת צ\'אט',
+                'heartbeat': '💓 אות חיים'
+            };
+            return dict[act] || act;
+        }
+
+        // כאן תוסיף לוגיקה לזיהוי "מנותקים" (אם ה-heartbeat האחרון היה לפני יותר מ-5 דקות)
+    </script>
+</body>
+</html>
