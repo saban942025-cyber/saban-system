@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Saban CEO | Harel</title>
+    <link rel="apple-touch-icon" href="https://ui-avatars.com/api/?name=Saban&background=000&color=fff&size=180">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        /* iOS Look & Feel */
+        body { background: #000000; color: white; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding-bottom: 90px; -webkit-tap-highlight-color: transparent; }
+        
+        /* Glassmorphism Header */
+        .header-blur { background: rgba(20, 20, 20, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.1); position: sticky; top: 0; z-index: 50; padding-top: env(safe-area-inset-top); }
+        
+        /* Cards */
+        .ceo-card { background: #1c1c1e; border-radius: 16px; padding: 16px; margin-bottom: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.05); }
+        
+        /* Tab Bar */
+        .tab-bar { position: fixed; bottom: 0; width: 100%; background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(20px); border-top: 1px solid rgba(255,255,255,0.1); padding-bottom: env(safe-area-inset-bottom); display: flex; justify-content: space-around; z-index: 100; }
+        .tab-btn { padding: 12px; color: #8e8e93; display: flex; flex-direction: column; align-items: center; font-size: 10px; transition: 0.3s; flex: 1; }
+        .tab-btn i { font-size: 24px; margin-bottom: 4px; }
+        .tab-btn.active { color: #0a84ff; text-shadow: 0 0 10px rgba(10, 132, 255, 0.5); }
+
+        /* Status Indicators */
+        .status-dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-left: 5px; }
+        .dot-green { background: #30d158; box-shadow: 0 0 8px #30d158; }
+        .dot-red { background: #ff453a; box-shadow: 0 0 8px #ff453a; }
+        .dot-orange { background: #ff9f0a; }
+
+        /* The Log Terminal */
+        .log-line { font-family: 'Courier New', monospace; font-size: 11px; border-left: 2px solid #333; padding-right: 8px; margin-bottom: 8px; opacity: 0.8; }
+        .log-time { color: #0a84ff; font-weight: bold; }
+        .log-user { color: #ff9f0a; }
+        
+        /* Animation */
+        .pulse-alert { animation: pulseRed 2s infinite; }
+        @keyframes pulseRed { 0% { box-shadow: 0 0 0 0 rgba(255, 69, 58, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(255, 69, 58, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 69, 58, 0); } }
+
+        /* Sections */
+        .view-section { display: none; padding: 20px; animation: fadeIn 0.3s ease; }
+        .view-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div class="header-blur px-5 py-4 flex justify-between items-center">
+        <div>
+            <div class="text-xs text-gray-400 font-medium uppercase tracking-wider">מנכ"ל חברה</div>
+            <div class="text-2xl font-bold text-white tracking-tight">הראל אידלסון</div>
+        </div>
+        <div class="relative">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-purple-600 flex items-center justify-center border-2 border-black shadow-lg">
+                <span class="text-xs font-bold">CEO</span>
+            </div>
+            <div id="alert-badge" class="absolute -top-1 -right-1 w-4 h-4 bg-red-600 rounded-full border-2 border-black hidden"></div>
+        </div>
+    </div>
+
+    <div id="view-home" class="view-section active">
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="ceo-card bg-gradient-to-br from-blue-900/40 to-black border-blue-500/30">
+                <div class="text-gray-400 text-xs mb-1">הזמנות פתוחות</div>
+                <div class="text-3xl font-bold text-blue-400" id="stat-orders">0</div>
+                <div class="text-xs text-blue-200 mt-2 flex items-center gap-1"><i class="fas fa-arrow-up"></i> פעילות שוטפת</div>
+            </div>
+            <div class="ceo-card bg-gradient-to-br from-green-900/40 to-black border-green-500/30">
+                <div class="text-gray-400 text-xs mb-1">נהגים פעילים</div>
+                <div class="text-3xl font-bold text-green-400" id="stat-drivers">0</div>
+                <div class="text-xs text-green-200 mt-2 flex items-center gap-1"><i class="fas fa-truck"></i> בשטח כרגע</div>
+            </div>
+        </div>
+
+        <div class="ceo-card">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-sm text-gray-300">תחזית יומית (Live)</h3>
+                <span class="text-xs bg-gray-800 px-2 py-1 rounded text-gray-400">היום</span>
+            </div>
+            <div class="h-40">
+                <canvas id="salesChart"></canvas>
+            </div>
+        </div>
+
+        <div class="text-xs font-bold text-gray-500 mb-2 px-1 uppercase">חריגים לטיפול (Exceptions)</div>
+        <div id="alerts-list">
+            </div>
+    </div>
+
+    <div id="view-team" class="view-section">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold">סטטוס צוות בזמן אמת</h2>
+            <button onclick="openBroadcast()" class="bg-gray-800 text-xs px-3 py-1.5 rounded-full border border-gray-600">📢 כריזה</button>
+        </div>
+        <div id="team-list" class="space-y-3"></div>
+    </div>
+
+    <div id="view-ops" class="view-section">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold">חדר מבצעים</h2>
+            <div class="text-xs text-gray-400">לחיצה להתערבות</div>
+        </div>
+        <div id="orders-feed" class="space-y-3"></div>
+    </div>
+
+    <div id="view-logs" class="view-section">
+        <div class="ceo-card" style="background: #0d0d0d; border: 1px solid #333;">
+            <div class="flex justify-between items-center mb-3 border-b border-gray-800 pb-2">
+                <h3 class="text-xs font-mono text-green-500">SYSTEM_AUDIT_LOG_V2.0</h3>
+                <span class="text-[10px] text-gray-600 animate-pulse">REC ●</span>
+            </div>
+            <div id="audit-log" class="h-[60vh] overflow-y-auto">
+                </div>
+        </div>
+    </div>
+
+    <div class="tab-bar">
+        <div class="tab-btn active" onclick="switchTab('home', this)">
+            <i class="fas fa-chart-pie"></i>
+            <span>קוקפיט</span>
+        </div>
+        <div class="tab-btn" onclick="switchTab('ops', this)">
+            <i class="fas fa-map"></i>
+            <span>מבצעים</span>
+        </div>
+        <div class="tab-btn" onclick="switchTab('team', this)">
+            <i class="fas fa-users"></i>
+            <span>צוות</span>
+        </div>
+        <div class="tab-btn" onclick="switchTab('logs', this)">
+            <i class="fas fa-terminal"></i>
+            <span>לוגים</span>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, where, orderBy, onSnapshot, serverTimestamp, updateDoc, doc, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
+
+        // --- 1. DASHBOARD & ALERTS ---
+        function initDashboard() {
+            // Stats
+            onSnapshot(collection(db, "orders"), (snap) => {
+                const active = snap.docs.filter(d => ['assigned','picking','en_route'].includes(d.data().status)).length;
+                document.getElementById('stat-orders').innerText = active;
+                
+                // Exceptions Logic (Red alerts)
+                const alertsContainer = document.getElementById('alerts-list');
+                alertsContainer.innerHTML = '';
+                let urgentCount = 0;
+
+                snap.docs.forEach(d => {
+                    const o = d.data();
+                    // חריג: הזמנה דחופה שעדיין לא יצאה (או סתם דחופה)
+                    if (o.taskType === 'urgent' && o.status !== 'done') {
+                        urgentCount++;
+                        alertsContainer.innerHTML += `
+                        <div class="ceo-card pulse-alert bg-red-900/20 border-red-500/50 flex justify-between items-center" onclick="intervene('${d.id}', '${o.clientName}')">
+                            <div>
+                                <div class="text-red-400 text-xs font-bold mb-1"><i class="fas fa-exclamation-triangle"></i> חריג דחוף</div>
+                                <div class="font-bold text-sm">${o.clientName}</div>
+                                <div class="text-xs text-gray-400">אחראי: ${o.driverId} | סטטוס: ${getStatusName(o.status)}</div>
+                            </div>
+                            <button class="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold">התערב</button>
+                        </div>`;
+                    }
+                });
+
+                if(urgentCount > 0) document.getElementById('alert-badge').classList.remove('hidden');
+                else document.getElementById('alert-badge').classList.add('hidden');
+            });
+
+            // Drivers Count
+            onSnapshot(query(collection(db, "users"), where("type", "==", "driver")), (snap) => {
+                document.getElementById('stat-drivers').innerText = snap.size;
+            });
+        }
+
+        // --- 2. LIVE OPS (Feed) ---
+        onSnapshot(query(collection(db, "orders"), orderBy("lastUpdate", "desc"), limit(20)), (snap) => {
+            const feed = document.getElementById('orders-feed');
+            feed.innerHTML = '';
+            
+            snap.forEach(d => {
+                const o = d.data();
+                const isUrgent = o.taskType === 'urgent';
+                
+                feed.innerHTML += `
+                <div class="ceo-card flex justify-between items-start" style="border-right: 4px solid ${isUrgent ? '#ef4444' : '#3b82f6'};">
+                    <div>
+                        <div class="text-xs text-gray-500 mb-1">
+                            ${new Date(o.createdAt?.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} • ${o.driverId}
+                        </div>
+                        <div class="font-bold text-base">${o.clientName}</div>
+                        <div class="text-sm text-gray-400 mt-1">${o.text || ''}</div>
+                        <div class="mt-2 inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-gray-800 text-gray-300">
+                            ${getStatusName(o.status)}
+                        </div>
+                    </div>
+                    <button onclick="intervene('${d.id}', '${o.clientName}')" class="text-gray-500 hover:text-white p-2">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                </div>`;
+            });
+        });
+
+        // --- 3. TEAM STATUS ---
+        onSnapshot(query(collection(db, "users"), orderBy("type")), (snap) => {
+            const list = document.getElementById('team-list');
+            list.innerHTML = '';
+            
+            snap.forEach(d => {
+                const u = d.data();
+                if(u.type === 'client') return;
+                
+                // Simulated online status (Random for demo, real implementation would use 'lastSeen')
+                const isOnline = Math.random() > 0.3; 
+                
+                list.innerHTML += `
+                <div class="ceo-card flex items-center justify-between py-3">
+                    <div class="flex items-center">
+                        <div class="relative">
+                            <img src="${u.avatar || `https://ui-avatars.com/api/?name=${u.name}`}" class="w-10 h-10 rounded-full bg-gray-700">
+                            <div class="absolute bottom-0 right-0 w-3 h-3 border-2 border-[#1c1c1e] rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-500'}"></div>
+                        </div>
+                        <div class="mr-3">
+                            <div class="font-bold text-sm">${u.name}</div>
+                            <div class="text-xs text-gray-500">${u.role || u.type} | ${u.branch || 'ראשי'}</div>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="spyChat('${u.phone}', '${u.name}')" class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-blue-400"><i class="fas fa-eye"></i></button>
+                        <button onclick="window.open('tel:${u.phone}')" class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-green-400"><i class="fas fa-phone"></i></button>
+                    </div>
+                </div>`;
+            });
+        });
+
+        // --- 4. AUDIT LOGS (The Black Box) ---
+        // כאן אנחנו מייצרים לוג מדומה שמבוסס על שינויים אמיתיים במערכת
+        // במערכת מלאה היינו שומרים קולקציית 'audit' נפרדת. כאן נשתמש בהאזנה לשינויים.
+        
+        function addLog(text, user="System", type="info") {
+            const logDiv = document.getElementById('audit-log');
+            const time = new Date().toLocaleTimeString();
+            const color = type === 'alert' ? '#ff453a' : '#30d158';
+            
+            const line = `
+            <div class="log-line">
+                <span class="log-time">[${time}]</span> 
+                <span class="log-user" style="color:${color}">${user}:</span> 
+                ${text}
+            </div>`;
+            
+            logDiv.insertAdjacentHTML('afterbegin', line);
+        }
+
+        // האזנה לשינויים בהזמנות בשביל הלוג
+        onSnapshot(collection(db, "orders"), (snap) => {
+            snap.docChanges().forEach(change => {
+                const d = change.doc.data();
+                if (change.type === "added") addLog(`New order created: ${d.clientName} -> ${d.driverId}`);
+                if (change.type === "modified") {
+                    if (d.status === 'done') addLog(`Order COMPLETED: ${d.clientName}`, d.driverId, 'alert'); // Green actually
+                    else addLog(`Status change: ${d.clientName} >> ${d.status}`, d.driverId);
+                }
+            });
+        });
+
+        // --- CEO ACTIONS (Intervention) ---
+        window.intervene = (orderId, clientName) => {
+            Swal.fire({
+                title: 'התערבות מנכ"ל',
+                text: `אתה משתלט על ההזמנה של ${clientName}. מה לעשות?`,
+                background: '#1c1c1e', color: 'white',
+                showCancelButton: true,
+                confirmButtonText: 'שנה סטטוס ידנית',
+                cancelButtonText: 'שלח הודעה לנהג',
+                confirmButtonColor: '#ff453a'
+            }).then(res => {
+                if (res.isConfirmed) {
+                    // Manual Status Override
+                    Swal.fire({
+                        title: 'בחר סטטוס חדש',
+                        input: 'select',
+                        inputOptions: { 'assigned': 'החזר להתחלה', 'urgent': 'סמן כדחוף ביותר', 'done': 'סגור הזמנה בכוח' },
+                        background: '#1c1c1e', color: 'white'
+                    }).then(async statusRes => {
+                        if(statusRes.value) {
+                            await updateDoc(doc(db, "orders", orderId), { 
+                                status: statusRes.value === 'urgent' ? 'assigned' : statusRes.value,
+                                taskType: statusRes.value === 'urgent' ? 'urgent' : 'client',
+                                lastUpdate: serverTimestamp() 
+                            });
+                            addLog(`CEO OVERRIDE on order ${orderId}`, 'HAREL', 'alert');
+                        }
+                    });
+                } else if (res.dismiss === Swal.DismissReason.cancel) {
+                    // Direct Message
+                    Swal.fire({
+                        input: 'text', inputLabel: 'הודעת מנהל (תישלח כהתראה)',
+                        background: '#1c1c1e', color: 'white'
+                    }).then(msg => {
+                        if(msg.value) {
+                            // Logic to send push/chat would go here
+                            Swal.fire({title: 'נשלח', icon: 'success', timer: 1000, showConfirmButton: false});
+                            addLog(`Sent CEO alert to driver re: ${clientName}`, 'HAREL');
+                        }
+                    });
+                }
+            });
+        };
+
+        window.spyChat = (phone, name) => {
+            // In a real app, this would open the chat view in read-only mode
+            Swal.fire({
+                title: `מצב ריגול: ${name}`,
+                text: 'פותח ערוץ תקשורת במצב האזנה (Ghost Mode)...',
+                icon: 'info',
+                background: '#1c1c1e', color: 'white',
+                timer: 2000, showConfirmButton: false
+            });
+            addLog(`Entered GHOST MODE on chat: ${name}`, 'HAREL', 'alert');
+        };
+
+        window.openBroadcast = () => {
+            Swal.fire({
+                title: 'כריזה לכל החברה',
+                input: 'textarea',
+                inputPlaceholder: 'הודעה דחופה לכל הנהגים והצוות...',
+                background: '#1c1c1e', color: 'white',
+                confirmButtonText: 'שדר עכשיו',
+                confirmButtonColor: '#ff453a'
+            }).then((res) => {
+                if(res.value) addLog(`BROADCAST SENT: ${res.value}`, 'HAREL', 'alert');
+            });
+        };
+
+        // --- UTILS ---
+        function getStatusName(s) {
+            const map = { 'assigned': 'ממתין', 'picking': 'בליקוט', 'en_route': 'בדרך', 'arrived': 'בפריקה', 'done': 'הושלם', 'pending_approval': 'ממתין לאישור' };
+            return map[s] || s;
+        }
+
+        window.switchTab = (viewId, btn) => {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(`view-${viewId}`).classList.add('active');
+            btn.classList.add('active');
+        };
+
+        // Chart.js - Sales Graph
+        setTimeout(() => {
+            const ctx = document.getElementById('salesChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['08:00', '10:00', '12:00', '14:00', '16:00'],
+                    datasets: [{
+                        label: 'הזמנות',
+                        data: [2, 5, 12, 8, 15],
+                        borderColor: '#0a84ff',
+                        backgroundColor: 'rgba(10, 132, 255, 0.1)',
+                        tension: 0.4, fill: true
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { display: false }, y: { display: false } }
+                }
+            });
+        }, 1000);
+
+        initDashboard();
+
+    </script>
+</body>
+</html>
