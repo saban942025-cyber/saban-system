@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saban Directory | ניהול צוות</title>
+    <title>Saban Directory | ניהול צוות ובקרה</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -125,35 +125,33 @@
         </div>
     </div>
 
+    <audio id="sound-driver-start" src="https://actions.google.com/sounds/v1/transportation/car_horn.ogg"></audio>
+    <audio id="sound-driver-arrive" src="https://actions.google.com/sounds/v1/cartoon/pop.ogg"></audio>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, updateDoc, doc, deleteDoc, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, updateDoc, doc, deleteDoc, serverTimestamp, getDocs, where, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Config
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
-        // --- 1. SEED DATA (צוות הליבה) ---
+        // --- 1. SEED DATA ---
         const FULL_STAFF_LIST = [
             { name: "הראל אידלסון", role: "מנכ\"ל", phone: "0505227724", email: "harel@saban94.co.il", branch: "main", type: "admin" },
             { name: "ראמי מסארוה", role: "מנהל תפעול (Admin)", phone: "0508860896", email: "ramims@saban94.co.il", branch: "main", type: "admin" },
             { name: "יואב", role: "מנהל סידור", phone: "0507855865", email: "yoav@saban94.co.il", branch: "main", type: "admin" },
             { name: "נתנאל", role: "מנהל רכש", phone: "0548132442", email: "netanel@saban94.co.il", branch: "main", type: "manager" },
-            // איציק - מנהל סניף החרש
             { name: "איציק זהבי", role: "מנהל סניף החרש", phone: "0504482285", email: "itzik@saban94.co.il", branch: "harash", type: "manager" },
-            // נהגים
             { name: "עלי", role: "נהג מנוף", phone: "", email: "", branch: "logistics", type: "driver" },
             { name: "חכמת", role: "נהג משאית", phone: "", email: "", branch: "logistics", type: "driver" },
-            // צוות נוסף
             { name: "ורד", role: "מנהלת משרד", phone: "0506662300", email: "vered@saban94.co.il", branch: "main", type: "office" },
             { name: "אורן", role: "מנהל חצר החרש", phone: "0509001392", email: "", branch: "harash", type: "field" },
             { name: "שי", role: "דלפק/ליקוט", phone: "", email: "", branch: "harash", type: "field" },
             { name: "תמיר", role: "מנהל חצר התלמיד", phone: "0523002828", email: "", branch: "main", type: "field" }
         ];
 
-        // Seed if empty
         async function syncStaffDatabase() {
             const snap = await getDocs(collection(db, "users"));
-            if (snap.size < 5) { // סף נמוך לטעינה ראשונית
+            if (snap.size < 5) {
                 const existingNames = new Set();
                 snap.forEach(d => existingNames.add(d.data().name));
                 for (const staff of FULL_STAFF_LIST) {
@@ -165,7 +163,56 @@
         }
         syncStaffDatabase();
 
-        // --- 2. RENDER LOGIC ---
+        // --- 2. DRIVER MONITORING (THE POPUP FEATURE) ---
+        // מאזין לשינויים בסטטוס הזמנות בזמן אמת כדי להקפיץ הודעות למנהל
+        function monitorDriverActivity() {
+            const q = query(collection(db, "orders"), orderBy("lastUpdate", "desc"), limit(1));
+            
+            onSnapshot(q, (snap) => {
+                snap.docChanges().forEach((change) => {
+                    if (change.type === "modified") {
+                        const data = change.doc.data();
+                        
+                        // בדיקה שהשינוי קרה ממש עכשיו (ב-10 שניות האחרונות) כדי לא להקפיץ סתם
+                        if (data.lastUpdate && (Date.now() - data.lastUpdate.seconds * 1000) < 10000) {
+                            
+                            // 1. נהג יצא לדרך
+                            if (data.status === 'en_route') {
+                                document.getElementById('sound-driver-start').play().catch(()=>{});
+                                Swal.fire({
+                                    title: `${data.driverId} יצא לדרך! 🚚`,
+                                    text: `המשימה: ${data.clientName}`,
+                                    position: 'top-end',
+                                    icon: 'info',
+                                    toast: true,
+                                    timer: 5000,
+                                    showConfirmButton: false,
+                                    background: '#ecfdf5',
+                                    color: '#065f46'
+                                });
+                            }
+                            
+                            // 2. נהג הגיע
+                            if (data.status === 'arrived') {
+                                document.getElementById('sound-driver-arrive').play().catch(()=>{});
+                                Swal.fire({
+                                    title: `${data.driverId} הגיע ליעד 📍`,
+                                    text: `אצל הלקוח: ${data.clientName}`,
+                                    position: 'top-end',
+                                    icon: 'success',
+                                    toast: true,
+                                    timer: 5000,
+                                    showConfirmButton: false
+                                });
+                            }
+                        }
+                    }
+                });
+            });
+        }
+        monitorDriverActivity(); // הפעלת המוניטור
+
+        // --- 3. RENDER LOGIC ---
         onSnapshot(query(collection(db, "users"), orderBy("name")), (snap) => {
             const grid = document.getElementById('staff-grid');
             const tableBody = document.getElementById('clients-table-body');
@@ -182,7 +229,7 @@
                 const avatar = p.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=random&color=fff`;
                 const userJson = JSON.stringify(p).replace(/"/g, '&quot;');
 
-                // --- Client Row ---
+                // CLIENT ROW
                 if (p.type === 'client') {
                     clientCount++;
                     tableBody.innerHTML += `
@@ -202,7 +249,7 @@
                         </td>
                     </tr>`;
                 } 
-                // --- Staff Card ---
+                // STAFF CARD
                 else {
                     staffCount++;
                     let stripClass = 'strip-main';
@@ -213,30 +260,15 @@
                     const teamsLink = p.email ? `https://teams.microsoft.com/l/chat/0/0?users=${p.email}` : null;
                     const waLink = p.phone ? `https://wa.me/972${p.phone?.replace(/^0/,'')}` : null;
 
-                    // --- MAGIC BUTTONS ---
+                    // SPECIAL BUTTONS
                     let specialBtn = '';
-                    
-                    // 1. ITZIK (Manager App)
                     if (p.branch === 'harash' && p.type === 'manager') {
-                        specialBtn = `
-                        <button onclick="window.open('itzik-app.html', '_blank')" class="btn-app-manager">
-                            <i class="fas fa-store"></i> כניסה לאפליקציית מנהל
-                        </button>`;
-                    }
-                    // 2. DRIVERS (Driver App)
-                    else if (p.type === 'driver') {
+                        specialBtn = `<button onclick="window.open('itzik-app.html', '_blank')" class="btn-app-manager"><i class="fas fa-store"></i> כניסה לאפליקציית מנהל</button>`;
+                    } else if (p.type === 'driver') {
                         const driverLink = `driver-app.html?uid=${p.phone}&name=${encodeURIComponent(p.name)}`;
-                        specialBtn = `
-                        <button onclick="window.open('${driverLink}', '_blank')" class="btn-app-driver">
-                            <i class="fas fa-truck"></i> כניסה לאפליקציית נהג
-                        </button>`;
-                    }
-                    // 3. Regular Staff (Task Button)
-                    else {
-                        specialBtn = `
-                        <button onclick="openTaskModal('${p.id}', '${p.name}', '${p.phone}')" class="btn-task">
-                            <i class="fas fa-tasks"></i> שגר משימה
-                        </button>`;
+                        specialBtn = `<button onclick="window.open('${driverLink}', '_blank')" class="btn-app-driver"><i class="fas fa-truck"></i> כניסה לאפליקציית נהג</button>`;
+                    } else {
+                        specialBtn = `<button onclick="openTaskModal('${p.id}', '${p.name}', '${p.phone}')" class="btn-task"><i class="fas fa-tasks"></i> שגר משימה</button>`;
                     }
 
                     grid.innerHTML += `
@@ -279,7 +311,7 @@
             return 'כללי';
         }
 
-        // --- EDIT / ADD MODAL ---
+        // --- EDIT MODAL ---
         window.openEditModal = (userData = null) => {
             const user = userData ? JSON.parse(userData) : null;
             const isEdit = !!user;
@@ -289,52 +321,12 @@
                 html: `
                     <div class="text-right space-y-3">
                         <div class="flex gap-2">
-                            <div class="w-2/3">
-                                <label class="text-xs font-bold text-gray-500">שם מלא</label>
-                                <input id="swal-name" class="swal2-input w-full mx-0" value="${user?.name || ''}">
-                            </div>
-                            <div class="w-1/3">
-                                <label class="text-xs font-bold text-gray-500">סוג</label>
-                                <select id="swal-type" class="swal2-input w-full mx-0 bg-yellow-50">
-                                    <option value="staff" ${user?.type==='staff'?'selected':''}>עובד</option>
-                                    <option value="client" ${user?.type==='client'?'selected':''}>לקוח/ספק</option>
-                                    <option value="driver" ${user?.type==='driver'?'selected':''}>נהג</option>
-                                    <option value="manager" ${user?.type==='manager'?'selected':''}>מנהל</option>
-                                    <option value="admin" ${user?.type==='admin'?'selected':''}>מנהל מערכת</option>
-                                </select>
-                            </div>
+                            <div class="w-2/3"><label class="text-xs font-bold text-gray-500">שם מלא</label><input id="swal-name" class="swal2-input w-full mx-0" value="${user?.name || ''}"></div>
+                            <div class="w-1/3"><label class="text-xs font-bold text-gray-500">סוג</label><select id="swal-type" class="swal2-input w-full mx-0 bg-yellow-50"><option value="staff" ${user?.type==='staff'?'selected':''}>עובד</option><option value="client" ${user?.type==='client'?'selected':''}>לקוח/ספק</option><option value="driver" ${user?.type==='driver'?'selected':''}>נהג</option><option value="manager" ${user?.type==='manager'?'selected':''}>מנהל</option><option value="admin" ${user?.type==='admin'?'selected':''}>מנהל מערכת</option></select></div>
                         </div>
-                        
-                        <div>
-                            <label class="text-xs font-bold text-gray-500">לינק לתמונה (אופציונלי)</label>
-                            <input id="swal-avatar" class="swal2-input w-full mx-0 text-xs" placeholder="https://..." value="${user?.avatar || ''}">
-                        </div>
-
-                        <div class="flex gap-2">
-                            <div class="w-1/2">
-                                <label class="text-xs font-bold text-gray-500">טלפון</label>
-                                <input id="swal-phone" class="swal2-input w-full mx-0" value="${user?.phone || ''}">
-                            </div>
-                            <div class="w-1/2">
-                                <label class="text-xs font-bold text-gray-500">מייל</label>
-                                <input id="swal-email" class="swal2-input w-full mx-0" value="${user?.email || ''}">
-                            </div>
-                        </div>
-                        
-                        <div class="flex gap-2">
-                            <div class="w-1/2">
-                                <label class="text-xs font-bold text-gray-500">תפקיד</label>
-                                <input id="swal-role-text" class="swal2-input w-full mx-0" value="${user?.role || ''}">
-                            </div>
-                            <div class="w-1/2">
-                                <label class="text-xs font-bold text-gray-500">סניף</label>
-                                <select id="swal-branch" class="swal2-input w-full mx-0">
-                                    <option value="main" ${user?.branch==='main'?'selected':''}>התלמיד 6</option>
-                                    <option value="harash" ${user?.branch==='harash'?'selected':''}>החרש 10</option>
-                                    <option value="logistics" ${user?.branch==='logistics'?'selected':''}>לוגיסטיקה</option>
-                                </select>
-                            </div>
-                        </div>
+                        <div><label class="text-xs font-bold text-gray-500">תמונה</label><input id="swal-avatar" class="swal2-input w-full mx-0 text-xs" placeholder="https://..." value="${user?.avatar || ''}"></div>
+                        <div class="flex gap-2"><div class="w-1/2"><label class="text-xs font-bold text-gray-500">טלפון</label><input id="swal-phone" class="swal2-input w-full mx-0" value="${user?.phone || ''}"></div><div class="w-1/2"><label class="text-xs font-bold text-gray-500">מייל</label><input id="swal-email" class="swal2-input w-full mx-0" value="${user?.email || ''}"></div></div>
+                        <div class="flex gap-2"><div class="w-1/2"><label class="text-xs font-bold text-gray-500">תפקיד</label><input id="swal-role-text" class="swal2-input w-full mx-0" value="${user?.role || ''}"></div><div class="w-1/2"><label class="text-xs font-bold text-gray-500">סניף</label><select id="swal-branch" class="swal2-input w-full mx-0"><option value="main" ${user?.branch==='main'?'selected':''}>התלמיד 6</option><option value="harash" ${user?.branch==='harash'?'selected':''}>החרש 10</option><option value="logistics" ${user?.branch==='logistics'?'selected':''}>לוגיסטיקה</option></select></div></div>
                     </div>
                 `,
                 showCancelButton: true,
@@ -354,46 +346,66 @@
             }).then(async (result) => {
                 if (result.isConfirmed) {
                     try {
-                        if (isEdit) {
-                            await updateDoc(doc(db, "users", user.id), result.value);
-                        } else {
-                            await addDoc(collection(db, "users"), { ...result.value, createdAt: serverTimestamp() });
-                        }
+                        if (isEdit) await updateDoc(doc(db, "users", user.id), result.value);
+                        else await addDoc(collection(db, "users"), { ...result.value, createdAt: serverTimestamp() });
                         Swal.fire({icon: 'success', title: 'נשמר!', timer: 1500, showConfirmButton: false});
                     } catch (e) { Swal.fire('שגיאה', e.message, 'error'); }
                 }
             });
         };
 
-        // --- TASK MODAL ---
+        // --- TASK MODAL (With Types & Chameleon) ---
         window.openTaskModal = (uid, name, phone) => {
             Swal.fire({
                 title: `משימה ל${name}`,
                 html: `
-                    <div class="text-right">
-                        <textarea id="task-desc" class="swal2-textarea w-full mx-0" placeholder="מה המשימה לביצוע?"></textarea>
-                        <select id="task-priority" class="swal2-input w-full mx-0">
-                            <option value="רגיל">🔵 רגיל</option>
-                            <option value="דחוף">🟠 דחוף</option>
-                            <option value="בהול">🔴 בהול (חירום)</option>
-                        </select>
+                    <div class="text-right space-y-3">
+                        <div>
+                            <label class="text-xs font-bold text-gray-500">סוג משימה</label>
+                            <select id="task-cat" class="swal2-input w-full mx-0 text-sm">
+                                <option value="client">📦 הובלה ללקוח (כחול)</option>
+                                <option value="transfer">🔄 העברה בין סניפים (כתום)</option>
+                                <option value="supplier">🏭 איסוף מספק (סגול)</option>
+                                <option value="urgent">🔥 משימה דחופה (אדום)</option>
+                            </select>
+                        </div>
+                        <textarea id="task-desc" class="swal2-textarea w-full mx-0" placeholder="פירוט המשימה / סחורה..."></textarea>
+                        <input id="task-addr" class="swal2-input w-full mx-0" placeholder="כתובת לניווט (Waze)">
+                        <div class="flex gap-2 items-center mt-2 bg-yellow-50 p-2 rounded">
+                            <input type="checkbox" id="task-approval">
+                            <label for="task-approval" class="text-xs text-yellow-800 font-bold">דרוש אישור סידור</label>
+                        </div>
                     </div>
                 `,
-                confirmButtonText: 'שגר משימה + ווצאף 🚀',
+                confirmButtonText: 'שגר לנהג 🚀',
                 showCancelButton: true,
                 preConfirm: () => {
-                    return { desc: document.getElementById('task-desc').value, prio: document.getElementById('task-priority').value }
+                    return { 
+                        type: document.getElementById('task-cat').value,
+                        desc: document.getElementById('task-desc').value,
+                        addr: document.getElementById('task-addr').value,
+                        pending: document.getElementById('task-approval').checked
+                    }
                 }
             }).then(async (result) => {
                 if (result.isConfirmed) {
-                    const task = result.value;
-                    if(!task.desc) return;
+                    const data = result.value;
+                    if(!data.desc) return;
                     
-                    await addDoc(collection(db, "tasks"), {
-                        assignedTo: uid, assignedToName: name, description: task.desc, priority: task.prio, status: 'pending', createdAt: serverTimestamp()
+                    const initialStatus = data.pending ? 'pending_approval' : 'assigned';
+
+                    await addDoc(collection(db, "orders"), {
+                        driverId: name,
+                        clientName: "משימה יזומה",
+                        text: data.desc,
+                        address: data.addr,
+                        taskType: data.type,
+                        status: initialStatus,
+                        lastUpdate: serverTimestamp(),
+                        createdAt: serverTimestamp()
                     });
 
-                    const waText = `*🛑 משימה חדשה מאת הנהלת סבן*\n------------------------\nעבור: ${name}\nדחיפות: ${task.prio}\n\n📝 *המשימה:* ${task.desc}\n\nנא לאשר ביצוע בהקדם.`;
+                    const waText = `*משימה חדשה*\nסוג: ${data.type}\nפרטים: ${data.desc}\nכתובת: ${data.addr}`;
                     window.open(`https://wa.me/972${phone.replace(/^0/,'')}?text=${encodeURIComponent(waText)}`, '_blank');
                 }
             });
@@ -404,12 +416,12 @@
             Swal.fire({
                 title: '📢 כריזה לארגון',
                 input: 'textarea',
-                inputPlaceholder: 'הודעת נהלים / חירום לכולם...',
-                confirmButtonText: 'שדר לכולם',
+                inputPlaceholder: 'הודעה לכולם...',
+                confirmButtonText: 'שדר',
                 confirmButtonColor: '#ef4444'
             }).then((res) => {
                 if(res.isConfirmed && res.value) {
-                    Swal.fire('שודר!', 'ההודעה נשלחה לכל המכשירים', 'success');
+                    Swal.fire('שודר!', '', 'success');
                 }
             });
         };
