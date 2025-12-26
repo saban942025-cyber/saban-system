@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Saban Dispatch | יואב</title>
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    
+    <meta name="theme-color" content="#374151">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="manifest-yoav.json">
+    <link rel="apple-touch-icon" href="https://ui-avatars.com/api/?name=Yoav&background=374151&color=fff&size=180">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        body { background: #f8fafc; font-family: 'Segoe UI', system-ui, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        
+        /* Sidebar */
+        .sidebar { width: 250px; background: white; border-left: 1px solid #e2e8f0; display: flex; flex-direction: column; padding: 20px; box-shadow: 2px 0 10px rgba(0,0,0,0.05); z-index: 20; }
+        
+        /* Main Area */
+        .main-area { flex: 1; padding: 20px; overflow-y: auto; background: #f1f5f9; display: flex; flex-direction: column; }
+        
+        /* Order Card */
+        .dispatch-card { background: white; border-radius: 8px; padding: 15px; margin-bottom: 12px; border: 1px solid #e2e8f0; border-right: 5px solid #cbd5e1; box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: 0.2s; position: relative; }
+        .dispatch-card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        
+        /* Colors based on status */
+        .status-assigned { border-right-color: #3b82f6; } /* Blue */
+        .status-picking { border-right-color: #f97316; } /* Orange */
+        .status-en_route { border-right-color: #10b981; } /* Green */
+        .status-urgent { border-right-color: #ef4444 !important; background: #fef2f2; } /* Red */
+
+        /* Header */
+        .app-header { background: #374151; color: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        
+        /* Add Button */
+        .btn-add-task { background: #3b82f6; color: white; border-radius: 8px; padding: 10px 20px; font-weight: bold; display: flex; align-items: center; gap: 8px; transition: 0.2s; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3); }
+        .btn-add-task:hover { background: #2563eb; transform: translateY(-1px); }
+
+        /* Driver List (Sidebar) */
+        .driver-row { display: flex; align-items: center; justify-content: space-between; padding: 10px; border-radius: 8px; margin-bottom: 5px; cursor: pointer; transition: 0.2s; }
+        .driver-row:hover { background: #f8fafc; }
+        .driver-status { width: 8px; height: 8px; border-radius: 50%; }
+        
+        /* Filter Tabs */
+        .filters { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
+        .filter-btn { padding: 6px 12px; border-radius: 20px; background: white; border: 1px solid #e2e8f0; font-size: 13px; color: #64748b; cursor: pointer; white-space: nowrap; }
+        .filter-btn.active { background: #374151; color: white; border-color: #374151; }
+    </style>
+</head>
+<body>
+
+    <div class="app-header">
+        <div class="flex items-center gap-3">
+            <div class="bg-gray-700 p-2 rounded-lg"><i class="fas fa-network-wired text-xl"></i></div>
+            <div>
+                <h1 class="text-xl font-bold">מערכת סידור</h1>
+                <div class="text-xs text-gray-400">ניהול צי רכב ולוגיסטיקה</div>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="text-right hidden md:block">
+                <div class="text-sm font-bold">יואב</div>
+                <div class="text-xs text-gray-400">מנהל סידור</div>
+            </div>
+            <img src="https://ui-avatars.com/api/?name=Yoav&background=4b5563&color=fff" class="w-10 h-10 rounded-full border-2 border-gray-600">
+        </div>
+    </div>
+
+    <div class="flex h-full">
+        <div class="sidebar hidden md:flex">
+            <h3 class="font-bold text-gray-700 mb-4 border-b pb-2">נהגים פעילים</h3>
+            <div id="drivers-list">
+                <div class="text-center text-gray-400 text-sm mt-4">טוען נהגים...</div>
+            </div>
+        </div>
+
+        <div class="main-area">
+            <div class="flex justify-between items-center mb-4">
+                <div class="filters">
+                    <button class="filter-btn active" onclick="filterView('all', this)">הכל</button>
+                    <button class="filter-btn" onclick="filterView('assigned', this)">ממתינים</button>
+                    <button class="filter-btn" onclick="filterView('picking', this)">בליקוט</button>
+                    <button class="filter-btn" onclick="filterView('en_route', this)">בדרך</button>
+                    <button class="filter-btn" onclick="filterView('urgent', this)">🔥 דחופים</button>
+                </div>
+                <button onclick="openNewOrderModal()" class="btn-add-task">
+                    <i class="fas fa-plus"></i> משימה חדשה
+                </button>
+            </div>
+
+            <div id="orders-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, where, orderBy, onSnapshot, serverTimestamp, updateDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
+
+        // 1. DRIVERS LISTENER
+        onSnapshot(query(collection(db, "users"), where("type", "==", "driver")), (snap) => {
+            const list = document.getElementById('drivers-list');
+            list.innerHTML = '';
+            
+            snap.forEach(d => {
+                const u = d.data();
+                // נהג פעיל? (סימולציה, במציאות לפי GPS אחרון)
+                const isActive = true; 
+                
+                list.innerHTML += `
+                <div class="driver-row" onclick="filterByDriver('${u.name}')">
+                    <div class="flex items-center gap-3">
+                        <img src="${u.avatar || `https://ui-avatars.com/api/?name=${u.name}`}" class="w-8 h-8 rounded-full">
+                        <div class="text-sm font-bold text-gray-700">${u.name}</div>
+                    </div>
+                    <div class="driver-status ${isActive ? 'bg-green-500' : 'bg-gray-300'}" title="${isActive ? 'מחובר' : 'לא זמין'}"></div>
+                </div>`;
+            });
+        });
+
+        // 2. ORDERS LISTENER
+        let currentFilter = 'all';
+        let ordersData = [];
+
+        onSnapshot(query(collection(db, "orders"), orderBy("createdAt", "desc")), (snap) => {
+            ordersData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            renderOrders();
+        });
+
+        function renderOrders() {
+            const grid = document.getElementById('orders-grid');
+            grid.innerHTML = '';
+            
+            const filtered = ordersData.filter(o => {
+                if (o.status === 'done' && currentFilter !== 'all') return false; // Hide done mostly
+                if (currentFilter === 'all') return o.status !== 'done';
+                if (currentFilter === 'urgent') return o.taskType === 'urgent';
+                return o.status === currentFilter;
+            });
+
+            if(filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center text-gray-400 mt-10">אין משימות בתצוגה זו</div>`;
+                return;
+            }
+
+            filtered.forEach(o => {
+                const statusClass = `status-${o.status}`;
+                const isUrgent = o.taskType === 'urgent' ? 'status-urgent' : '';
+                
+                grid.innerHTML += `
+                <div class="dispatch-card ${statusClass} ${isUrgent}">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-xs font-bold text-gray-400">#${o.id.slice(-4)}</span>
+                        <div class="flex gap-2">
+                            <button onclick="editOrder('${o.id}')" class="text-gray-400 hover:text-blue-500"><i class="fas fa-pencil-alt"></i></button>
+                            <button onclick="deleteOrder('${o.id}')" class="text-gray-400 hover:text-red-500"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="font-bold text-lg text-gray-800 mb-1">${o.clientName}</div>
+                    <div class="text-sm text-gray-600 mb-3 line-clamp-2">${o.text || 'אין פירוט'}</div>
+                    
+                    <div class="flex items-center gap-2 text-xs bg-gray-50 p-2 rounded mb-3">
+                        <i class="fas fa-truck text-gray-400"></i>
+                        <span class="font-bold">${o.driverId}</span>
+                        <i class="fas fa-arrow-left text-gray-300 mx-1"></i>
+                        <i class="fas fa-warehouse text-gray-400"></i>
+                        <span>${o.pickupBranch === 'harash' ? 'החרש' : (o.pickupBranch==='main'?'התלמיד':'ספק')}</span>
+                    </div>
+
+                    <div class="flex justify-between items-center mt-2">
+                        <span class="text-xs px-2 py-1 rounded bg-gray-200 font-bold">${getStatusText(o.status)}</span>
+                        <span class="text-[10px] text-gray-400">${new Date(o.createdAt?.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span>
+                    </div>
+                </div>`;
+            });
+        }
+
+        // --- ACTIONS ---
+        window.openNewOrderModal = () => {
+            Swal.fire({
+                title: 'משימה חדשה',
+                html: `
+                    <div class="text-right space-y-3">
+                        <input id="n-client" class="swal2-input w-full mx-0" placeholder="שם הלקוח">
+                        <div class="flex gap-2">
+                            <select id="n-driver" class="swal2-input w-full mx-0 text-sm">
+                                <option value="" disabled selected>בחר נהג...</option>
+                                <option value="חכמת">חכמת</option>
+                                <option value="עלי">עלי (מנוף)</option>
+                            </select>
+                            <select id="n-branch" class="swal2-input w-full mx-0 text-sm bg-blue-50">
+                                <option value="harash">החרש</option>
+                                <option value="main">התלמיד</option>
+                                <option value="supplier">ספק</option>
+                            </select>
+                        </div>
+                        <select id="n-type" class="swal2-input w-full mx-0 text-sm">
+                            <option value="client">רגיל</option>
+                            <option value="urgent">🔥 דחוף</option>
+                        </select>
+                        <textarea id="n-text" class="swal2-textarea w-full mx-0" placeholder="פירוט סחורה..."></textarea>
+                        <input id="n-addr" class="swal2-input w-full mx-0" placeholder="כתובת (Waze)">
+                    </div>
+                `,
+                confirmButtonText: 'צור משימה',
+                showCancelButton: true,
+                preConfirm: () => {
+                    return {
+                        client: document.getElementById('n-client').value,
+                        driver: document.getElementById('n-driver').value,
+                        branch: document.getElementById('n-branch').value,
+                        type: document.getElementById('n-type').value,
+                        text: document.getElementById('n-text').value,
+                        addr: document.getElementById('n-addr').value
+                    }
+                }
+            }).then(async res => {
+                if(res.isConfirmed) {
+                    const d = res.value;
+                    if(!d.client || !d.driver) return Swal.fire('חסרים פרטים', '', 'error');
+                    
+                    await addDoc(collection(db, "orders"), {
+                        clientName: d.client, driverId: d.driver, pickupBranch: d.branch, taskType: d.type, text: d.text, address: d.addr,
+                        status: 'assigned', createdAt: serverTimestamp(), lastUpdate: serverTimestamp()
+                    });
+                    
+                    // WhatsApp
+                    const waText = `*סידור עבודה חדש*\nנהג: ${d.driver}\nלקוח: ${d.client}\nאיסוף מ: ${d.branch}\nפרטים: ${d.text}`;
+                    // כאן צריך את הטלפון האמיתי, לצורך הדוגמה נפתח ווצאף כללי אם לא מוצאים
+                    // במערכת מלאה נשלוף את הטלפון מה-DB
+                    // window.open(`https://wa.me/?text=${encodeURIComponent(waText)}`, '_blank');
+                    Swal.fire('נוצר בהצלחה', '', 'success');
+                }
+            });
+        };
+
+        window.deleteOrder = (id) => {
+            Swal.fire({ title: 'למחוק?', icon: 'warning', showCancelButton: true, confirmButtonText: 'כן, מחק' }).then(async r => {
+                if(r.isConfirmed) { await deleteDoc(doc(db, "orders", id)); Swal.fire('נמחק', '', 'success'); }
+            });
+        };
+
+        window.filterView = (filter, btn) => {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderOrders();
+        };
+
+        function getStatusText(s) {
+            const map = { 'assigned': 'ממתין לביצוע', 'picking': 'בליקוט בחצר', 'en_route': 'יצא ללקוח', 'arrived': 'בפריקה', 'done': 'הושלם' };
+            return map[s] || s;
+        }
+    </script>
+</body>
+</html>
