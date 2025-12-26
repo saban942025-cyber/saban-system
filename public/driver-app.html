@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Saban Driver | נהג</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <style>
+        body { background: #111827; color: white; font-family: 'Segoe UI', system-ui, sans-serif; height: 100vh; display: flex; flex-direction: column; }
+        
+        /* Header */
+        .driver-header { background: #1f2937; padding: 20px; border-bottom: 1px solid #374151; display: flex; justify-content: space-between; align-items: center; }
+        .truck-id { background: #f59e0b; color: #000; font-weight: 900; padding: 5px 15px; border-radius: 8px; font-size: 20px; box-shadow: 0 0 10px rgba(245, 158, 11, 0.5); }
+        
+        /* Main Display */
+        .mission-area { flex: 1; padding: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        
+        /* The Cards */
+        .card-waiting { border: 2px dashed #4b5563; background: #1f2937; border-radius: 20px; padding: 40px; width: 100%; max-width: 400px; opacity: 0.7; }
+        
+        .card-mission { background: white; color: #1f2937; border-radius: 20px; width: 100%; max-width: 400px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5); animation: slideUp 0.5s ease-out; position: relative; }
+        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .mission-header { background: #2563eb; color: white; padding: 15px; font-size: 14px; font-weight: bold; display: flex; justify-content: space-between; }
+        .mission-body { padding: 25px; }
+        
+        .address-box { font-size: 24px; font-weight: 900; margin-bottom: 10px; line-height: 1.2; }
+        .client-box { font-size: 16px; color: #6b7280; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        
+        /* Big Buttons */
+        .btn-waze { background: #33ccff; color: white; width: 100%; padding: 15px; border-radius: 15px; font-size: 22px; font-weight: 900; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 15px; box-shadow: 0 5px 0 #0099cc; transition: 0.1s; }
+        .btn-waze:active { transform: translateY(5px); box-shadow: none; }
+        
+        .btn-action { width: 100%; padding: 20px; border-radius: 15px; font-size: 20px; font-weight: 900; color: white; margin-bottom: 10px; transition: 0.2s; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        
+        .status-start { background: #10b981; box-shadow: 0 5px 0 #059669; } /* ירוק - יצאתי */
+        .status-arrived { background: #f59e0b; box-shadow: 0 5px 0 #d97706; } /* כתום - הגעתי */
+        .status-done { background: #6366f1; box-shadow: 0 5px 0 #4f46e5; } /* סגול - סיימתי */
+        
+        .btn-action:active { transform: translateY(5px); box-shadow: none; }
+
+        /* Camera Input */
+        .camera-upload { display: none; }
+        .btn-camera { background: #374151; color: #d1d5db; padding: 10px; border-radius: 10px; width: 100%; font-weight: bold; border: 2px dashed #4b5563; margin-top: 10px; }
+
+        /* Notification Overlay */
+        .flash-msg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(16, 185, 129, 0.9); z-index: 100; display: flex; align-items: center; justify-content: center; flex-direction: column; color: white; display: none; }
+        .flash-msg i { font-size: 80px; margin-bottom: 20px; }
+        .flash-msg h2 { font-size: 40px; font-weight: 900; }
+
+    </style>
+</head>
+<body>
+
+    <div id="flash-overlay" class="flash-msg">
+        <i class="fas fa-check-circle"></i>
+        <h2>בוצע!</h2>
+    </div>
+
+    <div class="driver-header">
+        <div>
+            <div class="text-xs text-gray-400">נהג מחובר</div>
+            <div class="font-bold text-lg" id="driver-name">טוען...</div>
+        </div>
+        <div class="truck-id" id="truck-number">🚛</div>
+    </div>
+
+    <div class="mission-area" id="main-stage">
+        
+        <div id="state-waiting" class="card-waiting hidden">
+            <i class="fas fa-coffee text-6xl text-gray-600 mb-4"></i>
+            <h2 class="text-2xl font-bold text-gray-300">בהמתנה לסידור</h2>
+            <p class="text-gray-500 mt-2">אין נסיעות פעילות כרגע.</p>
+            <button onclick="window.location.reload()" class="mt-6 text-blue-400 underline">רענן נתונים</button>
+        </div>
+
+        <div id="state-mission" class="card-mission hidden">
+            <div class="mission-header">
+                <span>משימה פעילה #<span id="order-id">...</span></span>
+                <span id="mission-time">08:30</span>
+            </div>
+            
+            <div class="mission-body">
+                <div class="client-box">
+                    <i class="fas fa-user"></i> <span id="client-name">שם הלקוח</span>
+                </div>
+                <div class="address-box" id="dest-address">
+                    טוען כתובת...
+                </div>
+                <div class="bg-gray-100 p-3 rounded-lg mb-6 text-sm text-gray-600 font-bold text-right" id="mission-items">
+                    פירוט הסחורה...
+                </div>
+
+                <button onclick="openWaze()" class="btn-waze">
+                    <i class="fab fa-waze text-3xl"></i> סע ליעד
+                </button>
+
+                <button id="main-btn" class="btn-action status-start" onclick="updateStatus()">
+                    <i class="fas fa-play"></i> יצאתי לדרך
+                </button>
+
+                <input type="file" id="pod-upload" class="camera-upload" accept="image/*" capture="environment" onchange="uploadPOD(this)">
+                <label for="pod-upload" class="btn-camera hidden" id="camera-btn">
+                    <i class="fas fa-camera"></i> צלם תעודת משלוח
+                </label>
+            </div>
+        </div>
+
+    </div>
+
+    <audio id="sound-new" src="https://actions.google.com/sounds/v1/alarms/spaceship_alarm.ogg"></audio>
+    <audio id="sound-success" src="https://actions.google.com/sounds/v1/cartoon/pop.ogg"></audio>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, where, orderBy, onSnapshot, serverTimestamp, doc, updateDoc, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // Config
+        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
+
+        // IDENTITY (Mock for now, would be from login)
+        // לצורך ההדגמה נשתמש ב"חכמת" - בחיבור אמיתי זה יבוא מהלוגין
+        const DRIVER_NAME = "חכמת"; 
+        const TRUCK_NUM = "607";
+
+        document.getElementById('driver-name').innerText = DRIVER_NAME;
+        document.getElementById('truck-number').innerText = TRUCK_NUM;
+
+        let currentOrder = null;
+
+        // --- 1. LISTEN TO MISSIONS ---
+        // הנהג מאזין למשימות שמוקצות לו (driverId == שמו) ושעדיין לא הסתיימו (status != done)
+        const q = query(
+            collection(db, "orders"), 
+            where("driverId", "==", DRIVER_NAME), 
+            where("status", "in", ["assigned", "en_route", "arrived"]), // סטטוסים פעילים
+            orderBy("createdAt", "desc"),
+            limit(1) // רק אחת כל פעם
+        );
+
+        onSnapshot(q, (snap) => {
+            const waitingEl = document.getElementById('state-waiting');
+            const missionEl = document.getElementById('state-mission');
+
+            if (snap.empty) {
+                // No Mission
+                waitingEl.classList.remove('hidden');
+                missionEl.classList.add('hidden');
+                currentOrder = null;
+            } else {
+                // New Mission!
+                const data = snap.docs[0].data();
+                const id = snap.docs[0].id;
+                
+                // אם זו משימה חדשה לגמרי שהגיעה עכשיו
+                if (!currentOrder || currentOrder.id !== id) {
+                    document.getElementById('sound-new').play().catch(()=>{});
+                    // Log event
+                    logSystem('driver_receive', `Driver ${DRIVER_NAME} received task for ${data.clientName}`);
+                }
+
+                currentOrder = { id, ...data };
+                renderMission(currentOrder);
+                
+                waitingEl.classList.add('hidden');
+                missionEl.classList.remove('hidden');
+            }
+        });
+
+        // --- 2. RENDER MISSION UI ---
+        function renderMission(order) {
+            document.getElementById('order-id').innerText = order.id.slice(-4);
+            document.getElementById('client-name').innerText = order.clientName;
+            document.getElementById('dest-address').innerText = order.address || order.clientName; // fallback
+            document.getElementById('mission-items').innerText = order.text || "פריטים לפי תעודה";
+            
+            const btn = document.getElementById('main-btn');
+            const camBtn = document.getElementById('camera-btn');
+
+            // State Machine for Button
+            if (order.status === 'assigned') {
+                btn.className = 'btn-action status-start';
+                btn.innerHTML = '<i class="fas fa-play"></i> יצאתי לדרך';
+                btn.onclick = () => updateStatus('en_route');
+                camBtn.classList.add('hidden');
+            } else if (order.status === 'en_route') {
+                btn.className = 'btn-action status-arrived';
+                btn.innerHTML = '<i class="fas fa-map-marker-alt"></i> הגעתי ליעד';
+                btn.onclick = () => updateStatus('arrived');
+                camBtn.classList.add('hidden');
+            } else if (order.status === 'arrived') {
+                btn.className = 'btn-action status-done';
+                btn.innerHTML = '<i class="fas fa-check"></i> סיימתי פריקה';
+                btn.onclick = () => updateStatus('done');
+                camBtn.classList.remove('hidden'); // Show camera
+            }
+        }
+
+        // --- 3. ACTIONS ---
+        window.openWaze = () => {
+            if(!currentOrder) return;
+            const addr = currentOrder.address || currentOrder.clientName;
+            window.open(`https://waze.com/ul?q=${encodeURIComponent(addr)}&navigate=yes`, '_blank');
+            logSystem('driver_waze', `Driver opened Waze to ${addr}`);
+        };
+
+        window.updateStatus = async (newStatus) => {
+            if(!currentOrder) return;
+            
+            // Show flash feedback
+            const flash = document.getElementById('flash-overlay');
+            flash.style.display = 'flex';
+            document.getElementById('sound-success').play();
+            setTimeout(() => flash.style.display = 'none', 1000);
+
+            // Update DB
+            await updateDoc(doc(db, "orders", currentOrder.id), {
+                status: newStatus,
+                lastUpdate: serverTimestamp()
+            });
+
+            // Log
+            const statusMap = {'en_route': 'יצא לדרך', 'arrived': 'הגיע ליעד', 'done': 'סיים פריקה'};
+            logSystem('driver_status', `Driver changed status to: ${statusMap[newStatus]}`);
+        };
+
+        window.uploadPOD = async (input) => {
+            if (input.files && input.files[0]) {
+                Swal.fire({
+                    title: 'מעלה תעודה...',
+                    timer: 2000,
+                    didOpen: () => Swal.showLoading()
+                }).then(() => {
+                    Swal.fire('התעודה נקלטה!', 'המשרד רואה את הצילום', 'success');
+                    // בפועל כאן נעלה ל-Storage, כרגע רק סימולציה
+                    logSystem('driver_pod', `Driver uploaded POD image`);
+                });
+            }
+        };
+
+        // --- SYSTEM LOGGER ---
+        async function logSystem(action, details) {
+            try {
+                await addDoc(collection(db, "system_logs"), {
+                    user: DRIVER_NAME,
+                    role: 'driver',
+                    action: action,
+                    details: details,
+                    timestamp: serverTimestamp(),
+                    device: 'DriverApp'
+                });
+            } catch(e){}
+        }
+
+    </script>
+</body>
+</html>
