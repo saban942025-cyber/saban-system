@@ -38,8 +38,6 @@
         /* BUTTONS */
         .driver-actions { display: flex; gap: 8px; margin-top: 10px; margin-bottom: 10px; }
         .btn-app-driver { flex: 1; background: #2563eb; color: white; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 12px; display: flex; justify-content: center; align-items: center; gap: 5px; }
-        
-        /* מחסנאים */
         .btn-app-oren { flex: 1; background: #475569; color: white; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 12px; display: flex; justify-content: center; align-items: center; gap: 5px; }
         .btn-app-tamir { flex: 1; background: #1e40af; color: white; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 12px; display: flex; justify-content: center; align-items: center; gap: 5px; }
         
@@ -61,7 +59,10 @@
     <div class="page-header">
         <div class="page-title">
             <i class="fas fa-users-cog text-blue-600"></i>
-            <div><span>ניהול ארגון</span><span class="text-xs font-normal text-gray-500 block" id="counter">טוען...</span></div>
+            <div>
+                <span>ניהול ארגון</span>
+                <span class="text-xs font-normal text-gray-500 block" id="counter">טוען...</span>
+            </div>
         </div>
         <div class="actions-bar">
             <button onclick="openBroadcastModal()" class="btn-broadcast"><i class="fas fa-bullhorn"></i> כריזה</button>
@@ -80,11 +81,40 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, updateDoc, doc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, updateDoc, doc, getDocs, serverTimestamp, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
-        // RENDER
+        // SEED DATA
+        const FULL_STAFF_LIST = [
+            { name: "הראל אידלסון", role: "מנכ\"ל", phone: "0505227724", email: "harel@saban94.co.il", branch: "main", type: "admin" },
+            { name: "ראמי מסארוה", role: "מנהל תפעול", phone: "0508860896", email: "ramims@saban94.co.il", branch: "main", type: "admin" },
+            { name: "יואב", role: "מנהל סידור", phone: "0507855865", email: "yoav@saban94.co.il", branch: "main", type: "admin" },
+            { name: "איציק זהבי", role: "מנהל החרש", phone: "0504482285", email: "itzik@saban94.co.il", branch: "harash", type: "manager" },
+            { name: "עלי", role: "נהג מנוף", phone: "0500000606", email: "", branch: "logistics", type: "driver" },
+            { name: "חכמת", role: "נהג משאית", phone: "0500000607", email: "", branch: "logistics", type: "driver" },
+            { name: "אורן", role: "חצר החרש", phone: "0509001392", email: "", branch: "harash", type: "field" },
+            { name: "תמיר", role: "חצר התלמיד", phone: "0523002828", branch: "main", type: "field" },
+            { name: "נתנאל", role: "רכש", phone: "0548132442", branch: "main", type: "manager" },
+            { name: "ורד", role: "משרד", phone: "0506662300", branch: "main", type: "office" },
+            { name: "שי", role: "דלפק", phone: "", branch: "harash", type: "field" }
+        ];
+
+        async function syncStaffDatabase() {
+            const snap = await getDocs(collection(db, "users"));
+            if (snap.size < 5) {
+                const existingNames = new Set();
+                snap.forEach(d => existingNames.add(d.data().name));
+                for (const staff of FULL_STAFF_LIST) {
+                    if (!existingNames.has(staff.name)) {
+                        await addDoc(collection(db, "users"), { ...staff, permissions: 'view', active: true, createdAt: new Date() });
+                    }
+                }
+            }
+        }
+        syncStaffDatabase();
+
+        // RENDER LOGIC
         onSnapshot(query(collection(db, "users"), orderBy("name")), (snap) => {
             const grid = document.getElementById('staff-grid');
             const tableBody = document.getElementById('clients-table-body');
@@ -106,23 +136,19 @@
                     let stripClass = p.branch === 'harash' ? 'strip-harash' : (p.branch === 'logistics' ? 'strip-logistics' : 'strip-main');
                     let specialBtn = '';
                     
-                    // 1. DRIVERS
                     if (p.type === 'driver') {
                         let appFile = p.name.includes('עלי') ? 'ali-app.html' : 'driver-app.html';
                         const appUrl = `${baseUrl}/${appFile}?uid=${p.phone}&name=${encodeURIComponent(p.name)}`;
                         specialBtn = `<div class="driver-actions"><button onclick="window.open('${appUrl}', '_blank')" class="btn-app-driver"><i class="fas fa-desktop"></i> כניסה</button><button onclick="window.open('https://wa.me/972${p.phone?.replace(/^0/,'')}?text=${encodeURIComponent(appUrl)}', '_blank')" class="btn-magic-link"><i class="fab fa-whatsapp"></i> קסם</button></div><button onclick="openTaskModal('${p.name}', '${p.phone}')" class="btn-task"><i class="fas fa-tasks"></i> שגר משימה</button>`;
                     } 
-                    // 2. OREN (Harash)
                     else if (p.name.includes('אורן')) {
                         const orenUrl = `${baseUrl}/oren-app.html`;
                         specialBtn = `<div class="driver-actions"><button onclick="window.open('oren-app.html', '_blank')" class="btn-app-oren"><i class="fas fa-dolly"></i> מסוף חצר</button><button onclick="window.open('https://wa.me/972${p.phone?.replace(/^0/,'')}?text=${encodeURIComponent(orenUrl)}', '_blank')" class="btn-magic-link"><i class="fab fa-whatsapp"></i> קסם</button></div>`;
                     }
-                    // 3. TAMIR (Hatalmid) - NEW!
                     else if (p.name.includes('תמיר')) {
                         const tamirUrl = `${baseUrl}/tamir-app.html`;
                         specialBtn = `<div class="driver-actions"><button onclick="window.open('tamir-app.html', '_blank')" class="btn-app-tamir"><i class="fas fa-warehouse"></i> מסוף חצר</button><button onclick="window.open('https://wa.me/972${p.phone?.replace(/^0/,'')}?text=${encodeURIComponent(tamirUrl)}', '_blank')" class="btn-magic-link"><i class="fab fa-whatsapp"></i> קסם</button></div>`;
                     }
-                    // 4. MANAGER
                     else if (p.branch === 'harash' && p.type === 'manager') {
                         specialBtn = `<button onclick="window.open('itzik-app.html', '_blank')" class="btn-app-manager"><i class="fas fa-store"></i> אפליקציית מנהל</button>`;
                     } 
@@ -139,24 +165,14 @@
 
         function getBranchName(b) { if(b==='main') return 'התלמיד 6'; if(b==='harash') return 'החרש 10'; return 'לוגיסטיקה'; }
 
-        // --- TASK MODAL WITH BRANCH SELECTOR ---
+        // --- TASK MODAL ---
         window.openTaskModal = (name, phone) => {
             Swal.fire({
                 title: `משימה ל${name}`,
                 html: `
                     <div class="text-right space-y-3">
-                        <div>
-                            <label class="text-xs font-bold text-gray-500">מאיפה אוספים?</label>
-                            <select id="task-branch" class="swal2-input w-full mx-0 text-sm font-bold bg-blue-50">
-                                <option value="harash">🏗️ החרש (אורן)</option>
-                                <option value="main">🏢 התלמיד (תמיר)</option>
-                                <option value="supplier">🏭 ספק חיצוני</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="text-xs font-bold text-gray-500">סוג משימה</label>
-                            <select id="task-cat" class="swal2-input w-full mx-0 text-sm"><option value="client">📦 הובלה (כחול)</option><option value="transfer">🔄 העברה (כתום)</option><option value="urgent">🔥 דחוף (אדום)</option></select>
-                        </div>
+                        <div><label class="text-xs font-bold text-gray-500">מאיפה אוספים?</label><select id="task-branch" class="swal2-input w-full mx-0 text-sm font-bold bg-blue-50"><option value="harash">🏗️ החרש (אורן)</option><option value="main">🏢 התלמיד (תמיר)</option><option value="supplier">🏭 ספק חיצוני</option></select></div>
+                        <div><label class="text-xs font-bold text-gray-500">סוג משימה</label><select id="task-cat" class="swal2-input w-full mx-0 text-sm"><option value="client">📦 הובלה (כחול)</option><option value="transfer">🔄 העברה (כתום)</option><option value="urgent">🔥 דחוף (אדום)</option></select></div>
                         <textarea id="task-desc" class="swal2-textarea w-full mx-0" placeholder="פירוט המשימה..."></textarea>
                         <input id="task-addr" class="swal2-input w-full mx-0" placeholder="כתובת (Waze)">
                         <div class="flex gap-2 items-center bg-yellow-50 p-2 rounded"><input type="checkbox" id="task-approval"><label class="text-xs font-bold text-yellow-800">דרוש אישור סידור</label></div>
@@ -170,8 +186,7 @@
                     const data = result.value;
                     await addDoc(collection(db, "orders"), {
                         driverId: name, clientName: "משימה יזומה", text: data.desc, address: data.addr, taskType: data.type,
-                        pickupBranch: data.branch, // הניתוב
-                        status: data.pending ? 'pending_approval' : 'assigned', lastUpdate: serverTimestamp(), createdAt: serverTimestamp()
+                        pickupBranch: data.branch, status: data.pending ? 'pending_approval' : 'assigned', lastUpdate: serverTimestamp(), createdAt: serverTimestamp()
                     });
                     const waText = `*משימה חדשה*\nמאיפה: ${data.branch==='harash'?'החרש':'התלמיד'}\nפרטים: ${data.desc}\nיעד: ${data.addr}`;
                     window.open(`https://wa.me/972${phone.replace(/^0/,'')}?text=${encodeURIComponent(waText)}`, '_blank');
@@ -179,7 +194,47 @@
             });
         };
 
-        window.openEditModal = (json) => { /* ... existing edit code ... */ }; 
+        // --- EDIT MODAL (עם הוספת תמונה) ---
+        window.openEditModal = (json) => {
+            const user = json ? JSON.parse(json) : null;
+            Swal.fire({
+                title: user ? 'עריכת פרטים' : 'עובד חדש',
+                html: `
+                    <label class="text-xs font-bold text-gray-500 block text-right mb-1">שם מלא</label>
+                    <input id="e-name" class="swal2-input mx-0 w-full" value="${user?.name||''}" placeholder="שם">
+                    <label class="text-xs font-bold text-gray-500 block text-right mb-1 mt-3">טלפון</label>
+                    <input id="e-phone" class="swal2-input mx-0 w-full" value="${user?.phone||''}" placeholder="טלפון">
+                    <label class="text-xs font-bold text-gray-500 block text-right mb-1 mt-3">קישור לתמונה (URL)</label>
+                    <input id="e-avatar" class="swal2-input mx-0 w-full" value="${user?.avatar||''}" placeholder="https://example.com/image.jpg">
+                    <label class="text-xs font-bold text-gray-500 block text-right mb-1 mt-3">תפקיד במערכת</label>
+                    <select id="e-type" class="swal2-input mx-0 w-full">
+                        <option value="staff" ${user?.type === 'staff' ? 'selected' : ''}>עובד כללי</option>
+                        <option value="driver" ${user?.type === 'driver' ? 'selected' : ''}>נהג</option>
+                        <option value="field" ${user?.type === 'field' ? 'selected' : ''}>חצר/שטח</option>
+                        <option value="manager" ${user?.type === 'manager' ? 'selected' : ''}>מנהל</option>
+                        <option value="client" ${user?.type === 'client' ? 'selected' : ''}>לקוח</option>
+                    </select>
+                `,
+                confirmButtonText: 'שמור',
+                preConfirm: () => { 
+                    const data = {
+                        name: document.getElementById('e-name').value,
+                        phone: document.getElementById('e-phone').value,
+                        avatar: document.getElementById('e-avatar').value,
+                        type: document.getElementById('e-type').value,
+                    };
+                    if (user) data.branch = user.branch; else data.branch = 'main';
+                    return data;
+                }
+            }).then(async res => {
+                if(res.isConfirmed) {
+                    if(user) await updateDoc(doc(db, "users", user.id), res.value);
+                    else await addDoc(collection(db, "users"), res.value);
+                    Swal.fire('נשמר', '', 'success');
+                }
+            });
+        };
+        
         window.openBroadcastModal = () => Swal.fire('כריזה', 'הודעה נשלחה לכולם', 'success');
         window.filterGrid = () => { const term = document.getElementById('search').value.toLowerCase(); document.querySelectorAll('.item-row').forEach(row => row.style.display = row.getAttribute('data-name').toLowerCase().includes(term) ? (row.tagName === 'TR' ? 'table-row' : 'flex') : 'none'); };
     </script>
