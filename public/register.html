@@ -3,65 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>הרשמה - סבן חומרי בניין</title>
+    <title>כניסה למערכת - סבן</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body { background: #f0f2f5; font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; align-items: center; justify-content: center; }
         .card { background: white; width: 90%; max-width: 400px; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; }
         .input-field { width: 100%; padding: 15px; margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 16px; outline: none; transition: 0.3s; background: #f8fafc; }
         .input-field:focus { border-color: #00a884; background: white; box-shadow: 0 0 0 3px rgba(0, 168, 132, 0.1); }
-        .btn-start { background: #00a884; color: white; width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 18px; box-shadow: 0 5px 15px rgba(0, 168, 132, 0.3); transition: 0.2s; }
+        .btn-start { background: #00a884; color: white; width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 18px; box-shadow: 0 5px 15px rgba(0, 168, 132, 0.3); transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .btn-start:active { transform: scale(0.98); }
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #fff; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: none; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
     <div class="card">
         <div class="flex justify-center mb-6">
-            <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center text-4xl text-green-600 shadow-sm">
-                <i class="fas fa-truck-loading"></i>
+            <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-md border p-2">
+                <img src="https://cdn-icons-png.flaticon.com/512/733/733585.png" class="w-full h-full object-contain">
             </div>
         </div>
         
-        <h1 class="text-2xl font-bold text-gray-800 mb-2">ברוכים הבאים לסבן! 🏗️</h1>
-        <p class="text-gray-500 mb-8 text-sm">מערכת ההזמנות החדשה והמהירה.<br>מלא פרטים והתחל להזמין.</p>
+        <h1 class="text-2xl font-bold text-gray-800 mb-2">ח. סבן - מערכת חכמה</h1>
+        <p class="text-gray-500 mb-8 text-sm">הזדהות מהירה ללקוחות וצוות</p>
 
-        <form onsubmit="event.preventDefault(); register();">
-            <input type="text" id="name" class="input-field" placeholder="שם העסק / שם מלא" required>
-            <input type="tel" id="phone" class="input-field" placeholder="מספר טלפון (לזיהוי)" required>
-            <button type="submit" class="btn-start">כנס למערכת <i class="fas fa-arrow-left mr-2"></i></button>
+        <form onsubmit="event.preventDefault(); handleLogin();">
+            <input type="text" id="name" class="input-field" placeholder="שם מלא / שם העסק" required>
+            <input type="tel" id="phone" class="input-field" placeholder="מספר טלפון נייד" required>
+            <button type="submit" class="btn-start" id="loginBtn">
+                <span>כניסה למערכת</span>
+                <div class="loader" id="loader"></div>
+            </button>
         </form>
         
-        <p class="text-xs text-gray-400 mt-6">
-            לאחר הכניסה, לחץ על <b>"שתף"</b> ו-<b>"הוסף למסך הבית"</b><br>כדי לשמור כאפליקציה.
-        </p>
+        <div id="statusMsg" class="text-xs text-gray-400 mt-4 h-5"></div>
     </div>
 
-    <script>
-        function register() {
-            const name = document.getElementById('name').value.trim();
-            const phone = document.getElementById('phone').value.trim().replace(/\D/g,''); // רק מספרים
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, query, where, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // Firebase Config
+        const app = initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" });
+        const db = getFirestore(app);
+
+        // פונקציית הכניסה החכמה
+        window.handleLogin = async () => {
+            const name = document.getElementById('name').value.trim();
+            let phone = document.getElementById('phone').value.trim().replace(/\D/g,'');
+            
+            // בדיקת תקינות בסיסית
             if(name.length < 2 || phone.length < 9) {
-                alert("נא למלא שם מלא וטלפון תקין");
+                Swal.fire('שגיאה', 'נא להזין שם מלא ומספר תקין', 'error');
                 return;
             }
 
-            // 1. יצירת אובייקט משתמש
-            const user = {
-                name: name,
-                uid: phone, // הטלפון משמש כמזהה ייחודי
-                joinedAt: new Date().toISOString()
-            };
+            // נרמול מספר טלפון (מוסיף 0 בהתחלה אם חסר)
+            if (phone.length === 9 && phone.startsWith('5')) phone = '0' + phone;
 
-            // 2. שמירה בזיכרון של הטלפון (LocalStorage)
-            localStorage.setItem('saban_client', JSON.stringify(user));
+            // UI Loading
+            const btn = document.getElementById('loginBtn');
+            const loader = document.getElementById('loader');
+            const msg = document.getElementById('statusMsg');
+            
+            btn.disabled = true;
+            loader.style.display = 'block';
+            msg.innerText = 'בודק הרשאות במערכת...';
 
-            // 3. מעבר לאפליקציה הראשית
-            // אנחנו לא צריכים יותר פרמטרים ב-URL כי זה שמור בזיכרון!
-            window.location.href = 'client-smart.html';
-        }
+            try {
+                // 1. בדיקה האם המשתמש קיים במאגר הצוות/לקוחות
+                const q = query(collection(db, "users"), where("phone", "==", phone));
+                const querySnapshot = await getDocs(q);
+
+                let user = null;
+                let destination = 'client-smart.html'; // ברירת מחדל: לקוח
+
+                if (!querySnapshot.empty) {
+                    // המשתמש קיים! בוא נבדוק מי הוא
+                    const docData = querySnapshot.docs[0].data();
+                    user = { ...docData, uid: phone }; // משתמשים בטלפון כ-UID לצורך פשטות
+                    
+                    console.log("User Found:", user.type);
+
+                    // לוגיקת הניתוב (The Routing Logic)
+                    if (user.type === 'admin') {
+                        destination = 'staff-master.html'; // מנהל -> דשבורד
+                    } else if (user.type === 'staff' || user.type === 'driver' || user.type === 'manager') {
+                        destination = 'tasks-manager.html'; // עובד -> משימות
+                    } else {
+                        destination = 'client-smart.html'; // כל השאר -> לקוח
+                    }
+
+                } else {
+                    // משתמש חדש לגמרי -> רושמים כלקוח אוטומטית
+                    console.log("New User -> Creating Client");
+                    user = {
+                        name: name,
+                        phone: phone,
+                        type: 'client',
+                        role: 'לקוח באפליקציה',
+                        branch: 'general',
+                        joinedAt: serverTimestamp()
+                    };
+                    // שמירה במסד נתונים
+                    await addDoc(collection(db, "users"), user);
+                    user.uid = phone;
+                }
+
+                // 2. שמירה בזיכרון המכשיר (כדי לא להקיש שוב)
+                localStorage.setItem('saban_client', JSON.stringify(user));
+
+                // 3. הפניה ליעד
+                msg.innerText = 'מחובר! מעביר אותך...';
+                setTimeout(() => {
+                    window.location.href = destination;
+                }, 1000);
+
+            } catch (error) {
+                console.error("Login Error:", error);
+                Swal.fire('שגיאה', 'הייתה בעיה בהתחברות, נסה שוב', 'error');
+                btn.disabled = false;
+                loader.style.display = 'none';
+                msg.innerText = '';
+            }
+        };
     </script>
 </body>
 </html>
