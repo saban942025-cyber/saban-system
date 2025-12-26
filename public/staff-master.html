@@ -3,52 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saban OS | מערכת שליטה מרכזית</title>
+    <title>Saban OS | מערכת שליטה</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
     <style>
-        body { background: #f1f5f9; font-family: 'Segoe UI', system-ui, sans-serif; height: 100vh; overflow: hidden; display: flex; }
-        
-        /* Sidebar (The Command Strip) */
-        .sidebar { width: 80px; background: #1e293b; display: flex; flex-direction: column; align-items: center; padding-top: 20px; z-index: 50; box-shadow: 4px 0 10px rgba(0,0,0,0.1); }
+        body { background: #f1f5f9; font-family: 'Segoe UI', sans-serif; height: 100vh; overflow: hidden; display: flex; }
+        .sidebar { width: 80px; background: #1e293b; display: flex; flex-direction: column; align-items: center; padding-top: 20px; z-index: 50; }
         .nav-btn { width: 50px; height: 50px; margin-bottom: 15px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 20px; cursor: pointer; transition: 0.2s; position: relative; }
-        .nav-btn:hover { background: #334155; color: white; }
-        .nav-btn.active { background: #3b82f6; color: white; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
+        .nav-btn:hover, .nav-btn.active { background: #3b82f6; color: white; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
         .nav-label { position: absolute; left: 60px; background: #0f172a; color: white; padding: 5px 10px; border-radius: 4px; font-size: 12px; opacity: 0; pointer-events: none; transition: 0.2s; white-space: nowrap; z-index: 100; }
         .nav-btn:hover .nav-label { opacity: 1; left: 70px; }
-
-        /* Main Area */
-        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        .main-content { flex: 1; display: flex; flex-direction: column; height: 100%; }
+        .top-bar { height: 60px; background: white; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; }
         
-        /* Top Bar */
-        .top-bar { height: 70px; background: white; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; padding: 0 30px; }
-        .user-profile { display: flex; align-items: center; gap: 12px; }
-        .user-avatar { width: 45px; height: 45px; rounded: 50%; border: 2px solid #e2e8f0; object-fit: cover; }
-        .role-badge { background: #0f172a; color: #fbbf24; font-size: 10px; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; }
-
-        /* Views */
-        .view-container { flex: 1; overflow-y: auto; padding: 30px; display: none; animation: fadeIn 0.3s ease-out; }
-        .view-container.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Branch Card */
-        .branch-card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; height: 100%; display: flex; flex-direction: column; }
-        .branch-header { border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
-        .role-group { margin-bottom: 15px; }
-        .role-title { font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
-        .person-pill { display: flex; align-items: center; gap: 8px; background: #f8fafc; padding: 6px 10px; border-radius: 8px; margin-bottom: 5px; border: 1px solid #e2e8f0; font-size: 13px; font-weight: 600; color: #334155; }
-        .status-dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 0 2px #dcfce7; }
-
-        /* Dashboard Widgets */
-        .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
-        .widget { background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; }
-        .widget-val { font-size: 28px; font-weight: 800; color: #0f172a; }
-        .widget-label { font-size: 12px; color: #64748b; font-weight: 600; }
-        
-        /* Iframe Container (For integrating existing modules) */
-        .module-frame { width: 100%; height: 100%; border: none; border-radius: 12px; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        /* Iframe Container */
+        .module-container { flex: 1; position: relative; background: #f1f5f9; overflow: hidden; }
+        .module-frame { width: 100%; height: 100%; border: none; display: none; }
+        .module-frame.active { display: block; }
     </style>
 </head>
 <body>
@@ -56,247 +27,48 @@
     <div class="sidebar">
         <div class="mb-6 text-2xl font-bold text-white"><i class="fas fa-layer-group"></i></div>
         
-        <div class="nav-btn active" onclick="switchView('dashboard')" title="מבט על">
-            <i class="fas fa-home"></i><span class="nav-label">דשבורד ראשי</span>
+        <div class="nav-btn active" onclick="switchModule('dashboard')" title="דשבורד">
+            <i class="fas fa-home"></i><span class="nav-label">דשבורד</span>
         </div>
-        <div class="nav-btn" onclick="switchView('branches')" title="סניפים וצוות">
-            <i class="fas fa-sitemap"></i><span class="nav-label">ניהול סניפים</span>
+        <div class="nav-btn" onclick="switchModule('staff')" title="צוות וסניפים">
+            <i class="fas fa-users-cog"></i><span class="nav-label">ניהול צוות</span>
         </div>
-        <div class="nav-btn" onclick="switchView('dispatch')" title="סידור עבודה">
-            <i class="fas fa-truck-moving"></i><span class="nav-label">סידור נהגים</span>
+        <div class="nav-btn" onclick="switchModule('comm')" title="חמ''ל תקשורת">
+            <i class="fab fa-whatsapp"></i><span class="nav-label">חמ"ל הודעות</span>
         </div>
-        <div class="nav-btn" onclick="switchView('comm')" title="חמ''ל תקשורת">
-            <i class="fab fa-whatsapp"></i><span class="nav-label">הודעות ולקוחות</span>
-        </div>
-        <div class="nav-btn" onclick="switchView('procurement')" title="רכש ומלאי">
-            <i class="fas fa-boxes"></i><span class="nav-label">רכש (נתנאל)</span>
-        </div>
-        
-        <div style="flex:1"></div>
-        
-        <div class="nav-btn text-red-400" onclick="sendSystemBroadcast()" title="כריזה לכולם">
-            <i class="fas fa-bullhorn"></i><span class="nav-label">הודעת מערכת</span>
+        <div class="nav-btn" onclick="switchModule('dispatch')" title="סידור">
+            <i class="fas fa-truck-moving"></i><span class="nav-label">סידור עבודה</span>
         </div>
     </div>
 
     <div class="main-content">
-        
         <div class="top-bar">
-            <div>
-                <h1 class="text-xl font-black text-slate-800" id="page-title">דשבורד ניהולי</h1>
-                <div class="text-xs text-gray-500 font-mono">Saban Master System v2.0</div>
-            </div>
-            
-            <div class="flex items-center gap-6">
-                <div class="flex bg-gray-100 p-1 rounded-lg">
-                    <button class="px-3 py-1 text-xs font-bold rounded bg-white shadow-sm text-blue-600">ראמי (Admin)</button>
-                    <button class="px-3 py-1 text-xs font-bold rounded text-gray-500 hover:bg-white" onclick="alert('החלפת משתמש ליואב')">יואב</button>
-                    <button class="px-3 py-1 text-xs font-bold rounded text-gray-500 hover:bg-white" onclick="alert('החלפת משתמש להראל')">הראל</button>
-                </div>
-
-                <div class="user-profile">
-                    <div class="text-right hidden md:block">
-                        <div class="text-sm font-bold text-slate-800">ראמי מסארוה</div>
-                        <span class="role-badge">MASTER ADMIN</span>
-                    </div>
-                    <img src="https://media-mrs2-2.cdn.whatsapp.net/v/t61.24694-24/490584763_1521666505466352_3860845398977059833_n.jpg?stp=dst-jpg_s96x96_tt6&ccb=11-4&oh=01_Q5Aa3QEGGv9ElRRb2Qx1Adjclex0ahijeyYdc8W8wmVuCZ6L2A&oe=695B04A6&_nc_sid=5e03e0&_nc_cat=104" class="user-avatar" alt="Rami">
-                </div>
+            <h1 class="text-lg font-bold text-slate-800" id="page-title">דשבורד ראשי</h1>
+            <div class="flex items-center gap-3">
+                <span class="text-sm font-bold">ראמי מסארוה</span>
+                <img src="https://media-mrs2-2.cdn.whatsapp.net/v/t61.24694-24/490584763_1521666505466352_3860845398977059833_n.jpg?stp=dst-jpg_s96x96_tt6&ccb=11-4&oh=01_Q5Aa3QEGGv9ElRRb2Qx1Adjclex0ahijeyYdc8W8wmVuCZ6L2A&oe=695B04A6&_nc_sid=5e03e0&_nc_cat=104" class="w-8 h-8 rounded-full border">
             </div>
         </div>
 
-        <div id="view-dashboard" class="view-container active">
-            <div class="stat-grid">
-                <div class="widget">
-                    <div><div class="widget-val text-blue-600">42</div><div class="widget-label">הזמנות פתוחות</div></div>
-                    <i class="fas fa-clipboard-list text-3xl text-blue-100"></i>
-                </div>
-                <div class="widget">
-                    <div><div class="widget-val text-green-600">8</div><div class="widget-label">נהגים פעילים</div></div>
-                    <i class="fas fa-truck text-3xl text-green-100"></i>
-                </div>
-                <div class="widget">
-                    <div><div class="widget-val text-orange-600">3</div><div class="widget-label">בקשות רכש</div></div>
-                    <i class="fas fa-shopping-cart text-3xl text-orange-100"></i>
-                </div>
-                <div class="widget">
-                    <div><div class="widget-val text-purple-600">12</div><div class="widget-label">העברות סניפים</div></div>
-                    <i class="fas fa-exchange-alt text-3xl text-purple-100"></i>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-6 h-full">
-                <div class="bg-white rounded-xl border border-gray-200 p-4">
-                    <h3 class="font-bold text-gray-700 mb-4 flex justify-between">
-                        <span><i class="fas fa-map-marked-alt text-blue-500"></i> תמונת מצב - שטח</span>
-                        <button onclick="switchView('dispatch')" class="text-xs text-blue-600 hover:underline">לסידור המלא ></button>
-                    </h3>
-                    <div class="space-y-2">
-                        <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
-                            <span class="text-sm font-bold"><i class="fas fa-truck text-green-500"></i> עלי</span>
-                            <span class="text-xs bg-green-100 text-green-800 px-2 rounded">פורק באשטרום</span>
-                        </div>
-                        <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
-                            <span class="text-sm font-bold"><i class="fas fa-truck text-green-500"></i> חכמת</span>
-                            <span class="text-xs bg-blue-100 text-blue-800 px-2 rounded">בדרך לחרש</span>
-                        </div>
-                        <div class="flex justify-between items-center p-2 bg-red-50 rounded border border-red-100">
-                            <span class="text-sm font-bold"><i class="fas fa-exclamation-triangle text-red-500"></i> משאית 3</span>
-                            <span class="text-xs text-red-600 font-bold">תקלה טכנית</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-xl border border-gray-200 p-4">
-                    <h3 class="font-bold text-gray-700 mb-4"><i class="fas fa-bell text-orange-500"></i> התראות ועדכונים</h3>
-                    <ul class="text-sm space-y-3">
-                        <li class="flex gap-2"><span class="text-gray-400">10:00</span> <span><b>איציק (החרש):</b> מבקש דחוף העברה של מלט לבן.</span></li>
-                        <li class="flex gap-2"><span class="text-gray-400">09:45</span> <span><b>נתנאל:</b> סגר הזמנה מול תרמוקיר, מגיע מחר.</span></li>
-                        <li class="flex gap-2"><span class="text-gray-400">09:30</span> <span><b>הראל:</b> הפיץ נוהל חדש לגבי החזרת משטחים.</span></li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-
-        <div id="view-branches" class="view-container">
-            <div class="grid grid-cols-2 gap-8 h-full">
-                
-                <div class="branch-card border-t-4 border-blue-600">
-                    <div class="branch-header">
-                        <div>
-                            <h2 class="text-xl font-bold text-slate-800">סניף ראשי (התלמיד 6)</h2>
-                            <div class="text-xs text-gray-500">הוד השרון</div>
-                        </div>
-                        <div class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold">מטה החברה</div>
-                    </div>
-                    
-                    <div class="overflow-y-auto pr-2 custom-scroll">
-                        <div class="role-group">
-                            <div class="role-title"><i class="fas fa-crown"></i> הנהלה</div>
-                            <div class="person-pill"><div class="status-dot"></div> הראל אידלסון (מנכ"ל)</div>
-                        </div>
-                        <div class="role-group">
-                            <div class="role-title"><i class="fas fa-network-wired"></i> סידור ותפעול (מאסטרים)</div>
-                            <div class="person-pill bg-blue-50 border-blue-200"><div class="status-dot"></div> ראמי מסארוה</div>
-                            <div class="person-pill bg-blue-50 border-blue-200"><div class="status-dot"></div> יואב</div>
-                        </div>
-                        <div class="role-group">
-                            <div class="role-title"><i class="fas fa-file-invoice-dollar"></i> כספים ובק אופיס</div>
-                            <div class="person-pill"><div class="status-dot"></div> לינה (חשבוניות לקוחות)</div>
-                            <div class="person-pill"><div class="status-dot"></div> שרון (חשבוניות ספקים)</div>
-                            <div class="person-pill"><div class="status-dot"></div> ורד (מחשוב/שכר/קופות)</div>
-                        </div>
-                        <div class="role-group">
-                            <div class="role-title"><i class="fas fa-shopping-cart"></i> רכש ומכירות</div>
-                            <div class="person-pill"><div class="status-dot"></div> נתנאל (מנהל רכש)</div>
-                            <div class="person-pill"><div class="status-dot"></div> רמי (דלפק)</div>
-                            <div class="person-pill"><div class="status-dot"></div> אשר / חנן / שמעון (דלפק)</div>
-                        </div>
-                        <div class="role-group">
-                            <div class="role-title"><i class="fas fa-warehouse"></i> חצר ולוגיסטיקה</div>
-                            <div class="person-pill"><div class="status-dot"></div> תמיר (מנהל חצר)</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="branch-card border-t-4 border-orange-500">
-                    <div class="branch-header">
-                        <div>
-                            <h2 class="text-xl font-bold text-slate-800">סניף החרש 10</h2>
-                            <div class="text-xs text-gray-500">הוד השרון</div>
-                        </div>
-                        <div class="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-bold">סניף תפעולי</div>
-                    </div>
-
-                    <div class="role-group">
-                        <div class="role-title"><i class="fas fa-user-tie"></i> ניהול סניף</div>
-                        <div class="person-pill bg-orange-50 border-orange-200"><div class="status-dot"></div> איציק זהבי (מנהל)</div>
-                    </div>
-                    <div class="role-group">
-                        <div class="role-title"><i class="fas fa-file-alt"></i> אדמיניסטרציה</div>
-                        <div class="person-pill"><div class="status-dot"></div> גליה (חשבוניות/תעודות)</div>
-                    </div>
-                    <div class="role-group">
-                        <div class="role-title"><i class="fas fa-dolly"></i> תפעול וליקוט</div>
-                        <div class="person-pill"><div class="status-dot"></div> שי (דלפק/ליקוט לסידור)</div>
-                        <div class="person-pill"><div class="status-dot"></div> אורן (מנהל חצר/העמסה)</div>
-                    </div>
-                    
-                    <div class="mt-auto bg-gray-50 p-3 rounded-lg border border-gray-200 text-center">
-                        <h4 class="text-xs font-bold text-gray-500 mb-2">מלאי סניף החרש</h4>
-                        <div class="flex justify-center gap-4 text-sm font-bold">
-                            <span class="text-green-600">מלט: תקין</span>
-                            <span class="text-red-500">בלוק 20: חסר</span>
-                        </div>
-                        <button class="mt-2 text-xs bg-white border border-gray-300 px-3 py-1 rounded hover:bg-gray-100" onclick="alert('פתח בקשת העברה מאיציק')">צור העברה דחופה</button>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-        <div id="view-dispatch" class="view-container" style="padding:0;">
-            <iframe src="dashboard.html" class="module-frame"></iframe>
-        </div>
-
-        <div id="view-comm" class="view-container" style="padding:0;">
-            <iframe src="whatsapp-center.html" class="module-frame"></iframe>
-        </div>
-
-        <div id="view-procurement" class="view-container">
-            <h2 class="text-2xl font-bold text-slate-800 mb-6">רכש וספקים (נתנאל)</h2>
-            <div class="bg-white p-6 rounded-xl border shadow-sm text-center py-20">
-                <i class="fas fa-tools text-4xl text-gray-300 mb-4"></i>
-                <h3 class="text-lg font-bold text-gray-500">מודול רכש בבנייה</h3>
-                <p class="text-sm text-gray-400">כאן יופיעו הזמנות רכש פתוחות מול ספקים ללא צורך באישורים.</p>
-            </div>
-        </div>
-
+        <div class="module-container">
+            <iframe id="frame-dashboard" src="dashboard.html" class="module-frame active"></iframe> <iframe id="frame-staff" src="staff-directory.html" class="module-frame"></iframe> <iframe id="frame-comm" src="comm-center.html" class="module-frame"></iframe> <iframe id="frame-dispatch" src="dashboard.html" class="module-frame"></iframe> </div>
     </div>
 
     <script>
-        // --- Navigation Logic ---
-        function switchView(viewId) {
+        function switchModule(moduleId) {
             // Update Title
-            const titles = {
-                'dashboard': 'דשבורד ניהולי',
-                'branches': 'ניהול סניפים וצוות',
-                'dispatch': 'חמ"ל סידור ונהגים',
-                'comm': 'מרכז תקשורת (Whatsapp)',
-                'procurement': 'רכש ומלאי'
-            };
-            document.getElementById('page-title').innerText = titles[viewId];
+            const titles = { 'dashboard': 'דשבורד ניהולי', 'staff': 'ספר אנשי קשר וצוות', 'comm': 'מרכז תקשורת (Saban Chat)', 'dispatch': 'סידור עבודה' };
+            document.getElementById('page-title').innerText = titles[moduleId];
 
-            // Toggle Classes
-            document.querySelectorAll('.view-container').forEach(el => el.classList.remove('active'));
-            document.getElementById('view-' + viewId).classList.add('active');
+            // Toggle Nav
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            // (פשטות: מניח סדר כפתורים קבוע, בייצור נעשה לפי ID)
+            const index = ['dashboard', 'staff', 'comm', 'dispatch'].indexOf(moduleId);
+            if(index >= 0) document.querySelectorAll('.nav-btn')[index].classList.add('active');
 
-            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-            // Find the clicked button logic (simplified)
-            const btns = document.querySelectorAll('.nav-btn');
-            if(viewId === 'dashboard') btns[0].classList.add('active');
-            if(viewId === 'branches') btns[1].classList.add('active');
-            if(viewId === 'dispatch') btns[2].classList.add('active');
-            if(viewId === 'comm') btns[3].classList.add('active');
-            if(viewId === 'procurement') btns[4].classList.add('active');
-        }
-
-        // --- Broadcast System ---
-        function sendSystemBroadcast() {
-            Swal.fire({
-                title: '📢 הודעת מערכת (כריזה)',
-                input: 'textarea',
-                inputLabel: 'ההודעה תישלח לכל עובדי החברה כהתראה מתפרצת',
-                inputPlaceholder: 'לדוגמה: נא לשים לב, מחר ספירת מלאי בחרש...',
-                showCancelButton: true,
-                confirmButtonText: 'שדר לכולם',
-                confirmButtonColor: '#ef4444',
-                cancelButtonText: 'ביטול'
-            }).then((result) => {
-                if (result.isConfirmed && result.value) {
-                    // כאן נחבר את זה ל-Firebase בעתיד
-                    Swal.fire('נשלח!', 'ההודעה שודרה ל-15 מכשירים.', 'success');
-                }
-            });
+            // Toggle Iframe
+            document.querySelectorAll('.module-frame').forEach(frame => frame.classList.remove('active'));
+            document.getElementById('frame-' + moduleId).classList.add('active');
         }
     </script>
 </body>
