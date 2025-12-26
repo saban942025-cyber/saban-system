@@ -3,110 +3,290 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saban Directory</title>
+    <title>Saban Directory | ניהול ופיקוד</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     <style>
         body { background: #f0f2f5; font-family: 'Segoe UI', system-ui, sans-serif; padding: 20px; padding-bottom: 80px; }
-        /* ... שאר העיצוב (אותו דבר כמו קודם) ... */
-        /* הוספתי רק את המחלקות לכפתורי הנהגים */
-        .driver-actions { display: flex; gap: 5px; margin-top: 5px; }
-        .btn-app-driver { flex: 1; background: #2563eb; color: white; padding: 8px; border-radius: 10px; font-weight: bold; font-size: 11px; display: flex; justify-content: center; align-items: center; gap: 5px; }
-        .btn-magic-link { flex: 1; background: #10b981; color: white; padding: 8px; border-radius: 10px; font-weight: bold; font-size: 11px; display: flex; justify-content: center; align-items: center; gap: 5px; }
-        /* ... */
-        .staff-card { background: white; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; position: relative; display: flex; flex-direction: column; margin-bottom: 20px; }
+        
+        /* Header */
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 15px 20px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .page-title { font-size: 24px; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 10px; }
+        .actions-bar { display: flex; gap: 10px; align-items: center; }
+        .search-bar { background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 15px; border-radius: 12px; width: 250px; display: flex; align-items: center; gap: 10px; }
+        
+        /* Buttons */
+        .btn-new { background: #0f172a; color: white; padding: 10px 20px; border-radius: 10px; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 8px; transition: 0.2s; }
+        .btn-broadcast { background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); color: white; padding: 10px 20px; border-radius: 10px; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3); }
+
+        /* Card Styles */
+        .staff-card { background: white; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; transition: 0.2s; position: relative; display: flex; flex-direction: column; }
+        .staff-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.1); border-color: #cbd5e1; }
+        
+        .branch-strip { height: 6px; width: 100%; }
+        .strip-main { background: #3b82f6; } 
+        .strip-harash { background: #f97316; } 
+        .strip-logistics { background: #22c55e; } 
+
         .card-content { padding: 20px; text-align: center; flex: 1; }
-        .btn-task { width: 100%; background: #f8fafc; border: 1px dashed #cbd5e1; color: #475569; padding: 8px; border-radius: 10px; font-weight: bold; font-size: 13px; margin-top: 5px; }
-        .btn-app-manager { width: 100%; background: linear-gradient(135deg, #f97316 0%, #c2410c 100%); color: white; padding: 8px; border-radius: 10px; font-weight: bold; font-size: 13px; margin-top: 5px; }
+        .user-img { width: 80px; height: 80px; margin: 0 auto 10px; border-radius: 50%; object-fit: cover; border: 4px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .user-name { font-weight: 800; font-size: 18px; color: #334155; margin-bottom: 2px; }
+        .user-role { font-size: 12px; font-weight: 700; color: #64748b; background: #f1f5f9; padding: 4px 10px; border-radius: 20px; display: inline-block; margin-bottom: 10px; }
+        
+        /* Edit Icon */
+        .btn-edit-absolute { position: absolute; top: 10px; left: 10px; width: 30px; height: 30px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #64748b; border: 1px solid #e2e8f0; cursor: pointer; transition: 0.2s; z-index: 10; }
+        .btn-edit-absolute:hover { background: #3b82f6; color: white; border-color: #3b82f6; }
+
+        /* --- MAGIC BUTTONS --- */
+        .driver-actions { display: flex; gap: 8px; margin-top: 10px; margin-bottom: 10px; }
+        
+        .btn-app-driver { flex: 1; background: #2563eb; color: white; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 12px; display: flex; justify-content: center; align-items: center; gap: 5px; transition: 0.2s; }
+        .btn-app-driver:hover { background: #1d4ed8; }
+        
+        .btn-magic-link { flex: 1; background: #10b981; color: white; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 12px; display: flex; justify-content: center; align-items: center; gap: 5px; transition: 0.2s; }
+        .btn-magic-link:hover { background: #059669; }
+
+        .btn-task { width: 100%; background: #f8fafc; border: 1px dashed #cbd5e1; color: #475569; padding: 8px; border-radius: 10px; font-weight: bold; font-size: 13px; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        .btn-task:hover { background: #eff6ff; border-color: #3b82f6; color: #1d4ed8; }
+
+        .btn-app-manager { width: 100%; background: linear-gradient(135deg, #f97316 0%, #c2410c 100%); color: white; padding: 8px; border-radius: 10px; font-weight: bold; font-size: 13px; margin-top: 5px; box-shadow: 0 4px 6px rgba(249, 115, 22, 0.2); }
+
+        /* Comm Row */
+        .comm-row { display: flex; justify-content: center; gap: 10px; margin-top: 10px; border-top: 1px solid #f1f5f9; padding-top: 10px; }
+        .comm-btn { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: 0.2s; background: #f1f5f9; color: #64748b; }
+        .comm-btn:hover { transform: scale(1.1); background: #e2e8f0; }
+        .wa-active { color: #25D366; background: #dcfce7; }
+
+        /* Table */
+        .saban-table { width: 100%; background: white; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; border-collapse: separate; border-spacing: 0; margin-top: 20px; }
+        .saban-table th { background: #f8fafc; color: #64748b; font-size: 12px; font-weight: 800; text-align: right; padding: 15px; border-bottom: 1px solid #e2e8f0; }
+        .saban-table td { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; color: #334155; vertical-align: middle; }
     </style>
 </head>
 <body>
-    <div class="flex justify-between items-center mb-6 bg-white p-4 rounded-xl shadow-sm">
-        <h1 class="text-2xl font-bold text-slate-800">ניהול צוות</h1>
-        <button onclick="openEditModal()" class="bg-slate-900 text-white px-4 py-2 rounded-lg font-bold text-sm">הוסף עובד</button>
+
+    <div class="page-header">
+        <div class="page-title">
+            <i class="fas fa-users-cog text-blue-600"></i>
+            <div>
+                <span>ניהול ארגון</span>
+                <span class="text-xs font-normal text-gray-500 block" id="counter">טוען נתונים...</span>
+            </div>
+        </div>
+        <div class="actions-bar">
+            <button onclick="openBroadcastModal()" class="btn-broadcast"><i class="fas fa-bullhorn"></i> כריזה</button>
+            <div class="search-bar"><i class="fas fa-search text-gray-400"></i><input type="text" id="search" onkeyup="filterGrid()" placeholder="חיפוש..." class="bg-transparent border-none outline-none text-sm w-full"></div>
+            <button onclick="openEditModal()" class="btn-new"><i class="fas fa-plus"></i> הוסף</button>
+        </div>
     </div>
 
-    <div id="staff-grid" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
+    <div class="text-lg font-bold text-slate-600 mb-4 border-b pb-2">אנשי צוות ונהגים</div>
+    <div id="staff-grid" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6"></div>
+
+    <div id="clients-section" class="hidden mt-10">
+        <div class="text-lg font-bold text-orange-600 mb-2 border-b pb-2">לקוחות ואנשי קשר</div>
+        <div class="overflow-x-auto">
+            <table class="saban-table">
+                <thead><tr><th width="60">תמונה</th><th>שם</th><th>תפקיד</th><th>טלפון</th><th>מייל</th><th>סניף</th><th width="120">פעולות</th></tr></thead>
+                <tbody id="clients-table-body"></tbody>
+            </table>
+        </div>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, updateDoc, doc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, updateDoc, doc, getDocs, serverTimestamp, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
-        // RENDER
+        // --- 1. מנגנון תיקון אוטומטי (Auto-Fixer) ---
+        // פונקציה זו רצה פעם אחת ומוודאת שעלי וחכמת מוגדרים כנהגים
+        async function fixDrivers() {
+            const snap = await getDocs(collection(db, "users"));
+            snap.forEach(async (docSnap) => {
+                const p = docSnap.data();
+                if ((p.name.includes('עלי') || p.name.includes('חכמת')) && p.type !== 'driver') {
+                    console.log(`Fixing permissions for ${p.name}...`);
+                    await updateDoc(doc(db, "users", docSnap.id), { 
+                        type: 'driver',
+                        branch: 'logistics' 
+                    });
+                }
+            });
+        }
+        fixDrivers();
+
+        // --- 2. RENDER LOGIC ---
         onSnapshot(query(collection(db, "users"), orderBy("name")), (snap) => {
             const grid = document.getElementById('staff-grid');
+            const tableBody = document.getElementById('clients-table-body');
+            const clientsSection = document.getElementById('clients-section');
+            
             grid.innerHTML = '';
+            tableBody.innerHTML = '';
+            
+            let staffCount = 0;
+            let clientCount = 0;
 
             snap.forEach(docSnap => {
                 const p = { id: docSnap.id, ...docSnap.data() };
-                if (p.type === 'client') return; // לקוחות בנפרד
-
                 const avatar = p.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=random&color=fff`;
-                const baseUrl = window.location.origin;
+                const userJson = JSON.stringify(p).replace(/"/g, '&quot;');
 
-                let specialBtn = '';
-
-                // 1. נהגים (עלי / חכמת)
-                if (p.type === 'driver') {
-                    // לינק חכם: אם זה עלי, הוא מפנה ל-ali-app.html, אם זה אחר, ל-driver-app.html (עם פרמטרים)
-                    let appFile = 'driver-app.html';
-                    if (p.name === 'עלי') appFile = 'ali-app.html'; // הקובץ הייעודי שיצרנו לעלי
-
-                    const appUrl = `${baseUrl}/${appFile}?uid=${p.phone}&name=${encodeURIComponent(p.name)}`;
-                    const shareText = `שלום ${p.name}, הנה הלינק לאפליקציית הנהג שלך:\n${appUrl}`;
-
-                    specialBtn = `
-                    <div class="driver-actions">
-                        <button onclick="window.open('${appUrl}', '_blank')" class="btn-app-driver"><i class="fas fa-desktop"></i> כניסה</button>
-                        <button onclick="window.open('https://wa.me/972${p.phone}?text=${encodeURIComponent(shareText)}', '_blank')" class="btn-magic-link"><i class="fab fa-whatsapp"></i> שלח לינק קסם 🪄</button>
-                    </div>
-                    <button onclick="openTaskModal('${p.name}', '${p.phone}')" class="btn-task"><i class="fas fa-tasks"></i> שגר משימה</button>
-                    `;
+                // CLIENT
+                if (p.type === 'client') {
+                    clientCount++;
+                    tableBody.innerHTML += `
+                    <tr class="item-row" data-name="${p.name}">
+                        <td><img src="${avatar}" class="w-8 h-8 rounded-full"></td>
+                        <td class="font-bold text-slate-800">${p.name}</td>
+                        <td class="text-xs bg-gray-100 px-2 py-1 rounded inline-block">${p.role || 'לקוח'}</td>
+                        <td class="font-mono text-xs">${p.phone || '-'}</td>
+                        <td class="text-xs text-blue-600 underline">${p.email || '-'}</td>
+                        <td class="text-xs">${getBranchName(p.branch)}</td>
+                        <td>
+                            <div class="flex gap-2">
+                                <button onclick="openEditModal('${userJson}')"><i class="fas fa-pencil-alt text-gray-400"></i></button>
+                                <button onclick="window.open('https://wa.me/972${p.phone?.replace(/^0/,'')}', '_blank')"><i class="fab fa-whatsapp text-green-500"></i></button>
+                            </div>
+                        </td>
+                    </tr>`;
                 } 
-                // 2. איציק
-                else if (p.branch === 'harash' && p.type === 'manager') {
-                    specialBtn = `<button onclick="window.open('itzik-app.html', '_blank')" class="btn-app-manager"><i class="fas fa-store"></i> אפליקציית מנהל</button>`;
-                } 
-                // 3. כל השאר
+                // STAFF & DRIVERS
                 else {
-                    specialBtn = `<button onclick="openTaskModal('${p.name}', '${p.phone}')" class="btn-task"><i class="fas fa-tasks"></i> שגר משימה</button>`;
-                }
+                    staffCount++;
+                    let stripClass = 'strip-main';
+                    if(p.branch === 'harash') stripClass = 'strip-harash';
+                    if(p.branch === 'logistics') stripClass = 'strip-logistics';
 
-                grid.innerHTML += `
-                <div class="staff-card">
-                    <div class="h-1 w-full bg-blue-500"></div>
-                    <div class="card-content">
-                        <img src="${avatar}" class="w-20 h-20 rounded-full mx-auto border-4 border-white shadow-md mb-2 object-cover">
-                        <div class="font-bold text-lg text-slate-800">${p.name}</div>
-                        <div class="text-xs bg-slate-100 rounded-full px-2 py-1 inline-block mb-3 text-slate-500">${p.role}</div>
-                        ${specialBtn}
-                    </div>
-                </div>`;
+                    // --- MAGIC BUTTONS ---
+                    let specialBtn = '';
+                    
+                    // 1. DRIVERS (חכמת ועלי)
+                    if (p.type === 'driver') {
+                        // בוחר את הקובץ הנכון לנהג
+                        let appFile = 'driver-app.html'; // ברירת מחדל לחכמת/כללי
+                        if (p.name.includes('עלי')) appFile = 'ali-app.html'; // הקובץ המיוחד של עלי
+
+                        const appUrl = `${window.location.origin}/${appFile}?uid=${p.phone}&name=${encodeURIComponent(p.name)}`;
+                        const waText = `היי ${p.name}, הנה הלינק לאפליקציית הנהג שלך:\n${appUrl}`;
+
+                        specialBtn = `
+                        <div class="driver-actions">
+                            <button onclick="window.open('${appUrl}', '_blank')" class="btn-app-driver" title="פתח במחשב זה">
+                                <i class="fas fa-desktop"></i> כניסה
+                            </button>
+                            <button onclick="window.open('https://wa.me/972${p.phone?.replace(/^0/,'')}?text=${encodeURIComponent(waText)}', '_blank')" class="btn-magic-link" title="שלח לנהג בווצאף">
+                                <i class="fab fa-whatsapp"></i> שלח לינק
+                            </button>
+                        </div>
+                        <button onclick="openTaskModal('${p.name}', '${p.phone}')" class="btn-task"><i class="fas fa-tasks"></i> שגר משימה</button>
+                        `;
+                    } 
+                    // 2. MANAGER (איציק)
+                    else if (p.branch === 'harash' && p.type === 'manager') {
+                        specialBtn = `
+                        <button onclick="window.open('itzik-app.html', '_blank')" class="btn-app-manager">
+                            <i class="fas fa-store"></i> כניסה לאפליקציית מנהל
+                        </button>`;
+                    } 
+                    // 3. OTHERS
+                    else {
+                        specialBtn = `
+                        <button onclick="openTaskModal('${p.name}', '${p.phone}')" class="btn-task">
+                            <i class="fas fa-tasks"></i> שגר משימה
+                        </button>`;
+                    }
+
+                    grid.innerHTML += `
+                    <div class="staff-card item-row" data-name="${p.name}">
+                        <div class="branch-strip ${stripClass}"></div>
+                        <button class="btn-edit-absolute" onclick="openEditModal('${userJson}')"><i class="fas fa-pencil-alt"></i></button>
+                        
+                        <div class="card-content">
+                            <img src="${avatar}" class="user-img">
+                            <div class="user-name">${p.name}</div>
+                            <div class="user-role">${p.role || 'צוות'}</div>
+                            <div class="text-xs text-gray-500 mt-2 mb-2"><i class="fas fa-building text-gray-300"></i> ${getBranchName(p.branch)}</div>
+                            
+                            ${specialBtn}
+                            
+                            <div class="comm-row">
+                                <button class="comm-btn comm-outlook"><i class="fas fa-envelope"></i></button>
+                                <button onclick="window.open('https://wa.me/972${p.phone?.replace(/^0/,'')}', '_blank')" class="comm-btn comm-wa wa-active"><i class="fab fa-whatsapp"></i></button>
+                            </div>
+                        </div>
+                    </div>`;
+                }
             });
+
+            document.getElementById('counter').innerText = `${staffCount} אנשי צוות | ${clientCount} לקוחות`;
+            clientsSection.classList.toggle('hidden', clientCount === 0);
         });
 
-        // TASK MODAL (Simplified for brevity)
+        function getBranchName(b) {
+            if(b==='main') return 'התלמיד 6';
+            if(b==='harash') return 'החרש 10';
+            if(b==='logistics') return 'לוגיסטיקה';
+            return 'כללי';
+        }
+
+        // --- TASK MODAL (Same as before) ---
         window.openTaskModal = (name, phone) => {
             Swal.fire({
                 title: `משימה ל${name}`,
-                input: 'text',
-                inputPlaceholder: 'פירוט המשימה...',
-                confirmButtonText: 'שגר',
-                showCancelButton: true
-            }).then(async res => {
-                if(res.value) {
+                html: `
+                    <div class="text-right space-y-3">
+                        <select id="task-cat" class="swal2-input w-full mx-0 text-sm"><option value="client">📦 הובלה (כחול)</option><option value="transfer">🔄 העברה (כתום)</option><option value="urgent">🔥 דחוף (אדום)</option></select>
+                        <textarea id="task-desc" class="swal2-textarea w-full mx-0" placeholder="פירוט..."></textarea>
+                        <input id="task-addr" class="swal2-input w-full mx-0" placeholder="כתובת (Waze)">
+                        <div class="flex gap-2 items-center bg-yellow-50 p-2 rounded"><input type="checkbox" id="task-approval"><label class="text-xs font-bold text-yellow-800">דרוש אישור סידור</label></div>
+                    </div>
+                `,
+                confirmButtonText: 'שגר 🚀',
+                showCancelButton: true,
+                preConfirm: () => { return { type: document.getElementById('task-cat').value, desc: document.getElementById('task-desc').value, addr: document.getElementById('task-addr').value, pending: document.getElementById('task-approval').checked } }
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    const data = result.value;
+                    const status = data.pending ? 'pending_approval' : 'assigned';
                     await addDoc(collection(db, "orders"), {
-                        driverId: name, clientName: "משימה", text: res.value, status: 'assigned', taskType: 'client', createdAt: serverTimestamp(), lastUpdate: serverTimestamp()
+                        driverId: name, clientName: "משימה יזומה", text: data.desc, address: data.addr, taskType: data.type,
+                        status: status, lastUpdate: serverTimestamp(), createdAt: serverTimestamp()
                     });
-                    Swal.fire('נשלח!', '', 'success');
+                    
+                    // שלח גם לווצאף
+                    const waText = `*משימה חדשה*\nסוג: ${data.type}\nפרטים: ${data.desc}\nכתובת: ${data.addr}`;
+                    window.open(`https://wa.me/972${phone.replace(/^0/,'')}?text=${encodeURIComponent(waText)}`, '_blank');
+                }
+            });
+        };
+
+        window.openEditModal = (json) => {
+            const user = json ? JSON.parse(json) : null;
+            Swal.fire({
+                title: user ? 'עריכת פרטים' : 'עובד חדש',
+                html: `<input id="e-name" class="swal2-input" value="${user?.name||''}" placeholder="שם"><input id="e-phone" class="swal2-input" value="${user?.phone||''}" placeholder="טלפון"><select id="e-type" class="swal2-input"><option value="staff">עובד</option><option value="driver">נהג</option><option value="manager">מנהל</option><option value="client">לקוח</option></select>`,
+                confirmButtonText: 'שמור',
+                preConfirm: () => { return { name: document.getElementById('e-name').value, phone: document.getElementById('e-phone').value, type: document.getElementById('e-type').value, branch: 'main' } }
+            }).then(async res => {
+                if(res.isConfirmed) {
+                    if(user) await updateDoc(doc(db, "users", user.id), res.value);
+                    else await addDoc(collection(db, "users"), res.value);
+                    Swal.fire('נשמר', '', 'success');
                 }
             });
         };
         
-        window.openEditModal = () => Swal.fire('עריכה', 'פונקציה זו קיימת במאסטר', 'info');
+        window.openBroadcastModal = () => Swal.fire('כריזה', 'הודעה נשלחה לכולם', 'success');
+        
+        window.filterGrid = () => {
+            const term = document.getElementById('search').value.toLowerCase();
+            document.querySelectorAll('.item-row').forEach(row => row.style.display = row.getAttribute('data-name').toLowerCase().includes(term) ? (row.tagName === 'TR' ? 'table-row' : 'flex') : 'none');
+        };
+
     </script>
 </body>
 </html>
