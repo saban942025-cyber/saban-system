@@ -16,7 +16,7 @@
         .view-section { flex: 1; display: none; flex-direction: column; overflow-y: auto; padding-bottom: 80px; }
         .view-section.active { display: flex; }
         
-        /* Start Overlay */
+        /* Start Overlay (Critical for Audio) */
         #start-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
         .btn-start-shift { background: #10b981; color: white; font-size: 24px; font-weight: bold; padding: 20px 40px; border-radius: 50px; border: 4px solid #059669; animation: pulse 2s infinite; cursor: pointer; }
 
@@ -47,7 +47,7 @@
         .badge { position: absolute; top: 10px; right: 20%; background: red; width: 12px; height: 12px; border-radius: 50%; display: none; border: 2px solid #1f2937; }
     </style>
 </head>
-<body>
+<body onclick="stopAlert()">
 
     <div id="start-overlay">
         <div class="mb-6 text-2xl">שלום עלי! 👋</div>
@@ -116,26 +116,34 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, query, where, onSnapshot, serverTimestamp, doc, updateDoc, setDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // --- CONSOLE LOGGER (Hidden Snitch) ---
+        function logSnitch(msg) { console.log(`[DriverApp] ${msg}`); }
+
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
-        // IDENTITY (לוקח את המספר מה-URL או ברירת מחדל)
+        // IDENTITY (עלי - 054-2276631)
         const params = new URLSearchParams(window.location.search);
         let DRIVER = { 
-            uid: params.get('uid') || '054-2276631', // המספר שזיהינו במלשינון
+            uid: params.get('uid') || '054-2276631', 
             name: params.get('name') || 'עלי' 
         };
         document.getElementById('driver-name').innerText = DRIVER.name;
+        logSnitch(`Init: ${DRIVER.name} (${DRIVER.uid})`);
 
-        // SOUNDS (MP3)
-        const alertAudio = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3'); 
+        // SOUNDS (Reliable MP3s)
+        const alertAudio = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3'); // משימה
+        const msgAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/2346/2346-preview.mp3'); // הודעה
         
+        // --- Start Logic ---
         window.startShift = () => {
-            alertAudio.volume = 0;
-            alertAudio.play().then(() => {
-                alertAudio.pause();
-                alertAudio.currentTime = 0;
-                alertAudio.volume = 1;
-            }).catch(e => console.log("Audio issue:", e));
+            // משחרר חסימות אודיו
+            alertAudio.volume = 0; msgAudio.volume = 0;
+            Promise.all([alertAudio.play(), msgAudio.play()]).then(() => {
+                alertAudio.pause(); alertAudio.currentTime=0; alertAudio.volume=1;
+                msgAudio.pause(); msgAudio.currentTime=0; msgAudio.volume=1;
+                logSnitch("Audio Unlocked");
+            }).catch(e => console.error("Audio blocked:", e));
+            
             document.getElementById('start-overlay').style.display = 'none';
         };
 
@@ -148,7 +156,11 @@
 
         // --- 1. MISSION LISTENER ---
         let currentOrder = null;
-        const q = query(collection(db, "orders"), where("driverId", "==", DRIVER.name), where("status", "in", ["assigned", "en_route", "arrived"]));
+        const q = query(
+            collection(db, "orders"), 
+            where("driverId", "==", DRIVER.name),
+            where("status", "in", ["assigned", "en_route", "arrived"])
+        );
 
         onSnapshot(q, (snap) => {
             if (snap.empty) {
@@ -162,7 +174,9 @@
             const latest = tasks[0];
 
             if (!currentOrder || currentOrder.id !== latest.id) {
-                try { alertAudio.play().catch(()=>{}); } catch(e){}
+                logSnitch("New Mission!");
+                try { alertAudio.play().catch(e => console.error(e)); } catch(e){}
+                
                 Swal.fire({
                     title: 'משימה חדשה!',
                     text: latest.clientName,
@@ -173,6 +187,7 @@
                     position: 'top',
                     background: '#f0f9ff'
                 });
+
                 switchView('mission', document.querySelector('.nav-item'));
             }
 
@@ -250,23 +265,33 @@
             });
             container.scrollTop = container.scrollHeight;
             
+            // הודעה חדשה
             if (!snap.empty) {
                 const lastMsg = msgs[msgs.length-1];
+                // אם ההודעה האחרונה לא ממני, והחלון סגור או שזו טעינה ראשונית "חיה"
                 if (lastMsg && lastMsg.sender !== DRIVER.name) {
-                    if (document.getElementById('view-chat').style.display === 'none') {
+                    // בדיקה האם ההודעה חדשה (מהדקה האחרונה) כדי למנוע צפצוף בטעינה
+                    const msgTime = lastMsg.timestamp?.seconds * 1000 || 0;
+                    if (Date.now() - msgTime < 10000 && document.getElementById('view-chat').style.display === 'none') {
                         document.getElementById('chat-badge').style.display = 'block';
-                        try { alertAudio.play().catch(()=>{}); } catch(e){}
+                        try { msgAudio.play().catch(()=>{}); } catch(e){}
+                        logSnitch("New message alert!");
+                    } else if (document.getElementById('view-chat').style.display === 'none') {
+                        // סתם סימון אדום בלי רעש אם זה ישן
+                        document.getElementById('chat-badge').style.display = 'block';
                     }
                 }
             }
         });
 
         window.sendMessage = async () => {
+            stopAlert();
             const input = document.getElementById('msg-input');
             const txt = input.value.trim();
             if(!txt) return;
             input.value = '';
             
+            logSnitch("Sending msg");
             await addDoc(collection(db, `chats/${chatId}/messages`), { 
                 text: txt, 
                 sender: DRIVER.name, 
