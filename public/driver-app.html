@@ -41,24 +41,9 @@
         .nav-item.active { color: #f59e0b; }
         .nav-item i { font-size: 24px; margin-bottom: 2px; }
         .badge { position: absolute; top: 10px; right: 20%; background: red; width: 10px; height: 10px; border-radius: 50%; display: none; border: 2px solid #1f2937; }
-
-        /* THE SNITCH (Debug Console) */
-        #snitch-btn { position: fixed; bottom: 90px; left: 10px; background: rgba(0,0,0,0.5); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; z-index: 1000; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); }
-        #snitch-panel { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; display: none; flex-direction: column; font-family: monospace; font-size: 12px; padding: 10px; overflow: hidden; }
-        #snitch-logs { flex: 1; overflow-y: auto; color: #00ff00; }
-        .log-err { color: #ff4444; font-weight: bold; border-bottom: 1px solid #ff4444; padding-bottom: 5px; margin-bottom: 5px; }
-        .log-info { color: #00ffff; }
-        .close-snitch { position: absolute; top: 10px; right: 10px; background: #ff4444; color: white; padding: 5px 10px; border-radius: 5px; }
     </style>
 </head>
 <body onclick="stopAlert()">
-
-    <div id="snitch-btn" onclick="toggleSnitch()">🐞</div>
-    <div id="snitch-panel">
-        <button class="close-snitch" onclick="toggleSnitch()">סגור X</button>
-        <h3 style="color:white; border-bottom:1px solid gray; padding-bottom:5px;">מלשינון מערכת (Debug)</h3>
-        <div id="snitch-logs"></div>
-    </div>
 
     <div class="p-4 bg-gray-800 flex justify-between items-center border-b border-gray-700">
         <div>
@@ -76,7 +61,7 @@
                 <i class="fas fa-satellite-dish text-4xl text-gray-600"></i>
             </div>
             <h2 class="text-xl font-bold">ממתין למשימות...</h2>
-            <p class="text-sm opacity-50 mt-2">המערכת מאזינה (ערוץ: <span id="debug-uid">...</span>)</p>
+            <p class="text-sm opacity-50 mt-2">המערכת מאזינה בזמן אמת</p>
         </div>
 
         <div id="state-mission" class="card-mission hidden theme-client">
@@ -121,19 +106,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, query, where, onSnapshot, serverTimestamp, doc, updateDoc, setDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // --- SNITCH LOGIC ---
-        window.toggleSnitch = () => {
-            const p = document.getElementById('snitch-panel');
-            p.style.display = p.style.display === 'flex' ? 'none' : 'flex';
-        };
-        
-        function logSnitch(msg, type='info') {
-            const box = document.getElementById('snitch-logs');
-            const time = new Date().toLocaleTimeString();
-            const colorClass = type === 'error' ? 'log-err' : 'log-info';
-            box.innerHTML = `<div class="${colorClass}">[${time}] ${msg}</div>` + box.innerHTML;
-        }
-
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
         // IDENTITY
@@ -143,19 +115,15 @@
             name: params.get('name') || 'חכמת' 
         };
         document.getElementById('driver-name').innerText = DRIVER.name;
-        document.getElementById('debug-uid').innerText = DRIVER.name;
+
+        // SOUNDS (Gentle Doorbell)
+        const alertAudio = new Audio('https://actions.google.com/sounds/v1/doors/door_bell_1.ogg');
         
-        logSnitch(`Driver init: ${DRIVER.name} (${DRIVER.uid})`);
-
-        // SOUNDS
-        const alertAudio = new Audio('https://actions.google.com/sounds/v1/alarms/spaceship_alarm.ogg');
-        alertAudio.loop = true;
-
         window.stopAlert = () => {
+            // הנהג נגע במסך - מפסיקים את ההתראה
             if(!alertAudio.paused) {
                 alertAudio.pause();
                 alertAudio.currentTime = 0;
-                logSnitch('Alert stopped by user');
             }
         };
 
@@ -169,29 +137,27 @@
 
         onSnapshot(q, (snap) => {
             if (snap.empty) {
-                logSnitch('No active missions');
                 document.getElementById('state-waiting').classList.remove('hidden');
                 document.getElementById('state-mission').classList.add('hidden');
                 return;
             }
 
-            // Client-side sorting
             const tasks = snap.docs.map(d => ({id: d.id, ...d.data()}));
             tasks.sort((a,b) => b.createdAt - a.createdAt);
             const latest = tasks[0];
 
-            logSnitch(`Task detected: ${latest.clientName}`);
-
             if (!currentOrder || currentOrder.id !== latest.id) {
-                logSnitch('New task alert!');
-                alertAudio.play().catch(e => logSnitch('Audio blocked: ' + e));
+                // מנגן את הפעמון
+                alertAudio.play().catch(()=>{}); 
                 
                 Swal.fire({
                     title: 'משימה חדשה!',
                     text: 'התקבלה נסיעה מהמשרד',
                     icon: 'info',
                     timer: 3000,
-                    showConfirmButton: false
+                    showConfirmButton: false,
+                    toast: true,
+                    position: 'top'
                 });
 
                 switchView('mission', document.querySelector('.nav-item'));
@@ -201,13 +167,6 @@
             renderMission(latest);
             document.getElementById('state-waiting').classList.add('hidden');
             document.getElementById('state-mission').classList.remove('hidden');
-
-        }, (error) => {
-            logSnitch(`DB ERROR: ${error.message}`, 'error');
-            if(error.message.includes("index")) {
-                logSnitch(`INDEX MISSING: Check console for link`, 'error');
-                console.error(error); // הלינק לאינדקס יופיע בקונסול הרגיל
-            }
         });
 
         function renderMission(order) {
@@ -249,7 +208,6 @@
             stopAlert();
             if(!currentOrder) return;
             if (s === 'done') confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-            logSnitch(`Status update: ${s}`);
             await updateDoc(doc(db, "orders", currentOrder.id), { status: s, lastUpdate: serverTimestamp() });
         };
 
@@ -261,8 +219,7 @@
 
         // --- 2. CHAT SYSTEM ---
         const chatId = `chat_${DRIVER.uid}`; 
-        logSnitch(`Chat channel: ${chatId}`);
-
+        
         onSnapshot(query(collection(db, `chats/${chatId}/messages`)), (snap) => {
             const container = document.getElementById('chat-msgs');
             container.innerHTML = '';
@@ -279,7 +236,6 @@
                 const last = msgs[msgs.length-1];
                 if(last && last.sender !== DRIVER.name) {
                      document.getElementById('chat-badge').style.display = 'block';
-                     logSnitch('New msg received');
                 }
             }
         });
@@ -291,7 +247,6 @@
             if(!txt) return;
             input.value = '';
             
-            logSnitch(`Sending: ${txt}`);
             await addDoc(collection(db, `chats/${chatId}/messages`), { 
                 text: txt, 
                 sender: DRIVER.name, 
@@ -309,7 +264,7 @@
                     timestamp: serverTimestamp(),
                     active: true
                 }, { merge: true });
-            }, (err) => logSnitch(`GPS: ${err.message}`, 'error'), { enableHighAccuracy: true });
+            }, null, { enableHighAccuracy: true });
         }
 
         window.switchView = (v, btn) => {
