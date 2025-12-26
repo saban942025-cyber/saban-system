@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Saban Driver | עלי (מנוף)</title>
+    <title>Saban Driver | עלי</title>
     <link rel="icon" href="data:;base64,iVBORw0KGgo=">
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -16,12 +16,17 @@
         .view-section { flex: 1; display: none; flex-direction: column; overflow-y: auto; padding-bottom: 80px; }
         .view-section.active { display: flex; }
         
-        /* Ali's Special Theme (Crane) */
+        /* Start Overlay (חובה בשביל הסאונד) */
+        #start-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .btn-start-shift { background: #10b981; color: white; font-size: 24px; font-weight: bold; padding: 20px 40px; border-radius: 50px; border: 4px solid #059669; animation: pulse 2s infinite; cursor: pointer; }
+
+        /* Mission Card */
         .card-mission { margin: 15px; border-radius: 20px; overflow: hidden; background: white; color: #1f2937; position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
         .theme-transfer .header-bg { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); }
         .theme-client .header-bg { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); }
-        .theme-urgent .header-bg { background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); animation: pulse 0.8s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
+        .theme-urgent .header-bg { background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); animation: pulse-red 1s infinite; }
+        @keyframes pulse-red { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
         .mission-header { padding: 20px; color: white; display: flex; justify-content: space-between; align-items: flex-start; }
         .mission-body { padding: 20px; text-align: center; }
@@ -40,10 +45,16 @@
         .nav-item { text-align: center; color: #9ca3af; font-size: 10px; width: 50%; }
         .nav-item.active { color: #f59e0b; }
         .nav-item i { font-size: 24px; margin-bottom: 2px; }
-        .badge { position: absolute; top: 10px; right: 20%; background: red; width: 10px; height: 10px; border-radius: 50%; display: none; border: 2px solid #1f2937; }
+        .badge { position: absolute; top: 10px; right: 20%; background: red; width: 12px; height: 12px; border-radius: 50%; display: none; border: 2px solid #1f2937; }
     </style>
 </head>
-<body onclick="stopAlert()">
+<body>
+
+    <div id="start-overlay">
+        <div class="mb-6 text-2xl">שלום עלי! 👋</div>
+        <button class="btn-start-shift" onclick="startShift()">לחץ להתחלת משמרת</button>
+        <div class="mt-4 text-gray-400 text-sm">חובה ללחוץ כדי לשמוע התראות</div>
+    </div>
 
     <div class="p-4 bg-gray-800 flex justify-between items-center border-b border-gray-700">
         <div>
@@ -61,7 +72,7 @@
                 <i class="fas fa-truck-pickup text-4xl text-gray-600"></i>
             </div>
             <h2 class="text-xl font-bold">ממתין למשימות מנוף...</h2>
-            <p class="text-sm opacity-50 mt-2">המערכת מאזינה בזמן אמת</p>
+            <p class="text-sm opacity-50 mt-2">מחובר למרכז הבקרה</p>
         </div>
 
         <div id="state-mission" class="card-mission hidden theme-client">
@@ -90,7 +101,7 @@
     <div id="view-chat" class="view-section" style="background: #efeae2;">
         <div id="chat-msgs" class="flex-1 flex flex-col p-4 overflow-y-auto gap-2"></div>
         <div class="p-3 bg-gray-200 flex gap-2">
-            <input id="msg-input" class="flex-1 p-3 rounded-full text-black outline-none shadow-sm" placeholder="הודעה למשרד...">
+            <input id="msg-input" class="flex-1 p-3 rounded-full text-black outline-none shadow-sm" placeholder="הודעה למשרד..." onkeydown="if(event.key==='Enter') sendMessage()">
             <button onclick="sendMessage()" class="bg-[#00a884] w-12 h-12 rounded-full text-white shadow-lg flex items-center justify-center"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
@@ -108,17 +119,29 @@
 
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
-        // IDENTITY (מוגדר מראש לעלי)
+        // זהויות (עלי)
         const params = new URLSearchParams(window.location.search);
         let DRIVER = { 
-            uid: params.get('uid') || '0500000606', // המספר הייחודי של עלי
+            uid: params.get('uid') || '0500000606', // מספר המנופאי
             name: params.get('name') || 'עלי' 
         };
         document.getElementById('driver-name').innerText = DRIVER.name;
 
         // SOUNDS
         const alertAudio = new Audio('https://actions.google.com/sounds/v1/doors/door_bell_1.ogg');
-        
+        const msgAudio = new Audio('https://actions.google.com/sounds/v1/cartoon/pop.ogg');
+
+        // --- Start Logic (Fixes No Sound) ---
+        window.startShift = () => {
+            // נגינה "ריקה" כדי לפתוח את האודיו
+            alertAudio.play().then(() => {
+                alertAudio.pause();
+                alertAudio.currentTime = 0;
+            }).catch(e => console.log("Audio permissions granted"));
+            
+            document.getElementById('start-overlay').style.display = 'none';
+        };
+
         window.stopAlert = () => {
             if(!alertAudio.paused) {
                 alertAudio.pause();
@@ -135,26 +158,43 @@
         );
 
         onSnapshot(q, (snap) => {
+            const waitingEl = document.getElementById('state-waiting');
+            const missionEl = document.getElementById('state-mission');
+
             if (snap.empty) {
-                document.getElementById('state-waiting').classList.remove('hidden');
-                document.getElementById('state-mission').classList.add('hidden');
+                waitingEl.classList.remove('hidden');
+                missionEl.classList.add('hidden');
                 return;
             }
 
+            // מיון בצד לקוח (Client Side Sort) - חוסך בעיות אינדקס
             const tasks = snap.docs.map(d => ({id: d.id, ...d.data()}));
             tasks.sort((a,b) => b.createdAt - a.createdAt);
             const latest = tasks[0];
 
+            // בדיקה אם זו משימה חדשה
             if (!currentOrder || currentOrder.id !== latest.id) {
-                alertAudio.play().catch(()=>{}); 
-                Swal.fire({ title: 'משימת מנוף חדשה!', icon: 'info', timer: 3000, showConfirmButton: false, toast: true, position: 'top' });
+                // מנגן צלצול + מציג הודעה
+                try { alertAudio.play(); } catch(e){}
+                
+                Swal.fire({
+                    title: 'משימה חדשה!',
+                    text: latest.clientName,
+                    icon: 'info',
+                    timer: 4000,
+                    showConfirmButton: false,
+                    toast: true,
+                    position: 'top',
+                    background: '#f0f9ff'
+                });
+
                 switchView('mission', document.querySelector('.nav-item'));
             }
 
             currentOrder = latest;
             renderMission(latest);
-            document.getElementById('state-waiting').classList.add('hidden');
-            document.getElementById('state-mission').classList.remove('hidden');
+            waitingEl.classList.add('hidden');
+            missionEl.classList.remove('hidden');
         });
 
         function renderMission(order) {
@@ -205,30 +245,52 @@
             window.open(`https://waze.com/ul?q=${encodeURIComponent(currentOrder.address || '')}&navigate=yes`, '_blank');
         };
 
-        // --- 2. CHAT SYSTEM ---
+        // --- 2. CHAT SYSTEM (Fixed Listener) ---
         const chatId = `chat_${DRIVER.uid}`; 
-        
-        onSnapshot(query(collection(db, `chats/${chatId}/messages`)), (snap) => {
+        // מאזין לכל ההודעות בצ'אט הספציפי
+        const qChat = query(collection(db, `chats/${chatId}/messages`)); 
+
+        onSnapshot(qChat, (snap) => {
             const container = document.getElementById('chat-msgs');
             container.innerHTML = '';
+            
+            // מיון ידני לפי זמן
             const msgs = snap.docs.map(d => d.data()).sort((a,b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
+            
             msgs.forEach(m => {
                 const isMe = m.sender === DRIVER.name;
-                container.innerHTML += `<div class="msg-bubble ${isMe?'msg-out':'msg-in'}">${!isMe ? `<div class="text-[10px] font-bold text-orange-600 mb-1">${m.sender}</div>` : ''}${m.text}</div>`;
+                container.innerHTML += `
+                <div class="msg-bubble ${isMe?'msg-out':'msg-in'}">
+                    ${!isMe ? `<div class="text-[10px] font-bold text-orange-600 mb-1">${m.sender}</div>` : ''}
+                    ${m.text}
+                </div>`;
             });
             container.scrollTop = container.scrollHeight;
-            if(document.getElementById('view-chat').style.display === 'none' && !snap.empty) {
-                document.getElementById('chat-badge').style.display = 'block';
+            
+            // בדיקת הודעה חדשה
+            if (!snap.empty) {
+                const lastMsg = msgs[msgs.length-1];
+                // אם ההודעה האחרונה היא לא ממני, והחלון סגור -> התראה
+                if (lastMsg && lastMsg.sender !== DRIVER.name) {
+                    if (document.getElementById('view-chat').style.display === 'none') {
+                        document.getElementById('chat-badge').style.display = 'block';
+                        try { msgAudio.play(); } catch(e){}
+                    }
+                }
             }
         });
 
         window.sendMessage = async () => {
-            stopAlert();
             const input = document.getElementById('msg-input');
             const txt = input.value.trim();
             if(!txt) return;
             input.value = '';
-            await addDoc(collection(db, `chats/${chatId}/messages`), { text: txt, sender: DRIVER.name, timestamp: serverTimestamp() });
+            
+            await addDoc(collection(db, `chats/${chatId}/messages`), { 
+                text: txt, 
+                sender: DRIVER.name, 
+                timestamp: serverTimestamp() 
+            });
         };
 
         // --- GPS ---
