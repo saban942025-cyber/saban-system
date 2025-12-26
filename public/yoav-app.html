@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Saban Dispatch | יואב</title>
-    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
     
-    <meta name="theme-color" content="#374151">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#374151">
+    
     <link rel="manifest" href="manifest-yoav.json">
     <link rel="apple-touch-icon" href="https://ui-avatars.com/api/?name=Yoav&background=374151&color=fff&size=180">
 
@@ -21,7 +21,6 @@
         .sidebar { width: 250px; background: white; border-left: 1px solid #e2e8f0; display: flex; flex-direction: column; padding: 20px; box-shadow: 2px 0 10px rgba(0,0,0,0.05); z-index: 20; }
         .main-area { flex: 1; padding: 20px; overflow-y: auto; background: #f1f5f9; display: flex; flex-direction: column; }
         
-        /* Cards */
         .dispatch-card { background: white; border-radius: 8px; padding: 15px; margin-bottom: 12px; border: 1px solid #e2e8f0; border-right: 5px solid #cbd5e1; box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: 0.2s; position: relative; }
         .dispatch-card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
         
@@ -36,8 +35,7 @@
 
         .driver-row { display: flex; align-items: center; justify-content: space-between; padding: 10px; border-radius: 8px; margin-bottom: 5px; cursor: pointer; transition: 0.2s; }
         .driver-row:hover { background: #f8fafc; }
-        .driver-row.active-driver { background: #eff6ff; border: 1px solid #3b82f6; } /* Driver Selection Style */
-        
+        .driver-row.active-driver { background: #eff6ff; border: 1px solid #3b82f6; }
         .driver-status { width: 8px; height: 8px; border-radius: 50%; }
         
         .filters { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
@@ -98,7 +96,7 @@
 
         // STATE
         let currentFilter = 'all';
-        let currentDriverFilter = null; // For filtering by driver
+        let currentDriverFilter = null;
         let ordersData = [];
 
         // 1. DRIVERS LISTENER
@@ -108,7 +106,6 @@
             
             snap.forEach(d => {
                 const u = d.data();
-                // בודק אם הנהג הזה נבחר כרגע בסינון
                 const activeClass = currentDriverFilter === u.name ? 'active-driver' : '';
                 
                 list.innerHTML += `
@@ -133,10 +130,7 @@
             grid.innerHTML = '';
             
             const filtered = ordersData.filter(o => {
-                // 1. Driver Filter (אם נבחר נהג בצד)
                 if (currentDriverFilter && o.driverId !== currentDriverFilter) return false;
-
-                // 2. Status Filter (טאבים למעלה)
                 if (o.status === 'done' && currentFilter !== 'all') return false; 
                 if (currentFilter === 'all') return o.status !== 'done';
                 if (currentFilter === 'urgent') return o.taskType === 'urgent';
@@ -161,18 +155,13 @@
                             <button onclick="deleteOrder('${o.id}')" class="text-gray-400 hover:text-red-500"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>
-                    
                     <div class="font-bold text-lg text-gray-800 mb-1">${o.clientName}</div>
                     <div class="text-sm text-gray-600 mb-3 line-clamp-2">${o.text || 'אין פירוט'}</div>
-                    
                     <div class="flex items-center gap-2 text-xs bg-gray-50 p-2 rounded mb-3">
-                        <i class="fas fa-truck text-gray-400"></i>
-                        <span class="font-bold">${o.driverId}</span>
+                        <i class="fas fa-truck text-gray-400"></i><span class="font-bold">${o.driverId}</span>
                         <i class="fas fa-arrow-left text-gray-300 mx-1"></i>
-                        <i class="fas fa-warehouse text-gray-400"></i>
-                        <span>${o.pickupBranch === 'harash' ? 'החרש' : (o.pickupBranch==='main'?'התלמיד':'ספק')}</span>
+                        <i class="fas fa-warehouse text-gray-400"></i><span>${o.pickupBranch === 'harash' ? 'החרש' : (o.pickupBranch==='main'?'התלמיד':'ספק')}</span>
                     </div>
-
                     <div class="flex justify-between items-center mt-2">
                         <span class="text-xs px-2 py-1 rounded bg-gray-200 font-bold">${getStatusText(o.status)}</span>
                         <span class="text-[10px] text-gray-400">${new Date(o.createdAt?.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span>
@@ -181,12 +170,11 @@
             });
         }
 
-        // --- GLOBAL ACTIONS (Attached to Window) ---
-        
-        // סינון לפי נהג (לחיצה על השורה בצד)
+        // --- GLOBAL ACTIONS (התיקון: חשיפת הפונקציות ל-window) ---
+
         window.filterByDriver = (name) => {
             if (currentDriverFilter === name) {
-                currentDriverFilter = null; // ביטול סינון
+                currentDriverFilter = null;
                 document.querySelectorAll('.driver-row').forEach(e => e.classList.remove('active-driver'));
             } else {
                 currentDriverFilter = name;
@@ -197,41 +185,17 @@
             renderOrders();
         };
 
-        // עריכת הזמנה (הפונקציה שהייתה חסרה!)
         window.editOrder = (id) => {
             const order = ordersData.find(o => o.id === id);
             if (!order) return;
-
             Swal.fire({
                 title: 'עריכת משימה',
-                html: `
-                    <div class="text-right space-y-3">
-                        <label class="text-xs text-gray-500 font-bold">פירוט</label>
-                        <textarea id="e-text" class="swal2-textarea w-full mx-0">${order.text}</textarea>
-                        <label class="text-xs text-gray-500 font-bold">סטטוס</label>
-                        <select id="e-status" class="swal2-input w-full mx-0">
-                            <option value="assigned" ${order.status==='assigned'?'selected':''}>ממתין</option>
-                            <option value="picking" ${order.status==='picking'?'selected':''}>בליקוט</option>
-                            <option value="en_route" ${order.status==='en_route'?'selected':''}>בדרך</option>
-                            <option value="done" ${order.status==='done'?'selected':''}>הושלם</option>
-                        </select>
-                    </div>
-                `,
-                confirmButtonText: 'שמור שינויים',
-                showCancelButton: true,
-                preConfirm: () => {
-                    return {
-                        text: document.getElementById('e-text').value,
-                        status: document.getElementById('e-status').value
-                    }
-                }
+                html: `<div class="text-right space-y-3"><label class="text-xs text-gray-500 font-bold">פירוט</label><textarea id="e-text" class="swal2-textarea w-full mx-0">${order.text}</textarea><label class="text-xs text-gray-500 font-bold">סטטוס</label><select id="e-status" class="swal2-input w-full mx-0"><option value="assigned" ${order.status==='assigned'?'selected':''}>ממתין</option><option value="picking" ${order.status==='picking'?'selected':''}>בליקוט</option><option value="en_route" ${order.status==='en_route'?'selected':''}>בדרך</option><option value="done" ${order.status==='done'?'selected':''}>הושלם</option></select></div>`,
+                confirmButtonText: 'שמור', showCancelButton: true,
+                preConfirm: () => { return { text: document.getElementById('e-text').value, status: document.getElementById('e-status').value } }
             }).then(async (result) => {
                 if(result.isConfirmed) {
-                    await updateDoc(doc(db, "orders", id), {
-                        text: result.value.text,
-                        status: result.value.status,
-                        lastUpdate: serverTimestamp()
-                    });
+                    await updateDoc(doc(db, "orders", id), { text: result.value.text, status: result.value.status, lastUpdate: serverTimestamp() });
                     Swal.fire('עודכן', '', 'success');
                 }
             });
@@ -240,48 +204,14 @@
         window.openNewOrderModal = () => {
             Swal.fire({
                 title: 'משימה חדשה',
-                html: `
-                    <div class="text-right space-y-3">
-                        <input id="n-client" class="swal2-input w-full mx-0" placeholder="שם הלקוח">
-                        <div class="flex gap-2">
-                            <select id="n-driver" class="swal2-input w-full mx-0 text-sm">
-                                <option value="" disabled selected>בחר נהג...</option>
-                                <option value="חכמת">חכמת</option>
-                                <option value="עלי">עלי (מנוף)</option>
-                            </select>
-                            <select id="n-branch" class="swal2-input w-full mx-0 text-sm bg-blue-50">
-                                <option value="harash">החרש</option>
-                                <option value="main">התלמיד</option>
-                                <option value="supplier">ספק</option>
-                            </select>
-                        </div>
-                        <select id="n-type" class="swal2-input w-full mx-0 text-sm"><option value="client">רגיל</option><option value="urgent">🔥 דחוף</option></select>
-                        <textarea id="n-text" class="swal2-textarea w-full mx-0" placeholder="פירוט סחורה..."></textarea>
-                        <input id="n-addr" class="swal2-input w-full mx-0" placeholder="כתובת (Waze)">
-                    </div>
-                `,
-                confirmButtonText: 'צור משימה',
-                showCancelButton: true,
-                preConfirm: () => {
-                    return {
-                        client: document.getElementById('n-client').value,
-                        driver: document.getElementById('n-driver').value,
-                        branch: document.getElementById('n-branch').value,
-                        type: document.getElementById('n-type').value,
-                        text: document.getElementById('n-text').value,
-                        addr: document.getElementById('n-addr').value
-                    }
-                }
+                html: `<div class="text-right space-y-3"><input id="n-client" class="swal2-input w-full mx-0" placeholder="שם הלקוח"><div class="flex gap-2"><select id="n-driver" class="swal2-input w-full mx-0 text-sm"><option value="" disabled selected>בחר נהג...</option><option value="חכמת">חכמת</option><option value="עלי">עלי (מנוף)</option></select><select id="n-branch" class="swal2-input w-full mx-0 text-sm bg-blue-50"><option value="harash">החרש</option><option value="main">התלמיד</option><option value="supplier">ספק</option></select></div><select id="n-type" class="swal2-input w-full mx-0 text-sm"><option value="client">רגיל</option><option value="urgent">🔥 דחוף</option></select><textarea id="n-text" class="swal2-textarea w-full mx-0" placeholder="פירוט סחורה..."></textarea><input id="n-addr" class="swal2-input w-full mx-0" placeholder="כתובת (Waze)"></div>`,
+                confirmButtonText: 'צור משימה', showCancelButton: true,
+                preConfirm: () => { return { client: document.getElementById('n-client').value, driver: document.getElementById('n-driver').value, branch: document.getElementById('n-branch').value, type: document.getElementById('n-type').value, text: document.getElementById('n-text').value, addr: document.getElementById('n-addr').value } }
             }).then(async res => {
                 if(res.isConfirmed) {
                     const d = res.value;
                     if(!d.client || !d.driver) return Swal.fire('חסרים פרטים', '', 'error');
-                    
-                    await addDoc(collection(db, "orders"), {
-                        clientName: d.client, driverId: d.driver, pickupBranch: d.branch, taskType: d.type, text: d.text, address: d.addr,
-                        status: 'assigned', createdAt: serverTimestamp(), lastUpdate: serverTimestamp()
-                    });
-                    
+                    await addDoc(collection(db, "orders"), { clientName: d.client, driverId: d.driver, pickupBranch: d.branch, taskType: d.type, text: d.text, address: d.addr, status: 'assigned', createdAt: serverTimestamp(), lastUpdate: serverTimestamp() });
                     Swal.fire('נוצר בהצלחה', '', 'success');
                 }
             });
@@ -300,10 +230,7 @@
             renderOrders();
         };
 
-        function getStatusText(s) {
-            const map = { 'assigned': 'ממתין לביצוע', 'picking': 'בליקוט בחצר', 'en_route': 'יצא ללקוח', 'arrived': 'בפריקה', 'done': 'הושלם' };
-            return map[s] || s;
-        }
+        function getStatusText(s) { const map = { 'assigned': 'ממתין לביצוע', 'picking': 'בליקוט בחצר', 'en_route': 'יצא ללקוח', 'arrived': 'בפריקה', 'done': 'הושלם' }; return map[s] || s; }
     </script>
 </body>
 </html>
