@@ -45,6 +45,10 @@
         .btn-task { width: 100%; background: #f8fafc; border: 1px dashed #cbd5e1; color: #475569; padding: 8px; border-radius: 10px; font-weight: bold; font-size: 13px; margin-top: 10px; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
         .btn-task:hover { background: #eff6ff; border-color: #3b82f6; color: #1d4ed8; }
 
+        /* Itzik App Button */
+        .btn-app-connect { width: 100%; background: linear-gradient(135deg, #f97316 0%, #c2410c 100%); color: white; padding: 8px; border-radius: 10px; font-weight: bold; font-size: 13px; margin-top: 10px; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; box-shadow: 0 4px 6px rgba(249, 115, 22, 0.2); }
+        .btn-app-connect:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(249, 115, 22, 0.3); }
+
         .comm-row { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
         .comm-btn { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; transition: 0.2s; }
         .comm-outlook { background: #e0f2fe; color: #0369a1; }
@@ -118,11 +122,50 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, updateDoc, doc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, updateDoc, doc, deleteDoc, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
-        // --- RENDER LOGIC ---
+        // --- 1. SEED DATA (הרשימה המלאה והמתוקנת) ---
+        const FULL_STAFF_LIST = [
+            { name: "הראל אידלסון", role: "מנכ\"ל", phone: "0505227724", email: "harel@saban94.co.il", branch: "main", type: "admin", avatar: "https://media-mrs2-2.cdn.whatsapp.net/v/t61.24694-24/425943135_310910548378865_3167279294851460849_n.jpg?stp=dst-jpg_s96x96_tt6&ccb=11-4&oh=01_Q5Aa3QHD690LByBt92z_IAsCKeUxC5rxY0qUddugkDzSkBSqUA&oe=695B03CF&_nc_sid=5e03e0&_nc_cat=104" },
+            { name: "ראמי מסארוה", role: "מנהל תפעול (Admin)", phone: "0508860896", email: "ramims@saban94.co.il", branch: "main", type: "admin", avatar: "https://media-mrs2-2.cdn.whatsapp.net/v/t61.24694-24/490584763_1521666505466352_3860845398977059833_n.jpg?stp=dst-jpg_s96x96_tt6&ccb=11-4&oh=01_Q5Aa3QEGGv9ElRRb2Qx1Adjclex0ahijeyYdc8W8wmVuCZ6L2A&oe=695B04A6&_nc_sid=5e03e0&_nc_cat=104" },
+            { name: "יואב", role: "מנהל סידור", phone: "0507855865", email: "yoav@saban94.co.il", branch: "main", type: "admin" },
+            { name: "ורד", role: "מנהלת משרד/שכר", phone: "0506662300", email: "vered@saban94.co.il", branch: "main", type: "office" },
+            { name: "לינה", role: "הנה\"ח לקוחות", phone: "0507855869", email: "lina@saban94.co.il", branch: "main", type: "office" },
+            { name: "שרון", role: "הנה\"ח ספקים", phone: "", email: "sharon@saban94.co.il", branch: "main", type: "office" },
+            { name: "נתנאל", role: "מנהל רכש", phone: "0548132442", email: "netanel@saban94.co.il", branch: "main", type: "manager" },
+            { name: "רמי (דלפק)", role: "מכירות דלפק", phone: "0543071181", email: "", branch: "main", type: "staff" },
+            { name: "אשר סבן", role: "מכירות", phone: "0546569115", email: "", branch: "main", type: "staff" },
+            { name: "שמעון וקנין", role: "מכירות", phone: "0547644425", email: "", branch: "main", type: "staff" },
+            { name: "חנן", role: "מכירות", phone: "", email: "", branch: "main", type: "staff" },
+            { name: "תמיר", role: "מנהל חצר התלמיד", phone: "0523002828", email: "", branch: "main", type: "field" },
+            
+            // הכרטיס של איציק
+            { name: "איציק זהבי", role: "מנהל סניף החרש", phone: "0504482285", email: "itzik@saban94.co.il", branch: "harash", type: "manager", avatar: "https://media-mrs2-2.cdn.whatsapp.net/v/t61.24694-24/138846705_247951546693089_6505800604178808158_n.jpg?stp=dst-jpg_s96x96_tt6&ccb=11-4&oh=01_Q5Aa3QE_Teyw4quA6Pany4Hj8a0LOLkFxWWSd7r__aOsnJSAug&oe=695B1F10&_nc_sid=5e03e0&_nc_cat=105" },
+            { name: "גליה", role: "פקידת החרש", phone: "", email: "galya@saban94.co.il", branch: "harash", type: "office" },
+            { name: "אורן", role: "מנהל חצר החרש", phone: "0509001392", email: "", branch: "harash", type: "field" },
+            { name: "שי", role: "דלפק/ליקוט", phone: "", email: "", branch: "harash", type: "field" },
+            { name: "עלי", role: "נהג מנוף", phone: "", email: "", branch: "logistics", type: "driver" },
+            { name: "חכמת", role: "נהג משאית", phone: "", email: "", branch: "logistics", type: "driver" }
+        ];
+
+        // Seed Logic
+        async function syncStaffDatabase() {
+            const snap = await getDocs(collection(db, "users"));
+            if (snap.size < FULL_STAFF_LIST.length) {
+                const existingNames = new Set();
+                snap.forEach(d => existingNames.add(d.data().name));
+                for (const staff of FULL_STAFF_LIST) {
+                    if (!existingNames.has(staff.name)) {
+                        await addDoc(collection(db, "users"), { ...staff, permissions: 'view', active: true, createdAt: new Date() });
+                    }
+                }
+            }
+        }
+        syncStaffDatabase();
+
+        // --- 2. RENDER LOGIC ---
         onSnapshot(query(collection(db, "users"), orderBy("name")), (snap) => {
             const grid = document.getElementById('staff-grid');
             const tableBody = document.getElementById('clients-table-body');
@@ -170,6 +213,16 @@
                     const teamsLink = p.email ? `https://teams.microsoft.com/l/chat/0/0?users=${p.email}` : null;
                     const waLink = p.phone ? `https://wa.me/972${p.phone?.replace(/^0/,'')}` : null;
 
+                    // --- THE SPECIAL BUTTON FOR ITZIK ---
+                    let appButtonHtml = '';
+                    if (p.branch === 'harash' && p.type === 'manager') {
+                        appButtonHtml = `
+                        <button onclick="window.open('itzik-app.html', '_blank')" 
+                                class="btn-app-connect">
+                            <i class="fas fa-mobile-alt"></i> כניסה לאפליקציית מנהל
+                        </button>`;
+                    }
+
                     grid.innerHTML += `
                     <div class="staff-card item-row" data-name="${p.name}">
                         <div class="branch-strip ${stripClass}"></div>
@@ -180,11 +233,15 @@
                             </div>
                             <div class="user-name">${p.name}</div>
                             <div class="user-role">${p.role}</div>
-                            <div class="text-xs text-gray-500 mt-2 flex flex-col gap-1 items-center">
+                            <div class="text-xs text-gray-500 mt-2 flex flex-col gap-1 items-center mb-2">
                                 <span><i class="fas fa-building text-gray-300"></i> ${getBranchName(p.branch)}</span>
                                 <span><i class="fas fa-phone text-gray-300"></i> ${p.phone || '-'}</span>
                             </div>
-                            <button onclick="openTaskModal('${p.id}', '${p.name}', '${p.phone}')" class="btn-task"><i class="fas fa-tasks"></i> שגר משימה</button>
+                            
+                            ${appButtonHtml}
+
+                            ${!appButtonHtml ? `<button onclick="openTaskModal('${p.id}', '${p.name}', '${p.phone}')" class="btn-task"><i class="fas fa-tasks"></i> שגר משימה</button>` : ''}
+                            
                             <div class="comm-row">
                                 ${outlookLink ? `<a href="${outlookLink}" class="comm-btn comm-outlook"><i class="fas fa-envelope"></i></a>` : ''}
                                 ${teamsLink ? `<a href="${teamsLink}" class="comm-btn comm-teams"><i class="fas fa-video"></i></a>` : ''}
@@ -226,7 +283,8 @@
                                     <option value="staff" ${user?.type==='staff'?'selected':''}>עובד</option>
                                     <option value="client" ${user?.type==='client'?'selected':''}>לקוח/ספק</option>
                                     <option value="driver" ${user?.type==='driver'?'selected':''}>נהג</option>
-                                    <option value="admin" ${user?.type==='admin'?'selected':''}>מנהל</option>
+                                    <option value="manager" ${user?.type==='manager'?'selected':''}>מנהל</option>
+                                    <option value="admin" ${user?.type==='admin'?'selected':''}>מנהל מערכת</option>
                                 </select>
                             </div>
                         </div>
@@ -315,12 +373,10 @@
                     const task = result.value;
                     if(!task.desc) return;
                     
-                    // Save
                     await addDoc(collection(db, "tasks"), {
                         assignedTo: uid, assignedToName: name, description: task.desc, priority: task.prio, status: 'pending', createdAt: serverTimestamp()
                     });
 
-                    // WhatsApp
                     const waText = `*🛑 משימה חדשה מאת הנהלת סבן*\n------------------------\nעבור: ${name}\nדחיפות: ${task.prio}\n\n📝 *המשימה:* ${task.desc}\n\nנא לאשר ביצוע בהקדם.`;
                     window.open(`https://wa.me/972${phone.replace(/^0/,'')}?text=${encodeURIComponent(waText)}`, '_blank');
                 }
