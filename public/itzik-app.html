@@ -3,173 +3,296 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>סניף החרש | איציק זהבי</title>
+    <title>Saban Manager | איציק זהבי</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <style>
-        body { background: #f8fafc; font-family: 'Segoe UI', system-ui, sans-serif; padding-bottom: 80px; }
+        body { background: #f1f5f9; font-family: 'Segoe UI', system-ui, sans-serif; padding-bottom: 90px; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
         
+        /* Desktop/Mobile Layout Handling */
+        .app-container { display: flex; height: 100%; max-width: 1600px; margin: 0 auto; width: 100%; }
+        .sidebar-menu { width: 80px; background: white; border-left: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: center; padding-top: 20px; display: none; } /* Desktop Only */
+        .main-view { flex: 1; overflow-y: auto; position: relative; background: #f8fafc; }
+
         /* Header */
-        .header-bg { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); height: 160px; border-radius: 0 0 30px 30px; position: relative; padding: 20px; color: white; box-shadow: 0 4px 20px rgba(249, 115, 22, 0.3); }
-        .profile-section { position: absolute; bottom: -30px; left: 0; right: 0; text-align: center; }
-        .profile-img { width: 80px; height: 80px; border-radius: 50%; border: 4px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: inline-block; object-fit: cover; background: white; }
+        .hero-header { background: linear-gradient(135deg, #f97316 0%, #c2410c 100%); padding: 25px; border-radius: 0 0 30px 30px; color: white; position: relative; box-shadow: 0 10px 30px rgba(249, 115, 22, 0.3); }
+        .user-avatar { width: 70px; height: 70px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.8); position: absolute; bottom: -35px; left: 20px; background: white; object-fit: cover; }
         
-        /* Quick Actions Grid */
-        .action-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; padding: 50px 20px 20px 20px; }
-        .action-card { background: white; border-radius: 16px; padding: 20px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; transition: 0.2s; cursor: pointer; }
-        .action-card:active { transform: scale(0.95); background: #fff7ed; }
-        .icon-box { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 10px; }
+        /* Action Buttons (Big & Bold) */
+        .grid-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; padding: 50px 20px 20px 20px; }
+        @media (min-width: 768px) { 
+            .grid-actions { grid-template-columns: repeat(4, 1fr); padding-top: 20px; } 
+            .sidebar-menu { display: flex; }
+            .hero-header { border-radius: 0; padding-bottom: 20px; margin-bottom: 20px; }
+            .user-avatar { position: static; margin-right: 20px; }
+            .mobile-nav { display: none !important; }
+        }
+
+        .action-btn { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border: 1px solid #e2e8f0; transition: 0.2s; position: relative; overflow: hidden; }
+        .action-btn:active { transform: scale(0.95); }
+        .action-btn:hover { border-color: #f97316; box-shadow: 0 10px 15px rgba(249, 115, 22, 0.1); }
+        .icon-circle { width: 50px; height: 50px; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 10px; }
         
-        /* Request List */
-        .list-header { display: flex; justify-content: space-between; align-items: center; padding: 0 25px; margin-top: 10px; }
-        .req-item { background: white; margin: 10px 20px; padding: 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border-right: 4px solid #cbd5e1; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .req-pending { border-right-color: #f59e0b; }
-        .req-approved { border-right-color: #22c55e; }
+        /* Chat Drawer */
+        .chat-drawer { position: fixed; inset: 0; background: white; z-index: 50; transform: translateY(100%); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; }
+        .chat-drawer.open { transform: translateY(0); }
         
-        /* Staff Bar */
-        .staff-scroll { display: flex; gap: 10px; overflow-x: auto; padding: 10px 20px; scrollbar-width: none; }
-        .staff-chip { background: white; padding: 5px 12px; border-radius: 20px; border: 1px solid #e2e8f0; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
-        .dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; }
+        /* Notifications */
+        .badge { position: absolute; top: 10px; right: 10px; background: #ef4444; color: white; width: 20px; height: 20px; border-radius: 50%; font-size: 10px; display: flex; align-items: center; justify-content: center; font-weight: bold; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+
+        /* Mobile Nav */
+        .mobile-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-around; padding: 12px 0; z-index: 40; padding-bottom: env(safe-area-inset-bottom); }
+        .nav-item { text-align: center; color: #94a3b8; font-size: 10px; font-weight: bold; }
+        .nav-item.active { color: #f97316; }
+        .nav-item i { font-size: 20px; margin-bottom: 2px; display: block; }
 
     </style>
 </head>
 <body>
 
-    <div class="header-bg">
-        <div class="flex justify-between items-start">
-            <div>
-                <div class="text-sm opacity-80">שלום, מנהל סניף</div>
-                <div class="text-2xl font-bold">איציק זהבי</div>
+    <div class="app-container">
+        <div class="sidebar-menu">
+            <div class="mb-6 text-orange-600 text-2xl font-bold"><i class="fas fa-layer-group"></i></div>
+            <div class="p-3 bg-orange-100 text-orange-600 rounded-xl mb-4 cursor-pointer"><i class="fas fa-home"></i></div>
+            <div class="p-3 text-gray-400 hover:bg-gray-100 rounded-xl cursor-pointer" onclick="toggleChat()"><i class="fas fa-comments"></i></div>
+        </div>
+
+        <div class="main-view">
+            <div class="hero-header flex items-center justify-between">
+                <div class="flex items-center">
+                    <img src="https://media-mrs2-2.cdn.whatsapp.net/v/t61.24694-24/138846705_247951546693089_6505800604178808158_n.jpg?stp=dst-jpg_s96x96_tt6&ccb=11-4&oh=01_Q5Aa3QE_Teyw4quA6Pany4Hj8a0LOLkFxWWSd7r__aOsnJSAug&oe=695B1F10&_nc_sid=5e03e0&_nc_cat=105" class="user-avatar shadow-lg">
+                    <div class="mr-4 md:mr-0">
+                        <div class="text-orange-100 text-sm font-bold">מנהל סניף החרש</div>
+                        <h1 class="text-3xl font-black">איציק זהבי</h1>
+                    </div>
+                </div>
+                <button onclick="toggleChat()" class="relative bg-white/20 p-3 rounded-full backdrop-blur-md hover:bg-white/30 transition">
+                    <i class="fas fa-bell text-xl"></i>
+                    <div id="notif-badge" class="badge hidden">1</div>
+                </button>
             </div>
-            <div class="bg-white/20 p-2 rounded-lg backdrop-blur-sm cursor-pointer" onclick="window.location.reload()">
-                <i class="fas fa-sync-alt"></i>
+
+            <div class="px-5 pt-12 md:pt-5">
+                <h2 class="text-lg font-bold text-slate-700 mb-4 border-r-4 border-orange-500 pr-3">פעולות מהירות</h2>
+                <div class="grid-actions">
+                    
+                    <button class="action-btn" onclick="createAction('transport')">
+                        <div class="icon-box bg-blue-50 text-blue-600 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-2 text-xl">
+                            <i class="fas fa-truck-moving"></i>
+                        </div>
+                        <div class="font-bold text-slate-800">הזמנת הובלה</div>
+                        <div class="text-xs text-gray-400 mt-1">בקשה מראמי/יואב</div>
+                    </button>
+
+                    <button class="action-btn" onclick="openAddUserModal()">
+                        <div class="icon-box bg-green-50 text-green-600 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-2 text-xl">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <div class="font-bold text-slate-800">הוסף לקוח/נציג</div>
+                        <div class="text-xs text-gray-400 mt-1">יצירת לינק וגישה</div>
+                    </button>
+
+                    <button class="action-btn" onclick="toggleChat()">
+                        <div class="badge">3</div>
+                        <div class="icon-box bg-purple-50 text-purple-600 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-2 text-xl">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <div class="font-bold text-slate-800">חדר הנהלה</div>
+                        <div class="text-xs text-gray-400 mt-1">פרטי מול הראל</div>
+                    </button>
+
+                    <button class="action-btn" onclick="createAction('transfer')">
+                        <div class="icon-box bg-orange-50 text-orange-600 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-2 text-xl">
+                            <i class="fas fa-exchange-alt"></i>
+                        </div>
+                        <div class="font-bold text-slate-800">משיכה מהתלמיד</div>
+                        <div class="text-xs text-gray-400 mt-1">השלמת מלאי</div>
+                    </button>
+                </div>
             </div>
+
+            <div class="px-5 mt-4">
+                <h2 class="text-lg font-bold text-slate-700 mb-4 border-r-4 border-green-500 pr-3">סטטוס בזמן אמת</h2>
+                <div id="live-feed" class="space-y-3 pb-20">
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <nav class="mobile-nav md:hidden">
+        <div class="nav-item active"><i class="fas fa-home"></i> ראשי</div>
+        <div class="nav-item" onclick="openAddUserModal()"><i class="fas fa-users"></i> צוות</div>
+        <div class="nav-item" onclick="toggleChat()">
+            <div class="relative inline-block">
+                <i class="fas fa-comment-dots"></i>
+                <span class="absolute -top-1 -right-1 bg-red-500 w-2 h-2 rounded-full"></span>
+            </div>
+            הודעות
+        </div>
+        <div class="nav-item"><i class="fas fa-bars"></i> עוד</div>
+    </nav>
+
+    <div id="chat-drawer" class="chat-drawer">
+        <div class="bg-slate-800 text-white p-4 flex justify-between items-center shadow-md">
+            <div class="flex items-center gap-3">
+                <div class="relative">
+                    <img src="https://ui-avatars.com/api/?name=Harel&background=random" class="w-10 h-10 rounded-full border-2 border-green-400">
+                    <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border border-white rounded-full"></div>
+                </div>
+                <div>
+                    <h3 class="font-bold">הראל (מנכ"ל)</h3>
+                    <div class="text-xs text-slate-300">מחובר כעת • מקליד...</div>
+                </div>
+            </div>
+            <button onclick="toggleChat()"><i class="fas fa-times text-xl"></i></button>
         </div>
         
-        <div class="profile-section">
-            <img src="https://media-mrs2-2.cdn.whatsapp.net/v/t61.24694-24/138846705_247951546693089_6505800604178808158_n.jpg?stp=dst-jpg_s96x96_tt6&ccb=11-4&oh=01_Q5Aa3QE_Teyw4quA6Pany4Hj8a0LOLkFxWWSd7r__aOsnJSAug&oe=695B1F10&_nc_sid=5e03e0&_nc_cat=105" class="profile-img">
-        </div>
-    </div>
-
-    <div class="action-grid">
-        <div class="action-card" onclick="openRequestModal('transport')">
-            <div class="icon-box bg-blue-50 text-blue-600"><i class="fas fa-truck-moving"></i></div>
-            <div class="font-bold text-slate-700">הזמן הובלה ללקוח</div>
-            <div class="text-xs text-gray-400">בקש מראמי נהג</div>
-        </div>
-
-        <div class="action-card" onclick="openRequestModal('transfer')">
-            <div class="icon-box bg-purple-50 text-purple-600"><i class="fas fa-exchange-alt"></i></div>
-            <div class="font-bold text-slate-700">העברה מהסניף</div>
-            <div class="text-xs text-gray-400">משוך סחורה מהתלמיד</div>
+        <div class="flex-1 bg-[#efeae2] p-4 overflow-y-auto flex flex-col gap-3" id="chat-msgs">
+            <div class="self-start bg-white p-3 rounded-tr-xl rounded-br-xl rounded-bl-xl shadow-sm max-w-[80%]">
+                <span class="text-xs font-bold text-orange-600 block mb-1">הראל</span>
+                איציק בוקר טוב, תעדכן אותי לגבי הלקוח מאתמול
+                <span class="text-[10px] text-gray-400 block text-left mt-1">08:30</span>
+            </div>
+            <div class="self-end bg-[#d9fdd3] p-3 rounded-tl-xl rounded-br-xl rounded-bl-xl shadow-sm max-w-[80%]">
+                טופל, יצא אליו עלי עם המשאית.
+                <span class="text-[10px] text-gray-400 block text-left mt-1">08:32 <i class="fas fa-check-double text-blue-500"></i></span>
+            </div>
         </div>
 
-        <div class="action-card" onclick="openRequestModal('supplier')">
-            <div class="icon-box bg-orange-50 text-orange-600"><i class="fas fa-box-open"></i></div>
-            <div class="font-bold text-slate-700">איסוף מספק</div>
-            <div class="text-xs text-gray-400">בקשה מול נתנאל/רכש</div>
+        <div class="p-3 bg-gray-100 flex items-center gap-2">
+            <input class="flex-1 p-3 rounded-xl border-none outline-none" placeholder="הקלד הודעה להראל...">
+            <button class="bg-green-600 text-white w-12 h-12 rounded-full shadow-lg"><i class="fas fa-paper-plane"></i></button>
         </div>
-
-        <div class="action-card" onclick="alert('מודול גבייה בבנייה')">
-            <div class="icon-box bg-green-50 text-green-600"><i class="fas fa-file-invoice-dollar"></i></div>
-            <div class="font-bold text-slate-700">גבייה / חשבונית</div>
-            <div class="text-xs text-gray-400">מול גליה/הראל</div>
-        </div>
-    </div>
-
-    <div class="px-5 text-xs font-bold text-gray-400 mb-2">צוות החרש (מחוברים)</div>
-    <div class="staff-scroll">
-        <div class="staff-chip"><div class="dot"></div> גליה</div>
-        <div class="staff-chip"><div class="dot"></div> אורן (חצר)</div>
-        <div class="staff-chip"><div class="dot"></div> שי (דלפק)</div>
-        <div class="staff-chip border-dashed text-gray-400"><div class="dot bg-gray-300"></div> אליהו (לא מחובר)</div>
-    </div>
-
-    <div class="list-header">
-        <h3 class="font-bold text-lg text-slate-800">בקשות פתוחות</h3>
-        <span class="text-xs bg-gray-200 px-2 py-1 rounded-full text-gray-600" id="req-count">0</span>
-    </div>
-    
-    <div id="requests-list" class="pb-10">
-        <div class="text-center text-gray-400 mt-10 text-sm">אין בקשות פתוחות כרגע</div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, where, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // Config
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
         
-        // --- 1. Request Logic ---
-        window.openRequestModal = (type) => {
-            let title = '', placeholder = '';
-            
-            if(type === 'transport') { title = 'הזמנת משאית ללקוח'; placeholder = 'עבור מי? לאן? מה הסחורה?'; }
-            if(type === 'transfer') { title = 'משיכת סחורה (מהתלמיד)'; placeholder = 'איזה פריטים חסרים? דחיפות?'; }
-            if(type === 'supplier') { title = 'בקשת איסוף מספק'; placeholder = 'איזה ספק? מה להביא?'; }
+        const CURRENT_USER = { name: 'איציק זהבי', role: 'מנהל סניף החרש', uid: '0504482285' };
 
+        // --- 1. THE LOGGER ("המלשינון") REPORTER ---
+        async function logAction(action, details, status='success') {
+            try {
+                await addDoc(collection(db, "system_logs"), {
+                    user: CURRENT_USER.name,
+                    uid: CURRENT_USER.uid,
+                    action: action, // e.g., "Created Order", "Added User"
+                    details: details,
+                    status: status,
+                    timestamp: serverTimestamp(),
+                    device: /Mobi/i.test(navigator.userAgent) ? 'Mobile' : 'Desktop'
+                });
+                console.log("Action Logged to Snitch System");
+            } catch(e) { console.error("Logging failed", e); }
+        }
+
+        // Heartbeat (Online Status)
+        setInterval(() => {
+            // Update "Last Seen" every minute so Rami knows I'm online
+            logAction('heartbeat', 'Online Check', 'active'); 
+        }, 60000);
+        
+        // Login Log
+        logAction('login', 'User entered the app');
+
+        // --- 2. ACTIONS ---
+        window.createAction = (type) => {
             Swal.fire({
-                title: title,
+                title: type === 'transport' ? 'הזמנת הובלה' : 'העברה מסניף',
                 input: 'textarea',
-                inputPlaceholder: placeholder,
-                showCancelButton: true,
-                confirmButtonText: 'שלח לסידור 🚀',
+                inputPlaceholder: 'פרט את הבקשה...',
+                confirmButtonText: 'שלח לטיפול',
                 confirmButtonColor: '#f97316',
-                preConfirm: (text) => {
-                    if(!text) Swal.showValidationMessage('נא לפרט את הבקשה');
-                    return text;
-                }
-            }).then(async (result) => {
-                if(result.isConfirmed) {
-                    // יצירת משימה שקופצת לראמי בדשבורד
+                showCancelButton: true
+            }).then(async (res) => {
+                if(res.isConfirmed) {
                     await addDoc(collection(db, "orders"), {
-                        clientName: `סניף החרש (${type === 'transfer' ? 'העברה' : 'הובלה'})`,
-                        text: result.value,
-                        isTask: true, // זה משימה פנימית
-                        taskType: type === 'transport' ? 'urgent' : 'transfer', // צבע בסידור
+                        clientName: `סניף החרש (${type})`,
+                        text: res.value,
+                        requester: CURRENT_USER.name,
                         status: 'new',
-                        branch: 'harash', // שיוך לסניף
-                        requester: 'איציק זהבי',
-                        lastActive: serverTimestamp(),
                         createdAt: serverTimestamp()
                     });
-
-                    Swal.fire('נשלח!', 'הבקשה עברה לראמי/יואב בסידור', 'success');
+                    
+                    logAction('create_request', `Type: ${type}, Content: ${res.value}`); // LOG IT
+                    Swal.fire('נשלח!', '', 'success');
                 }
             });
         };
 
-        // --- 2. Live List ---
-        // מאזין לבקשות שאיציק פתח
-        const q = query(collection(db, "orders"), where("requester", "==", "איציק זהבי"), where("status", "!=", "done"), orderBy("createdAt", "desc"));
-        
-        onSnapshot(q, (snap) => {
-            const list = document.getElementById('requests-list');
-            document.getElementById('req-count').innerText = snap.size;
-            list.innerHTML = '';
+        // --- 3. ADD USER & MAGIC LINK ---
+        window.openAddUserModal = () => {
+            Swal.fire({
+                title: 'הוסף משתמש לאפליקציה',
+                html: `
+                    <input id="new-name" class="swal2-input" placeholder="שם מלא">
+                    <input id="new-phone" class="swal2-input" placeholder="טלפון">
+                    <select id="new-role" class="swal2-input">
+                        <option value="client">לקוח</option>
+                        <option value="staff">עובד סניף</option>
+                    </select>
+                `,
+                confirmButtonText: 'צור משתמש ולינק',
+                preConfirm: () => {
+                    return {
+                        name: document.getElementById('new-name').value,
+                        phone: document.getElementById('new-phone').value,
+                        role: document.getElementById('new-role').value
+                    }
+                }
+            }).then(async (res) => {
+                if(res.isConfirmed) {
+                    const data = res.value;
+                    // Create Link
+                    const link = `https://saban-system.onrender.com/register.html?ref=${CURRENT_USER.uid}`; // Simplified
+                    
+                    // Log
+                    logAction('add_user', `Added ${data.name} as ${data.role}`);
 
-            if(snap.empty) {
-                list.innerHTML = '<div class="text-center text-gray-400 mt-10 text-sm">הכל נקי, אין בקשות פתוחות.</div>';
-                return;
-            }
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'נוצר!',
+                        html: `
+                            <p>שלח לו את הלינק בווצאף:</p>
+                            <a href="https://wa.me/972${data.phone.replace(/^0/,'')}?text=${encodeURIComponent('היי ' + data.name + ', הנה הלינק לאפליקציה:\n' + link)}" target="_blank" class="block bg-green-500 text-white p-3 rounded-xl mt-3 font-bold">
+                                <i class="fab fa-whatsapp"></i> שלח בווצאף
+                            </a>
+                        `
+                    });
+                }
+            });
+        };
 
+        // --- UI ---
+        window.toggleChat = () => {
+            const d = document.getElementById('chat-drawer');
+            const isOpen = d.classList.contains('open');
+            d.classList.toggle('open');
+            
+            if(!isOpen) logAction('open_chat', 'Opened chat with Harel');
+        };
+
+        // Listen for updates (Feed)
+        onSnapshot(query(collection(db, "orders"), where("requester", "==", CURRENT_USER.name), orderBy("createdAt", "desc")), (snap) => {
+            const feed = document.getElementById('live-feed');
+            feed.innerHTML = '';
             snap.forEach(doc => {
-                const r = doc.data();
-                const statusColor = r.status === 'new' ? 'req-pending' : 'req-approved';
-                const statusText = r.status === 'new' ? 'ממתין לשיבוץ' : (r.driverId ? `בטיפול ע"י ${r.driverId}` : 'בטיפול');
-                
-                list.innerHTML += `
-                <div class="req-item ${statusColor}">
+                const d = doc.data();
+                const statusColor = d.status === 'new' ? 'border-orange-400' : 'border-green-500';
+                feed.innerHTML += `
+                <div class="bg-white p-4 rounded-xl border-r-4 ${statusColor} shadow-sm flex justify-between items-center">
                     <div>
-                        <div class="font-bold text-slate-700 text-sm">${r.clientName}</div>
-                        <div class="text-xs text-gray-500 mt-1">${r.text}</div>
+                        <div class="font-bold text-slate-700">${d.clientName}</div>
+                        <div class="text-xs text-gray-500">${d.text}</div>
                     </div>
-                    <div class="text-center">
-                        <div class="text-[10px] font-bold bg-gray-100 px-2 py-1 rounded mb-1">${statusText}</div>
-                        <div class="text-[10px] text-gray-400">${new Date(r.createdAt.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
-                    </div>
+                    <span class="text-xs font-bold bg-gray-100 px-2 py-1 rounded">${d.status}</span>
                 </div>`;
             });
         });
