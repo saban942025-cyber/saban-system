@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saban Directory | ניהול צוות ובקרה</title>
+    <title>Saban Directory | ניהול ופיקוד</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -134,15 +134,18 @@
 
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
-        // --- 1. SEED DATA ---
+        // --- 1. SEED DATA (מתוקן) ---
         const FULL_STAFF_LIST = [
             { name: "הראל אידלסון", role: "מנכ\"ל", phone: "0505227724", email: "harel@saban94.co.il", branch: "main", type: "admin" },
             { name: "ראמי מסארוה", role: "מנהל תפעול (Admin)", phone: "0508860896", email: "ramims@saban94.co.il", branch: "main", type: "admin" },
             { name: "יואב", role: "מנהל סידור", phone: "0507855865", email: "yoav@saban94.co.il", branch: "main", type: "admin" },
             { name: "נתנאל", role: "מנהל רכש", phone: "0548132442", email: "netanel@saban94.co.il", branch: "main", type: "manager" },
             { name: "איציק זהבי", role: "מנהל סניף החרש", phone: "0504482285", email: "itzik@saban94.co.il", branch: "harash", type: "manager" },
-            { name: "עלי", role: "נהג מנוף", phone: "", email: "", branch: "logistics", type: "driver" },
-            { name: "חכמת", role: "נהג משאית", phone: "", email: "", branch: "logistics", type: "driver" },
+            
+            // נהגים (עם טלפונים ייחודיים שתואמים לצ'אט)
+            { name: "עלי", role: "נהג מנוף", phone: "0500000606", email: "", branch: "logistics", type: "driver" },
+            { name: "חכמת", role: "נהג משאית", phone: "0500000607", email: "", branch: "logistics", type: "driver" },
+            
             { name: "ורד", role: "מנהלת משרד", phone: "0506662300", email: "vered@saban94.co.il", branch: "main", type: "office" },
             { name: "אורן", role: "מנהל חצר החרש", phone: "0509001392", email: "", branch: "harash", type: "field" },
             { name: "שי", role: "דלפק/ליקוט", phone: "", email: "", branch: "harash", type: "field" },
@@ -151,6 +154,7 @@
 
         async function syncStaffDatabase() {
             const snap = await getDocs(collection(db, "users"));
+            // בדיקה שטחית אם צריך להוסיף
             if (snap.size < 5) {
                 const existingNames = new Set();
                 snap.forEach(d => existingNames.add(d.data().name));
@@ -163,9 +167,9 @@
         }
         syncStaffDatabase();
 
-        // --- 2. DRIVER MONITORING (THE POPUP FEATURE) ---
-        // מאזין לשינויים בסטטוס הזמנות בזמן אמת כדי להקפיץ הודעות למנהל
+        // --- 2. DRIVER MONITORING (האוזן המאזינה) ---
         function monitorDriverActivity() {
+            // מאזין למשימה האחרונה שהתעדכנה
             const q = query(collection(db, "orders"), orderBy("lastUpdate", "desc"), limit(1));
             
             onSnapshot(q, (snap) => {
@@ -173,15 +177,15 @@
                     if (change.type === "modified") {
                         const data = change.doc.data();
                         
-                        // בדיקה שהשינוי קרה ממש עכשיו (ב-10 שניות האחרונות) כדי לא להקפיץ סתם
+                        // רק אם העדכון טרי (10 שניות אחרונות)
                         if (data.lastUpdate && (Date.now() - data.lastUpdate.seconds * 1000) < 10000) {
                             
-                            // 1. נהג יצא לדרך
+                            // נהג יצא
                             if (data.status === 'en_route') {
                                 document.getElementById('sound-driver-start').play().catch(()=>{});
                                 Swal.fire({
                                     title: `${data.driverId} יצא לדרך! 🚚`,
-                                    text: `המשימה: ${data.clientName}`,
+                                    text: `לכיוון: ${data.clientName}`,
                                     position: 'top-end',
                                     icon: 'info',
                                     toast: true,
@@ -192,12 +196,12 @@
                                 });
                             }
                             
-                            // 2. נהג הגיע
+                            // נהג הגיע
                             if (data.status === 'arrived') {
                                 document.getElementById('sound-driver-arrive').play().catch(()=>{});
                                 Swal.fire({
                                     title: `${data.driverId} הגיע ליעד 📍`,
-                                    text: `אצל הלקוח: ${data.clientName}`,
+                                    text: `נמצא אצל: ${data.clientName}`,
                                     position: 'top-end',
                                     icon: 'success',
                                     toast: true,
@@ -210,9 +214,9 @@
                 });
             });
         }
-        monitorDriverActivity(); // הפעלת המוניטור
+        monitorDriverActivity();
 
-        // --- 3. RENDER LOGIC ---
+        // --- 3. RENDER UI ---
         onSnapshot(query(collection(db, "users"), orderBy("name")), (snap) => {
             const grid = document.getElementById('staff-grid');
             const tableBody = document.getElementById('clients-table-body');
@@ -260,15 +264,30 @@
                     const teamsLink = p.email ? `https://teams.microsoft.com/l/chat/0/0?users=${p.email}` : null;
                     const waLink = p.phone ? `https://wa.me/972${p.phone?.replace(/^0/,'')}` : null;
 
-                    // SPECIAL BUTTONS
+                    // --- MAGIC BUTTONS LOGIC ---
                     let specialBtn = '';
+                    
+                    // 1. איציק
                     if (p.branch === 'harash' && p.type === 'manager') {
-                        specialBtn = `<button onclick="window.open('itzik-app.html', '_blank')" class="btn-app-manager"><i class="fas fa-store"></i> כניסה לאפליקציית מנהל</button>`;
-                    } else if (p.type === 'driver') {
+                        specialBtn = `
+                        <button onclick="window.open('itzik-app.html', '_blank')" class="btn-app-manager">
+                            <i class="fas fa-store"></i> כניסה לאפליקציית מנהל
+                        </button>`;
+                    } 
+                    // 2. נהגים
+                    else if (p.type === 'driver') {
                         const driverLink = `driver-app.html?uid=${p.phone}&name=${encodeURIComponent(p.name)}`;
-                        specialBtn = `<button onclick="window.open('${driverLink}', '_blank')" class="btn-app-driver"><i class="fas fa-truck"></i> כניסה לאפליקציית נהג</button>`;
-                    } else {
-                        specialBtn = `<button onclick="openTaskModal('${p.id}', '${p.name}', '${p.phone}')" class="btn-task"><i class="fas fa-tasks"></i> שגר משימה</button>`;
+                        specialBtn = `
+                        <button onclick="window.open('${driverLink}', '_blank')" class="btn-app-driver">
+                            <i class="fas fa-truck"></i> כניסה לאפליקציית נהג
+                        </button>`;
+                    } 
+                    // 3. כולם
+                    else {
+                        specialBtn = `
+                        <button onclick="openTaskModal('${p.id}', '${p.name}', '${p.phone}')" class="btn-task">
+                            <i class="fas fa-tasks"></i> שגר משימה
+                        </button>`;
                     }
 
                     grid.innerHTML += `
@@ -354,7 +373,7 @@
             });
         };
 
-        // --- TASK MODAL (With Types & Chameleon) ---
+        // --- TASK MODAL (WITH TYPES) ---
         window.openTaskModal = (uid, name, phone) => {
             Swal.fire({
                 title: `משימה ל${name}`,
