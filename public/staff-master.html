@@ -3,72 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saban OS | מערכת שליטה</title>
+    <title>Saban OS | Master</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         body { background: #f1f5f9; font-family: 'Segoe UI', sans-serif; height: 100vh; overflow: hidden; display: flex; }
-        .sidebar { width: 80px; background: #1e293b; display: flex; flex-direction: column; align-items: center; padding-top: 20px; z-index: 50; }
+        
+        /* Sidebar */
+        .sidebar { width: 80px; background: #1e293b; display: flex; flex-direction: column; align-items: center; padding-top: 20px; z-index: 50; box-shadow: 4px 0 10px rgba(0,0,0,0.2); }
+        .logo { font-size: 24px; color: white; margin-bottom: 30px; }
+        
         .nav-btn { width: 50px; height: 50px; margin-bottom: 15px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 20px; cursor: pointer; transition: 0.2s; position: relative; }
         .nav-btn:hover, .nav-btn.active { background: #3b82f6; color: white; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
-        .nav-label { position: absolute; left: 60px; background: #0f172a; color: white; padding: 5px 10px; border-radius: 4px; font-size: 12px; opacity: 0; pointer-events: none; transition: 0.2s; white-space: nowrap; z-index: 100; }
+        .nav-label { position: absolute; left: 60px; background: #0f172a; color: white; padding: 5px 10px; border-radius: 4px; font-size: 12px; opacity: 0; pointer-events: none; transition: 0.2s; white-space: nowrap; z-index: 100; font-weight: bold; }
         .nav-btn:hover .nav-label { opacity: 1; left: 70px; }
+
+        /* Log Button (Special) */
+        .btn-log { margin-top: auto; margin-bottom: 20px; font-size: 12px; font-weight: 900; color: #475569; border: 1px solid #334155; }
+        .btn-log:hover { color: #ef4444; border-color: #ef4444; background: #1e293b; }
+
+        /* Layout */
         .main-content { flex: 1; display: flex; flex-direction: column; height: 100%; }
         .top-bar { height: 60px; background: white; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; }
         
-        /* Iframe Container */
-        .module-container { flex: 1; position: relative; background: #f1f5f9; overflow: hidden; }
+        /* Modules */
+        .module-container { flex: 1; position: relative; background: #f8fafc; overflow: hidden; }
         .module-frame { width: 100%; height: 100%; border: none; display: none; }
-        .module-frame.active { display: block; }
+        .module-frame.active { display: block; animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
-        <div class="mb-6 text-2xl font-bold text-white"><i class="fas fa-layer-group"></i></div>
+        <div class="logo"><i class="fas fa-layer-group"></i></div>
         
         <div class="nav-btn active" onclick="switchModule('dashboard')" title="דשבורד">
-            <i class="fas fa-home"></i><span class="nav-label">דשבורד</span>
+            <i class="fas fa-home"></i><span class="nav-label">מבט על</span>
         </div>
-        <div class="nav-btn" onclick="switchModule('staff')" title="צוות וסניפים">
-            <i class="fas fa-users-cog"></i><span class="nav-label">ניהול צוות</span>
+        <div class="nav-btn" onclick="switchModule('staff')" title="צוות">
+            <i class="fas fa-users-cog"></i><span class="nav-label">ניהול וספר טלפונים</span>
         </div>
-        <div class="nav-btn" onclick="switchModule('comm')" title="חמ''ל תקשורת">
+        <div class="nav-btn" onclick="switchModule('comm')" title="תקשורת">
             <i class="fab fa-whatsapp"></i><span class="nav-label">חמ"ל הודעות</span>
         </div>
         <div class="nav-btn" onclick="switchModule('dispatch')" title="סידור">
             <i class="fas fa-truck-moving"></i><span class="nav-label">סידור עבודה</span>
         </div>
+
+        <div class="nav-btn btn-log" onclick="switchModule('logs')" title="לוג מערכת (מלשינון)">
+            LOG
+            <span class="nav-label text-red-400">יומן אירועים (Admin)</span>
+        </div>
     </div>
 
     <div class="main-content">
         <div class="top-bar">
-            <h1 class="text-lg font-bold text-slate-800" id="page-title">דשבורד ראשי</h1>
-            <div class="flex items-center gap-3">
-                <span class="text-sm font-bold">ראמי מסארוה</span>
-                <img src="https://media-mrs2-2.cdn.whatsapp.net/v/t61.24694-24/490584763_1521666505466352_3860845398977059833_n.jpg?stp=dst-jpg_s96x96_tt6&ccb=11-4&oh=01_Q5Aa3QEGGv9ElRRb2Qx1Adjclex0ahijeyYdc8W8wmVuCZ6L2A&oe=695B04A6&_nc_sid=5e03e0&_nc_cat=104" class="w-8 h-8 rounded-full border">
+            <h1 class="text-lg font-bold text-slate-800 flex items-center gap-2" id="page-title">
+                <i class="fas fa-circle text-green-500 text-[10px]"></i> דשבורד ניהולי
+            </h1>
+            <div class="flex items-center gap-3 bg-gray-100 px-3 py-1 rounded-full">
+                <span class="text-xs font-bold text-gray-600">מחובר: ראמי (Master)</span>
+                <img src="https://media-mrs2-2.cdn.whatsapp.net/v/t61.24694-24/490584763_1521666505466352_3860845398977059833_n.jpg?stp=dst-jpg_s96x96_tt6&ccb=11-4&oh=01_Q5Aa3QEGGv9ElRRb2Qx1Adjclex0ahijeyYdc8W8wmVuCZ6L2A&oe=695B04A6&_nc_sid=5e03e0&_nc_cat=104" class="w-8 h-8 rounded-full border border-gray-300">
             </div>
         </div>
 
         <div class="module-container">
-            <iframe id="frame-dashboard" src="dashboard.html" class="module-frame active"></iframe> <iframe id="frame-staff" src="staff-directory.html" class="module-frame"></iframe> <iframe id="frame-comm" src="comm-center.html" class="module-frame"></iframe> <iframe id="frame-dispatch" src="dashboard.html" class="module-frame"></iframe> </div>
+            <iframe id="frame-dashboard" src="dashboard.html" class="module-frame active"></iframe>
+            <iframe id="frame-staff" src="staff-directory.html" class="module-frame"></iframe>
+            <iframe id="frame-comm" src="comm-center.html" class="module-frame"></iframe>
+            <iframe id="frame-dispatch" src="dashboard.html" class="module-frame"></iframe>
+            <iframe id="frame-logs" src="system-logs.html" class="module-frame"></iframe> </div>
     </div>
 
     <script>
         function switchModule(moduleId) {
             // Update Title
-            const titles = { 'dashboard': 'דשבורד ניהולי', 'staff': 'ספר אנשי קשר וצוות', 'comm': 'מרכז תקשורת (Saban Chat)', 'dispatch': 'סידור עבודה' };
-            document.getElementById('page-title').innerText = titles[moduleId];
+            const titles = { 
+                'dashboard': 'דשבורד ראשי', 
+                'staff': 'ספר אנשי קשר וניהול הרשאות', 
+                'comm': 'מרכז תקשורת (Saban Chat)', 
+                'dispatch': 'חמ"ל סידור עבודה',
+                'logs': 'יומן אירועים ומערכת בקרה (Logs)'
+            };
+            document.getElementById('page-title').innerHTML = `<i class="fas fa-circle text-green-500 text-[10px]"></i> ${titles[moduleId]}`;
 
             // Toggle Nav
             document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-            // (פשטות: מניח סדר כפתורים קבוע, בייצור נעשה לפי ID)
-            const index = ['dashboard', 'staff', 'comm', 'dispatch'].indexOf(moduleId);
-            if(index >= 0) document.querySelectorAll('.nav-btn')[index].classList.add('active');
+            
+            // Logic for active button highlighting
+            const btnMap = { 'dashboard':0, 'staff':1, 'comm':2, 'dispatch':3, 'logs':4 };
+            if(btnMap[moduleId] !== undefined) {
+                document.querySelectorAll('.nav-btn')[btnMap[moduleId]].classList.add('active');
+            }
 
             // Toggle Iframe
             document.querySelectorAll('.module-frame').forEach(frame => frame.classList.remove('active'));
-            document.getElementById('frame-' + moduleId).classList.add('active');
+            const targetFrame = document.getElementById('frame-' + moduleId);
+            if(targetFrame) targetFrame.classList.add('active');
         }
     </script>
 </body>
