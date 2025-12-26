@@ -3,77 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Saban Driver | Cockpit</title>
+    <title>Saban Driver | חכמת</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(function(OneSignal) {
+        OneSignal.init({
+          appId: "שים-כאן-את-הקוד-שתקבל-מ-OneSignal", // <--- כאן מדביקים את ה-ID
+        });
+      });
+    </script>
+
     <style>
         body { background: #111827; color: white; font-family: 'Segoe UI', system-ui, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        
-        /* Views */
         .view-section { flex: 1; display: none; flex-direction: column; overflow-y: auto; padding-bottom: 80px; }
         .view-section.active { display: flex; }
         
-        /* Header */
-        .driver-header { background: #1f2937; padding: 15px; border-bottom: 1px solid #374151; display: flex; justify-content: space-between; align-items: center; }
-        
-        /* Chameleon Card Styles */
-        .card-mission { margin: 15px; border-radius: 20px; overflow: hidden; background: white; color: #1f2937; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: slideUp 0.5s ease-out; }
-        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-        /* Themes */
+        /* Mission Card */
+        .card-mission { margin: 15px; border-radius: 20px; overflow: hidden; background: white; color: #1f2937; position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
         .theme-transfer .header-bg { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); }
         .theme-client .header-bg { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); }
-        .theme-supplier .header-bg { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
-        .theme-urgent .header-bg { background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); animation: pulse 1s infinite; }
+        .theme-urgent .header-bg { background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); animation: pulse 0.8s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
 
         .mission-header { padding: 20px; color: white; display: flex; justify-content: space-between; align-items: flex-start; }
         .mission-body { padding: 20px; text-align: center; }
         
-        /* Buttons */
         .btn-main { width: 100%; padding: 18px; border-radius: 15px; font-size: 18px; font-weight: 900; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
         .btn-main:active { transform: scale(0.98); }
-        
-        .status-start { background: #10b981; } 
-        .status-arrived { background: #f59e0b; } 
-        .status-done { background: #6366f1; }
+        .status-start { background: #10b981; } .status-arrived { background: #f59e0b; } .status-done { background: #6366f1; }
 
-        /* Chat Styles */
+        /* Chat */
         .msg-bubble { max-width: 80%; padding: 8px 12px; border-radius: 8px; margin: 5px 10px; font-size: 14px; position: relative; color: black; }
         .msg-in { align-self: flex-start; background: white; border-top-right-radius: 0; }
         .msg-out { align-self: flex-end; background: #d9fdd3; border-top-left-radius: 0; }
-        
+
         /* Nav */
         .nav-bar { position: fixed; bottom: 0; width: 100%; background: #1f2937; border-top: 1px solid #374151; display: flex; justify-content: space-around; padding: 15px 0; z-index: 50; }
         .nav-item { text-align: center; color: #9ca3af; font-size: 10px; width: 50%; }
         .nav-item.active { color: #f59e0b; }
-        .nav-item i { font-size: 24px; margin-bottom: 2px; display: block; }
+        .nav-item i { font-size: 24px; margin-bottom: 2px; }
         .badge { position: absolute; top: 10px; right: 20%; background: red; width: 10px; height: 10px; border-radius: 50%; display: none; border: 2px solid #1f2937; }
     </style>
 </head>
-<body>
-
-    <div class="driver-header">
+<body onclick="stopAlert()"> <div class="p-4 bg-gray-800 flex justify-between items-center border-b border-gray-700">
         <div>
             <div class="text-xs text-gray-400">נהג מחובר</div>
-            <div class="font-bold text-lg" id="driver-name">טוען...</div>
+            <div class="font-bold text-lg" id="driver-name">חכמת</div>
         </div>
-        <div class="bg-gray-800 px-3 py-1 rounded text-xs font-mono text-green-400 border border-green-900 flex items-center gap-2">
+        <div class="bg-green-900 text-green-400 text-xs px-2 py-1 rounded flex items-center gap-2">
             <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div> GPS ON
         </div>
     </div>
 
     <div id="view-mission" class="view-section active">
-        
         <div id="state-waiting" class="flex flex-col items-center justify-center h-full text-gray-500 mt-20">
             <div class="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mb-6 animate-pulse">
                 <i class="fas fa-satellite-dish text-4xl text-gray-600"></i>
             </div>
             <h2 class="text-xl font-bold">ממתין למשימות...</h2>
-            <p class="text-sm opacity-50 mt-2">המערכת מאזינה לשידורי המשרד</p>
         </div>
 
         <div id="state-mission" class="card-mission hidden theme-client">
@@ -84,12 +77,11 @@
                 </div>
                 <i class="fas fa-box text-4xl opacity-80" id="type-icon"></i>
             </div>
-            
             <div class="mission-body">
                 <div class="text-lg font-bold mb-1 text-gray-800" id="dest-address">...</div>
                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 mb-6 text-sm text-right text-gray-700 leading-relaxed" id="mission-desc">...</div>
                 
-                <button onclick="openWaze()" class="w-full bg-[#33ccff] text-white font-bold py-3 rounded-xl mb-3 flex items-center justify-center gap-2 shadow-sm hover:brightness-95 transition">
+                <button onclick="openWaze()" class="w-full bg-[#33ccff] text-white font-bold py-3 rounded-xl mb-3 flex items-center justify-center gap-2 shadow-sm">
                     <i class="fab fa-waze text-2xl"></i> סע ליעד
                 </button>
                 
@@ -109,20 +101,11 @@
     </div>
 
     <div class="nav-bar">
-        <div class="nav-item active" onclick="switchView('mission', this)">
-            <i class="fas fa-truck"></i> משימה
-        </div>
+        <div class="nav-item active" onclick="switchView('mission', this)"><i class="fas fa-truck"></i> משימה</div>
         <div class="nav-item" onclick="switchView('chat', this)">
-            <div class="relative inline-block">
-                <i class="fas fa-comments"></i>
-                <div id="chat-badge" class="badge"></div>
-            </div>
-            הודעות
+            <div class="relative inline-block"><i class="fas fa-comments"></i><div id="chat-badge" class="badge"></div></div> הודעות
         </div>
     </div>
-
-    <audio id="sound-alert" src="https://actions.google.com/sounds/v1/alarms/spaceship_alarm.ogg"></audio>
-    <audio id="sound-msg" src="https://actions.google.com/sounds/v1/cartoon/pop.ogg"></audio>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -130,19 +113,25 @@
 
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
-        // 1. זהות הנהג (Identity)
+        // IDENTITY (חובה שזה יהיה תואם למנהל)
         const params = new URLSearchParams(window.location.search);
-        // ברירת מחדל לבדיקה: המספר של חכמת שהגדרנו במאגר
         let DRIVER = { 
-            uid: params.get('uid') || '0500000607', 
+            uid: params.get('uid') || '0500000607', // מספר ברירת מחדל של חכמת
             name: params.get('name') || 'חכמת' 
         };
-        
         document.getElementById('driver-name').innerText = DRIVER.name;
-        let currentOrder = null;
 
-        // --- 2. האזנה למשימות (Orders Listener) ---
-        // שימוש בפילטר פשוט ללא אינדקס מורכב למניעת תקלות
+        // SOUNDS
+        const alertAudio = new Audio('https://actions.google.com/sounds/v1/alarms/spaceship_alarm.ogg');
+        alertAudio.loop = true; // שיחפור עד שעונים
+
+        window.stopAlert = () => {
+            alertAudio.pause();
+            alertAudio.currentTime = 0;
+        };
+
+        // --- 1. MISSION LISTENER ---
+        let currentOrder = null;
         const q = query(
             collection(db, "orders"), 
             where("driverId", "==", DRIVER.name),
@@ -159,15 +148,18 @@
                 return;
             }
 
-            // מיון מקומי (Client-Side Sorting) - הפתרון לבעיית האינדקס
             const tasks = snap.docs.map(d => ({id: d.id, ...d.data()}));
-            tasks.sort((a,b) => b.createdAt - a.createdAt); // החדש ביותר ראשון
+            tasks.sort((a,b) => b.createdAt - a.createdAt);
             const latest = tasks[0];
 
-            // התראה קולית על משימה חדשה
+            // התראה על משימה חדשה
             if (!currentOrder || currentOrder.id !== latest.id) {
-                document.getElementById('sound-alert').play().catch(()=>{});
-                switchView('mission', document.querySelector('.nav-item')); // העבר פוקוס
+                alertAudio.play().catch(()=>{}); // הפעלת צלצול בלופ
+                
+                // OneSignal / Native Notification Simulation
+                if(window.OneSignal) window.OneSignal.sendSelfNotification("משימה חדשה", "לחץ לפתיחה");
+                
+                switchView('mission', document.querySelector('.nav-item'));
             }
 
             currentOrder = latest;
@@ -176,34 +168,28 @@
             missionEl.classList.remove('hidden');
         });
 
-        // --- 3. רינדור כרטיס המשימה (Chameleon Logic) ---
         function renderMission(order) {
             const card = document.getElementById('state-mission');
-            const typeLabel = document.getElementById('task-type-label');
-            const typeIcon = document.getElementById('type-icon');
+            const label = document.getElementById('task-type-label');
+            const icon = document.getElementById('type-icon');
             
-            // איפוס מחלקות עיצוב
             card.classList.remove('theme-transfer', 'theme-client', 'theme-supplier', 'theme-urgent');
             
-            // בחירת עיצוב לפי סוג
             let theme = 'theme-client';
-            let label = 'הובלה ללקוח';
-            let icon = 'fa-box';
+            let txt = 'הובלה';
+            let ico = 'fa-box';
 
-            if (order.taskType === 'transfer') { theme = 'theme-transfer'; label = 'העברה בין סניפים'; icon = 'fa-exchange-alt'; }
-            else if (order.taskType === 'supplier') { theme = 'theme-supplier'; label = 'איסוף מספק'; icon = 'fa-dolly'; }
-            else if (order.taskType === 'urgent') { theme = 'theme-urgent'; label = 'משימה דחופה 🔥'; icon = 'fa-fire'; }
-
+            if (order.taskType === 'urgent') { theme = 'theme-urgent'; txt = 'דחוף 🔥'; ico = 'fa-fire'; }
+            else if (order.taskType === 'transfer') { theme = 'theme-transfer'; txt = 'העברה'; ico = 'fa-exchange-alt'; }
+            
             card.classList.add(theme);
-            typeLabel.innerText = label;
-            typeIcon.className = `fas ${icon} text-4xl opacity-80`;
+            label.innerText = txt;
+            icon.className = `fas ${ico} text-4xl opacity-80`;
 
-            // נתונים
             document.getElementById('client-name').innerText = order.clientName;
-            document.getElementById('dest-address').innerText = order.address || 'לא צוינה כתובת';
-            document.getElementById('mission-desc').innerText = order.text || '...';
+            document.getElementById('dest-address').innerText = order.address || '';
+            document.getElementById('mission-desc').innerText = order.text || '';
 
-            // כפתור ראשי
             const btn = document.getElementById('main-btn');
             if(order.status === 'assigned') {
                 btn.className = 'btn-main status-start';
@@ -211,36 +197,33 @@
                 btn.onclick = () => updateStatus('en_route');
             } else if (order.status === 'en_route') {
                 btn.className = 'btn-main status-arrived';
-                btn.innerHTML = '<i class="fas fa-map-marker-alt"></i> הגעתי ליעד';
+                btn.innerHTML = '<i class="fas fa-map-marker-alt"></i> הגעתי';
                 btn.onclick = () => updateStatus('arrived');
             } else {
                 btn.className = 'btn-main status-done';
-                btn.innerHTML = '<i class="fas fa-check"></i> סיימתי פריקה';
+                btn.innerHTML = '<i class="fas fa-check"></i> סיימתי';
                 btn.onclick = () => updateStatus('done');
             }
         }
 
         window.updateStatus = async (s) => {
+            stopAlert(); // עצור צלצול
             if(!currentOrder) return;
-            
-            if (s === 'done') {
-                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-            }
-            
+            if (s === 'done') confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
             await updateDoc(doc(db, "orders", currentOrder.id), { status: s, lastUpdate: serverTimestamp() });
         };
 
         window.openWaze = () => {
+            stopAlert(); // עצור צלצול
             if(!currentOrder) return;
             window.open(`https://waze.com/ul?q=${encodeURIComponent(currentOrder.address || '')}&navigate=yes`, '_blank');
         };
 
-        // --- 4. מערכת הצ'אט (Chat Logic) ---
-        // חיבור ל-ID החדש שנוצר במאסטר (chat_0500000607)
+        // --- 2. CHAT SYSTEM (Fix: Using Exact Chat ID) ---
+        // חייב להיות זהה למה שיש במנהל: chat_0500000607
         const chatId = `chat_${DRIVER.uid}`; 
-        const qChat = query(collection(db, `chats/${chatId}/messages`));
-
-        onSnapshot(qChat, (snap) => {
+        
+        onSnapshot(query(collection(db, `chats/${chatId}/messages`)), (snap) => {
             const container = document.getElementById('chat-msgs');
             container.innerHTML = '';
             
@@ -256,18 +239,20 @@
             });
             container.scrollTop = container.scrollHeight;
             
-            // תג בודק אם יש הודעה חדשה ואנחנו לא בצ'אט
+            // התראה על הודעה
             if(document.getElementById('view-chat').style.display === 'none' && !snap.empty) {
                 document.getElementById('chat-badge').style.display = 'block';
-                // אם ההודעה האחרונה לא ממני -> השמע צליל
-                const lastMsg = msgs[msgs.length-1];
-                if (lastMsg && lastMsg.sender !== DRIVER.name) {
-                    document.getElementById('sound-msg').play().catch(()=>{});
+                // צפצוף רק אם זה לא אני
+                const last = msgs[msgs.length-1];
+                if(last && last.sender !== DRIVER.name) {
+                     // צפצוף קצר
+                     new Audio('https://actions.google.com/sounds/v1/cartoon/pop.ogg').play().catch(()=>{});
                 }
             }
         });
 
         window.sendMessage = async () => {
+            stopAlert();
             const input = document.getElementById('msg-input');
             const txt = input.value.trim();
             if(!txt) return;
@@ -280,7 +265,7 @@
             });
         };
 
-        // --- 5. GPS Tracker ---
+        // --- GPS ---
         if ("geolocation" in navigator) {
             navigator.geolocation.watchPosition((pos) => {
                 setDoc(doc(db, "drivers_location", DRIVER.uid), {
@@ -293,15 +278,14 @@
             }, null, { enableHighAccuracy: true });
         }
 
-        // --- Utils ---
         window.switchView = (v, btn) => {
+            stopAlert();
             document.querySelectorAll('.view-section').forEach(e => e.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
             document.getElementById(`view-${v}`).classList.add('active');
             if(btn) btn.classList.add('active');
             if(v==='chat') document.getElementById('chat-badge').style.display='none';
         };
-
     </script>
 </body>
 </html>
