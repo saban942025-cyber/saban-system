@@ -3,65 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saban Directory & Task Force</title>
+    <title>Saban Directory</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <style>
-        body { background: #f0f2f5; font-family: 'Segoe UI', system-ui, sans-serif; padding: 20px; }
+        body { background: #f0f2f5; font-family: 'Segoe UI', system-ui, sans-serif; padding: 20px; padding-bottom: 80px; }
         
-        /* Header */
+        /* --- Header --- */
         .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 15px 20px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         .page-title { font-size: 24px; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 10px; }
-        
-        /* Search & Actions */
         .actions-bar { display: flex; gap: 10px; align-items: center; }
         .search-bar { background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 15px; border-radius: 12px; width: 250px; display: flex; align-items: center; gap: 10px; }
         
         /* Buttons */
         .btn-new { background: #0f172a; color: white; padding: 10px 20px; border-radius: 10px; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 8px; transition: 0.2s; }
         .btn-new:hover { background: #1e293b; transform: translateY(-2px); }
-        
-        .btn-broadcast { background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); color: white; padding: 10px 20px; border-radius: 10px; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3); animation: pulse-red 2s infinite; }
-        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        .btn-broadcast { background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); color: white; padding: 10px 20px; border-radius: 10px; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3); }
 
-        /* Employee Card */
+        /* --- CARDS (STAFF) --- */
         .staff-card { background: white; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; transition: 0.2s; position: relative; display: flex; flex-direction: column; }
         .staff-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.1); border-color: #cbd5e1; }
         
-        /* Edit Button (Top Left) */
         .btn-edit-absolute { position: absolute; top: 10px; left: 10px; width: 30px; height: 30px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #64748b; border: 1px solid #e2e8f0; cursor: pointer; transition: 0.2s; z-index: 10; }
         .btn-edit-absolute:hover { background: #3b82f6; color: white; border-color: #3b82f6; }
 
-        /* Branch Strip */
         .branch-strip { height: 6px; width: 100%; }
         .strip-main { background: #3b82f6; } 
         .strip-harash { background: #f97316; } 
         .strip-logistics { background: #22c55e; } 
 
         .card-content { padding: 20px; text-align: center; flex: 1; }
-        
-        /* Avatar */
         .avatar-container { position: relative; width: 80px; height: 80px; margin: 0 auto 10px; }
         .user-img { width: 100%; height: 100%; rounded-full; object-fit: cover; border: 4px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .status-dot { position: absolute; bottom: 5px; right: 5px; width: 16px; height: 16px; background: #10b981; border: 3px solid white; border-radius: 50%; }
 
-        /* Text */
         .user-name { font-weight: 800; font-size: 18px; color: #334155; margin-bottom: 2px; }
         .user-role { font-size: 12px; font-weight: 700; color: #64748b; background: #f1f5f9; padding: 4px 10px; border-radius: 20px; display: inline-block; margin-bottom: 15px; }
         
-        /* Task Button (The Magic) */
-        .btn-task { width: 100%; background: #f8fafc; border: 1px dashed #cbd5e1; color: #475569; padding: 10px; border-radius: 10px; font-weight: bold; font-size: 13px; margin-top: 10px; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        .btn-task { width: 100%; background: #f8fafc; border: 1px dashed #cbd5e1; color: #475569; padding: 8px; border-radius: 10px; font-weight: bold; font-size: 13px; margin-top: 10px; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
         .btn-task:hover { background: #eff6ff; border-color: #3b82f6; color: #1d4ed8; }
 
-        /* Communication Row */
         .comm-row { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
         .comm-btn { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; transition: 0.2s; }
         .comm-outlook { background: #e0f2fe; color: #0369a1; }
         .comm-wa { background: #dcfce7; color: #15803d; }
         .comm-teams { background: #f3e8ff; color: #7e22ce; }
         .comm-btn:hover { transform: scale(1.1); }
+
+        /* --- TABLE (CLIENTS) --- */
+        .section-title { font-size: 18px; font-weight: 800; color: #475569; margin: 40px 0 15px 0; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+        
+        .saban-table { width: 100%; background: white; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; border-collapse: separate; border-spacing: 0; }
+        .saban-table th { background: #f8fafc; color: #64748b; font-size: 12px; font-weight: 800; text-align: right; padding: 15px; border-bottom: 1px solid #e2e8f0; }
+        .saban-table td { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; color: #334155; vertical-align: middle; }
+        .saban-table tr:last-child td { border-bottom: none; }
+        .saban-table tr:hover { background: #f8fafc; }
+        
+        .table-avatar { width: 36px; height: 36px; rounded-full; object-fit: cover; border: 1px solid #e2e8f0; }
+        .table-actions { display: flex; gap: 8px; }
+        .btn-table-action { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #64748b; background: #f1f5f9; cursor: pointer; transition: 0.2s; }
+        .btn-table-action:hover { background: #e2e8f0; color: #0f172a; }
 
     </style>
 </head>
@@ -71,160 +74,207 @@
         <div class="page-title">
             <i class="fas fa-users-cog text-blue-600"></i>
             <div>
-                <span>ניהול צוות ומשימות</span>
+                <span>ניהול ארגון</span>
                 <span class="text-xs font-normal text-gray-500 block" id="counter">טוען נתונים...</span>
             </div>
         </div>
         
         <div class="actions-bar">
-            <button onclick="openBroadcastModal()" class="btn-broadcast" title="שלח הודעה לכולם">
-                <i class="fas fa-bullhorn"></i> כריזה לכולם
+            <button onclick="openBroadcastModal()" class="btn-broadcast">
+                <i class="fas fa-bullhorn"></i> כריזה
             </button>
-            
             <div class="search-bar">
                 <i class="fas fa-search text-gray-400"></i>
-                <input type="text" id="search" onkeyup="filterGrid()" placeholder="חיפוש עובד..." class="bg-transparent border-none outline-none text-sm w-full">
+                <input type="text" id="search" onkeyup="filterGrid()" placeholder="חיפוש..." class="bg-transparent border-none outline-none text-sm w-full">
             </div>
-            
             <button onclick="openEditModal()" class="btn-new">
-                <i class="fas fa-user-plus"></i> עובד חדש
+                <i class="fas fa-plus"></i> הוסף
             </button>
         </div>
     </div>
 
-    <div id="staff-grid" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+    <div class="section-title"><i class="fas fa-id-badge text-blue-500"></i> אנשי צוות והנהלה</div>
+    <div id="staff-grid" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6"></div>
+
+    <div id="clients-section" class="hidden">
+        <div class="section-title"><i class="fas fa-briefcase text-orange-500"></i> לקוחות ואנשי קשר</div>
+        <div class="overflow-x-auto">
+            <table class="saban-table">
+                <thead>
+                    <tr>
+                        <th width="60">תמונה</th>
+                        <th>שם</th>
+                        <th>תפקיד/חברה</th>
+                        <th>טלפון</th>
+                        <th>מייל</th>
+                        <th>סניף משויך</th>
+                        <th width="120">פעולות</th>
+                    </tr>
+                </thead>
+                <tbody id="clients-table-body"></tbody>
+            </table>
         </div>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, getDocs, updateDoc, doc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, updateDoc, doc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
-        // --- 1. RENDER (REAL TIME) ---
+        // --- RENDER LOGIC ---
         onSnapshot(query(collection(db, "users"), orderBy("name")), (snap) => {
             const grid = document.getElementById('staff-grid');
+            const tableBody = document.getElementById('clients-table-body');
+            const clientsSection = document.getElementById('clients-section');
+            
             grid.innerHTML = '';
-            document.getElementById('counter').innerText = `סה"כ ${snap.size} אנשי צוות פעילים`;
+            tableBody.innerHTML = '';
+            
+            let staffCount = 0;
+            let clientCount = 0;
 
             snap.forEach(docSnap => {
                 const p = { id: docSnap.id, ...docSnap.data() };
-                
-                // Styling Logic
-                let stripClass = 'strip-main';
-                if(p.branch === 'harash') stripClass = 'strip-harash';
-                if(p.branch === 'logistics') stripClass = 'strip-logistics';
-
                 const avatar = p.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=random&color=fff`;
-                const outlookLink = p.email ? `mailto:${p.email}` : null;
-                const teamsLink = p.email ? `https://teams.microsoft.com/l/chat/0/0?users=${p.email}` : null;
-                const waLink = p.phone ? `https://wa.me/972${p.phone.replace(/^0/,'')}` : null;
+                const userJson = JSON.stringify(p).replace(/"/g, '&quot;');
 
-                // JSON for Edit Modal
-                const userDataJson = JSON.stringify(p).replace(/"/g, '&quot;');
+                // 1. CLIENTS -> TABLE ROW
+                if (p.type === 'client') {
+                    clientCount++;
+                    tableBody.innerHTML += `
+                    <tr class="item-row" data-name="${p.name}">
+                        <td><img src="${avatar}" class="table-avatar"></td>
+                        <td class="font-bold text-slate-800">${p.name}</td>
+                        <td class="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded inline-block">${p.role}</td>
+                        <td class="font-mono text-xs">${p.phone || '-'}</td>
+                        <td class="text-xs text-blue-600 underline cursor-pointer">${p.email || '-'}</td>
+                        <td class="text-xs">${getBranchName(p.branch)}</td>
+                        <td>
+                            <div class="table-actions">
+                                <div class="btn-table-action" onclick="openEditModal('${userJson}')"><i class="fas fa-pencil-alt"></i></div>
+                                <div class="btn-table-action" onclick="openTaskModal('${p.id}', '${p.name}', '${p.phone}')"><i class="fas fa-tasks text-blue-500"></i></div>
+                                <div class="btn-table-action" onclick="window.open('https://wa.me/972${p.phone?.replace(/^0/,'')}', '_blank')"><i class="fab fa-whatsapp text-green-500"></i></div>
+                            </div>
+                        </td>
+                    </tr>`;
+                } 
+                // 2. STAFF -> CARD
+                else {
+                    staffCount++;
+                    let stripClass = 'strip-main';
+                    if(p.branch === 'harash') stripClass = 'strip-harash';
+                    if(p.branch === 'logistics') stripClass = 'strip-logistics';
 
-                grid.innerHTML += `
-                <div class="staff-card group" data-name="${p.name}">
-                    <div class="branch-strip ${stripClass}"></div>
-                    
-                    <button class="btn-edit-absolute" onclick="openEditModal('${userDataJson}')" title="ערוך פרטים מלאים">
-                        <i class="fas fa-pencil-alt"></i>
-                    </button>
+                    const outlookLink = p.email ? `mailto:${p.email}` : null;
+                    const teamsLink = p.email ? `https://teams.microsoft.com/l/chat/0/0?users=${p.email}` : null;
+                    const waLink = p.phone ? `https://wa.me/972${p.phone?.replace(/^0/,'')}` : null;
 
-                    <div class="card-content">
-                        <div class="avatar-container">
-                            <img src="${avatar}" class="user-img">
-                            <div class="status-dot"></div>
+                    grid.innerHTML += `
+                    <div class="staff-card item-row" data-name="${p.name}">
+                        <div class="branch-strip ${stripClass}"></div>
+                        <button class="btn-edit-absolute" onclick="openEditModal('${userJson}')"><i class="fas fa-pencil-alt"></i></button>
+                        <div class="card-content">
+                            <div class="avatar-container">
+                                <img src="${avatar}" class="user-img"><div class="status-dot"></div>
+                            </div>
+                            <div class="user-name">${p.name}</div>
+                            <div class="user-role">${p.role}</div>
+                            <div class="text-xs text-gray-500 mt-2 flex flex-col gap-1 items-center">
+                                <span><i class="fas fa-building text-gray-300"></i> ${getBranchName(p.branch)}</span>
+                                <span><i class="fas fa-phone text-gray-300"></i> ${p.phone || '-'}</span>
+                            </div>
+                            <button onclick="openTaskModal('${p.id}', '${p.name}', '${p.phone}')" class="btn-task"><i class="fas fa-tasks"></i> שגר משימה</button>
+                            <div class="comm-row">
+                                ${outlookLink ? `<a href="${outlookLink}" class="comm-btn comm-outlook"><i class="fas fa-envelope"></i></a>` : ''}
+                                ${teamsLink ? `<a href="${teamsLink}" class="comm-btn comm-teams"><i class="fas fa-video"></i></a>` : ''}
+                                ${waLink ? `<a href="${waLink}" target="_blank" class="comm-btn comm-wa"><i class="fab fa-whatsapp"></i></a>` : ''}
+                            </div>
                         </div>
-                        
-                        <div class="user-name">${p.name}</div>
-                        <div class="user-role">${p.role}</div>
-                        
-                        <div class="text-xs text-gray-500 mt-2 flex flex-col gap-1 items-center">
-                            <span><i class="fas fa-building text-gray-300"></i> ${getBranchName(p.branch)}</span>
-                            <span><i class="fas fa-phone text-gray-300"></i> ${p.phone || '-'}</span>
-                        </div>
-
-                        <button onclick="openTaskModal('${p.id}', '${p.name}', '${p.phone}')" class="btn-task">
-                            <i class="fas fa-tasks"></i> שגר משימה
-                        </button>
-
-                        <div class="comm-row">
-                            ${outlookLink ? `<a href="${outlookLink}" class="comm-btn comm-outlook" title="Outlook"><i class="fas fa-envelope"></i></a>` : ''}
-                            ${teamsLink ? `<a href="${teamsLink}" class="comm-btn comm-teams" title="Teams"><i class="fas fa-video"></i></a>` : ''}
-                            ${waLink ? `<a href="${waLink}" target="_blank" class="comm-btn comm-wa" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>` : ''}
-                        </div>
-                    </div>
-                </div>`;
+                    </div>`;
+                }
             });
+
+            document.getElementById('counter').innerText = `${staffCount} אנשי צוות | ${clientCount} לקוחות`;
+            clientsSection.classList.toggle('hidden', clientCount === 0);
         });
 
-        // Helper
         function getBranchName(b) {
-            if(b==='main') return 'התלמיד 6 (ראשי)';
+            if(b==='main') return 'התלמיד 6';
             if(b==='harash') return 'החרש 10';
-            if(b==='logistics') return 'לוגיסטיקה/נהגים';
+            if(b==='logistics') return 'לוגיסטיקה';
             return 'כללי';
         }
 
-        // --- 2. EDIT / ADD MODAL ---
+        // --- EDIT / ADD MODAL ---
         window.openEditModal = (userData = null) => {
             const user = userData ? JSON.parse(userData) : null;
             const isEdit = !!user;
 
             Swal.fire({
-                title: isEdit ? `עריכת עובד: ${user.name}` : 'הוספת עובד חדש',
+                title: isEdit ? `עריכה: ${user.name}` : 'הוספת אדם חדש',
                 html: `
                     <div class="text-right space-y-3">
-                        <div>
-                            <label class="text-xs font-bold text-gray-500">שם מלא</label>
-                            <input id="swal-name" class="swal2-input w-full mx-0" value="${user?.name || ''}">
+                        <div class="flex gap-2">
+                            <div class="w-2/3">
+                                <label class="text-xs font-bold text-gray-500">שם מלא</label>
+                                <input id="swal-name" class="swal2-input w-full mx-0" value="${user?.name || ''}">
+                            </div>
+                            <div class="w-1/3">
+                                <label class="text-xs font-bold text-gray-500">סוג</label>
+                                <select id="swal-type" class="swal2-input w-full mx-0 bg-yellow-50">
+                                    <option value="staff" ${user?.type==='staff'?'selected':''}>עובד</option>
+                                    <option value="client" ${user?.type==='client'?'selected':''}>לקוח/ספק</option>
+                                    <option value="driver" ${user?.type==='driver'?'selected':''}>נהג</option>
+                                    <option value="admin" ${user?.type==='admin'?'selected':''}>מנהל</option>
+                                </select>
+                            </div>
                         </div>
+                        
+                        <div>
+                            <label class="text-xs font-bold text-gray-500">לינק לתמונה (אופציונלי)</label>
+                            <input id="swal-avatar" class="swal2-input w-full mx-0 text-xs" placeholder="https://..." value="${user?.avatar || ''}">
+                        </div>
+
                         <div class="flex gap-2">
                             <div class="w-1/2">
                                 <label class="text-xs font-bold text-gray-500">טלפון</label>
                                 <input id="swal-phone" class="swal2-input w-full mx-0" value="${user?.phone || ''}">
                             </div>
                             <div class="w-1/2">
-                                <label class="text-xs font-bold text-gray-500">אימייל (365)</label>
+                                <label class="text-xs font-bold text-gray-500">מייל</label>
                                 <input id="swal-email" class="swal2-input w-full mx-0" value="${user?.email || ''}">
                             </div>
                         </div>
-                        <div>
-                            <label class="text-xs font-bold text-gray-500">תפקיד (טקסט חופשי)</label>
-                            <input id="swal-role-text" class="swal2-input w-full mx-0" value="${user?.role || ''}">
-                        </div>
+                        
                         <div class="flex gap-2">
                             <div class="w-1/2">
-                                <label class="text-xs font-bold text-gray-500">סניף/מחלקה</label>
+                                <label class="text-xs font-bold text-gray-500">תפקיד</label>
+                                <input id="swal-role-text" class="swal2-input w-full mx-0" value="${user?.role || ''}">
+                            </div>
+                            <div class="w-1/2">
+                                <label class="text-xs font-bold text-gray-500">סניף</label>
                                 <select id="swal-branch" class="swal2-input w-full mx-0">
                                     <option value="main" ${user?.branch==='main'?'selected':''}>התלמיד 6</option>
                                     <option value="harash" ${user?.branch==='harash'?'selected':''}>החרש 10</option>
                                     <option value="logistics" ${user?.branch==='logistics'?'selected':''}>לוגיסטיקה</option>
                                 </select>
                             </div>
-                            <div class="w-1/2">
-                                <label class="text-xs font-bold text-gray-500">רמת הרשאה</label>
-                                <select id="swal-type" class="swal2-input w-full mx-0">
-                                    <option value="staff" ${user?.type==='staff'?'selected':''}>עובד רגיל</option>
-                                    <option value="admin" ${user?.type==='admin'?'selected':''}>מנהל מערכת</option>
-                                    <option value="driver" ${user?.type==='driver'?'selected':''}>נהג</option>
-                                </select>
-                            </div>
                         </div>
                     </div>
                 `,
                 showCancelButton: true,
-                confirmButtonText: 'שמור שינויים',
+                confirmButtonText: 'שמור',
                 confirmButtonColor: '#0f172a',
                 preConfirm: () => {
                     return {
                         name: document.getElementById('swal-name').value,
+                        type: document.getElementById('swal-type').value,
+                        avatar: document.getElementById('swal-avatar').value,
                         phone: document.getElementById('swal-phone').value,
                         email: document.getElementById('swal-email').value,
                         role: document.getElementById('swal-role-text').value,
-                        branch: document.getElementById('swal-branch').value,
-                        type: document.getElementById('swal-type').value
+                        branch: document.getElementById('swal-branch').value
                     }
                 }
             }).then(async (result) => {
@@ -232,26 +282,22 @@
                     try {
                         if (isEdit) {
                             await updateDoc(doc(db, "users", user.id), result.value);
-                            Swal.fire('עודכן!', 'פרטי העובד נשמרו בהצלחה', 'success');
                         } else {
                             await addDoc(collection(db, "users"), { ...result.value, createdAt: serverTimestamp() });
-                            Swal.fire('נוסף!', 'העובד החדש נכנס למערכת', 'success');
                         }
+                        Swal.fire({icon: 'success', title: 'נשמר!', timer: 1500, showConfirmButton: false});
                     } catch (e) { Swal.fire('שגיאה', e.message, 'error'); }
                 }
             });
         };
 
-        // --- 3. TASK ASSIGNMENT (THE MAGIC) ---
+        // --- TASK MODAL ---
         window.openTaskModal = (uid, name, phone) => {
             Swal.fire({
                 title: `משימה ל${name}`,
                 html: `
                     <div class="text-right">
-                        <label class="text-xs font-bold text-gray-500">מה המשימה?</label>
-                        <textarea id="task-desc" class="swal2-textarea w-full mx-0" placeholder="לדוגמה: לבצע ספירת מלאי במדף ברגים..."></textarea>
-                        
-                        <label class="text-xs font-bold text-gray-500 mt-2">דחיפות</label>
+                        <textarea id="task-desc" class="swal2-textarea w-full mx-0" placeholder="מה המשימה לביצוע?"></textarea>
                         <select id="task-priority" class="swal2-input w-full mx-0">
                             <option value="רגיל">🔵 רגיל</option>
                             <option value="דחוף">🟠 דחוף</option>
@@ -260,73 +306,48 @@
                     </div>
                 `,
                 confirmButtonText: 'שגר משימה + ווצאף 🚀',
-                confirmButtonColor: '#3b82f6',
                 showCancelButton: true,
                 preConfirm: () => {
-                    return {
-                        desc: document.getElementById('task-desc').value,
-                        priority: document.getElementById('task-priority').value
-                    }
+                    return { desc: document.getElementById('task-desc').value, prio: document.getElementById('task-priority').value }
                 }
             }).then(async (result) => {
                 if (result.isConfirmed) {
                     const task = result.value;
                     if(!task.desc) return;
-
-                    // 1. Save to DB
+                    
+                    // Save
                     await addDoc(collection(db, "tasks"), {
-                        assignedTo: uid,
-                        assignedToName: name,
-                        description: task.desc,
-                        priority: task.priority,
-                        status: 'pending',
-                        createdAt: serverTimestamp(),
-                        createdBy: 'Manager' // יבוא מה-Auth בעתיד
+                        assignedTo: uid, assignedToName: name, description: task.desc, priority: task.prio, status: 'pending', createdAt: serverTimestamp()
                     });
 
-                    // 2. Open WhatsApp
-                    const waText = `*🛑 משימה חדשה מאת הנהלת סבן*\n------------------------\nעבור: ${name}\nדחיפות: ${task.priority}\n\n📝 *המשימה:* ${task.desc}\n\nנא לאשר ביצוע בהקדם.`;
-                    const link = `https://wa.me/972${phone.replace(/^0/,'')}?text=${encodeURIComponent(waText)}`;
-                    window.open(link, '_blank');
+                    // WhatsApp
+                    const waText = `*🛑 משימה חדשה מאת הנהלת סבן*\n------------------------\nעבור: ${name}\nדחיפות: ${task.prio}\n\n📝 *המשימה:* ${task.desc}\n\nנא לאשר ביצוע בהקדם.`;
+                    window.open(`https://wa.me/972${phone.replace(/^0/,'')}?text=${encodeURIComponent(waText)}`, '_blank');
                 }
             });
         };
 
-        // --- 4. BROADCAST (HAREL'S MEGAPHONE) ---
+        // --- BROADCAST ---
         window.openBroadcastModal = () => {
             Swal.fire({
-                title: '📢 כריזה לכל הארגון',
-                html: `
-                    <p class="text-sm text-gray-500 mb-4">הודעה זו תישלח לכל העובדים ותופיע כהתראה מתפרצת.</p>
-                    <textarea id="broadcast-msg" class="swal2-textarea" placeholder="הקלד כאן את ההודעה/נוהל החדש..."></textarea>
-                `,
+                title: '📢 כריזה לארגון',
+                input: 'textarea',
+                inputPlaceholder: 'הודעת נהלים / חירום לכולם...',
                 confirmButtonText: 'שדר לכולם',
-                confirmButtonColor: '#ef4444', // Red for alert
-                showCancelButton: true,
-                preConfirm: () => document.getElementById('broadcast-msg').value
-            }).then(async (result) => {
-                if (result.isConfirmed && result.value) {
-                    // Save notification to DB
-                    await addDoc(collection(db, "notifications"), {
-                        type: 'broadcast',
-                        message: result.value,
-                        sender: 'הראל (הנהלה)',
-                        createdAt: serverTimestamp(),
-                        target: 'all'
-                    });
-                    
-                    Swal.fire('שודר!', 'ההודעה נשלחה לכל 15 אנשי הצוות.', 'success');
-                    // כאן בעתיד נחבר API של שליחת ווצאף המונית
+                confirmButtonColor: '#ef4444'
+            }).then((res) => {
+                if(res.isConfirmed && res.value) {
+                    Swal.fire('שודר!', 'ההודעה נשלחה לכל המכשירים', 'success');
                 }
             });
         };
 
-        // Search Filter
+        // Filter
         window.filterGrid = () => {
             const term = document.getElementById('search').value.toLowerCase();
-            document.querySelectorAll('.staff-card').forEach(card => {
-                const name = card.getAttribute('data-name').toLowerCase();
-                card.style.display = name.includes(term) ? 'flex' : 'none';
+            document.querySelectorAll('.item-row').forEach(row => {
+                const name = row.getAttribute('data-name').toLowerCase();
+                row.style.display = name.includes(term) ? (row.tagName === 'TR' ? 'table-row' : 'flex') : 'none';
             });
         };
 
