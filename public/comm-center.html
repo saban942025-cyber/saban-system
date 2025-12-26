@@ -118,13 +118,14 @@
 
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
-        // 1. אנשי קשר (קבוצות + נהגים)
+        // 1. אנשי קשר (מתוקנים ומסונכרנים)
         const CHATS = [
             { id: 'orders_main', name: 'הזמנות לקוחות', type: 'group', avatar: 'https://ui-avatars.com/api/?name=Orders&background=00a884&color=fff' },
             { id: 'management', name: 'הודעות הנהלה', type: 'group', avatar: 'https://ui-avatars.com/api/?name=Saban&background=1e293b&color=fff' },
-            // הנהגים:
-            { id: 'chat_0509001392', name: 'חכמת (נהג)', phone: '0509001392', type: 'driver', avatar: 'https://cdn-icons-png.flaticon.com/512/1995/1995470.png' },
-            { id: 'chat_driver_ali', name: 'עלי (מנוף)', phone: '0500000000', type: 'driver', avatar: 'https://cdn-icons-png.flaticon.com/512/741/741407.png' }
+            
+            // >>> הנהגים עם ה-ID המדויק <<<
+            { id: 'chat_0500000607', name: 'חכמת (נהג)', phone: '0500000607', type: 'driver', avatar: 'https://cdn-icons-png.flaticon.com/512/1995/1995470.png' },
+            { id: 'chat_0500000606', name: 'עלי (מנוף)', phone: '0500000606', type: 'driver', avatar: 'https://cdn-icons-png.flaticon.com/512/741/741407.png' }
         ];
 
         let activeChat = null;
@@ -160,7 +161,7 @@
             document.getElementById('active-avatar').src = chat.avatar;
             document.getElementById('active-status').innerText = chat.type === 'driver' ? 'מחובר (Driver App)' : 'קבוצה פעילה';
             
-            // Show/Hide "Dispatch Task" Button (רק לנהגים)
+            // Show/Hide "Dispatch Task" Button
             const btn = document.getElementById('btn-dispatch');
             if (chat.type === 'driver') {
                 btn.classList.remove('hidden');
@@ -171,14 +172,18 @@
             }
 
             // Load Messages
-            const q = query(collection(db, `chats/${chatId}/messages`), orderBy('timestamp', 'asc'));
+            // הערה: הסרתי את orderBy זמנית כדי למנוע קריסות אם אין אינדקס, המיון מתבצע בקוד
+            const q = query(collection(db, `chats/${chatId}/messages`));
+            
             onSnapshot(q, (snap) => {
                 const area = document.getElementById('messages-area');
-                area.innerHTML = ''; // Clear but keep header
+                area.innerHTML = ''; 
                 
-                snap.forEach(doc => {
-                    const m = doc.data();
-                    const isMe = m.sender === 'ראמי (Admin)'; // Mock login
+                // מיון ידני
+                const msgs = snap.docs.map(d => d.data()).sort((a,b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
+
+                msgs.forEach(m => {
+                    const isMe = m.sender === 'ראמי (Admin)'; 
                     
                     area.innerHTML += `
                     <div class="msg ${isMe ? 'msg-out' : 'msg-in'}">
@@ -208,7 +213,7 @@
             });
         };
 
-        // 5. THE DISPATCH MODAL (הכפתור האפור)
+        // 5. THE DISPATCH MODAL
         window.openDispatchModal = () => {
             if(!activeChat || activeChat.type !== 'driver') return;
 
@@ -230,7 +235,7 @@
                     </div>
                 `,
                 confirmButtonText: 'שגר לנהג 🚀',
-                confirmButtonColor: '#54656f', // Gray matching the button
+                confirmButtonColor: '#54656f',
                 showCancelButton: true,
                 preConfirm: () => {
                     return {
@@ -245,13 +250,17 @@
                     if(!data.desc) return;
 
                     // 1. Create Order (For Driver App)
+                    // שימוש בשם הנקי (בלי "(נהג)")
+                    const driverNameClean = activeChat.name.split(' ')[0]; // "חכמת"
+
                     await addDoc(collection(db, "orders"), {
-                        driverId: activeChat.name.split(' ')[0], // "חכמת"
+                        driverId: driverNameClean, 
                         clientName: "משימה יזומה (מהצ'אט)",
                         text: data.desc,
                         address: data.addr,
                         taskType: data.type,
-                        status: 'assigned', // שולח ישר לנהג (ללא אישור נוסף)
+                        status: 'assigned',
+                        lastUpdate: serverTimestamp(),
                         createdAt: serverTimestamp()
                     });
 
