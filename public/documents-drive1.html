@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saban Drive | מסמכים</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body { background: #f3f4f6; font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; flex-direction: column; }
+        .header { background: #1e293b; color: white; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .doc-card { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.2s; display: flex; flex-direction: column; align-items: center; text-align: center; border: 1px solid #e2e8f0; cursor: pointer; position: relative; }
+        .doc-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: #3b82f6; }
+        .doc-icon { font-size: 40px; margin-bottom: 10px; color: #64748b; }
+        .doc-title { font-weight: 700; font-size: 13px; color: #334155; line-height: 1.2; margin-bottom: 5px; word-break: break-all; }
+        .doc-meta { font-size: 10px; color: #94a3b8; }
+        .badge { position: absolute; top: 10px; right: 10px; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; }
+        .bg-comax { background: #ffedd5; color: #c2410c; } /* כתום לקומקס */
+        .bg-manual { background: #dbeafe; color: #1e40af; } /* כחול לידני */
+        
+        .fab { position: fixed; bottom: 30px; left: 30px; width: 60px; height: 60px; background: #2563eb; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.4); cursor: pointer; transition: 0.2s; z-index: 50; }
+        .fab:hover { transform: scale(1.1); background: #1d4ed8; }
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: none; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </script>
+</head>
+<body>
+
+    <div class="header flex justify-between items-center">
+        <div>
+            <h1 class="text-xl font-bold flex items-center gap-2"><i class="fab fa-google-drive"></i> Saban Drive</h1>
+            <p class="text-xs text-gray-400">ארכיון מסמכים מרכזי</p>
+        </div>
+        <div id="status-line" class="text-xs font-mono bg-slate-700 px-3 py-1 rounded-full flex items-center gap-2">
+            <div class="loader" id="loader"></div>
+            <span id="status-text">טוען נתונים...</span>
+        </div>
+    </div>
+
+    <div id="grid" class="flex-1 overflow-y-auto p-4 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+
+    <div class="fab" onclick="uploadFile()">
+        <i class="fas fa-plus"></i>
+    </div>
+    <input type="file" id="fileInput" style="display: none;" onchange="handleFileSelect(this)">
+
+    <script>
+        // >>> הדבק כאן את הלינק שקיבלת מה-Deploy <<<
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwIwoPwUA7uKnylbBBLoq06os16t1OV5jxWuohGCXhuWt99JjMfdEp1wWV-rSCeSmaD/exec"; 
+
+        async function loadDocs() {
+            document.getElementById('loader').style.display = 'block';
+            document.getElementById('status-text').innerText = 'מסנכרן מול הדרייב...';
+            
+            try {
+                const response = await fetch(SCRIPT_URL);
+                const files = await response.json();
+                
+                const grid = document.getElementById('grid');
+                grid.innerHTML = '';
+                
+                files.forEach(f => {
+                    const isPdf = f.type.includes('pdf');
+                    const isImg = f.type.includes('image');
+                    const icon = isPdf ? 'fa-file-pdf text-red-500' : (isImg ? 'fa-file-image text-blue-500' : 'fa-file text-gray-400');
+                    const badge = f.source === 'comax' 
+                        ? `<span class="badge bg-comax">Comax</span>` 
+                        : `<span class="badge bg-manual">ידני</span>`;
+
+                    grid.innerHTML += `
+                    <div class="doc-card" onclick="window.open('${f.url}', '_blank')">
+                        ${badge}
+                        <div class="doc-icon"><i class="fas ${icon}"></i></div>
+                        <div class="doc-title">${f.name}</div>
+                        <div class="doc-meta">${new Date(f.date).toLocaleDateString()}</div>
+                    </div>`;
+                });
+                
+                document.getElementById('status-text').innerText = `${files.length} מסמכים זמינים`;
+            } catch (e) {
+                console.error(e);
+                document.getElementById('status-text').innerText = 'שגיאה בטעינה';
+            } finally {
+                document.getElementById('loader').style.display = 'none';
+            }
+        }
+
+        // --- לוגיקת העלאה ---
+        function uploadFile() {
+            document.getElementById('fileInput').click();
+        }
+
+        function handleFileSelect(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const reader = new FileReader();
+                
+                // מראה למשתמש שמתחילים לעבוד
+                Swal.fire({
+                    title: 'מעלה לדרייב...',
+                    text: 'אנא המתן, זה לוקח רגע',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
+                });
+
+                reader.onload = async function(e) {
+                    // המרה ל-base64 (כדי לשלוח לסקריפט)
+                    const base64 = e.target.result.split(',')[1];
+                    
+                    const payload = {
+                        fileName: file.name,
+                        mimeType: file.type,
+                        fileBase64: base64
+                    };
+
+                    try {
+                        // שליחה ל-Google Apps Script
+                        const res = await fetch(SCRIPT_URL, {
+                            method: 'POST',
+                            body: JSON.stringify(payload)
+                        });
+                        const result = await res.json();
+                        
+                        if (result.success) {
+                            Swal.fire('הצלחה', 'הקובץ נשמר בתיקיית הדרייב', 'success');
+                            loadDocs(); // רענון הרשימה
+                        } else {
+                            throw new Error(result.error);
+                        }
+                    } catch (err) {
+                        Swal.fire('שגיאה', 'לא הצלחנו להעלות את הקובץ', 'error');
+                        console.error(err);
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // טעינה ראשונית
+        loadDocs();
+    </script>
+</body>
+</html>
