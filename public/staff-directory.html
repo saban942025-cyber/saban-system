@@ -11,16 +11,26 @@
     <style>
         body { background: #f0f2f5; font-family: 'Segoe UI', system-ui, sans-serif; padding: 20px; padding-bottom: 80px; }
         
-        /* Header */
-        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 15px 20px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        /* Header & Actions */
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 15px 20px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); flex-wrap: wrap; gap: 15px; }
         .page-title { font-size: 24px; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 10px; }
-        .actions-bar { display: flex; gap: 10px; align-items: center; }
-        .search-bar { background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 15px; border-radius: 12px; width: 250px; display: flex; align-items: center; gap: 10px; }
         
-        .btn-new { background: #0f172a; color: white; padding: 10px 20px; border-radius: 10px; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 8px; transition: 0.2s; }
-        .btn-broadcast { background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); color: white; padding: 10px 20px; border-radius: 10px; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3); }
+        .actions-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        
+        /* הכפתור החדש - דרייב מרכזי */
+        .btn-drive { 
+            background: #2563eb; color: white; padding: 10px 20px; border-radius: 10px; 
+            font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 8px; 
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3); transition: 0.2s; 
+        }
+        .btn-drive:hover { background: #1d4ed8; transform: translateY(-2px); }
 
-        /* Cards */
+        .btn-new { background: #0f172a; color: white; padding: 10px 20px; border-radius: 10px; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 8px; transition: 0.2s; }
+        .btn-broadcast { background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); color: white; padding: 10px 20px; border-radius: 10px; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+
+        .search-bar { background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 15px; border-radius: 12px; width: 200px; display: flex; align-items: center; gap: 10px; }
+
+        /* Cards Layout */
         .staff-card { background: white; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; transition: 0.2s; position: relative; display: flex; flex-direction: column; }
         .staff-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.1); border-color: #cbd5e1; }
         
@@ -33,25 +43,13 @@
         .user-img { width: 80px; height: 80px; margin: 0 auto 10px; border-radius: 50%; object-fit: cover; border: 4px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .user-name { font-weight: 800; font-size: 18px; color: #334155; margin-bottom: 2px; }
         .user-role { font-size: 12px; font-weight: 700; color: #64748b; background: #f1f5f9; padding: 4px 10px; border-radius: 20px; display: inline-block; margin-bottom: 10px; }
-        .btn-edit-absolute { position: absolute; top: 10px; left: 10px; width: 30px; height: 30px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #64748b; border: 1px solid #e2e8f0; cursor: pointer; transition: 0.2s; z-index: 10; }
-
-        /* BUTTONS */
+        
         .driver-actions { display: flex; gap: 8px; margin-top: 10px; margin-bottom: 10px; }
         .btn-app-driver { flex: 1; background: #2563eb; color: white; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 12px; display: flex; justify-content: center; align-items: center; gap: 5px; }
-        .btn-app-oren { flex: 1; background: #475569; color: white; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 12px; display: flex; justify-content: center; align-items: center; gap: 5px; }
-        .btn-app-tamir { flex: 1; background: #1e40af; color: white; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 12px; display: flex; justify-content: center; align-items: center; gap: 5px; }
-        
-        .btn-magic-link { flex: 1; background: #10b981; color: white; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 12px; display: flex; justify-content: center; align-items: center; gap: 5px; }
         .btn-task { width: 100%; background: #f8fafc; border: 1px dashed #cbd5e1; color: #475569; padding: 8px; border-radius: 10px; font-weight: bold; font-size: 13px; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
-        .btn-app-manager { width: 100%; background: linear-gradient(135deg, #f97316 0%, #c2410c 100%); color: white; padding: 8px; border-radius: 10px; font-weight: bold; font-size: 13px; margin-top: 5px; }
-
+        
         .comm-row { display: flex; justify-content: center; gap: 10px; margin-top: 10px; border-top: 1px solid #f1f5f9; padding-top: 10px; }
         .comm-btn { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; background: #f1f5f9; color: #64748b; }
-        .wa-active { color: #25D366; background: #dcfce7; }
-        
-        .saban-table { width: 100%; background: white; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; border-collapse: separate; border-spacing: 0; margin-top: 20px; }
-        .saban-table th { background: #f8fafc; color: #64748b; font-size: 12px; font-weight: 800; text-align: right; padding: 15px; border-bottom: 1px solid #e2e8f0; }
-        .saban-table td { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; color: #334155; vertical-align: middle; }
     </style>
 </head>
 <body>
@@ -59,184 +57,66 @@
     <div class="page-header">
         <div class="page-title">
             <i class="fas fa-users-cog text-blue-600"></i>
-            <div>
-                <span>ניהול ארגון</span>
-                <span class="text-xs font-normal text-gray-500 block" id="counter">טוען...</span>
-            </div>
+            <div><span>ניהול ארגון</span><span class="text-xs font-normal text-gray-500 block" id="counter">טוען...</span></div>
         </div>
         <div class="actions-bar">
-            <button onclick="openBroadcastModal()" class="btn-broadcast"><i class="fas fa-bullhorn"></i> כריזה</button>
+            <button onclick="window.open('documents-drive.html', '_blank')" class="btn-drive">
+                <i class="fab fa-google-drive"></i> ארכיון מסמכים
+            </button>
+            
+            <button onclick="Swal.fire('כריזה','הודעה נשלחה','success')" class="btn-broadcast"><i class="fas fa-bullhorn"></i> כריזה</button>
             <div class="search-bar"><i class="fas fa-search text-gray-400"></i><input type="text" id="search" onkeyup="filterGrid()" placeholder="חיפוש..." class="bg-transparent border-none outline-none text-sm w-full"></div>
-            <button onclick="openEditModal()" class="btn-new"><i class="fas fa-plus"></i> הוסף</button>
+            <button onclick="openEditModal()" class="btn-new"><i class="fas fa-plus"></i></button>
         </div>
     </div>
 
     <div class="text-lg font-bold text-slate-600 mb-4 border-b pb-2">אנשי צוות ונהגים</div>
     <div id="staff-grid" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6"></div>
 
-    <div id="clients-section" class="hidden mt-10">
-        <div class="text-lg font-bold text-orange-600 mb-2 border-b pb-2">לקוחות ואנשי קשר</div>
-        <div class="overflow-x-auto"><table class="saban-table"><thead><tr><th width="60">תמונה</th><th>שם</th><th>תפקיד</th><th>טלפון</th><th>מייל</th><th>סניף</th><th width="120">פעולות</th></tr></thead><tbody id="clients-table-body"></tbody></table></div>
-    </div>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, updateDoc, doc, getDocs, serverTimestamp, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
-        // SEED DATA
-        const FULL_STAFF_LIST = [
-            { name: "הראל אידלסון", role: "מנכ\"ל", phone: "0505227724", email: "harel@saban94.co.il", branch: "main", type: "admin" },
-            { name: "ראמי מסארוה", role: "מנהל תפעול", phone: "0508860896", email: "ramims@saban94.co.il", branch: "main", type: "admin" },
-            { name: "יואב", role: "מנהל סידור", phone: "0507855865", email: "yoav@saban94.co.il", branch: "main", type: "admin" },
-            { name: "איציק זהבי", role: "מנהל החרש", phone: "0504482285", email: "itzik@saban94.co.il", branch: "harash", type: "manager" },
-            { name: "עלי", role: "נהג מנוף", phone: "0500000606", email: "", branch: "logistics", type: "driver" },
-            { name: "חכמת", role: "נהג משאית", phone: "0500000607", email: "", branch: "logistics", type: "driver" },
-            { name: "אורן", role: "חצר החרש", phone: "0509001392", email: "", branch: "harash", type: "field" },
-            { name: "תמיר", role: "חצר התלמיד", phone: "0523002828", branch: "main", type: "field" },
-            { name: "נתנאל", role: "רכש", phone: "0548132442", branch: "main", type: "manager" },
-            { name: "ורד", role: "משרד", phone: "0506662300", branch: "main", type: "office" },
-            { name: "שי", role: "דלפק", phone: "", branch: "harash", type: "field" }
-        ];
-
-        async function syncStaffDatabase() {
-            const snap = await getDocs(collection(db, "users"));
-            if (snap.size < 5) {
-                const existingNames = new Set();
-                snap.forEach(d => existingNames.add(d.data().name));
-                for (const staff of FULL_STAFF_LIST) {
-                    if (!existingNames.has(staff.name)) {
-                        await addDoc(collection(db, "users"), { ...staff, permissions: 'view', active: true, createdAt: new Date() });
-                    }
-                }
-            }
-        }
-        syncStaffDatabase();
-
-        // RENDER LOGIC
+        // RENDER STAFF
         onSnapshot(query(collection(db, "users"), orderBy("name")), (snap) => {
             const grid = document.getElementById('staff-grid');
-            const tableBody = document.getElementById('clients-table-body');
-            const clientsSection = document.getElementById('clients-section');
-            grid.innerHTML = ''; tableBody.innerHTML = '';
-            let staffCount = 0; let clientCount = 0;
+            grid.innerHTML = '';
+            let staffCount = 0;
 
             snap.forEach(docSnap => {
                 const p = { id: docSnap.id, ...docSnap.data() };
+                if (p.type === 'client') return;
+                staffCount++;
+                
                 const avatar = p.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=random&color=fff`;
-                const userJson = JSON.stringify(p).replace(/"/g, '&quot;');
-                const baseUrl = window.location.origin;
+                let stripClass = p.branch === 'harash' ? 'strip-harash' : (p.branch === 'logistics' ? 'strip-logistics' : 'strip-main');
+                let specialBtn = `<button onclick="openTaskModal('${p.name}')" class="btn-task"><i class="fas fa-tasks"></i> משימה</button>`;
+                
+                if (p.name.includes('יואב')) specialBtn = `<button onclick="window.open('yoav-app.html', '_blank')" class="btn-app-driver" style="background:#374151"><i class="fas fa-network-wired"></i> סידור</button>`;
+                if (p.type === 'driver') specialBtn = `<div class="driver-actions"><button onclick="window.open('driver-app.html?uid=${p.phone}', '_blank')" class="btn-app-driver"><i class="fas fa-truck"></i> נהג</button></div>` + specialBtn;
 
-                if (p.type === 'client') {
-                    clientCount++;
-                    tableBody.innerHTML += `<tr class="item-row" data-name="${p.name}"><td><img src="${avatar}" class="w-8 h-8 rounded-full"></td><td class="font-bold text-slate-800">${p.name}</td><td class="text-xs bg-gray-100 px-2 py-1 rounded inline-block">${p.role}</td><td class="font-mono text-xs">${p.phone}</td><td class="text-xs text-blue-600 underline">${p.email}</td><td class="text-xs">${getBranchName(p.branch)}</td><td><div class="flex gap-2"><button onclick="openEditModal('${userJson}')"><i class="fas fa-pencil-alt text-gray-400"></i></button><button onclick="window.open('https://wa.me/972${p.phone?.replace(/^0/,'')}', '_blank')"><i class="fab fa-whatsapp text-green-500"></i></button></div></td></tr>`;
-                } else {
-                    staffCount++;
-                    let stripClass = p.branch === 'harash' ? 'strip-harash' : (p.branch === 'logistics' ? 'strip-logistics' : 'strip-main');
-                    let specialBtn = '';
-                    
-                    if (p.type === 'driver') {
-                        let appFile = p.name.includes('עלי') ? 'ali-app.html' : 'driver-app.html';
-                        const appUrl = `${baseUrl}/${appFile}?uid=${p.phone}&name=${encodeURIComponent(p.name)}`;
-                        specialBtn = `<div class="driver-actions"><button onclick="window.open('${appUrl}', '_blank')" class="btn-app-driver"><i class="fas fa-desktop"></i> כניסה</button><button onclick="window.open('https://wa.me/972${p.phone?.replace(/^0/,'')}?text=${encodeURIComponent(appUrl)}', '_blank')" class="btn-magic-link"><i class="fab fa-whatsapp"></i> קסם</button></div><button onclick="openTaskModal('${p.name}', '${p.phone}')" class="btn-task"><i class="fas fa-tasks"></i> שגר משימה</button>`;
-                    } 
-                    else if (p.name.includes('אורן')) {
-                        const orenUrl = `${baseUrl}/oren-app.html`;
-                        specialBtn = `<div class="driver-actions"><button onclick="window.open('oren-app.html', '_blank')" class="btn-app-oren"><i class="fas fa-dolly"></i> מסוף חצר</button><button onclick="window.open('https://wa.me/972${p.phone?.replace(/^0/,'')}?text=${encodeURIComponent(orenUrl)}', '_blank')" class="btn-magic-link"><i class="fab fa-whatsapp"></i> קסם</button></div>`;
-                    }
-                    else if (p.name.includes('תמיר')) {
-                        const tamirUrl = `${baseUrl}/tamir-app.html`;
-                        specialBtn = `<div class="driver-actions"><button onclick="window.open('tamir-app.html', '_blank')" class="btn-app-tamir"><i class="fas fa-warehouse"></i> מסוף חצר</button><button onclick="window.open('https://wa.me/972${p.phone?.replace(/^0/,'')}?text=${encodeURIComponent(tamirUrl)}', '_blank')" class="btn-magic-link"><i class="fab fa-whatsapp"></i> קסם</button></div>`;
-                    }
-                    else if (p.branch === 'harash' && p.type === 'manager') {
-                        specialBtn = `<button onclick="window.open('itzik-app.html', '_blank')" class="btn-app-manager"><i class="fas fa-store"></i> אפליקציית מנהל</button>`;
-                    } 
-                    else {
-                        specialBtn = `<button onclick="openTaskModal('${p.name}', '${p.phone}')" class="btn-task"><i class="fas fa-tasks"></i> שגר משימה</button>`;
-                    }
-
-                    grid.innerHTML += `<div class="staff-card item-row" data-name="${p.name}"><div class="branch-strip ${stripClass}"></div><button class="btn-edit-absolute" onclick="openEditModal('${userJson}')"><i class="fas fa-pencil-alt"></i></button><div class="card-content"><img src="${avatar}" class="user-img"><div class="user-name">${p.name}</div><div class="user-role">${p.role||'צוות'}</div><div class="text-xs text-gray-500 mt-2 mb-2">${getBranchName(p.branch)}</div>${specialBtn}<div class="comm-row"><button class="comm-btn comm-outlook"><i class="fas fa-envelope"></i></button><button onclick="window.open('https://wa.me/972${p.phone?.replace(/^0/,'')}', '_blank')" class="comm-btn comm-wa wa-active"><i class="fab fa-whatsapp"></i></button></div></div></div>`;
-                }
+                grid.innerHTML += `
+                <div class="staff-card item-row" data-name="${p.name}">
+                    <div class="branch-strip ${stripClass}"></div>
+                    <div class="card-content">
+                        <img src="${avatar}" class="user-img">
+                        <div class="user-name">${p.name}</div>
+                        <div class="user-role">${p.role||'צוות'}</div>
+                        ${specialBtn}
+                        <div class="comm-row">
+                            <button onclick="window.open('https://wa.me/972${p.phone?.replace(/^0/,'')}', '_blank')" class="comm-btn text-green-500"><i class="fab fa-whatsapp"></i></button>
+                        </div>
+                    </div>
+                </div>`;
             });
-            document.getElementById('counter').innerText = `${staffCount} אנשי צוות | ${clientCount} לקוחות`;
-            clientsSection.classList.toggle('hidden', clientCount === 0);
+            document.getElementById('counter').innerText = `${staffCount} אנשי צוות`;
         });
 
-        function getBranchName(b) { if(b==='main') return 'התלמיד 6'; if(b==='harash') return 'החרש 10'; return 'לוגיסטיקה'; }
-
-        // --- TASK MODAL ---
-        window.openTaskModal = (name, phone) => {
-            Swal.fire({
-                title: `משימה ל${name}`,
-                html: `
-                    <div class="text-right space-y-3">
-                        <div><label class="text-xs font-bold text-gray-500">מאיפה אוספים?</label><select id="task-branch" class="swal2-input w-full mx-0 text-sm font-bold bg-blue-50"><option value="harash">🏗️ החרש (אורן)</option><option value="main">🏢 התלמיד (תמיר)</option><option value="supplier">🏭 ספק חיצוני</option></select></div>
-                        <div><label class="text-xs font-bold text-gray-500">סוג משימה</label><select id="task-cat" class="swal2-input w-full mx-0 text-sm"><option value="client">📦 הובלה (כחול)</option><option value="transfer">🔄 העברה (כתום)</option><option value="urgent">🔥 דחוף (אדום)</option></select></div>
-                        <textarea id="task-desc" class="swal2-textarea w-full mx-0" placeholder="פירוט המשימה..."></textarea>
-                        <input id="task-addr" class="swal2-input w-full mx-0" placeholder="כתובת (Waze)">
-                        <div class="flex gap-2 items-center bg-yellow-50 p-2 rounded"><input type="checkbox" id="task-approval"><label class="text-xs font-bold text-yellow-800">דרוש אישור סידור</label></div>
-                    </div>
-                `,
-                confirmButtonText: 'שגר לנהג 🚀',
-                showCancelButton: true,
-                preConfirm: () => { return { branch: document.getElementById('task-branch').value, type: document.getElementById('task-cat').value, desc: document.getElementById('task-desc').value, addr: document.getElementById('task-addr').value, pending: document.getElementById('task-approval').checked } }
-            }).then(async (result) => {
-                if (result.isConfirmed) {
-                    const data = result.value;
-                    await addDoc(collection(db, "orders"), {
-                        driverId: name, clientName: "משימה יזומה", text: data.desc, address: data.addr, taskType: data.type,
-                        pickupBranch: data.branch, status: data.pending ? 'pending_approval' : 'assigned', lastUpdate: serverTimestamp(), createdAt: serverTimestamp()
-                    });
-                    const waText = `*משימה חדשה*\nמאיפה: ${data.branch==='harash'?'החרש':'התלמיד'}\nפרטים: ${data.desc}\nיעד: ${data.addr}`;
-                    window.open(`https://wa.me/972${phone.replace(/^0/,'')}?text=${encodeURIComponent(waText)}`, '_blank');
-                }
-            });
-        };
-
-        // --- EDIT MODAL (עם הוספת תמונה) ---
-        window.openEditModal = (json) => {
-            const user = json ? JSON.parse(json) : null;
-            Swal.fire({
-                title: user ? 'עריכת פרטים' : 'עובד חדש',
-                html: `
-                    <label class="text-xs font-bold text-gray-500 block text-right mb-1">שם מלא</label>
-                    <input id="e-name" class="swal2-input mx-0 w-full" value="${user?.name||''}" placeholder="שם">
-                    <label class="text-xs font-bold text-gray-500 block text-right mb-1 mt-3">טלפון</label>
-                    <input id="e-phone" class="swal2-input mx-0 w-full" value="${user?.phone||''}" placeholder="טלפון">
-                    <label class="text-xs font-bold text-gray-500 block text-right mb-1 mt-3">קישור לתמונה (URL)</label>
-                    <input id="e-avatar" class="swal2-input mx-0 w-full" value="${user?.avatar||''}" placeholder="https://example.com/image.jpg">
-                    <label class="text-xs font-bold text-gray-500 block text-right mb-1 mt-3">תפקיד במערכת</label>
-                    <select id="e-type" class="swal2-input mx-0 w-full">
-                        <option value="staff" ${user?.type === 'staff' ? 'selected' : ''}>עובד כללי</option>
-                        <option value="driver" ${user?.type === 'driver' ? 'selected' : ''}>נהג</option>
-                        <option value="field" ${user?.type === 'field' ? 'selected' : ''}>חצר/שטח</option>
-                        <option value="manager" ${user?.type === 'manager' ? 'selected' : ''}>מנהל</option>
-                        <option value="client" ${user?.type === 'client' ? 'selected' : ''}>לקוח</option>
-                    </select>
-                `,
-                confirmButtonText: 'שמור',
-                preConfirm: () => { 
-                    const data = {
-                        name: document.getElementById('e-name').value,
-                        phone: document.getElementById('e-phone').value,
-                        avatar: document.getElementById('e-avatar').value,
-                        type: document.getElementById('e-type').value,
-                    };
-                    if (user) data.branch = user.branch; else data.branch = 'main';
-                    return data;
-                }
-            }).then(async res => {
-                if(res.isConfirmed) {
-                    if(user) await updateDoc(doc(db, "users", user.id), res.value);
-                    else await addDoc(collection(db, "users"), res.value);
-                    Swal.fire('נשמר', '', 'success');
-                }
-            });
-        };
-        
-        window.openBroadcastModal = () => Swal.fire('כריזה', 'הודעה נשלחה לכולם', 'success');
-        window.filterGrid = () => { const term = document.getElementById('search').value.toLowerCase(); document.querySelectorAll('.item-row').forEach(row => row.style.display = row.getAttribute('data-name').toLowerCase().includes(term) ? (row.tagName === 'TR' ? 'table-row' : 'flex') : 'none'); };
+        window.openEditModal = () => Swal.fire('בקרוב', 'הוספת עובד חדש', 'info');
+        window.openTaskModal = (name) => Swal.fire('משימה', `שליחת משימה ל${name}`, 'question');
+        window.filterGrid = () => { const term = document.getElementById('search').value.toLowerCase(); document.querySelectorAll('.item-row').forEach(row => row.style.display = row.getAttribute('data-name').toLowerCase().includes(term) ? 'flex' : 'none'); };
     </script>
 </body>
 </html>
