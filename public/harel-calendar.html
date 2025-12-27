@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harel Calendar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body { background: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 20px; padding-bottom: 80px; }
+        
+        /* Header Card */
+        .profile-card {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            color: white; border-radius: 20px; padding: 20px;
+            display: flex; align-items: center; justify-content: space-between;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15); margin-bottom: 24px;
+        }
+
+        /* Calendar Grid */
+        .calendar-wrap { background: white; border-radius: 20px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); border: 1px solid #e2e8f0; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 10px; }
+        .day-header { text-align: center; font-size: 10px; color: #94a3b8; font-weight: 700; padding-bottom: 8px; }
+        
+        .day-cell { 
+            min-height: 60px; border-radius: 10px; border: 1px solid #f1f5f9; padding: 4px; 
+            display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: 0.2s;
+        }
+        .day-cell:active { background: #f8fafc; }
+        .day-num { font-size: 12px; font-weight: 600; color: #475569; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+        .today .day-num { background: #2563eb; color: white; box-shadow: 0 2px 5px rgba(37, 99, 235, 0.4); }
+
+        /* Dots for events */
+        .dots-row { display: flex; gap: 2px; margin-top: 4px; }
+        .dot { width: 5px; height: 5px; border-radius: 50%; }
+        .dot-meet { background: #3b82f6; }
+        .dot-task { background: #ef4444; }
+        .dot-deliv { background: #f59e0b; }
+
+        /* List Styling */
+        .task-row { 
+            background: white; padding: 16px; border-radius: 16px; margin-bottom: 10px; 
+            display: flex; align-items: center; gap: 15px; border: 1px solid #e2e8f0;
+            transition: 0.2s;
+        }
+        .task-row.done { opacity: 0.5; }
+        .task-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: white; }
+    </style>
+</head>
+<body>
+
+    <div class="profile-card">
+        <div class="flex items-center gap-4">
+            <img src="https://ui-avatars.com/api/?name=Harel&background=random" class="w-12 h-12 rounded-full border-2 border-white/20">
+            <div>
+                <div class="text-xs text-slate-300 font-bold uppercase tracking-wider">מנכ"ל</div>
+                <div class="text-xl font-bold">היומן של הראל</div>
+            </div>
+        </div>
+        <button onclick="addEvent()" class="bg-white/10 w-10 h-10 rounded-full flex items-center justify-center text-white backdrop-blur-sm active:scale-95 transition">
+            <i class="fas fa-plus text-lg"></i>
+        </button>
+    </div>
+
+    <div class="calendar-wrap mb-6">
+        <div class="flex justify-between items-center mb-4 px-2">
+            <h2 class="font-bold text-slate-700" id="month-name">...</h2>
+            <div class="flex gap-2 text-[10px] font-bold">
+                <span class="flex items-center gap-1 text-blue-600"><span class="w-2 h-2 rounded-full bg-blue-500"></span> פגישה</span>
+                <span class="flex items-center gap-1 text-red-600"><span class="w-2 h-2 rounded-full bg-red-500"></span> משימה</span>
+            </div>
+        </div>
+        <div class="grid grid-cols-7 mb-2">
+            <div class="day-header">א</div><div class="day-header">ב</div><div class="day-header">ג</div><div class="day-header">ד</div><div class="day-header">ה</div><div class="day-header">ו</div><div class="day-header">ש</div>
+        </div>
+        <div id="cal-grid" class="calendar-grid"></div>
+    </div>
+
+    <h3 class="text-xs font-bold text-slate-400 uppercase mb-3 px-1 tracking-wider">סדר יום</h3>
+    <div id="agenda-list">
+        <div class="text-center text-gray-400 mt-4 text-sm">טוען נתונים...</div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, query, orderBy, onSnapshot, addDoc, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
+
+        let events = [];
+        const today = new Date();
+
+        // 1. Load Data
+        onSnapshot(query(collection(db, "calendar"), orderBy("date")), (snap) => {
+            events = [];
+            const list = document.getElementById('agenda-list');
+            list.innerHTML = '';
+            
+            snap.forEach(d => {
+                const e = {id: d.id, ...d.data()};
+                events.push(e);
+
+                // הצגת רשימה (רק רלוונטיים להראל או כלליים)
+                if(!e.done && (e.assignTo?.includes('הראל') || !e.assignTo)) {
+                    let icon = 'fa-check';
+                    let bg = 'bg-slate-400';
+                    if(e.type === 'meeting') { icon = 'fa-handshake'; bg = 'bg-blue-500'; }
+                    if(e.type === 'task') { icon = 'fa-exclamation'; bg = 'bg-red-500'; }
+                    if(e.type === 'delivery') { icon = 'fa-truck'; bg = 'bg-orange-500'; }
+
+                    list.innerHTML += `
+                    <div class="task-row">
+                        <div class="task-icon ${bg}"><i class="fas ${icon}"></i></div>
+                        <div class="flex-1">
+                            <div class="font-bold text-slate-800 text-sm">${e.title}</div>
+                            <div class="text-xs text-slate-400 flex gap-2 mt-1">
+                                <span><i class="far fa-clock"></i> ${e.date.split('-').reverse().join('/')}</span>
+                                ${e.docLink ? `<span onclick="window.open('${e.docLink}')" class="text-blue-500 cursor-pointer font-bold">📎 מסמך</span>` : ''}
+                            </div>
+                        </div>
+                        <input type="checkbox" class="w-5 h-5 accent-green-600" onclick="completeTask('${e.id}')">
+                    </div>`;
+                }
+            });
+            renderCalendar();
+        });
+
+        // 2. Render Calendar
+        function renderCalendar() {
+            const y = today.getFullYear(), m = today.getMonth();
+            const daysInMonth = new Date(y, m + 1, 0).getDate();
+            const firstDay = new Date(y, m, 1).getDay();
+            
+            const monthNames = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"];
+            document.getElementById('month-name').innerText = `${monthNames[m]} ${y}`;
+
+            const grid = document.getElementById('cal-grid');
+            grid.innerHTML = '';
+
+            for(let i=0; i<firstDay; i++) grid.innerHTML += `<div></div>`;
+
+            for(let d=1; d<=daysInMonth; d++) {
+                const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                const isToday = new Date().toISOString().split('T')[0] === dateStr;
+                
+                // מציאת אירועים ליום זה
+                const daysEvents = events.filter(e => e.date === dateStr);
+                let dots = '';
+                daysEvents.forEach(ev => {
+                    let cls = 'dot-task';
+                    if(ev.type === 'meeting') cls = 'dot-meet';
+                    if(ev.type === 'delivery') cls = 'dot-deliv';
+                    dots += `<div class="dot ${cls}"></div>`;
+                });
+
+                grid.innerHTML += `
+                <div class="day-cell ${isToday ? 'today' : ''}" onclick="addEvent('${dateStr}')">
+                    <div class="day-num">${d}</div>
+                    <div class="dots-row">${dots}</div>
+                </div>`;
+            }
+        }
+
+        // 3. Add Event (Smart Harel)
+        window.addEvent = async (date) => {
+            const defaultDate = date || new Date().toISOString().split('T')[0];
+            
+            const { value: form } = await Swal.fire({
+                title: 'הוספה ליומן הראל',
+                html: `
+                    <input id="swal-title" class="swal2-input" placeholder="נושא הפגישה/משימה">
+                    <select id="swal-type" class="swal2-input">
+                        <option value="meeting">🔵 פגישה</option>
+                        <option value="task">🔴 משימה</option>
+                        <option value="delivery">🚚 הובלה</option>
+                    </select>
+                    <input id="swal-date" type="date" class="swal2-input" value="${defaultDate}">
+                    <input id="swal-doc" class="swal2-input" placeholder="קישור למסמך (אופציונלי)">
+                    <div class="text-xs text-gray-400 mt-2 text-right pr-4">* משוייך אוטומטית להראל</div>
+                `,
+                confirmButtonText: 'שמור',
+                preConfirm: () => ({
+                    title: document.getElementById('swal-title').value,
+                    type: document.getElementById('swal-type').value,
+                    date: document.getElementById('swal-date').value,
+                    docLink: document.getElementById('swal-doc').value,
+                    assignTo: 'הראל' // אוטומטי!
+                })
+            });
+
+            if (form && form.title) {
+                await addDoc(collection(db, "calendar"), { ...form, done: false });
+                Swal.fire({icon: 'success', title: 'נשמר ביומן', timer: 1500, showConfirmButton: false});
+            }
+        };
+
+        window.completeTask = async (id) => {
+            await updateDoc(doc(db, "calendar", id), { done: true });
+        };
+    </script>
+</body>
+</html>
