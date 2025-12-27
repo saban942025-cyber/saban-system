@@ -3,18 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SabanOS Pro</title>
+    <title>SabanOS Pro - Vered</title>
     
     <link rel="icon" href="data:;base64,iVBORw0KGgo=">
-    
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-    <script>
-      window.OneSignalDeferred = window.OneSignalDeferred || [];
-      OneSignalDeferred.push(async function(OneSignal) {
-        const isHealthy = await new Promise(r => { try { let q=indexedDB.open("t");q.onsuccess=()=>{q.result.close();r(true)};q.onerror=()=>r(false);}catch{r(false)}});
-        if(isHealthy) await OneSignal.init({ appId: "07b81f2e-e812-424f-beca-36584b12ccf2" });
-      });
-    </script>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -26,190 +17,115 @@
         .app-header { height: 60px; background: white; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border-bottom: 1px solid #e2e8f0; z-index: 50; }
         .main-stage { flex: 1; width: 100%; height: 100%; position: relative; }
         iframe { width: 100%; height: 100%; border: none; }
-        .bottom-nav { height: 65px; background: white; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-around; align-items: center; padding-bottom: env(safe-area-inset-bottom); z-index: 50; }
         
-        .nav-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; width: 60px; height: 100%; }
-        .nav-btn.active { color: #2563eb; border-top: 2px solid #2563eb; }
-        .nav-btn i { font-size: 20px; margin-bottom: 3px; }
-        .nav-btn span { font-size: 10px; font-weight: 500; }
-
-        /* THE BLOCKER (חסימת מסך אדומה) */
+        /* החוסם האדום */
         .blocker-overlay { 
-            position: fixed; inset: 0; background: rgba(220, 38, 38, 0.98); /* אדום דם */
+            position: fixed; inset: 0; background: rgba(220, 38, 38, 0.98); 
             z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; 
             display: none; padding: 20px; text-align: center; color: white;
         }
-        .blocker-card { background: white; color: #1e293b; padding: 25px; border-radius: 20px; width: 100%; max-width: 340px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); animation: shake 0.5s infinite; }
-        @keyframes shake { 0% {transform: translate(1px, 1px) rotate(0deg);} 10% {transform: translate(-1px, -2px) rotate(-1deg);} 20% {transform: translate(-3px, 0px) rotate(1deg);} 30% {transform: translate(3px, 2px) rotate(0deg);} 40% {transform: translate(1px, -1px) rotate(1deg);} 50% {transform: translate(-1px, 2px) rotate(-1deg);} 60% {transform: translate(-3px, 1px) rotate(0deg);} 70% {transform: translate(3px, 1px) rotate(-1deg);} 80% {transform: translate(-1px, -1px) rotate(1deg);} 90% {transform: translate(1px, 2px) rotate(0deg);} 100% {transform: translate(1px, -2px) rotate(-1deg);} }
-        
-        .siren-icon { font-size: 50px; color: #ef4444; margin-bottom: 15px; animation: pulse 0.5s infinite; }
+        .siren-icon { font-size: 60px; animation: pulse 0.5s infinite; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body>
 
-    <audio id="siren-sound" loop>
-        <source src="https://cdn.freesound.org/previews/337/337000_5769786-lq.mp3" type="audio/mpeg">
-    </audio>
-
     <div class="app-header">
-        <div class="font-black text-xl text-slate-800 flex items-center gap-2" onclick="goHome()">SabanOS</div>
-        <div class="text-sm font-bold text-gray-500" id="header-title">דף הבית</div>
-        <i class="fas fa-bars text-xl text-slate-600"></i>
-    </div>
-
-    <div id="nag-bar" class="hidden bg-yellow-100 p-2 flex justify-between items-center px-4 border-b border-yellow-200">
-        <div class="flex items-center gap-2">
-            <i class="fas fa-bell text-yellow-600 animate-swing"></i>
-            <span class="text-xs font-bold text-yellow-800" id="nag-text">...</span>
-        </div>
-        <button class="text-xs bg-yellow-500 text-white px-2 py-1 rounded font-bold" onclick="openApp('harel', 'משימות')">פתח</button>
+        <div class="font-black text-xl text-slate-800">SabanOS <span class="text-blue-600 text-xs">Vered</span></div>
+        <div id="status-indicator" class="text-xs font-bold text-green-500">מחובר</div>
     </div>
 
     <div class="main-stage">
         <iframe id="main-frame" src="dashboard.html"></iframe>
     </div>
 
-    <div class="bottom-nav">
-        <div class="nav-btn active" onclick="goHome()" id="nav-home"><i class="fas fa-home"></i><span>ראשי</span></div>
-        <div class="nav-btn" onclick="openApp('chat', 'צ\'אט')" id="nav-chat"><i class="fab fa-whatsapp"></i><span>צ'אט</span></div>
-        <div class="nav-btn" onclick="openApp('drive', 'מסמכים')" id="nav-drive"><i class="fas fa-folder"></i><span>דרייב</span></div>
-        <div class="nav-btn" onclick="openApp('harel', 'משימות')" id="nav-harel"><i class="fas fa-tasks"></i><span>משימות</span></div>
-    </div>
-
     <div id="blocker" class="blocker-overlay">
-        <div class="blocker-card">
-            <div class="siren-icon"><i class="fas fa-radiation-alt"></i></div>
-            <h2 class="text-2xl font-black mb-1">התראה מהמנכ"ל!</h2>
-            <p class="text-gray-500 mb-4 text-xs font-bold">עצור הכל ואשר קבלה</p>
-            
-            <div class="bg-red-50 border-2 border-red-100 p-3 rounded-xl mb-4 text-center">
-                <div class="text-xs font-bold text-red-400 uppercase mb-1">נושא ההודעה:</div>
-                <div class="text-xl font-black text-red-600 leading-tight" id="blocker-msg">...</div>
-            </div>
-
-            <button onclick="confirmTask()" class="w-full bg-red-600 hover:bg-red-700 text-white py-4 rounded-xl font-bold text-lg shadow-lg active:scale-95 transition flex items-center justify-center gap-2">
-                <span id="btn-text">מאשר שראיתי</span> <i class="fas fa-check-double"></i>
-            </button>
-        </div>
+        <div class="siren-icon"><i class="fas fa-radiation-alt"></i></div>
+        <h2 class="text-3xl font-black mt-4">הודעה דחופה!</h2>
+        <div class="text-xl mt-2 font-bold bg-white text-red-600 px-4 py-2 rounded-lg" id="blocker-msg">...</div>
+        <button onclick="confirmTask()" class="mt-8 bg-white text-red-600 px-8 py-4 rounded-full font-black text-xl shadow-xl active:scale-95">
+            מאשר קבלה
+        </button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         
+        // הגדרות Firebase
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
-        // זיהוי משתמש (לדמו: ורד) - במציאות זה יבוא מלוגין
+        // *** הגדרה קשיחה של זהות המשתמש ***
+        // וודא שבהראל אתה שולח ל"כולם" או למשתמש שיש לו את ה-ID הזה בדיוק
         const MY_ID = 'vered'; 
-        const MY_NAME = 'ורד'; 
 
-        let activeTaskId = null;
-        let audio = document.getElementById('siren-sound');
+        console.log("🔥 מערכת האזנה הופעלה עבור משתמש:", MY_ID);
 
-        // האזנה למשימות בזמן אמת
+        // האזנה לכל המשימות הפתוחות
         onSnapshot(query(collection(db, "tasks"), where("status", "==", "pending")), (snap) => {
-            let foundBlocker = false;
-            let foundNag = false;
+            console.log("📥 התקבל עדכון מ-DB. מספר משימות פתוחות:", snap.size);
             
+            let foundUrgent = false;
+
             snap.forEach(d => {
                 const t = d.data();
-                const isForMe = t.assignedTo === 'all' || t.assignedTo === MY_ID;
-                const notRead = !t.readBy || !t.readBy.includes(MY_ID);
+                console.log("שודרה משימה:", t.title, "| עבור:", t.assignedTo, "| דחופה:", t.mustConfirm);
 
-                if (isForMe && notRead) {
-                    // משימה דחופה חוסמת
+                // האם המשימה עבורי? (או לכולם, או ספציפית לורד)
+                const isForMe = (t.assignedTo === 'all' || t.assignedTo === MY_ID);
+                
+                // האם כבר קראתי אותה?
+                const alreadyRead = t.readBy && t.readBy.includes(MY_ID);
+
+                if (isForMe && !alreadyRead) {
+                    console.log("⚠️ זוהתה משימה רלוונטית שלא נקראה!");
+                    
                     if (t.mustConfirm) {
-                        triggerBlocker(d.id, t.title);
-                        foundBlocker = true;
-                    } 
-                    // משימה רגילה
-                    else {
-                        document.getElementById('nag-text').innerText = t.title;
-                        foundNag = true;
+                        console.log("🚨 המשימה דחופה! מפעיל חוסם מסך.");
+                        showBlocker(d.id, t.title);
+                        foundUrgent = true;
                     }
                 }
             });
 
-            if(!foundBlocker) {
+            if (!foundUrgent) {
                 document.getElementById('blocker').style.display = 'none';
-                audio.pause();
-                audio.currentTime = 0;
             }
-
-            if(foundNag) document.getElementById('nag-bar').classList.remove('hidden');
-            else document.getElementById('nag-bar').classList.add('hidden');
+        }, (error) => {
+            console.error("❌ שגיאה בהתחברות ל-DB:", error);
+            document.getElementById('status-indicator').innerText = "שגיאת חיבור";
+            document.getElementById('status-indicator').className = "text-xs font-bold text-red-500";
         });
 
-        function triggerBlocker(id, title) {
-            if(document.getElementById('blocker').style.display === 'flex') return;
-            
+        let activeTaskId = null;
+
+        function showBlocker(id, title) {
             activeTaskId = id;
             document.getElementById('blocker-msg').innerText = title;
             document.getElementById('blocker').style.display = 'flex';
-            
-            // ניסיון הפעלת סאונד (דורש אינטראקציה בדפדפנים מסוימים)
-            audio.play().catch(e => console.log("Click page to enable audio"));
         }
 
         window.confirmTask = async () => {
             if(!activeTaskId) return;
+            console.log("✅ מאשר משימה:", activeTaskId);
             
-            const btn = document.querySelector('#blocker button');
-            const originalText = document.getElementById('btn-text').innerText;
-            document.getElementById('btn-text').innerText = 'מעדכן שרת...';
-            btn.disabled = true;
-
             try {
-                // 1. עדכון משימה ב-DB (זה החלק הקריטי!)
                 await updateDoc(doc(db, "tasks", activeTaskId), { 
                     readBy: arrayUnion(MY_ID) 
                 });
                 
-                // 2. רישום לוג להראל
-                await addDoc(collection(db, "task_logs"), {
-                    taskId: activeTaskId,
-                    userId: MY_ID,
-                    userName: MY_NAME,
-                    action: 'confirm',
-                    details: 'אישרה קבלה',
-                    timestamp: serverTimestamp()
+                // לוג אופציונלי
+                addDoc(collection(db, "task_logs"), {
+                    taskId: activeTaskId, userId: MY_ID, userName: 'ורד',
+                    action: 'confirm', details: 'אישור ידני', timestamp: serverTimestamp()
                 });
 
-                // הצלחה
                 document.getElementById('blocker').style.display = 'none';
-                audio.pause();
-                activeTaskId = null;
-                
-            } catch (error) {
-                console.error("Error confirming:", error);
-                alert("שגיאה באישור. נסה שוב.");
-            } finally {
-                document.getElementById('btn-text').innerText = originalText;
-                btn.disabled = false;
+            } catch (e) {
+                console.error("שגיאה באישור:", e);
+                alert("שגיאה בשמירה, נסה שוב");
             }
         };
-
-        window.goHome = () => { document.getElementById('main-frame').src = 'dashboard.html'; updateNav('nav-home'); }
-        window.openApp = (id, title) => {
-            let url = '';
-            switch(id) {
-                case 'chat': url = 'comm-center.html'; break;
-                case 'drive': url = 'documents-drive.html'; break;
-                case 'team': url = 'team-view.html'; break;
-                case 'harel': url = 'harel-tasks.html'; break;
-                case 'calendar': url = 'calendar-app.html'; break;
-            }
-            document.getElementById('main-frame').src = url;
-            document.getElementById('header-title').innerText = title;
-            updateNav(`nav-${id}`);
-        }
-        
-        function updateNav(id) {
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            const btn = document.getElementById(id);
-            if(btn) btn.classList.add('active');
-        }
     </script>
 </body>
 </html>
