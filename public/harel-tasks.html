@@ -3,97 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Harel Command</title>
+    <title>Harel Command Pro</title>
     
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function(OneSignal) {
-        /* בדיקת תקינות דפדפן */
         const isHealthy = await new Promise(r => { try { let q=indexedDB.open("t");q.onsuccess=()=>{q.result.close();r(true)};q.onerror=()=>r(false);}catch{r(false)}});
         if(isHealthy) await OneSignal.init({ appId: "07b81f2e-e812-424f-beca-36584b12ccf2" });
       });
     </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body { background: #f2f2f7; font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding-bottom: 100px; -webkit-tap-highlight-color: transparent; }
-        .ios-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-        .ios-input { width: 100%; background: #f2f2f7; border: none; padding: 14px; border-radius: 12px; font-size: 16px; outline: none; margin-bottom: 12px; }
+        
+        /* עיצוב כרטיסים נקי */
+        .ios-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.02); }
+        
+        /* כפתורים ואינפוטים */
+        .ios-input { width: 100%; background: #f2f2f7; border: none; padding: 14px; border-radius: 12px; font-size: 16px; outline: none; margin-bottom: 12px; transition: 0.2s; }
+        .ios-input:focus { background: #e5e5ea; ring: 2px solid #007aff; }
         .ios-btn { background: #007aff; color: white; border-radius: 14px; padding: 16px; font-weight: 700; width: 100%; text-align: center; font-size: 18px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 12px rgba(0,122,255,0.3); }
         .ios-btn:active { transform: scale(0.97); }
 
-        /* Day Selector */
-        .day-selector { display: flex; justify-content: space-between; gap: 4px; margin-top: 8px; }
-        .day-circle { width: 36px; height: 36px; border-radius: 50%; background: #f2f2f7; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; color: #8e8e93; cursor: pointer; transition: 0.2s; }
-        .day-circle.selected { background: #007aff; color: white; box-shadow: 0 2px 5px rgba(0,122,255,0.3); }
+        /* סרגל ניווט עליון (Tab Bar) */
+        .nav-segment { display: flex; background: #e5e5ea; padding: 4px; border-radius: 12px; margin-bottom: 20px; }
+        .nav-item { flex: 1; text-align: center; padding: 8px; font-size: 13px; font-weight: 600; color: #8e8e93; border-radius: 10px; cursor: pointer; transition: 0.2s; }
+        .nav-item.active { background: white; color: #1c1c1e; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+
+        /* סטטוסים בפיד החי */
+        .status-badge { font-size: 10px; padding: 4px 8px; border-radius: 20px; font-weight: bold; }
+        .st-sent { background: #e5e5ea; color: #8e8e93; }
+        .st-read { background: #dbeafe; color: #1e40af; }
+        .st-done { background: #dcfce7; color: #166534; }
+        .st-ignored { background: #fee2e2; color: #991b1b; animation: pulseRed 2s infinite; }
+        
+        @keyframes pulseRed { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
 
-    <div class="pt-6 pb-4 px-5">
-        <h1 class="text-3xl font-black text-slate-900 tracking-tight">משימות הראל</h1>
-        <p class="text-slate-500 text-sm font-medium">שליטה, בקרה וביצוע</p>
+    <div class="pt-6 pb-2 px-5 sticky top-0 bg-[#f2f2f7] z-10">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-black text-slate-900 tracking-tight">הראל סבן</h1>
+                <p class="text-slate-500 text-xs font-bold uppercase tracking-wider">מרכז שליטה (Master)</p>
+            </div>
+            <img src="https://ui-avatars.com/api/?name=Harel&background=000&color=fff" class="w-10 h-10 rounded-full shadow-md border-2 border-white">
+        </div>
+
+        <div class="nav-segment mt-4">
+            <div class="nav-item active" onclick="switchView('create', this)">🚀 שיגור</div>
+            <div class="nav-item" onclick="switchView('feed', this)">👀 פיד חי</div>
+            <div class="nav-item" onclick="switchView('stats', this)">📊 ביצועים</div>
+        </div>
     </div>
 
-    <div class="px-4">
+    <div id="view-create" class="px-4 view-section">
         <div class="ios-card">
-            <h3 class="font-bold mb-4 text-slate-800 text-lg">יצירת משימה חדשה</h3>
+            <h3 class="font-bold mb-4 text-slate-800 flex items-center gap-2">
+                <i class="fas fa-plus-circle text-blue-500"></i> הוראה חדשה
+            </h3>
             
-            <input id="task-title" class="ios-input" placeholder="נושא המשימה (לדוגמה: בדיקת מלאי)">
-            <textarea id="task-desc" class="ios-input" rows="3" placeholder="פירוט והנחיות..."></textarea>
+            <input id="task-title" class="ios-input" placeholder="נושא (לדוגמה: יציאה לקו חלוקה)">
+            <textarea id="task-desc" class="ios-input" rows="2" placeholder="פירוט..."></textarea>
             
-            <label class="text-xs font-bold text-gray-400 mr-1 mb-1 block">למי המשימה?</label>
+            <label class="text-xs font-bold text-gray-400 mr-1 mb-1 block">יעד המשימה:</label>
             <select id="task-assign" class="ios-input bg-white border border-gray-200">
-                <option value="all">📢 כולם (הודעה מתפרצת לכל הארגון)</option>
-                </select>
+                <option value="all">📢 כולם (הודעה מתפרצת)</option>
+            </select>
 
-            <div class="space-y-4 mt-2">
-                
-                <div class="flex items-center justify-between bg-red-50 p-3 rounded-xl border border-red-100">
-                    <div>
-                        <div class="font-bold text-red-900 text-sm">השתק והתראה (חובה)</div>
-                        <div class="text-[10px] text-red-600">חוסם את מסך העובד עד לאישור</div>
-                    </div>
-                    <input type="checkbox" id="task-confirm" class="w-6 h-6 accent-red-600" checked>
+            <div class="bg-red-50 p-3 rounded-xl border border-red-100 flex justify-between items-center mb-4">
+                <div>
+                    <div class="font-bold text-red-900 text-sm">חסימת מסך (דחוף)</div>
+                    <div class="text-[10px] text-red-600">העובד חייב לאשר כדי להמשיך</div>
                 </div>
-
-                <div class="bg-gray-50 p-3 rounded-xl border border-gray-100">
-                    <div class="flex items-center justify-between mb-2">
-                        <div class="font-bold text-gray-700 text-sm">תזכורת חוזרת</div>
-                        <input type="checkbox" id="task-recurring" class="w-6 h-6 accent-blue-600" onchange="toggleRecurring()">
-                    </div>
-                    
-                    <div id="recurring-panel" class="hidden border-t border-gray-200 pt-2 mt-2">
-                        <div class="text-[10px] font-bold text-gray-400 mb-2">בחר ימים לחזרה:</div>
-                        <div class="day-selector">
-                            <div class="day-circle" onclick="toggleDay(this, 'sun')">א</div>
-                            <div class="day-circle" onclick="toggleDay(this, 'mon')">ב</div>
-                            <div class="day-circle" onclick="toggleDay(this, 'tue')">ג</div>
-                            <div class="day-circle" onclick="toggleDay(this, 'wed')">ד</div>
-                            <div class="day-circle" onclick="toggleDay(this, 'thu')">ה</div>
-                            <div class="day-circle" onclick="toggleDay(this, 'fri')">ו</div>
-                        </div>
-                        <div class="mt-3">
-                            <div class="text-[10px] font-bold text-gray-400 mb-1">שעה קבועה:</div>
-                            <input type="time" id="recurring-time" class="ios-input bg-white !mb-0 !py-2">
-                        </div>
-                    </div>
-                </div>
-
+                <input type="checkbox" id="task-confirm" class="w-6 h-6 accent-red-600" checked>
             </div>
 
-            <button onclick="sendTask()" class="ios-btn mt-6 shadow-blue-500/30">
-                <i class="fas fa-paper-plane ml-2"></i> שגר הוראה
+            <button onclick="sendTask()" class="ios-btn shadow-blue-500/30">
+                שגר עכשיו <i class="fas fa-paper-plane ml-2"></i>
             </button>
         </div>
     </div>
 
-    <div class="px-4">
-        <div class="text-xs font-bold text-gray-400 mb-2 mr-2">פעילות אחרונה</div>
-        <div id="logs-preview" class="space-y-2"></div>
+    <div id="view-feed" class="px-4 view-section hidden">
+        <div class="text-xs font-bold text-gray-400 mb-2 mr-2 uppercase tracking-widest">סטטוס בזמן אמת</div>
+        <div id="live-feed-list" class="space-y-3">
+            <div class="text-center text-gray-400 mt-10">טוען נתונים...</div>
+        </div>
+    </div>
+
+    <div id="view-stats" class="px-4 view-section hidden">
+        
+        <div class="grid grid-cols-2 gap-3 mb-4">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-green-100">
+                <div class="text-xs text-gray-400 font-bold">מצטיין החודש</div>
+                <div class="text-lg font-black text-slate-800" id="top-employee">-</div>
+                <div class="text-[10px] text-green-500 font-bold">יעילות גבוהה</div>
+            </div>
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-red-100">
+                <div class="text-xs text-gray-400 font-bold">טעון שיפור</div>
+                <div class="text-lg font-black text-slate-800" id="low-employee">-</div>
+                <div class="text-[10px] text-red-500 font-bold">עיכוב במשימות</div>
+            </div>
+        </div>
+
+        <div class="ios-card">
+            <h3 class="font-bold mb-4 text-slate-800 text-sm">ביצועי צוות (כמות משימות)</h3>
+            <canvas id="performanceChart"></canvas>
+        </div>
     </div>
 
     <script type="module">
@@ -102,15 +126,17 @@
 
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
-        // ימים שנבחרו
-        window.selectedDays = [];
+        // משתני עזר
+        let usersMap = {};
+        let myChart = null;
 
-        // טעינת עובדים
-        onSnapshot(query(collection(db, "users"), orderBy("name")), (snap) => {
+        // 1. טעינת משתמשים (לדרופדאון ולשמות)
+        onSnapshot(query(collection(db, "users")), (snap) => {
             const sel = document.getElementById('task-assign');
             let html = '<option value="all">📢 כולם (הודעה מתפרצת)</option>';
             snap.forEach(d => {
                 const u = d.data();
+                usersMap[d.id] = u.name; // שמירת שם לשימוש בפיד
                 if(u.type !== 'client') {
                     html += `<option value="${d.id}">${u.name}</option>`;
                 }
@@ -118,97 +144,159 @@
             sel.innerHTML = html;
         });
 
-        // טעינת לוגים אחרונים (לראות מי אישר)
-        onSnapshot(query(collection(db, "task_logs"), orderBy("timestamp", "desc"), limit(5)), (snap) => {
-            const list = document.getElementById('logs-preview');
-            list.innerHTML = '';
+        // 2. המנוע החכם - האזנה למשימות + חישוב סטטיסטיקה
+        onSnapshot(query(collection(db, "tasks"), orderBy("createdAt", "desc"), limit(50)), (snap) => {
+            const feed = document.getElementById('live-feed-list');
+            feed.innerHTML = '';
+
+            // משתנים לסטטיסטיקה
+            let stats = {}; // { 'userId': { total: 0, done: 0 } }
+
             snap.forEach(d => {
-                const l = d.data();
-                const time = l.timestamp ? new Date(l.timestamp.seconds*1000).toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'}) : '';
-                list.innerHTML += `
-                <div class="bg-white p-3 rounded-xl border border-gray-100 flex justify-between items-center">
-                    <div class="flex items-center gap-2">
-                        <i class="fas fa-check-circle text-green-500"></i>
-                        <span class="text-sm font-bold text-gray-700">${l.userName} אישר/ה</span>
+                const t = d.data();
+                const taskId = d.id;
+                
+                // --- לוגיקה לפיד החי ---
+                const assigneeName = usersMap[t.assignedTo] || 'כולם';
+                const timeStr = t.createdAt ? new Date(t.createdAt.seconds*1000).toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'}) : '...';
+                
+                // חישוב סטטוס
+                let statusHtml = '';
+                const isRead = t.readBy && t.readBy.length > 0;
+                
+                // בדיקת התעלמות (אם עברו 30 דקות ועדיין לא נקרא)
+                const now = new Date();
+                const taskTime = t.createdAt ? t.createdAt.toDate() : new Date();
+                const diffMins = (now - taskTime) / 60000;
+                
+                if (isRead) {
+                    statusHtml = `<span class="status-badge st-read"><i class="fas fa-eye"></i> נצפה ע"י ${t.readBy.length}</span>`;
+                } else if (diffMins > 30) {
+                    statusHtml = `<span class="status-badge st-ignored"><i class="fas fa-clock"></i> התעלמות!</span>`;
+                } else {
+                    statusHtml = `<span class="status-badge st-sent">נשלח...</span>`;
+                }
+
+                feed.innerHTML += `
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-start mb-1">
+                        <div class="font-bold text-slate-800">${t.title}</div>
+                        <div class="text-[10px] text-gray-400 font-mono">${timeStr}</div>
                     </div>
-                    <span class="text-xs text-gray-400">${time}</span>
+                    <div class="flex justify-between items-center mt-2">
+                        <div class="text-xs text-gray-500 flex items-center gap-1">
+                            <i class="fas fa-user-tag"></i> עבור: <b>${assigneeName}</b>
+                        </div>
+                        ${statusHtml}
+                    </div>
                 </div>`;
+
+                // --- איסוף נתונים לגרף ---
+                if (t.assignedTo !== 'all') {
+                    if (!stats[t.assignedTo]) stats[t.assignedTo] = { name: assigneeName, total: 0, read: 0 };
+                    stats[t.assignedTo].total++;
+                    if (isRead) stats[t.assignedTo].read++;
+                }
             });
+
+            updateChart(stats);
         });
 
-        // לוגיקה לממשק
-        window.toggleRecurring = () => {
-            const el = document.getElementById('recurring-panel');
-            el.classList.toggle('hidden');
-        };
+        // 3. עדכון הגרף והכרטיסים
+        function updateChart(statsData) {
+            const labels = [];
+            const dataTotal = [];
+            const dataRead = [];
 
-        window.toggleDay = (el, day) => {
-            el.classList.toggle('selected');
-            if(window.selectedDays.includes(day)) {
-                window.selectedDays = window.selectedDays.filter(d => d !== day);
-            } else {
-                window.selectedDays.push(day);
+            let bestEmp = { name: '-', val: -1 };
+            let worstEmp = { name: '-', val: 9999 };
+
+            for (const [uid, data] of Object.entries(statsData)) {
+                labels.push(data.name);
+                dataTotal.push(data.total);
+                dataRead.push(data.read);
+
+                // חישוב אחוזים למצטיין/חלש
+                const percent = data.total > 0 ? (data.read / data.total) : 0;
+                if (data.total > 2) { // מתייחסים רק למי שיש לו פעילות
+                    if (percent > bestEmp.val) bestEmp = { name: data.name, val: percent };
+                    if (percent < worstEmp.val) worstEmp = { name: data.name, val: percent };
+                }
             }
-        };
 
-        // --- מנוע שליחה ---
+            // עדכון כרטיסים
+            if(bestEmp.val !== -1) document.getElementById('top-employee').innerText = bestEmp.name;
+            if(worstEmp.val !== 9999) document.getElementById('low-employee').innerText = worstEmp.name;
+
+            // עדכון Chart.js
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            
+            if (myChart) myChart.destroy(); // מחיקת גרף ישן
+
+            myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'בוצעו', data: dataRead, backgroundColor: '#22c55e', borderRadius: 5 },
+                        { label: 'סך הכל', data: dataTotal, backgroundColor: '#e2e8f0', borderRadius: 5, grouped: false, z: -1 } // רקע אפור
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: { y: { beginAtZero: true } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        // 4. פונקציית שליחה
         window.sendTask = async () => {
             const title = document.getElementById('task-title').value;
             const assignTo = document.getElementById('task-assign').value;
             const mustConfirm = document.getElementById('task-confirm').checked;
-            
-            if(!title) return Swal.fire('שגיאה', 'יש לכתוב נושא למשימה', 'error');
 
-            // 1. שליחת התראה אמיתית (Push) לטלפון
+            if(!title) return Swal.fire('שגיאה', 'יש לכתוב נושא', 'error');
+
             try {
-                // המפתח הסודי שסיפקת - נמצא כאן בקוד כדי להבטיח שליחה
-                const ONE_SIGNAL_API_KEY = "jaav6e6m2em34c3wxihk3tgxk"; 
-                const APP_ID = "07b81f2e-e812-424f-beca-36584b12ccf2";
-
+                // OneSignal Push
                 await fetch("https://onesignal.com/api/v1/notifications", {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": "Basic " + ONE_SIGNAL_API_KEY
-                    },
+                    headers: { "Content-Type": "application/json", "Authorization": "Basic jaav6e6m2em34c3wxihk3tgxk" },
                     body: JSON.stringify({
-                        app_id: APP_ID,
-                        included_segments: ["All"], // שולח לכולם (או מסנן לפי משתמש אם נרצה בעתיד)
-                        headings: { en: "משימה חדשה מהראל" },
-                        contents: { en: title },
-                        data: { type: 'urgent_task' } // סימון כדי שהאפליקציה תדע לפתוח את הנודניק
+                        app_id: "07b81f2e-e812-424f-beca-36584b12ccf2",
+                        included_segments: ["All"],
+                        headings: { en: "הוראה חדשה מהראל" },
+                        contents: { en: title }
                     })
                 });
-                console.log("Push sent successfully");
-            } catch (e) {
-                console.error("Push failed", e);
-            }
+            } catch(e) { console.log(e); }
 
-            // 2. שמירה במסד הנתונים (זה מה שמפעיל את החסימה במסך)
             await addDoc(collection(db, "tasks"), {
                 title: title,
                 desc: document.getElementById('task-desc').value,
                 assignedTo: assignTo,
-                mustConfirm: mustConfirm, // אם זה True - המסך של העובד ייחסם
-                isRecurring: document.getElementById('task-recurring').checked,
-                recurringDays: window.selectedDays,
-                recurringTime: document.getElementById('recurring-time').value,
+                mustConfirm: mustConfirm,
                 createdBy: 'הראל',
                 createdAt: serverTimestamp(),
                 status: 'pending',
                 readBy: []
             });
 
-            Swal.fire({
-                icon: 'success', 
-                title: 'נשלח בהצלחה', 
-                text: 'העובד יקבל התראה והמסך שלו ייחסם עד לאישור',
-                confirmButtonColor: '#007aff'
-            });
-
-            // איפוס
+            Swal.fire({icon: 'success', title: 'שוגר!', timer: 1000, showConfirmButton: false});
             document.getElementById('task-title').value = '';
-            document.getElementById('task-desc').value = '';
+            
+            // מעבר אוטומטי לפיד כדי לראות את השיגור
+            switchView('feed', document.querySelectorAll('.nav-item')[1]);
+        };
+
+        // UI Tabs Switcher
+        window.switchView = (viewId, btn) => {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById('view-' + viewId).classList.remove('hidden');
+            
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            btn.classList.add('active');
         };
     </script>
 </body>
