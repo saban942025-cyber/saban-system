@@ -3,63 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dashboard</title>
+    <title>Saban Dashboard</title>
     
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
-      OneSignalDeferred.push(async function(OneSignal) {
-        await OneSignal.init({ appId: "07b81f2e-e812-424f-beca-36584b12ccf2" });
-      });
+      OneSignalDeferred.push(async function(OneSignal) { await OneSignal.init({ appId: "07b81f2e-e812-424f-beca-36584b12ccf2" }); });
     </script>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { background: #f8fafc; padding: 20px; font-family: sans-serif; overflow-x: hidden; }
-        .hero-card { 
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; 
-            border-radius: 20px; padding: 24px; margin-bottom: 24px; box-shadow: 0 10px 25px rgba(15, 23, 42, 0.2);
+        /* Dark Premium Theme */
+        body { 
+            background: #0f172a; 
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #0f172a 70%);
+            color: white; font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+            padding: 20px; padding-bottom: 100px; min-height: 100vh;
+            -webkit-tap-highlight-color: transparent;
         }
-        .app-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
-        .app-btn { 
-            background: white; border-radius: 16px; padding: 15px; height: 120px;
-            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.02); border: 1px solid #e2e8f0; cursor: pointer;
+
+        /* Glass Cards */
+        .glass-btn {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+            padding: 20px; height: 120px; cursor: pointer; transition: 0.2s;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
         }
-        .app-btn:active { transform: scale(0.96); background: #f1f5f9; }
-        .icon-circle { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; color: white; }
+        .glass-btn:active { transform: scale(0.96); background: rgba(30, 41, 59, 0.9); border-color: rgba(255,255,255,0.2); }
+
+        .icon-glow {
+            width: 48px; height: 48px; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; color: white;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .g-green { background: linear-gradient(135deg, #22c55e, #14532d); }
+        .g-blue { background: linear-gradient(135deg, #3b82f6, #1e3a8a); }
+        .g-purple { background: linear-gradient(135deg, #a855f7, #581c87); }
+        .g-orange { background: linear-gradient(135deg, #f97316, #7c2d12); }
+        .g-red { background: linear-gradient(135deg, #ef4444, #991b1b); }
     </style>
 </head>
 <body>
 
-    <div class="hero-card">
-        <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">פורטל ארגוני</div>
-        <h1 class="text-2xl font-bold">שלום, צוות סבן</h1>
-        <div class="mt-4 flex items-center gap-2 text-sm text-slate-300">
-            <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> מחובר למערכת
+    <div class="glass-btn mb-6 !flex-row !justify-between !items-center !h-auto !p-6" style="background: linear-gradient(135deg, #1e293b, #0f172a);">
+        <div>
+            <div class="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">מערכת ראשית</div>
+            <h1 class="text-2xl font-black text-white">ראמי סבן</h1>
+            <div class="text-sm text-green-400 font-medium mt-2 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_#22c55e]"></span>
+                פעיל
+            </div>
+        </div>
+        <div class="text-right">
+            <div id="clock" class="text-2xl font-mono font-bold text-white opacity-90">00:00</div>
         </div>
     </div>
 
-    <h2 class="text-xs font-bold text-slate-400 uppercase mb-4 tracking-wider">יישומים מהירים</h2>
-    <div class="app-grid">
-        <div class="app-btn" onclick="window.parent.openApp('chat', 'מרכז תקשורת')">
-            <div class="icon-circle bg-green-500"><i class="fab fa-whatsapp"></i></div>
-            <div class="font-bold text-slate-700 text-sm">צ'אט</div>
+    <div class="grid grid-cols-2 gap-4">
+        
+        <div class="glass-btn" onclick="openApp('chat', 'מרכז תקשורת')">
+            <div class="icon-glow g-green"><i class="fab fa-whatsapp"></i></div>
+            <div class="text-center">
+                <div class="font-bold">תקשורת</div>
+                <div class="text-[10px] text-gray-400">צ'אט, קבוצות</div>
+            </div>
         </div>
-        <div class="app-btn" onclick="window.parent.openApp('drive', 'ארכיון מסמכים')">
-            <div class="icon-circle bg-blue-500"><i class="fas fa-folder-open"></i></div>
-            <div class="font-bold text-slate-700 text-sm">מסמכים</div>
+
+        <div class="glass-btn" onclick="openApp('drive', 'ארכיון מסמכים')">
+            <div class="icon-glow g-blue"><i class="fas fa-folder-open"></i></div>
+            <div class="text-center">
+                <div class="font-bold">מסמכים</div>
+                <div class="text-[10px] text-gray-400">דרייב, חשבוניות</div>
+            </div>
         </div>
-        <div class="app-btn" onclick="window.parent.openApp('team', 'צוותים')">
-            <div class="icon-circle bg-purple-500"><i class="fas fa-users"></i></div>
-            <div class="font-bold text-slate-700 text-sm">צוות</div>
+
+        <div class="glass-btn" onclick="openApp('calendar', 'יומן חכם')">
+            <div class="icon-glow g-red"><i class="fas fa-calendar-check"></i></div>
+            <div class="text-center">
+                <div class="font-bold">יומן</div>
+                <div class="text-[10px] text-gray-400">משימות, פגישות</div>
+            </div>
         </div>
-        <div class="app-btn" onclick="window.parent.openApp('truck', 'מסוף נהג')">
-            <div class="icon-circle bg-orange-500"><i class="fas fa-truck"></i></div>
-            <div class="font-bold text-slate-700 text-sm">נהג</div>
+
+        <div class="glass-btn" onclick="window.parent.sendMagicLink()">
+            <div class="icon-glow g-orange"><i class="fas fa-magic"></i></div>
+            <div class="text-center">
+                <div class="font-bold">לינק קסם</div>
+                <div class="text-[10px] text-gray-400">שליחת הזמנה</div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="mt-6 flex justify-between px-4">
+        <div class="text-center" onclick="openApp('team', 'צוותים')">
+            <div class="text-2xl font-bold text-white"><i class="fas fa-users text-blue-400"></i></div>
+            <div class="text-[10px] text-gray-500 uppercase font-bold">צוות</div>
+        </div>
+        <div class="text-center" onclick="openApp('truck', 'נהגים')">
+            <div class="text-2xl font-bold text-white"><i class="fas fa-truck text-orange-400"></i></div>
+            <div class="text-[10px] text-gray-500 uppercase font-bold">נהגים</div>
+        </div>
+        <div class="text-center">
+            <div class="text-2xl font-bold text-green-400">100%</div>
+            <div class="text-[10px] text-gray-500 uppercase font-bold">יעילות</div>
         </div>
     </div>
 
+    <script>
+        // ניווט דרך האבא (Shell)
+        function openApp(id, title) {
+            if (window.parent && window.parent.openApp) {
+                window.parent.openApp(id, title);
+            }
+        }
+
+        // שעון
+        setInterval(() => {
+            document.getElementById('clock').innerText = new Date().toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'});
+        }, 1000);
+    </script>
 </body>
 </html>
