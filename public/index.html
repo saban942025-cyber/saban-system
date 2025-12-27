@@ -5,21 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SabanOS Pro</title>
     <link rel="icon" href="https://saban-system.onrender.com/icons/icon-192.png">
+    
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({
+          appId: "07b81f2e-e812-424f-beca-36584b12ccf2",
+          safari_web_id: "web.onesignal.auto.6476576c-3432-4e56-8976-5656565656", // אופציונלי
+          notifyButton: { enable: true }, // כפתור פעמון להרשמה
+          allowLocalhostAsSecureOrigin: true,
+        });
+      });
+    </script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
+        /* איפוס ועיצוב בסיס */
         body { margin: 0; padding: 0; background: #f8fafc; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: system-ui, -apple-system, sans-serif; }
         
-        /* HEADER (מופיע רק פעם אחת כאן) */
+        /* HEADER */
         .app-header { 
             height: 60px; background: white; display: flex; align-items: center; justify-content: space-between; 
             padding: 0 16px; border-bottom: 1px solid #e2e8f0; z-index: 50; flex-shrink: 0;
         }
-        .header-logo { font-weight: 800; font-size: 20px; color: #0f172a; display: flex; align-items: center; gap: 8px; }
+        .header-logo { font-weight: 800; font-size: 18px; color: #0f172a; display: flex; align-items: center; gap: 8px; cursor: pointer; }
         .header-logo img { width: 32px; height: 32px; border-radius: 6px; }
         .page-title { font-weight: 600; color: #64748b; font-size: 14px; position: absolute; left: 50%; transform: translateX(-50%); }
 
-        /* CONTENT STAGE */
+        /* MAIN STAGE */
         .main-stage { flex: 1; position: relative; background: #f1f5f9; width: 100%; overflow: hidden; }
         iframe { width: 100%; height: 100%; border: none; display: block; }
 
@@ -33,7 +49,7 @@
         .nav-btn span { font-size: 10px; font-weight: 500; }
         .nav-btn.active { color: #2563eb; border-top: 2px solid #2563eb; }
 
-        /* DRAWER (תפריט צד נסתר) */
+        /* DRAWER */
         .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; opacity: 0; pointer-events: none; transition: 0.3s; }
         .drawer-overlay.open { opacity: 1; pointer-events: all; }
         .drawer-content { 
