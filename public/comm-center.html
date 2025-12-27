@@ -3,258 +3,432 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Saban Chat | מרכז תקשורת</title>
+    <title>Saban Chat | מרכז עצבים</title>
+    <link rel="manifest" href="manifest-chat.json">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
-        body { background: #e5e7eb; font-family: 'Segoe UI', system-ui, sans-serif; height: 100vh; display: flex; overflow: hidden; }
-        
-        /* Sidebar */
-        .sidebar { width: 300px; background: white; border-left: 1px solid #d1d5db; display: flex; flex-direction: column; z-index: 20; }
-        .sidebar-header { padding: 15px; background: #f3f4f6; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; }
-        .search-box { padding: 10px; border-bottom: 1px solid #f3f4f6; }
-        .chat-list { flex: 1; overflow-y: auto; }
-        
-        .chat-item { display: flex; align-items: center; gap: 12px; padding: 12px 15px; cursor: pointer; transition: 0.2s; border-bottom: 1px solid #f9fafb; }
-        .chat-item:hover { background: #f9fafb; }
-        .chat-item.active { background: #eff6ff; border-right: 4px solid #3b82f6; }
-        
-        .avatar { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 1px solid #e5e7eb; }
-        .avatar-group { background: #e0f2fe; color: #0369a1; display: flex; align-items: center; justify-content: center; font-size: 18px; }
-        
-        .unread-badge { background: #2563eb; color: white; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 10px; margin-right: auto; }
+        /* --- Chameleon Engine --- */
+        :root {
+            --wa-primary: #00a884;
+            --wa-header: #f0f2f5;
+            --wa-bg: #efeae2;
+            --wa-msg-out: #d9fdd3;
+            --wa-msg-in: #ffffff;
+            --wa-text: #111b21;
+        }
 
-        /* Main Chat Area */
-        .chat-area { flex: 1; display: flex; flex-direction: column; background: #efeae2; position: relative; }
-        .chat-header { background: #f0f2f5; padding: 10px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #d1d5db; height: 60px; }
+        body.theme-dark { --wa-primary: #00a884; --wa-header: #202c33; --wa-bg: #0b141a; --wa-msg-out: #005c4b; --wa-msg-in: #202c33; --wa-text: #e9edef; }
+        body.theme-royal { --wa-primary: #3b82f6; --wa-header: #1e3a8a; --wa-bg: #eff6ff; --wa-msg-out: #dbeafe; --wa-msg-in: #ffffff; --wa-text: #1e3a8a; color: #1e3a8a; }
+
+        body { background: #d1d7db; font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; overflow: hidden; color: var(--wa-text); }
         
-        .messages-box { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); opacity: 0.95; }
+        /* Layout */
+        .app-container { display: flex; width: 100%; height: 100%; max-width: 1600px; margin: 0 auto; background: white; position: relative; }
         
-        .message { max-width: 70%; padding: 8px 12px; border-radius: 8px; font-size: 14px; line-height: 1.4; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-        .msg-in { align-self: flex-start; background: white; border-top-right-radius: 0; }
-        .msg-out { align-self: flex-end; background: #dcf8c6; border-top-left-radius: 0; }
+        /* Sidebar (Contacts) */
+        .sidebar { width: 30%; min-width: 320px; background: white; border-left: 1px solid #e9edef; display: flex; flex-direction: column; z-index: 20; transition: transform 0.3s; }
+        body.theme-dark .sidebar { background: #111b21; border-color: #222e35; }
         
-        .msg-time { font-size: 10px; color: #9ca3af; text-align: left; margin-top: 4px; }
-        .msg-sender { font-size: 10px; font-weight: bold; color: #e11d48; margin-bottom: 2px; }
+        .sidebar-header { padding: 10px 16px; background: var(--wa-header); height: 60px; display: flex; justify-content: space-between; align-items: center; border-right: 1px solid rgba(0,0,0,0.1); }
+        
+        .chat-item { display: flex; align-items: center; gap: 15px; padding: 12px; cursor: pointer; border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .chat-item:hover { background: rgba(0,0,0,0.03); }
+        .chat-item.active { background: rgba(0,0,0,0.05); }
+        
+        /* Main Chat */
+        .chat-area { flex: 1; display: flex; flex-direction: column; background: var(--wa-bg); position: relative; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); background-blend-mode: overlay; }
+        
+        .chat-header { background: var(--wa-header); padding: 10px 16px; height: 60px; display: flex; align-items: center; gap: 15px; cursor: pointer; }
+        
+        /* Messages */
+        .messages-box { flex: 1; overflow-y: auto; padding: 20px 5%; display: flex; flex-direction: column; gap: 8px; }
+        .message { max-width: 65%; padding: 6px 10px; border-radius: 8px; font-size: 14.2px; line-height: 19px; position: relative; box-shadow: 0 1px 0.5px rgba(0,0,0,0.13); display: flex; flex-direction: column; }
+        
+        .msg-in { align-self: flex-start; background: var(--wa-msg-in); border-top-right-radius: 0; }
+        .msg-out { align-self: flex-end; background: var(--wa-msg-out); border-top-left-radius: 0; }
+        
+        .msg-meta { font-size: 11px; color: rgba(0,0,0,0.45); display: flex; justify-content: flex-end; gap: 4px; margin-top: 2px; }
+        body.theme-dark .msg-meta { color: rgba(255,255,255,0.6); }
+
+        /* Selection Mode */
+        .message.selected { background: #bfdbfe !important; transform: scale(0.98); outline: 2px solid #3b82f6; }
+        .selection-bar { position: absolute; top: 0; left: 0; right: 0; height: 60px; background: var(--wa-primary); color: white; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; z-index: 50; transform: translateY(-100%); transition: 0.3s; }
+        .selection-bar.visible { transform: translateY(0); }
 
         /* Input Area */
-        .input-area { background: #f0f2f5; padding: 10px; display: flex; align-items: center; gap: 10px; }
-        .msg-input { flex: 1; padding: 10px; border-radius: 20px; border: none; outline: none; font-size: 14px; }
-        .btn-send { background: #2563eb; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
-        .btn-send:hover { transform: scale(1.1); }
+        .input-area { background: var(--wa-header); padding: 8px 10px; display: flex; align-items: center; gap: 10px; min-height: 62px; }
+        .msg-input { flex: 1; padding: 9px 12px; border-radius: 8px; border: none; outline: none; font-size: 15px; background: white; max-height: 100px; }
+        body.theme-dark .msg-input { background: #2a3942; color: white; }
+
+        /* Pin Drawer */
+        .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; display: none; align-items: flex-end; }
+        .drawer-content { width: 100%; background: white; border-top-left-radius: 20px; border-top-right-radius: 20px; height: 60vh; display: flex; flex-direction: column; animation: slideUp 0.3s; }
+        body.theme-dark .drawer-content { background: #111b21; color: white; }
+        @keyframes slideUp { from {transform: translateY(100%)} to {transform: translateY(0)} }
+
+        /* Info Panel (Right Side) */
+        .info-panel { width: 0; background: var(--wa-header); border-right: 1px solid rgba(0,0,0,0.1); overflow: hidden; transition: 0.3s; display: flex; flex-direction: column; }
+        .info-panel.open { width: 300px; }
 
         /* Responsive */
         @media (max-width: 768px) {
-            .sidebar { width: 100%; position: absolute; height: 100%; transition: 0.3s; transform: translateX(0); }
-            .sidebar.hidden-mobile { transform: translateX(100%); }
-            .chat-area { width: 100%; }
-            .back-btn { display: block; margin-left: 10px; cursor: pointer; }
+            .sidebar { width: 100%; position: absolute; height: 100%; }
+            .sidebar.hidden { transform: translateX(100%); }
+            .info-panel.open { position: absolute; right: 0; top: 0; height: 100%; width: 85%; z-index: 60; box-shadow: -5px 0 15px rgba(0,0,0,0.2); }
         }
-        @media (min-width: 769px) {
-            .back-btn { display: none; }
-        }
-
-        /* Section Dividers */
-        .list-section { font-size: 11px; font-weight: bold; color: #6b7280; padding: 10px 15px 5px; background: #f9fafb; text-transform: uppercase; letter-spacing: 0.5px; }
     </style>
 </head>
 <body>
 
-    <div id="sidebar" class="sidebar">
-        <div class="sidebar-header">
-            <div class="font-bold text-gray-700 flex items-center gap-2"><i class="fab fa-whatsapp text-green-500 text-xl"></i> Saban Chat</div>
-            <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs">אני</div>
-        </div>
-        <div class="search-box">
-            <input type="text" id="search-contact" placeholder="חיפוש איש קשר..." class="w-full bg-gray-100 px-3 py-2 rounded-lg text-sm outline-none">
-        </div>
-        <div class="chat-list" id="contacts-list">
+    <div class="app-container">
+        
+        <div id="selection-bar" class="selection-bar">
+            <div class="flex items-center gap-4">
+                <button onclick="clearSelection()"><i class="fas fa-arrow-right"></i></button>
+                <span id="select-count" class="font-bold text-lg">0</span>
             </div>
+            <button onclick="forwardSelected()"><i class="fas fa-share text-xl"></i></button>
+        </div>
+
+        <div id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <div class="flex gap-3 items-center">
+                    <img src="https://ui-avatars.com/api/?name=Admin" class="w-10 h-10 rounded-full">
+                    <span class="font-bold hidden md:block">מרכז בקרה</span>
+                </div>
+                <div class="flex gap-3 text-gray-500">
+                    <button onclick="toggleTheme()"><i class="fas fa-adjust"></i></button>
+                    <button><i class="fas fa-comment-alt"></i></button>
+                    <button><i class="fas fa-ellipsis-v"></i></button>
+                </div>
+            </div>
+            <div class="p-2 bg-white dark:bg-[#111b21]">
+                <input type="text" placeholder="חיפוש או שיחה חדשה" class="w-full bg-[#f0f2f5] dark:bg-[#202c33] dark:text-white px-4 py-2 rounded-lg text-sm outline-none">
+            </div>
+            <div class="flex-1 overflow-y-auto" id="contacts-list"></div>
+        </div>
+
+        <div class="chat-area">
+            <div class="chat-header" onclick="toggleInfoPanel()">
+                <button class="md:hidden ml-2" onclick="toggleSidebar()"><i class="fas fa-arrow-right"></i></button>
+                <img id="header-img" src="" class="w-10 h-10 rounded-full object-cover hidden">
+                <div class="flex-1">
+                    <div id="header-name" class="font-bold">בחר שיחה</div>
+                    <div id="header-status" class="text-xs opacity-60"></div>
+                </div>
+                <button><i class="fas fa-search text-gray-500"></i></button>
+            </div>
+
+            <div id="messages" class="messages-box">
+                <div class="flex flex-col items-center justify-center h-full opacity-40 gap-4">
+                    <i class="fab fa-whatsapp text-6xl"></i>
+                    <div>Saban Communication Center</div>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <button onclick="toggleDocsDrawer()" class="text-gray-500 hover:text-[#00a884] transition transform hover:rotate-45"><i class="fas fa-paperclip text-xl"></i></button>
+                <input type="text" id="msg-input" class="msg-input" placeholder="הקלד הודעה" onkeypress="handleKey(event)">
+                <button onclick="sendMessage()" class="text-[#00a884]"><i class="fas fa-paper-plane text-xl"></i></button>
+            </div>
+        </div>
+
+        <div id="info-panel" class="info-panel">
+            <div class="p-4 bg-gray-100 dark:bg-[#202c33] flex items-center gap-2">
+                <button onclick="toggleInfoPanel()"><i class="fas fa-times"></i></button>
+                <span class="font-bold">פרטי איש קשר</span>
+            </div>
+            <div class="p-6 flex flex-col items-center border-b dark:border-gray-700">
+                <img id="info-img" src="" class="w-32 h-32 rounded-full mb-4 shadow-lg">
+                <h2 id="info-name" class="text-xl font-bold"></h2>
+                <div id="info-role" class="text-sm text-gray-500"></div>
+                
+                <div class="flex gap-4 mt-4 w-full justify-center">
+                    <div class="text-center cursor-pointer" onclick="callUser()">
+                        <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center mx-auto mb-1"><i class="fas fa-phone"></i></div>
+                        <span class="text-xs">שיחה</span>
+                    </div>
+                    <div class="text-center cursor-pointer">
+                        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mx-auto mb-1"><i class="fas fa-video"></i></div>
+                        <span class="text-xs">וידאו</span>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 flex-1 overflow-y-auto">
+                <div class="text-xs font-bold text-gray-500 mb-2">קבצים ומדיה</div>
+                <div class="grid grid-cols-3 gap-2" id="info-media">
+                    </div>
+            </div>
+        </div>
+
     </div>
 
-    <div class="chat-area">
-        <div class="chat-header">
-            <i class="fas fa-arrow-right back-btn text-gray-600" onclick="toggleSidebar()"></i>
-            <img id="header-img" src="" class="avatar hidden">
-            <div>
-                <div id="header-name" class="font-bold text-gray-800">בחר איש קשר</div>
-                <div id="header-status" class="text-xs text-gray-500"></div>
+    <div id="docs-drawer" class="drawer-overlay" onclick="if(event.target===this) toggleDocsDrawer()">
+        <div class="drawer-content">
+            <div class="p-4 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-[#202c33] rounded-t-2xl">
+                <div class="font-bold">📎 צרף מסמך</div>
+                <button onclick="document.getElementById('file-upload').click()" class="bg-[#00a884] text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                    <i class="fas fa-plus"></i> העלאה
+                </button>
+                <input type="file" id="file-upload" hidden onchange="handleFileUpload(this)">
             </div>
-        </div>
-
-        <div id="messages" class="messages-box">
-            <div class="flex flex-col items-center justify-center h-full text-gray-400 opacity-50">
-                <i class="fas fa-comments text-6xl mb-4"></i>
-                <div>בחר שיחה כדי להתחיל</div>
+            <div id="docs-list" class="flex-1 overflow-y-auto p-2 space-y-2">
+                <div class="text-center mt-10 text-gray-400"><i class="fas fa-circle-notch fa-spin"></i> טוען...</div>
             </div>
-        </div>
-
-        <div class="input-area">
-            <button class="text-gray-500 hover:text-gray-700 p-2"><i class="fas fa-paperclip"></i></button>
-            <input type="text" id="msg-input" class="msg-input" placeholder="הקלד הודעה..." onkeypress="handleKey(event)">
-            <div class="btn-send" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, where, orderBy, onSnapshot, serverTimestamp, setDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, where, orderBy, onSnapshot, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwIwoPwUA7uKnylbBBLoq06os16t1OV5jxWuohGCXhuWt99JjMfdEp1wWV-rSCeSmaD/exec";
 
         // STATE
         let currentChatId = null;
-        let currentUser = 'dispatcher'; // סימולציה - כרגע אנחנו הסדרן
-        let contacts = [];
-
-        // 1. האזנה למשתמשים + הוספת ורד סטטית
-        const qUsers = query(collection(db, "users"), orderBy("name"));
+        let currentUserData = null;
+        let selectedMsgs = new Set();
+        let isSelectionMode = false;
         
-        onSnapshot(qUsers, (snap) => {
+        // --- 1. Load Contacts ---
+        onSnapshot(query(collection(db, "users"), orderBy("name")), (snap) => {
             const list = document.getElementById('contacts-list');
             list.innerHTML = '';
-            contacts = [];
-
-            // --- קבוצות קבועות ---
-            renderContactItem(list, { id: 'general', name: '📢 ערוץ כללי', type: 'group', avatar: null, role: 'system' }, true);
             
-            // כותרת הנהלה
-            list.innerHTML += `<div class="list-section">הנהלה ואדמיניסטרציה</div>`;
-            
-            // --- הוספה כפויה של ורד (אם עדיין לא ב-DB) ---
-            const veredExists = snap.docs.find(d => d.data().name.includes('ורד'));
-            if (!veredExists) {
-                 renderContactItem(list, { 
-                     id: 'vered_manual', 
-                     name: 'ורד אידלסון', 
-                     role: 'manager', 
-                     avatar: 'https://ui-avatars.com/api/?name=Vered&background=be123c&color=fff',
-                     phone: '0506662300'
-                 });
-            }
-
-            // --- טעינת משתמשים מה-DB ---
-            let driversList = [];
-            let managersList = [];
+            // ערוץ כללי
+            renderContact(list, {id: 'general', name: '📢 ערוץ כללי', type: 'group'}, true);
 
             snap.forEach(d => {
-                const u = { id: d.id, ...d.data() };
-                if (u.type === 'driver') driversList.push(u);
-                else if (u.type === 'manager' || u.role?.includes('מנהל')) managersList.push(u);
+                renderContact(list, {id: d.id, ...d.data()});
             });
-
-            // רנדור מנהלים
-            managersList.forEach(u => renderContactItem(list, u));
-
-            // כותרת נהגים
-            list.innerHTML += `<div class="list-section">נהגים ואנשי שטח</div>`;
-            driversList.forEach(u => renderContactItem(list, u));
         });
 
-        function renderContactItem(container, u, isGroup = false) {
-            const avatarSrc = u.avatar || `https://ui-avatars.com/api/?name=${u.name}&background=random`;
-            const icon = isGroup ? '<i class="fas fa-bullhorn"></i>' : `<img src="${avatarSrc}" class="avatar">`;
-            const cssClass = isGroup ? 'avatar-group rounded-lg w-[45px] h-[45px]' : '';
-            
-            // זיהוי ורד לצביעת השם
-            const isVered = u.name.includes('ורד');
-            const nameColor = isVered ? 'text-rose-700 font-bold' : 'text-gray-800 font-bold';
-            const badge = isVered ? '<i class="fas fa-crown text-xs text-yellow-500 ml-1"></i>' : '';
-
-            const html = `
-            <div class="chat-item" onclick="openChat('${u.id}', '${u.name}', '${avatarSrc}', '${u.type}')">
-                <div class="${isGroup ? cssClass : ''}">${icon}</div>
+        function renderContact(container, u, isGroup=false) {
+            const avatar = u.avatar || `https://ui-avatars.com/api/?name=${u.name}&background=random`;
+            const div = document.createElement('div');
+            div.className = 'chat-item';
+            div.innerHTML = `
+                <img src="${avatar}" class="w-12 h-12 rounded-full object-cover">
                 <div class="flex-1">
-                    <div class="${nameColor} text-sm flex items-center justify-between">
-                        <span>${u.name} ${badge}</span>
-                        <span class="text-[10px] text-gray-400">12:30</span>
+                    <div class="flex justify-between">
+                        <span class="font-bold text-sm">${u.name}</span>
+                        <span class="text-[10px] text-gray-500">10:30</span>
                     </div>
-                    <div class="text-xs text-gray-500 truncate w-40">${u.role || 'זמין לשיחה'}</div>
+                    <div class="text-xs text-gray-500 truncate">${u.role || '...'}</div>
                 </div>
-            </div>`;
-            
-            container.innerHTML += html;
+            `;
+            div.onclick = () => openChat(u);
+            container.appendChild(div);
         }
 
-        // 2. פתיחת צ'אט
-        window.openChat = (id, name, avatar, type) => {
-            currentChatId = id;
+        // --- 2. Chat Logic ---
+        window.openChat = (u) => {
+            currentChatId = u.id;
+            currentUserData = u;
             
-            // UI Update
-            document.getElementById('header-name').innerText = name;
-            document.getElementById('header-status').innerText = type === 'group' ? 'ערוץ הודעות לכולם' : 'מחובר';
-            const img = document.getElementById('header-img');
-            img.src = avatar;
-            img.classList.remove('hidden');
+            // Header Update
+            document.getElementById('header-img').src = u.avatar || `https://ui-avatars.com/api/?name=${u.name}`;
+            document.getElementById('header-img').classList.remove('hidden');
+            document.getElementById('header-name').innerText = u.name;
+            document.getElementById('header-status').innerText = u.type === 'group' ? 'כולם כאן' : 'אונליין';
             
-            // Mobile toggle
-            if(window.innerWidth < 768) toggleSidebar();
+            // Info Panel Update
+            document.getElementById('info-img').src = u.avatar || `https://ui-avatars.com/api/?name=${u.name}`;
+            document.getElementById('info-name').innerText = u.name;
+            document.getElementById('info-role').innerText = u.role || 'משתמש';
+
+            // Mobile: Hide Sidebar
+            if(window.innerWidth < 768) document.getElementById('sidebar').classList.add('hidden');
 
             // Load Messages
-            const qMsg = query(collection(db, `chats/${id}/messages`), orderBy("createdAt", "asc"));
-            onSnapshot(qMsg, (snap) => {
-                const box = document.getElementById('messages');
-                box.innerHTML = '';
-                
-                if (snap.empty) {
-                     box.innerHTML = `<div class="text-center mt-10 text-gray-500 text-sm bg-white/80 p-2 rounded w-fit mx-auto">התחלת שיחה עם ${name}</div>`;
-                }
+            loadMessages(u.id);
+        };
 
+        function loadMessages(chatId) {
+            const box = document.getElementById('messages');
+            box.innerHTML = '';
+            
+            onSnapshot(query(collection(db, `chats/${chatId}/messages`), orderBy("createdAt", "asc")), (snap) => {
+                box.innerHTML = '';
                 snap.forEach(d => {
                     const m = d.data();
-                    const isMe = m.senderId === 'dispatcher'; // זמני
-                    const time = m.createdAt ? new Date(m.createdAt.seconds * 1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '...';
+                    const isMe = m.senderId === 'dispatcher'; 
+                    const time = m.createdAt ? new Date(m.createdAt.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '...';
                     
-                    box.innerHTML += `
-                    <div class="message ${isMe ? 'msg-out' : 'msg-in'}">
-                        ${!isMe ? `<div class="msg-sender">${m.senderName}</div>` : ''}
-                        <div>${m.text}</div>
-                        <div class="msg-time">${time} <i class="fas fa-check-double text-blue-500 ml-1"></i></div>
-                    </div>`;
+                    const div = document.createElement('div');
+                    div.className = `message ${isMe ? 'msg-out' : 'msg-in'}`;
+                    div.innerHTML = `
+                        ${!isMe ? `<span class="text-[10px] font-bold text-orange-600 mb-1">${m.senderName}</span>` : ''}
+                        <div>${renderText(m.text)}</div>
+                        <div class="msg-meta">
+                            <span>${time}</span>
+                            ${isMe ? '<i class="fas fa-check-double text-blue-500 text-[10px]"></i>' : ''}
+                        </div>
+                    `;
+                    
+                    // Selection Logic
+                    div.onclick = () => {
+                        if (isSelectionMode) toggleSelectMessage(div, m.text);
+                    };
+                    // Long press for selection
+                    div.addEventListener('contextmenu', (e) => {
+                        e.preventDefault();
+                        startSelectionMode();
+                        toggleSelectMessage(div, m.text);
+                    });
+
+                    box.appendChild(div);
                 });
                 box.scrollTop = box.scrollHeight;
             });
-        };
-
-        // 3. שליחת הודעה
-        window.sendMessage = async () => {
-            const input = document.getElementById('msg-input');
-            const text = input.value.trim();
-            if (!text || !currentChatId) return;
-
-            input.value = '';
-            
-            // שמירה ל-Firestore
-            await addDoc(collection(db, `chats/${currentChatId}/messages`), {
-                text: text,
-                senderId: 'dispatcher',
-                senderName: 'יואב (סידור)', // זמני - צריך לקחת מהלוגין
-                createdAt: serverTimestamp(),
-                read: false
-            });
-            
-            // צליל שליחה
-            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3'); 
-            audio.volume = 0.2;
-            audio.play().catch(()=>{});
-        };
-
-        window.handleKey = (e) => { if (e.key === 'Enter') sendMessage(); };
-        
-        // Mobile Sidebar Toggle
-        window.toggleSidebar = () => {
-            const sb = document.getElementById('sidebar');
-            sb.classList.toggle('hidden-mobile');
-        };
-
-        // הוספה חד פעמית של ורד למערכת אם היא לא שם (Self-Healing)
-        async function ensureVeredInDB() {
-            // בדיקה אם קיים
-            // כאן אפשר להריץ לוגיקה שקטה שבודקת ומוסיפה
-            // אבל כבר טיפלנו בזה בתצוגה (render)
         }
+
+        function renderText(text) {
+            // Detect Links
+            if(text.includes('http')) {
+                return text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" class="text-blue-500 underline">$1</a>');
+            }
+            return text;
+        }
+
+        // --- 3. Forwarding System ---
+        function startSelectionMode() {
+            isSelectionMode = true;
+            document.getElementById('selection-bar').classList.add('visible');
+        }
+
+        window.clearSelection = () => {
+            isSelectionMode = false;
+            selectedMsgs.clear();
+            document.getElementById('selection-bar').classList.remove('visible');
+            document.querySelectorAll('.message.selected').forEach(el => el.classList.remove('selected'));
+            document.getElementById('select-count').innerText = '0';
+        };
+
+        function toggleSelectMessage(el, text) {
+            if (selectedMsgs.has(text)) {
+                selectedMsgs.delete(text);
+                el.classList.remove('selected');
+            } else {
+                selectedMsgs.add(text);
+                el.classList.add('selected');
+            }
+            document.getElementById('select-count').innerText = selectedMsgs.size;
+            if (selectedMsgs.size === 0) clearSelection();
+        }
+
+        window.forwardSelected = () => {
+            if (selectedMsgs.size === 0) return;
+            // כאן נפתח מודל לבחירת איש קשר להעברה
+            // לצורך הדוגמה, נעביר לערוץ הכללי
+            const textToForward = Array.from(selectedMsgs).join('\n---\n');
+            
+            Swal.fire({
+                title: 'העבר הודעות',
+                text: 'האם להעביר לערוץ הכללי?',
+                showCancelButton: true,
+                confirmButtonText: 'כן, העבר'
+            }).then(async (res) => {
+                if(res.isConfirmed) {
+                    await addDoc(collection(db, "chats/general/messages"), {
+                        text: `*הודעה מועברת:*\n${textToForward}`,
+                        senderId: 'dispatcher', senderName: 'מוקד', createdAt: serverTimestamp()
+                    });
+                    clearSelection();
+                    Swal.fire('הועבר בהצלחה', '', 'success');
+                }
+            });
+        };
+
+        // --- 4. Documents & Pin ---
+        window.toggleDocsDrawer = async () => {
+            const el = document.getElementById('docs-drawer');
+            const list = document.getElementById('docs-list');
+            
+            if (el.style.display === 'flex') {
+                el.style.display = 'none';
+            } else {
+                el.style.display = 'flex';
+                // Fetch Docs
+                if(list.children.length < 2) {
+                    try {
+                        const res = await fetch(SCRIPT_URL);
+                        const files = await res.json();
+                        list.innerHTML = '';
+                        files.forEach(f => {
+                            const icon = f.type.includes('image') ? 'fa-image text-blue-500' : 'fa-file-pdf text-red-500';
+                            const div = document.createElement('div');
+                            div.className = "flex items-center gap-3 p-3 border-b dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5";
+                            div.innerHTML = `
+                                <div class="w-10 h-10 rounded bg-gray-100 dark:bg-gray-800 flex items-center justify-center"><i class="fas ${icon}"></i></div>
+                                <div class="flex-1">
+                                    <div class="font-bold text-sm">${f.name}</div>
+                                    <div class="text-[10px] opacity-60">${new Date(f.date).toLocaleDateString()}</div>
+                                </div>
+                            `;
+                            div.onclick = () => { sendLink(f.url, f.name); toggleDocsDrawer(); };
+                            list.appendChild(div);
+                        });
+                    } catch(e) { list.innerText = 'שגיאה בטעינה'; }
+                }
+            }
+        };
+
+        function sendLink(url, name) {
+            const input = document.getElementById('msg-input');
+            input.value = `מצורף מסמך: ${name}\n${url}`;
+            sendMessage();
+        }
+
+        window.handleFileUpload = (input) => {
+            const file = input.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async () => {
+                const base64 = reader.result.split(',')[1];
+                Swal.fire({title:'מעלה...', didOpen:()=>Swal.showLoading()});
+                await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({fileName:file.name, mimeType:file.type, fileBase64:base64}) });
+                Swal.fire('הועלה','','success');
+                toggleDocsDrawer();
+            };
+        };
+
+        // --- 5. UI Helpers ---
+        window.toggleSidebar = () => {
+            document.getElementById('sidebar').classList.toggle('hidden');
+        };
+        
+        window.toggleInfoPanel = () => {
+            document.getElementById('info-panel').classList.toggle('open');
+        };
+
+        window.toggleTheme = () => {
+            if(document.body.classList.contains('theme-dark')) {
+                document.body.className = 'theme-royal';
+            } else if(document.body.classList.contains('theme-royal')) {
+                document.body.className = '';
+            } else {
+                document.body.className = 'theme-dark';
+            }
+        };
+
+        window.sendMessage = async () => {
+            const inp = document.getElementById('msg-input');
+            const txt = inp.value.trim();
+            if(!txt || !currentChatId) return;
+            inp.value = '';
+            await addDoc(collection(db, `chats/${currentChatId}/messages`), {
+                text: txt, senderId: 'dispatcher', senderName: 'מוקד', createdAt: serverTimestamp()
+            });
+        };
+        window.handleKey = (e) => { if(e.key==='Enter') sendMessage(); };
+        window.callUser = () => window.open(`tel:${currentUserData?.phone||''}`);
     </script>
 </body>
 </html>
