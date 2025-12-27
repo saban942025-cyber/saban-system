@@ -10,56 +10,45 @@
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function(OneSignal) {
-        await OneSignal.init({
-          appId: "07b81f2e-e812-424f-beca-36584b12ccf2",
-          safari_web_id: "web.onesignal.auto.6476576c-3432-4e56-8976-5656565656",
-          notifyButton: { enable: true, size: 'medium', theme: 'default', position: 'bottom-left', showCredit: false },
-          allowLocalhostAsSecureOrigin: true,
-        });
+        await OneSignal.init({ appId: "07b81f2e-e812-424f-beca-36584b12ccf2", safari_web_id: "web.onesignal.auto.6476576c-3432-4e56-8976-5656565656", notifyButton: { enable: true } });
       });
     </script>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
+
     <style>
-        /* עיצוב נקי ללא סרגלים מיותרים */
         body { margin: 0; padding: 0; background: #f8fafc; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: system-ui, -apple-system, sans-serif; }
         
         /* HEADER */
-        .app-header { 
-            height: 60px; background: white; display: flex; align-items: center; justify-content: space-between; 
-            padding: 0 16px; border-bottom: 1px solid #e2e8f0; z-index: 50; flex-shrink: 0;
-        }
+        .app-header { height: 60px; background: white; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border-bottom: 1px solid #e2e8f0; z-index: 50; flex-shrink: 0; }
         .header-logo { font-weight: 800; font-size: 18px; color: #0f172a; display: flex; align-items: center; gap: 8px; cursor: pointer; }
         .header-logo img { width: 32px; height: 32px; border-radius: 6px; }
         .page-title { font-weight: 600; color: #64748b; font-size: 14px; position: absolute; left: 50%; transform: translateX(-50%); }
 
-        /* STAGE */
+        /* THE NAG BAR (הנודניק) */
+        .nag-bar { background: #fef9c3; border-bottom: 1px solid #fde047; padding: 8px 16px; display: flex; align-items: center; justify-content: space-between; animation: slideDown 0.3s ease-out; z-index: 40; }
+        .nag-bar.hidden { display: none; }
+        @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+
+        /* MAIN STAGE */
         .main-stage { flex: 1; position: relative; background: #f1f5f9; width: 100%; overflow: hidden; }
         iframe { width: 100%; height: 100%; border: none; display: block; }
 
         /* BOTTOM NAV */
-        .bottom-nav { 
-            height: 65px; background: white; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-around; 
-            align-items: center; padding-bottom: env(safe-area-inset-bottom); z-index: 50; flex-shrink: 0;
-        }
+        .bottom-nav { height: 65px; background: white; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-around; align-items: center; padding-bottom: env(safe-area-inset-bottom); z-index: 50; flex-shrink: 0; }
         .nav-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; width: 60px; height: 100%; transition: 0.2s; cursor: pointer; }
+        .nav-btn.active { color: #2563eb; border-top: 2px solid #2563eb; }
         .nav-btn i { font-size: 20px; margin-bottom: 3px; }
         .nav-btn span { font-size: 10px; font-weight: 500; }
-        .nav-btn.active { color: #2563eb; border-top: 2px solid #2563eb; }
 
         /* DRAWER */
         .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; opacity: 0; pointer-events: none; transition: 0.3s; }
         .drawer-overlay.open { opacity: 1; pointer-events: all; }
-        .drawer-content { 
-            position: absolute; top: 0; right: 0; bottom: 0; width: 280px; background: white; 
-            transform: translateX(100%); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column;
-        }
+        .drawer-content { position: absolute; top: 0; right: 0; bottom: 0; width: 280px; background: white; transform: translateX(100%); transition: 0.3s; display: flex; flex-direction: column; }
         .drawer-overlay.open .drawer-content { transform: translateX(0); }
         .drawer-item { padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; gap: 12px; align-items: center; color: #334155; font-weight: 500; cursor: pointer; }
-        .drawer-item:active { background: #f8fafc; }
     </style>
 </head>
 <body>
@@ -73,23 +62,30 @@
         <button onclick="toggleDrawer(true)" class="text-slate-600 text-xl p-2"><i class="fas fa-bars"></i></button>
     </div>
 
+    <div id="nag-bar" class="nag-bar hidden">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 border border-yellow-200">
+                <i class="fas fa-bell animate-swing"></i>
+            </div>
+            <div>
+                <div class="text-[10px] font-bold text-yellow-800 uppercase tracking-wider">תזכורת פתוחה</div>
+                <div class="text-xs text-yellow-900 font-bold truncate max-w-[150px]" id="nag-text">...</div>
+            </div>
+        </div>
+        <button onclick="openApp('calendar', 'יומן משימות')" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm transition">
+            טפל עכשיו <i class="fas fa-arrow-left mr-1"></i>
+        </button>
+    </div>
+
     <div class="main-stage">
         <iframe id="main-frame" src="dashboard.html"></iframe>
     </div>
 
     <div class="bottom-nav">
-        <div class="nav-btn active" onclick="goHome()" id="nav-home">
-            <i class="fas fa-home"></i><span>ראשי</span>
-        </div>
-        <div class="nav-btn" onclick="openApp('chat', 'מרכז תקשורת')" id="nav-chat">
-            <i class="fab fa-whatsapp"></i><span>צ'אט</span>
-        </div>
-        <div class="nav-btn" onclick="openApp('drive', 'מסמכים')" id="nav-drive">
-            <i class="fas fa-folder"></i><span>דרייב</span>
-        </div>
-        <div class="nav-btn" onclick="openApp('team', 'צוותים')" id="nav-team">
-            <i class="fas fa-users"></i><span>צוות</span>
-        </div>
+        <div class="nav-btn active" onclick="goHome()" id="nav-home"><i class="fas fa-home"></i><span>ראשי</span></div>
+        <div class="nav-btn" onclick="openApp('chat', 'מרכז תקשורת')" id="nav-chat"><i class="fab fa-whatsapp"></i><span>צ'אט</span></div>
+        <div class="nav-btn" onclick="openApp('drive', 'מסמכים')" id="nav-drive"><i class="fas fa-folder"></i><span>דרייב</span></div>
+        <div class="nav-btn" onclick="openApp('calendar', 'יומן')" id="nav-calendar"><i class="fas fa-calendar-alt"></i><span>יומן</span></div>
     </div>
 
     <div id="drawer" class="drawer-overlay" onclick="toggleDrawer(false)">
@@ -100,30 +96,50 @@
             </div>
             <div class="flex-1 overflow-y-auto">
                 <div class="drawer-item" onclick="goHome(); toggleDrawer(false)"><i class="fas fa-home w-5 text-center"></i> דף הבית</div>
+                <div class="drawer-item" onclick="openApp('team', 'צוותים'); toggleDrawer(false)"><i class="fas fa-users w-5 text-center text-purple-500"></i> ניהול צוות</div>
                 <div class="drawer-item" onclick="openApp('truck', 'מסוף נהג'); toggleDrawer(false)"><i class="fas fa-truck w-5 text-center text-orange-500"></i> מסוף נהג</div>
                 <div class="drawer-item" onclick="location.reload()"><i class="fas fa-sync w-5 text-center"></i> רענן</div>
             </div>
             <div class="p-4 border-t">
-                <div class="drawer-item text-red-500 bg-red-50 rounded-lg" onclick="alert('LOGOUT')">
-                    <i class="fas fa-sign-out-alt w-5 text-center"></i> יציאה (LOG)
-                </div>
+                <div class="drawer-item text-red-500 bg-red-50 rounded-lg" onclick="alert('LOGOUT')"><i class="fas fa-sign-out-alt w-5 text-center"></i> יציאה (LOG)</div>
             </div>
         </div>
     </div>
 
-    <script>
-        function goHome() {
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
+
+        // --- NAG BAR LOGIC ---
+        // מאזין למשימות שטרם בוצעו (done == false)
+        onSnapshot(query(collection(db, "calendar"), where("done", "==", false)), (snap) => {
+            const bar = document.getElementById('nag-bar');
+            if (!snap.empty) {
+                const count = snap.size;
+                const task = snap.docs[0].data(); // לוקח את המשימה הראשונה
+                bar.classList.remove('hidden');
+                document.getElementById('nag-text').innerText = `${task.title} ${count > 1 ? `(+${count-1})` : ''}`;
+            } else {
+                bar.classList.add('hidden');
+            }
+        });
+
+        // --- NAVIGATION LOGIC ---
+        window.goHome = () => {
             document.getElementById('main-frame').src = 'dashboard.html';
             updateUI('home', 'דף הבית');
         }
 
-        function openApp(id, title) {
+        window.openApp = (id, title) => {
             let url = '';
             switch(id) {
                 case 'chat': url = 'comm-center.html'; break;
                 case 'drive': url = 'documents-drive.html'; break;
                 case 'team': url = 'team-view.html'; break; 
                 case 'truck': url = 'driver-app.html'; break;
+                case 'calendar': url = 'calendar-app.html'; break; // <--- החדש
+                case 'tasks': url = 'calendar-app.html'; break; // גם משימות מוביל ליומן
             }
             const frame = document.getElementById('main-frame');
             if(!frame.src.includes(url)) frame.src = url;
@@ -133,16 +149,16 @@
         function updateUI(id, title) {
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             const btn = document.getElementById('nav-' + id);
+            // אם אין כפתור תחתון מתאים (למשל נהג), לא נורא
             if(btn) btn.classList.add('active');
+            
             document.getElementById('header-title').innerText = title;
         }
 
-        function toggleDrawer(show) {
+        window.toggleDrawer = (show) => {
             const d = document.getElementById('drawer');
             if(show) d.classList.add('open'); else d.classList.remove('open');
         }
-
-        window.openApp = openApp;
     </script>
 </body>
 </html>
