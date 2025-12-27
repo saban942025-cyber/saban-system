@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SabanOS | פורטל</title>
+    <title>SabanOS | מערכת ראשית</title>
     <link rel="icon" href="https://saban-system.onrender.com/icons/icon-192.png">
     <link rel="manifest" href="manifest-chat.json">
     
@@ -12,165 +12,177 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
-        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-
-        /* HEADER - נקי ומינימליסטי */
-        .top-bar { 
-            height: 60px; background: white; display: flex; align-items: center; justify-content: space-between; 
-            padding: 0 20px; box-shadow: 0 1px 15px rgba(0,0,0,0.03); z-index: 50; position: relative;
+        /* הגדרות בסיס */
+        body { 
+            margin: 0; padding: 0; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            background: #f1f5f9; 
+            height: 100vh; width: 100vw;
+            display: flex; 
+            flex-direction: row; /* במחשב: שורה (סרגל בצד) */
+            overflow: hidden; 
         }
-        .logo-area { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 20px; color: #0f172a; letter-spacing: -0.5px; }
-        .logo-img { width: 34px; height: 34px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
 
-        /* MAIN STAGE */
-        .stage { flex: 1; position: relative; overflow: hidden; background: #f1f5f9; }
-
-        /* PORTAL VIEW (המסך הראשי) */
-        .portal-view { 
-            position: absolute; inset: 0; overflow-y: auto; padding: 20px; padding-bottom: 90px;
-            display: flex; flex-direction: column; gap: 24px;
-            animation: fadeIn 0.4s ease-out;
+        /* --- 1. סרגל צד (דסקטופ בלבד) --- */
+        .desktop-sidebar {
+            width: 80px; 
+            background: #1e293b; /* הכחול הכהה מהתמונה שלך */
+            display: flex; flex-direction: column; align-items: center; padding-top: 20px; gap: 20px;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1); z-index: 50;
         }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* APP IFRAME (האפליקציות שנפתחות) */
-        .app-container {
-            position: absolute; inset: 0; background: white; z-index: 40; 
-            transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        
+        .sidebar-btn {
+            width: 50px; height: 50px; border-radius: 12px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: #94a3b8; cursor: pointer; transition: 0.2s; position: relative;
         }
-        .app-container.active { transform: translateX(0); }
+        .sidebar-btn i { font-size: 20px; margin-bottom: 2px; }
+        .sidebar-btn span { font-size: 9px; font-weight: bold; }
+        
+        .sidebar-btn:hover { background: rgba(255,255,255,0.1); color: white; }
+        .sidebar-btn.active { background: #3b82f6; color: white; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.4); }
+
+        .logo-icon { width: 45px; height: 45px; border-radius: 10px; margin-bottom: 20px; border: 2px solid rgba(255,255,255,0.2); }
+
+        /* --- 2. אזור תוכן ראשי (הבמה) --- */
+        .main-stage {
+            flex: 1; position: relative; background: #f8fafc; overflow: hidden;
+            display: flex; flex-direction: column;
+        }
+
+        /* --- 3. סרגל תחתון (מובייל בלבד) --- */
+        .mobile-nav {
+            display: none; /* מוסתר במחשב */
+            height: 65px; background: white; border-top: 1px solid #e2e8f0;
+            justify-content: space-around; align-items: center;
+            padding-bottom: env(safe-area-inset-bottom); z-index: 50;
+        }
+        
+        .mobile-btn {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: #94a3b8; width: 60px; height: 100%;
+        }
+        .mobile-btn i { font-size: 20px; margin-bottom: 4px; }
+        .mobile-btn.active { color: #2563eb; }
+
+        /* --- שינויים למובייל (Media Query) --- */
+        @media (max-width: 768px) {
+            body { flex-direction: column; } /* במובייל: עמודה (תוכן למעלה, סרגל למטה) */
+            .desktop-sidebar { display: none; } /* הסתרת סרגל צד */
+            .mobile-nav { display: flex; } /* הצגת סרגל תחתון */
+        }
+
+        /* --- Views (פורטל ואפליקציות) --- */
+        .view-container { position: absolute; inset: 0; overflow: hidden; }
+        
+        /* דף הבית (פורטל) */
+        #portal-view { 
+            z-index: 10; overflow-y: auto; padding: 20px; 
+            display: flex; flex-direction: column; gap: 20px;
+            background: #f1f5f9;
+        }
+
+        /* מסגרת האפליקציות (Iframe) */
+        #app-view { 
+            z-index: 20; background: white; transform: translateX(100%); 
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #app-view.active { transform: translateX(0); }
         iframe { width: 100%; height: 100%; border: none; }
 
-        /* GRID CARDS - עיצוב חדש ונקי */
-        .apps-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-        .app-card { 
-            background: white; border-radius: 16px; padding: 16px; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.02); border: 1px solid #e2e8f0; cursor: pointer;
-            transition: 0.2s; height: 110px; text-align: center;
+        /* עיצוב כרטיסי פורטל */
+        .portal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .apps-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .app-card {
+            background: white; padding: 20px; border-radius: 16px; 
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02); border: 1px solid #e2e8f0; cursor: pointer;
         }
-        .app-card:active { transform: scale(0.97); background: #f8fafc; }
-        .app-icon { 
-            width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; 
-            font-size: 22px; color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        .app-title { font-weight: 700; color: #334155; font-size: 13px; }
-
-        /* STAFF LIST - עיצוב רשימה */
-        .staff-list { display: flex; flex-direction: column; gap: 10px; }
-        .staff-row { 
-            background: white; padding: 10px 15px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between;
-            border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.01);
-        }
-        .staff-info { display: flex; align-items: center; gap: 12px; }
-        .staff-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
-        .staff-actions { display: flex; gap: 8px; }
-        .action-btn { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; }
-
-        /* BOTTOM NAV (מינימליסטי) */
-        .bottom-nav { 
-            height: 65px; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px);
-            border-top: 1px solid #e2e8f0; display: flex; justify-content: space-around; 
-            align-items: center; z-index: 50; padding-bottom: env(safe-area-inset-bottom);
-            position: fixed; bottom: 0; width: 100%;
-        }
-        .nav-btn { 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            color: #94a3b8; width: 60px; height: 100%; cursor: pointer; transition: 0.2s;
-        }
-        .nav-btn.active { color: #2563eb; transform: translateY(-2px); }
-        .nav-btn i { font-size: 20px; margin-bottom: 4px; }
-        .nav-btn span { font-size: 10px; font-weight: 600; }
-
-        /* BACK BUTTON (מופיע רק כשאפליקציה פתוחה) */
-        .back-btn { display: none; }
-        .app-mode .back-btn { display: block; color: #64748b; font-size: 18px; }
-        .app-mode .logo-area { display: none; } /* מסתיר לוגו כשאפליקציה פתוחה כדי לחסוך מקום */
-        .app-mode .app-title-header { display: block; font-weight: bold; color: #334155; }
-        .app-title-header { display: none; }
-
-        /* כותרות סקשן */
-        .section-title { font-size: 12px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+        .icon-box { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; }
     </style>
 </head>
 <body>
 
-    <div class="top-bar" id="top-bar">
-        <div class="logo-area">
-            <img src="https://saban-system.onrender.com/icons/icon-192.png" class="logo-img">
-            <span>Saban<span class="text-blue-600">OS</span></span>
-        </div>
+    <nav class="desktop-sidebar">
+        <img src="https://saban-system.onrender.com/icons/icon-192.png" class="logo-icon">
         
-        <button class="back-btn" onclick="goHome()">
-            <i class="fas fa-arrow-right"></i>
-        </button>
-        <div class="app-title-header" id="header-app-name">שם האפליקציה</div>
-
-        <div class="flex gap-3 text-slate-400">
-            <button onclick="Swal.fire('התראות','אין התראות חדשות','info')"><i class="far fa-bell"></i></button>
-            <button><i class="fas fa-search"></i></button>
+        <div class="sidebar-btn active" onclick="goHome()" id="desk-home">
+            <i class="fas fa-home"></i><span>בית</span>
         </div>
-    </div>
+        <div class="sidebar-btn" onclick="openApp('chat')" id="desk-chat">
+            <i class="fab fa-whatsapp"></i><span>צ'אט</span>
+        </div>
+        <div class="sidebar-btn" onclick="openApp('drive')" id="desk-drive">
+            <i class="fas fa-folder"></i><span>דרייב</span>
+        </div>
+        <div class="sidebar-btn" onclick="openApp('staff')" id="desk-staff">
+            <i class="fas fa-users"></i><span>צוות</span>
+        </div>
+        <div class="sidebar-btn" onclick="openApp('truck')" id="desk-truck">
+            <i class="fas fa-truck"></i><span>נהג</span>
+        </div>
+    </nav>
 
-    <div class="stage">
+    <main class="main-stage">
         
-        <div id="view-portal" class="portal-view">
-            
-            <div>
-                <h3 class="section-title mb-3">אפליקציות</h3>
-                <div class="apps-grid">
-                    <div class="app-card" onclick="openApp('chat', 'Saban Chat')">
-                        <div class="app-icon bg-green-500"><i class="fab fa-whatsapp"></i></div>
-                        <div class="app-title">תקשורת</div>
-                    </div>
-                    <div class="app-card" onclick="openApp('drive', 'ארכיון מסמכים')">
-                        <div class="app-icon bg-blue-500"><i class="fas fa-folder-open"></i></div>
-                        <div class="app-title">מסמכים</div>
-                    </div>
-                    <div class="app-card" onclick="openApp('tasks', 'משימות וסידור')">
-                        <div class="app-icon bg-slate-700"><i class="fas fa-tasks"></i></div>
-                        <div class="app-title">סידור</div>
-                    </div>
-                    <div class="app-card" onclick="sendMagicLink()">
-                        <div class="app-icon bg-purple-500"><i class="fas fa-magic"></i></div>
-                        <div class="app-title">לינק קסם</div>
-                    </div>
+        <div id="portal-view" class="view-container">
+            <div class="portal-header">
+                <div>
+                    <h1 class="text-xl font-bold text-slate-800">SabanOS</h1>
+                    <p class="text-xs text-slate-500">פורטל ארגוני</p>
+                </div>
+                <img src="https://ui-avatars.com/api/?name=Admin" class="w-8 h-8 rounded-full">
+            </div>
+
+            <div class="apps-grid">
+                <div class="app-card" onclick="openApp('chat')">
+                    <div class="icon-box bg-green-500"><i class="fab fa-whatsapp"></i></div>
+                    <div class="font-bold text-sm text-slate-700">תקשורת</div>
+                </div>
+                <div class="app-card" onclick="openApp('drive')">
+                    <div class="icon-box bg-blue-500"><i class="fas fa-cloud"></i></div>
+                    <div class="font-bold text-sm text-slate-700">מסמכים</div>
+                </div>
+                <div class="app-card" onclick="openApp('staff')">
+                    <div class="icon-box bg-purple-500"><i class="fas fa-users-cog"></i></div>
+                    <div class="font-bold text-sm text-slate-700">ניהול צוות</div>
+                </div>
+                <div class="app-card" onclick="openApp('truck')">
+                    <div class="icon-box bg-slate-700"><i class="fas fa-truck-loading"></i></div>
+                    <div class="font-bold text-sm text-slate-700">מסוף נהג</div>
                 </div>
             </div>
 
-            <div>
-                <div class="flex justify-between items-end mb-3">
-                    <h3 class="section-title">צוות אונליין</h3>
-                    <span class="text-[10px] bg-green-100 text-green-700 px-2 rounded-full font-bold" id="online-count">0</span>
-                </div>
-                <div id="staff-list" class="staff-list">
+            <div class="mt-6">
+                <h3 class="text-xs font-bold text-slate-400 uppercase mb-3">אנשי קשר</h3>
+                <div id="quick-contacts" class="flex flex-col gap-2">
                     </div>
             </div>
         </div>
 
-        <div id="view-app" class="app-container">
-            <iframe id="app-frame" src=""></iframe>
+        <div id="app-view" class="view-container">
+            <iframe id="main-frame" src=""></iframe>
         </div>
-    </div>
 
-    <div class="bottom-nav">
-        <div class="nav-btn active" onclick="goHome()">
-            <i class="fas fa-th-large"></i>
-            <span>פורטל</span>
+    </main>
+
+    <nav class="mobile-nav">
+        <div class="mobile-btn active" onclick="goHome()" id="mob-home">
+            <i class="fas fa-home"></i>
         </div>
-        <div class="nav-btn" onclick="openApp('chat', 'Saban Chat')">
-            <i class="fas fa-comments"></i>
-            <span>צ'אט</span>
+        <div class="mobile-btn" onclick="openApp('chat')" id="mob-chat">
+            <i class="fab fa-whatsapp"></i>
         </div>
-        <div class="nav-btn" onclick="openApp('drive', 'ארכיון מסמכים')">
-            <i class="fas fa-cloud"></i>
-            <span>דרייב</span>
+        <div class="mobile-btn" onclick="openApp('drive')" id="mob-drive">
+            <i class="fas fa-folder-open"></i>
         </div>
-        <div class="nav-btn" onclick="Swal.fire('פרופיל','הגדרות משתמש','info')">
-            <i class="fas fa-user-circle"></i>
-            <span>אני</span>
+        <div class="mobile-btn" onclick="openApp('staff')" id="mob-staff">
+            <i class="fas fa-users"></i>
         </div>
-    </div>
+        <div class="mobile-btn" onclick="openApp('truck')" id="mob-truck">
+            <i class="fas fa-truck"></i>
+        </div>
+    </nav>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -178,89 +190,66 @@
 
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
-        // --- Navigation Logic ---
+        // --- NAVIGATION ENGINE ---
+        
         window.goHome = () => {
-            document.getElementById('view-app').classList.remove('active');
-            document.body.classList.remove('app-mode'); // מחזיר את ההדר הרגיל
+            // הסתרת האפליקציה וחזרה לפורטל
+            document.getElementById('app-view').classList.remove('active');
+            updateButtons('home');
             
-            // איפוס כפתורים
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.nav-btn')[0].classList.add('active'); // פורטל פעיל
+            // ניקוי ה-iframe כדי לא להכביד (אופציונלי, אפשר להשאיר לרענון מהיר)
+            // setTimeout(() => document.getElementById('main-frame').src = '', 300);
         };
 
-        window.openApp = (appId, appName) => {
+        window.openApp = (appId) => {
             let url = '';
+            // מיפוי קבצים מדויק
             switch(appId) {
                 case 'chat': url = 'comm-center.html'; break;
                 case 'drive': url = 'documents-drive.html'; break;
-                case 'tasks': url = 'yoav-app.html'; break;
+                case 'staff': url = 'staff-directory-view.html'; break; // או yoav-app.html תלוי בך
+                case 'truck': url = 'driver-app.html'; break;
             }
 
-            const frame = document.getElementById('app-frame');
-            if (!frame.src.includes(url)) frame.src = url;
+            const frame = document.getElementById('main-frame');
+            if(!frame.src.includes(url)) frame.src = url;
 
-            document.getElementById('view-app').classList.add('active');
+            document.getElementById('app-view').classList.add('active');
+            updateButtons(appId);
+        };
+
+        function updateButtons(activeId) {
+            // ניקוי כל הכפתורים
+            document.querySelectorAll('.sidebar-btn, .mobile-btn').forEach(b => b.classList.remove('active'));
             
-            // עדכון הדר
-            document.body.classList.add('app-mode');
-            document.getElementById('header-app-name').innerText = appName;
+            // הפעלת הכפתור הרלוונטי (גם בדסקטופ וגם במובייל)
+            const dBtn = document.getElementById(`desk-${activeId}`);
+            const mBtn = document.getElementById(`mob-${activeId}`);
+            
+            if(dBtn) dBtn.classList.add('active');
+            if(mBtn) mBtn.classList.add('active');
+        }
 
-            // עדכון כפתור תחתון פעיל
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            // חיפוש הכפתור המתאים (פשוט לפי הסדר או לוגיקה)
-            if(appId === 'chat') document.querySelectorAll('.nav-btn')[1].classList.add('active');
-            if(appId === 'drive') document.querySelectorAll('.nav-btn')[2].classList.add('active');
-        };
-
-        // --- Magic Link ---
-        window.sendMagicLink = async () => {
-            const { value: phone } = await Swal.fire({
-                title: 'לינק קסם ללקוח 🪄',
-                input: 'tel',
-                inputPlaceholder: '050...',
-                confirmButtonText: 'שלח',
-                confirmButtonColor: '#8b5cf6'
-            });
-            if (phone) {
-                window.open(`https://wa.me/972${phone.replace(/^0/,'')}?text=היי, הנה לינק להזמנה: https://saban.app`, '_blank');
-            }
-        };
-
-        // --- Staff Loader ---
+        // --- QUICK CONTACTS LOADER ---
         onSnapshot(query(collection(db, "users"), orderBy("name")), (snap) => {
-            const list = document.getElementById('staff-list');
+            const list = document.getElementById('quick-contacts');
             list.innerHTML = '';
-            let count = 0;
-
-            snap.forEach(d => {
+            
+            snap.docs.slice(0, 5).forEach(d => {
                 const u = d.data();
                 if(u.type === 'client') return;
-                count++;
-
-                const avatar = u.avatar || `https://ui-avatars.com/api/?name=${u.name}&background=random`;
-                const badge = u.role?.includes('מנהל') ? '<i class="fas fa-crown text-yellow-500 ml-1"></i>' : '';
-
+                
                 list.innerHTML += `
-                <div class="staff-row">
-                    <div class="staff-info">
-                        <img src="${avatar}" class="staff-avatar">
-                        <div>
-                            <div class="font-bold text-sm text-slate-700">${u.name} ${badge}</div>
-                            <div class="text-xs text-slate-400">${u.role || 'צוות'}</div>
-                        </div>
+                <div class="bg-white p-3 rounded-xl border border-slate-200 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <img src="${u.avatar || `https://ui-avatars.com/api/?name=${u.name}`}" class="w-8 h-8 rounded-full">
+                        <div class="text-sm font-bold text-slate-700">${u.name}</div>
                     </div>
-                    <div class="staff-actions">
-                        <div onclick="window.open('https://wa.me/972${u.phone?.replace(/^0/,'')}', '_blank')" class="action-btn bg-green-50 text-green-600"><i class="fab fa-whatsapp"></i></div>
-                        <div onclick="openTask('${u.name}')" class="action-btn bg-blue-50 text-blue-600"><i class="fas fa-tasks"></i></div>
-                    </div>
+                    <a href="https://wa.me/972${u.phone?.replace(/^0/,'')}" target="_blank" class="text-green-500"><i class="fab fa-whatsapp text-lg"></i></a>
                 </div>`;
             });
-            document.getElementById('online-count').innerText = count;
         });
 
-        window.openTask = (name) => {
-            Swal.fire({ title: `משימה ל${name}`, input: 'text', confirmButtonText: 'שלח' });
-        }
     </script>
 </body>
 </html>
