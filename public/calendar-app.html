@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saban Planner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body { background: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 16px; padding-bottom: 80px; }
+        
+        /* Calendar Grid */
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 10px; }
+        .day-cell { 
+            background: white; border-radius: 8px; min-height: 80px; padding: 4px; border: 1px solid #e2e8f0; 
+            display: flex; flex-direction: column; gap: 2px; cursor: pointer; transition: 0.2s;
+        }
+        .day-cell:active { background: #f1f5f9; }
+        .day-header { text-align: center; font-size: 10px; color: #94a3b8; font-weight: bold; padding-bottom: 5px; }
+        .day-number { font-size: 12px; font-weight: bold; color: #334155; margin-bottom: 4px; }
+        .today .day-number { background: #2563eb; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 4px auto; }
+
+        /* Events Pills */
+        .event-pill { font-size: 9px; padding: 2px 4px; border-radius: 4px; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 1px; }
+        .evt-meeting { background: #3b82f6; } /* כחול - פגישה */
+        .evt-task { background: #ef4444; }    /* אדום - משימה */
+        .evt-delivery { background: #f59e0b; } /* כתום - הובלה */
+
+        /* Task List Item */
+        .task-item { background: white; padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .task-check { width: 20px; height: 20px; border: 2px solid #cbd5e1; border-radius: 6px; cursor: pointer; }
+        .task-check.done { background: #22c55e; border-color: #22c55e; }
+    </style>
+</head>
+<body>
+
+    <div class="flex justify-between items-center mb-4">
+        <div>
+            <h1 class="font-bold text-xl text-slate-800">יומן חכם</h1>
+            <div class="text-xs text-slate-500" id="current-month">טוען...</div>
+        </div>
+        <button onclick="openAddModal()" class="bg-blue-600 text-white w-10 h-10 rounded-xl shadow-lg flex items-center justify-center text-xl">
+            <i class="fas fa-plus"></i>
+        </button>
+    </div>
+
+    <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
+        <div class="grid grid-cols-7 text-center mb-2">
+            <div class="day-header">א</div><div class="day-header">ב</div><div class="day-header">ג</div><div class="day-header">ד</div>
+            <div class="day-header">ה</div><div class="day-header">ו</div><div class="day-header">ש</div>
+        </div>
+        <div id="calendar-body" class="calendar-grid"></div>
+    </div>
+
+    <h3 class="text-xs font-bold text-slate-400 uppercase mt-6 mb-3 tracking-wider">התזכורות שלי (הנודניק)</h3>
+    <div id="tasks-list">
+        </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, query, orderBy, onSnapshot, addDoc, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
+
+        let currentDate = new Date();
+        let events = [];
+
+        // --- 1. RENDER CALENDAR ---
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            
+            // עדכון כותרת
+            const monthNames = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"];
+            document.getElementById('current-month').innerText = `${monthNames[month]} ${year}`;
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            const grid = document.getElementById('calendar-body');
+            grid.innerHTML = '';
+
+            // משבצות ריקות להתחלה
+            for(let i=0; i<firstDay; i++) {
+                grid.innerHTML += `<div class="bg-transparent"></div>`;
+            }
+
+            // ימים
+            for(let d=1; d<=daysInMonth; d++) {
+                const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                const isToday = new Date().toDateString() === new Date(year, month, d).toDateString();
+                
+                // סינון אירועים ליום זה
+                const daysEvents = events.filter(e => e.date === dateStr);
+                let eventsHtml = '';
+                daysEvents.forEach(e => {
+                    let colorClass = 'evt-task';
+                    if(e.type === 'meeting') colorClass = 'evt-meeting';
+                    if(e.type === 'delivery') colorClass = 'evt-delivery';
+                    eventsHtml += `<div class="event-pill ${colorClass}">${e.title}</div>`;
+                });
+
+                grid.innerHTML += `
+                <div class="day-cell ${isToday ? 'today' : ''}" onclick="selectDate('${dateStr}')">
+                    <div class="day-number">${d}</div>
+                    ${eventsHtml}
+                </div>`;
+            }
+        }
+
+        // --- 2. FETCH DATA ---
+        onSnapshot(query(collection(db, "calendar"), orderBy("date")), (snap) => {
+            events = [];
+            const list = document.getElementById('tasks-list');
+            list.innerHTML = '';
+
+            snap.forEach(d => {
+                const e = {id: d.id, ...d.data()};
+                events.push(e);
+
+                // אם זו משימה שעדיין לא בוצעה - הוסף לרשימה למטה
+                if(!e.done) {
+                    let icon = 'fa-circle';
+                    if(e.type === 'meeting') icon = 'fa-handshake text-blue-500';
+                    if(e.type === 'delivery') icon = 'fa-truck text-orange-500';
+                    if(e.type === 'task') icon = 'fa-exclamation-circle text-red-500';
+
+                    list.innerHTML += `
+                    <div class="task-item">
+                        <div class="task-check" onclick="toggleTask('${e.id}', true)"></div>
+                        <div class="flex-1">
+                            <div class="font-bold text-sm text-slate-800">${e.title}</div>
+                            <div class="text-xs text-slate-400 flex gap-2">
+                                <span><i class="fas ${icon}"></i> ${e.assignTo || 'כללי'}</span>
+                                <span><i class="far fa-clock"></i> ${e.date}</span>
+                            </div>
+                        </div>
+                    </div>`;
+                }
+            });
+            renderCalendar();
+        });
+
+        // --- 3. ACTIONS ---
+        window.openAddModal = async () => {
+            const { value: formValues } = await Swal.fire({
+                title: 'אירוע חדש',
+                html: `
+                    <input id="swal-title" class="swal2-input" placeholder="שם המשימה/פגישה">
+                    <select id="swal-type" class="swal2-input">
+                        <option value="task">🔴 משימה</option>
+                        <option value="meeting">🔵 פגישה</option>
+                        <option value="delivery">🚚 הובלה</option>
+                    </select>
+                    <input id="swal-date" type="date" class="swal2-input" value="${new Date().toISOString().split('T')[0]}">
+                    <input id="swal-assign" class="swal2-input" placeholder="למי? (לדוגמה: ורד)">
+                    <input id="swal-doc" class="swal2-input" placeholder="לינק למסמך (אופציונלי)">
+                `,
+                focusConfirm: false,
+                confirmButtonText: 'שמור ביומן',
+                preConfirm: () => {
+                    return {
+                        title: document.getElementById('swal-title').value,
+                        type: document.getElementById('swal-type').value,
+                        date: document.getElementById('swal-date').value,
+                        assignTo: document.getElementById('swal-assign').value,
+                        docLink: document.getElementById('swal-doc').value
+                    }
+                }
+            });
+
+            if (formValues && formValues.title) {
+                await addDoc(collection(db, "calendar"), {
+                    ...formValues,
+                    done: false,
+                    createdAt: new Date()
+                });
+                
+                // שליחת התראה (אם הוגדר שם)
+                if(formValues.assignTo && window.parent.sendOneSignal) {
+                    // כאן אפשר להפעיל את פונקציית ההתראה מהמעטפת אם תרצה
+                }
+                
+                Swal.fire('נשמר!', '', 'success');
+            }
+        };
+
+        window.toggleTask = async (id, status) => {
+            await updateDoc(doc(db, "calendar", id), { done: status });
+        };
+        
+        window.selectDate = (date) => {
+            // אפשרות לפתוח הוספה עם התאריך שנבחר
+            document.getElementById('swal-date').value = date; // ידרוש שינוי לוגיקה קטן ב-swal
+            openAddModal(); 
+        };
+    </script>
+</body>
+</html>
