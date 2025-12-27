@@ -1,0 +1,16 @@
+{
+  "name": "Saban Chat",
+  "short_name": "Chat",
+  "start_url": "./comm-center.html",
+  "display": "standalone",
+  "background_color": "#e5e7eb",
+  "theme_color": "#00a884",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://ui-avatars.com/api/?name=Chat&background=00a884&color=fff&size=192&rounded=true",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
