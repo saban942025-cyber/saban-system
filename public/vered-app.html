@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Saban Ops | ורד</title>
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    
+    <meta name="theme-color" content="#be123c">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="manifest-vered.json">
+    <link rel="apple-touch-icon" href="https://ui-avatars.com/api/?name=Vered&background=be123c&color=fff&size=180">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        body { background: #fff1f2; font-family: 'Segoe UI', system-ui, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        
+        /* Header Distinctive Style */
+        .app-header { 
+            background: linear-gradient(135deg, #be123c 0%, #fb7185 100%); 
+            color: white; padding: 20px; padding-top: max(20px, env(safe-area-inset-top)); 
+            border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; 
+            box-shadow: 0 4px 20px rgba(190, 18, 60, 0.3); 
+        }
+        
+        /* Cards */
+        .rose-card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #ffe4e6; position: relative; overflow: hidden; }
+        .rose-card::before { content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 4px; background: #fb7185; }
+        
+        .harel-task { background: #fff0f1; border-color: #fda4af; }
+        .harel-task::before { background: #be123c; }
+
+        /* Buttons */
+        .btn-sos { background: #be123c; color: white; border-radius: 12px; padding: 12px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; box-shadow: 0 4px 12px rgba(190, 18, 60, 0.2); transition: 0.2s; }
+        .btn-sos:active { transform: scale(0.98); }
+
+        .btn-quick { display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; color: #881337; background: white; padding: 10px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); flex: 1; }
+        .btn-quick i { font-size: 20px; color: #be123c; }
+
+        /* Tabs */
+        .tab-bar { background: white; border-top: 1px solid #fecdd3; padding-bottom: env(safe-area-inset-bottom); display: flex; justify-content: space-around; position: fixed; bottom: 0; width: 100%; z-index: 50; }
+        .tab-btn { padding: 12px; color: #9f1239; opacity: 0.6; display: flex; flex-direction: column; align-items: center; font-size: 10px; flex: 1; transition: 0.3s; }
+        .tab-btn.active { opacity: 1; font-weight: bold; transform: translateY(-2px); }
+        .tab-btn i { font-size: 20px; margin-bottom: 4px; }
+
+        /* Toggle DND */
+        .dnd-switch { background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px; font-size: 11px; display: flex; items-center; gap: 6px; cursor: pointer; }
+        .dnd-active { background: #fff; color: #be123c; font-weight: bold; }
+
+        .view-section { display: none; padding: 20px; padding-bottom: 90px; overflow-y: auto; height: 100%; }
+        .view-section.active { display: block; }
+    </style>
+</head>
+<body>
+
+    <div class="app-header">
+        <div class="flex justify-between items-start mb-4">
+            <div>
+                <div class="text-xs opacity-90">מנהלת אדמיניסטרציה</div>
+                <div class="text-2xl font-bold">ורד אידלסון</div>
+            </div>
+            <div id="dnd-btn" class="dnd-switch" onclick="toggleDND()">
+                <i class="fas fa-bell"></i> <span>זמינה</span>
+            </div>
+        </div>
+        
+        <div class="flex gap-3 justify-between">
+            <div class="text-center bg-white/10 rounded-lg p-2 flex-1">
+                <div class="text-xl font-bold">0</div>
+                <div class="text-[10px]">משימות הראל</div>
+            </div>
+            <div class="text-center bg-white/10 rounded-lg p-2 flex-1">
+                <div class="text-xl font-bold text-green-200">OK</div>
+                <div class="text-[10px]">סטטוס קומקס</div>
+            </div>
+            <div class="text-center bg-white/10 rounded-lg p-2 flex-1">
+                <div class="text-xl font-bold">3</div>
+                <div class="text-[10px]">חריגי נוכחות</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-home" class="view-section active">
+        
+        <div class="flex gap-3 mb-6">
+            <button class="btn-quick" onclick="window.open('tel:0505227724')">
+                <i class="fas fa-phone"></i> הראל
+            </button>
+            <button class="btn-quick" onclick="window.open('https://wa.me/972505227724', '_blank')">
+                <i class="fab fa-whatsapp"></i> הראל
+            </button>
+            <button class="btn-quick" onclick="window.open('documents-drive.html', '_blank')">
+                <i class="fab fa-google-drive"></i> מסמכים
+            </button>
+            <button class="btn-quick" onclick="openComaxTicket()">
+                <i class="fas fa-headset"></i> קומקס
+            </button>
+        </div>
+
+        <h3 class="font-bold text-rose-900 mb-3 flex items-center gap-2"><i class="fas fa-crown text-yellow-500"></i> דחוף מהמנכ"ל</h3>
+        <div id="harel-tasks-list">
+            <div class="rose-card harel-task">
+                <div class="font-bold text-rose-800">בדיקת דוחות נוכחות חודש שעבר</div>
+                <div class="text-xs text-rose-600 mt-1">נשלח ע"י הראל | לפני 20 דק'</div>
+            </div>
+        </div>
+
+        <h3 class="font-bold text-rose-900 mb-3 mt-6">שוטף</h3>
+        <div class="rose-card flex justify-between items-center">
+            <div>
+                <div class="font-bold text-gray-800">תקלות קופה פתוחות</div>
+                <div class="text-xs text-gray-500">אין תקלות מדווחות</div>
+            </div>
+            <div class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">תקין</div>
+        </div>
+    </div>
+
+    <div id="view-tech" class="view-section">
+        <h2 class="text-xl font-bold text-rose-900 mb-4">ניהול עמדות קומקס</h2>
+        <button onclick="openComaxTicket()" class="btn-sos mb-6">
+            <i class="fas fa-exclamation-circle"></i> פתח קריאת שירות (SOS)
+        </button>
+        
+        <div class="space-y-3">
+            <div class="rose-card flex justify-between items-center">
+                <span>🖥️ עמדה 1 (דלפק ראשי)</span>
+                <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">מחובר</span>
+            </div>
+            <div class="rose-card flex justify-between items-center">
+                <span>🖥️ עמדה 2 (החרש)</span>
+                <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">מחובר</span>
+            </div>
+            <div class="rose-card flex justify-between items-center">
+                <span>🖨️ מדפסת מדבקות</span>
+                <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">תקלה</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-hr" class="view-section">
+        <h2 class="text-xl font-bold text-rose-900 mb-4">משאבי אנוש ושכר</h2>
+        
+        <div class="grid grid-cols-3 gap-3 mb-6">
+            <button onclick="waContact('גליה')" class="btn-quick bg-pink-50"><i class="fas fa-user-circle"></i> גליה</button>
+            <button onclick="waContact('לינה')" class="btn-quick bg-pink-50"><i class="fas fa-user-circle"></i> לינה</button>
+            <button onclick="waContact('שרון')" class="btn-quick bg-pink-50"><i class="fas fa-user-circle"></i> שרון</button>
+        </div>
+
+        <h3 class="font-bold text-gray-700 mb-2">חריגי נוכחות (היום)</h3>
+        <div class="space-y-2" id="hr-alerts">
+            <div class="rose-card py-2 flex justify-between items-center">
+                <span class="text-sm font-bold">חכמת (נהג)</span>
+                <button onclick="remindWorker('חכמת')" class="text-xs bg-rose-100 text-rose-700 px-2 py-1 rounded">שלח תזכורת</button>
+            </div>
+            <div class="rose-card py-2 flex justify-between items-center">
+                <span class="text-sm font-bold">אורן (חצר)</span>
+                <button onclick="remindWorker('אורן')" class="text-xs bg-rose-100 text-rose-700 px-2 py-1 rounded">שלח תזכורת</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-bar">
+        <div class="tab-btn active" onclick="switchTab('home', this)"><i class="fas fa-home"></i><span>ראשי</span></div>
+        <div class="tab-btn" onclick="switchTab('tech', this)"><i class="fas fa-server"></i><span>קומקס</span></div>
+        <div class="tab-btn" onclick="switchTab('hr', this)"><i class="fas fa-users"></i><span>צוות</span></div>
+        <div class="tab-btn" onclick="window.open('documents-drive.html', '_blank')"><i class="fas fa-folder"></i><span>דרייב</span></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, where, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
+
+        // UI Functions
+        window.switchTab = (viewId, btn) => {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(`view-${viewId}`).classList.add('active');
+            btn.classList.add('active');
+        };
+
+        let isDND = false;
+        window.toggleDND = () => {
+            isDND = !isDND;
+            const btn = document.getElementById('dnd-btn');
+            if (isDND) {
+                btn.classList.add('dnd-active');
+                btn.innerHTML = `<i class="fas fa-moon"></i> <span>נא לא להפריע</span>`;
+                Swal.fire({ icon: 'info', title: 'מצב שקט', text: 'רק הודעות דחופות מהראל יתקבלו', timer: 1500, showConfirmButton: false });
+            } else {
+                btn.classList.remove('dnd-active');
+                btn.innerHTML = `<i class="fas fa-bell"></i> <span>זמינה</span>`;
+            }
+        };
+
+        // Comax Functions
+        window.openComaxTicket = () => {
+            Swal.fire({
+                title: 'תקלת קומקס חדשה',
+                html: `
+                    <select id="t-station" class="swal2-select w-full m-0 mb-2">
+                        <option>עמדה 1</option><option>עמדה 2</option><option>מדפסת</option><option>שרת</option>
+                    </select>
+                    <textarea id="t-desc" class="swal2-textarea w-full m-0" placeholder="תיאור התקלה..."></textarea>
+                    <div class="text-xs text-gray-400 mt-2"><i class="fas fa-camera"></i> ניתן לצרף צילום מסך בדרייב</div>
+                `,
+                confirmButtonText: 'שלח קריאה',
+                confirmButtonColor: '#be123c',
+                showCancelButton: true
+            }).then((res) => {
+                if(res.isConfirmed) {
+                    Swal.fire('נשלח', 'המייל נשלח לתמיכה והראל עודכן', 'success');
+                    // כאן אפשר להוסיף לוגיקה לשליחת מייל אמיתי דרך השרת שבנינו קודם
+                }
+            });
+        };
+
+        // HR Functions
+        window.waContact = (name) => {
+            // טלפונים לדוגמה - יש לעדכן למספרים האמיתיים
+            const phones = { 'גליה': '0500000000', 'לינה': '0500000000', 'שרון': '0500000000' };
+            window.open(`https://wa.me/972${phones[name]?.replace(/^0/,'')}`, '_blank');
+        };
+
+        window.remindWorker = (name) => {
+            const text = `היי ${name}, ורד כאן. חסרה לך החתמת שעון היום. נא לטפל בזה דחוף.`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+        };
+
+        // Listen for Harel's Tasks (Example)
+        // כאן נחבר בעתיד את ההודעות מהראל
+    </script>
+</body>
+</html>
