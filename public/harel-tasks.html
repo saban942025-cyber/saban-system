@@ -4,12 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Harel Command</title>
+    
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        // בדיקת תקינות מערכת לפני הפעלה
+        const isHealthy = await new Promise(resolve => {
+            try { 
+                let req = window.indexedDB.open("test_check"); 
+                req.onsuccess = () => { req.result.close(); resolve(true); }; 
+                req.onerror = () => resolve(false); 
+            } catch(e) { resolve(false); }
+        });
+
+        if (isHealthy) {
+            await OneSignal.init({ appId: "07b81f2e-e812-424f-beca-36584b12ccf2", notifyButton: { enable: true } });
+        } else {
+            console.log("Harel Tasks: Notifications disabled (Restricted Mode)");
+        }
+      });
+    </script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        /* iOS Design Language */
-        body { background: #f2f2f7; font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding-bottom: 80px; }
+        /* iOS Design */
+        body { background: #f2f2f7; font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding-bottom: 80px; -webkit-tap-highlight-color: transparent; }
         
         .ios-card {
             background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px;
@@ -26,4 +48,170 @@
             background: #007aff; color: white; border-radius: 12px; padding: 14px; font-weight: 600;
             width: 100%; text-align: center; font-size: 17px; cursor: pointer; transition: 0.2s;
         }
-        .ios-btn:active { transform: scale(0.
+        .ios-btn:active { transform: scale(0.98); opacity: 0.9; }
+        .ios-btn.red { background: #ff3b30; }
+
+        /* Toggles */
+        .segment-control { display: flex; background: #e5e5ea; padding: 2px; border-radius: 8px; margin-bottom: 20px; }
+        .segment-btn { flex: 1; text-align: center; padding: 6px; font-size: 13px; border-radius: 6px; font-weight: 500; cursor: pointer; }
+        .segment-btn.active { background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+        /* Log List */
+        .log-item { border-bottom: 1px solid #e5e5ea; padding: 12px 0; display: flex; justify-content: space-between; align-items: center; }
+        .log-item:last-child { border: none; }
+        .log-time { font-size: 11px; color: #8e8e93; }
+    </style>
+</head>
+<body>
+
+    <div class="pt-4 pb-2 px-4">
+        <h1 class="text-3xl font-bold text-black tracking-tight">משימות הראל</h1>
+        <p class="text-gray-500 text-sm">מרכז שליטה ובקרה</p>
+    </div>
+
+    <div class="px-4">
+        <div class="segment-control">
+            <div class="segment-btn active" onclick="switchTab('create', this)">יצירה</div>
+            <div class="segment-btn" onclick="switchTab('track', this)">מעקב & לוגים</div>
+        </div>
+    </div>
+
+    <div id="view-create" class="px-4">
+        <div class="ios-card">
+            <h3 class="font-bold mb-3 text-gray-800">הגדרת משימה</h3>
+            
+            <input id="task-title" class="ios-input" placeholder="נושא המשימה (לדוגמה: בדיקת מלאי)">
+            <textarea id="task-desc" class="ios-input" rows="3" placeholder="פירוט המשימה..."></textarea>
+            
+            <div class="flex gap-2 mb-2">
+                <input id="task-date" type="date" class="ios-input w-1/2">
+                <input id="task-time" type="time" class="ios-input w-1/2">
+            </div>
+
+            <select id="task-assign" class="ios-input">
+                <option value="all">📢 כולם (הודעה כללית)</option>
+                </select>
+
+            <select id="task-category" class="ios-input">
+                <option value="general">כללי</option>
+                <option value="logistics">🚚 סידור והובלה</option>
+                <option value="finance">💰 רכש וכספים</option>
+                <option value="urgent">🚨 דחוף ביותר</option>
+            </select>
+
+            <div class="flex items-center justify-between py-2 border-t border-gray-100 mt-2">
+                <span class="text-sm font-medium">מחייב אישור קבלה?</span>
+                <input type="checkbox" id="task-confirm" class="w-6 h-6 accent-blue-600">
+            </div>
+            
+            <div class="flex items-center justify-between py-2 border-t border-gray-100">
+                <span class="text-sm font-medium">תזכורת חוזרת (נודניק)</span>
+                <input type="checkbox" id="task-recurring" class="w-6 h-6 accent-orange-500">
+            </div>
+
+            <input id="task-doc" class="ios-input mt-2" placeholder="🔗 קישור למסמך (אופציונלי)">
+
+            <button onclick="sendTask()" class="ios-btn mt-4">שגר משימה <i class="fas fa-paper-plane mr-2"></i></button>
+        </div>
+    </div>
+
+    <div id="view-track" class="px-4 hidden">
+        <div class="ios-card">
+            <h3 class="font-bold mb-3 text-gray-800">יומן אירועים (Logs)</h3>
+            <div id="logs-list">
+                <div class="text-center text-gray-400 text-sm py-4">טוען נתונים...</div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
+
+        // Load Users
+        onSnapshot(query(collection(db, "users"), orderBy("name")), (snap) => {
+            const sel = document.getElementById('task-assign');
+            sel.innerHTML = '<option value="all">📢 כולם (הודעה כללית)</option>';
+            snap.forEach(d => {
+                const u = d.data();
+                if(u.type !== 'client') {
+                    sel.innerHTML += `<option value="${d.id}">${u.name} (${u.role || 'צוות'})</option>`;
+                }
+            });
+        });
+
+        // Load Logs
+        onSnapshot(query(collection(db, "task_logs"), orderBy("timestamp", "desc")), (snap) => {
+            const list = document.getElementById('logs-list');
+            list.innerHTML = '';
+            snap.forEach(d => {
+                const l = d.data();
+                const time = l.timestamp ? new Date(l.timestamp.seconds*1000).toLocaleString('he-IL') : '...';
+                let icon = 'fa-eye text-gray-400';
+                if(l.action === 'confirm') icon = 'fa-check-circle text-green-500';
+                
+                list.innerHTML += `
+                <div class="log-item">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"><i class="fas ${icon}"></i></div>
+                        <div>
+                            <div class="text-sm font-bold text-gray-800">${l.userName}</div>
+                            <div class="text-xs text-gray-500">${l.details}</div>
+                        </div>
+                    </div>
+                    <div class="log-time">${time}</div>
+                </div>`;
+            });
+        });
+
+        // Send Task
+        window.sendTask = async () => {
+            const title = document.getElementById('task-title').value;
+            if(!title) return Swal.fire('שגיאה', 'חובה להזין כותרת', 'error');
+
+            const taskData = {
+                title: title,
+                desc: document.getElementById('task-desc').value,
+                dueDate: document.getElementById('task-date').value,
+                dueTime: document.getElementById('task-time').value,
+                assignedTo: document.getElementById('task-assign').value,
+                category: document.getElementById('task-category').value,
+                mustConfirm: document.getElementById('task-confirm').checked,
+                isRecurring: document.getElementById('task-recurring').checked,
+                docLink: document.getElementById('task-doc').value,
+                createdBy: 'הראל',
+                createdAt: serverTimestamp(),
+                status: 'pending',
+                readBy: []
+            };
+
+            try {
+                await addDoc(collection(db, "tasks"), taskData);
+                Swal.fire({
+                    icon: 'success', 
+                    title: 'המשימה שוגרה',
+                    text: 'הצוות יקבל התראה מיידית',
+                    confirmButtonColor: '#007aff'
+                });
+                
+                // איפוס שדות
+                document.getElementById('task-title').value = '';
+                document.getElementById('task-desc').value = '';
+            } catch (e) {
+                console.error(e);
+                Swal.fire('שגיאה', 'לא ניתן לשלוח משימה כרגע', 'error');
+            }
+        };
+
+        window.switchTab = (tab, btn) => {
+            document.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('view-create').classList.add('hidden');
+            document.getElementById('view-track').classList.add('hidden');
+            document.getElementById('view-' + tab).classList.remove('hidden');
+        };
+    </script>
+</body>
+</html>
