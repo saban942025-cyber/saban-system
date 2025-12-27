@@ -3,84 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SabanOS Mobile</title>
+    <title>SabanOS Pro</title>
     <link rel="icon" href="https://saban-system.onrender.com/icons/icon-192.png">
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
     <style>
-        /* איפוס מלא למסך מלא */
-        body { 
-            margin: 0; padding: 0; background: #f1f5f9; 
-            height: 100vh; width: 100vw; overflow: hidden;
-            display: flex; flex-direction: column;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        /* איפוס ועיצוב בסיס */
+        body { margin: 0; padding: 0; background: #f8fafc; height: 100vh; display: flex; flex-direction: column; font-family: system-ui, -apple-system, sans-serif; overflow: hidden; }
+        
+        /* HEADER (עליון) */
+        .app-header { 
+            height: 60px; background: white; display: flex; align-items: center; justify-content: space-between; 
+            padding: 0 16px; border-bottom: 1px solid #e2e8f0; z-index: 50; flex-shrink: 0;
         }
+        .header-logo { font-weight: 800; font-size: 18px; color: #0f172a; display: flex; align-items: center; gap: 8px; }
+        .header-logo img { width: 32px; height: 32px; border-radius: 6px; }
+        .page-title { font-weight: 600; color: #64748b; font-size: 14px; }
 
-        /* 1. סרגל עליון (Header) */
-        .app-header {
-            height: 60px; background: white; display: flex; align-items: center; justify-content: space-between;
-            padding: 0 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); z-index: 50; flex-shrink: 0;
-        }
-        .header-logo { font-weight: 800; font-size: 18px; color: #1e293b; display: flex; align-items: center; gap: 8px; }
-        .header-title { position: absolute; left: 50%; transform: translateX(-50%); font-weight: 700; color: #334155; opacity: 0; transition: 0.3s; }
-        .show-title .header-title { opacity: 1; }
-        .show-title .header-logo { opacity: 0; }
-
-        /* 2. במת התוכן (Iframe Container) */
-        .main-stage {
-            flex: 1; position: relative; background: #f8fafc; overflow: hidden; width: 100%;
-        }
+        /* CONTENT STAGE (מרכז) */
+        .main-stage { flex: 1; position: relative; background: #f1f5f9; width: 100%; overflow: hidden; }
         iframe { width: 100%; height: 100%; border: none; }
 
-        /* 3. סרגל תחתון (Bottom Nav) */
-        .bottom-nav {
-            height: 65px; background: white; border-top: 1px solid #e2e8f0;
-            display: flex; justify-content: space-around; align-items: center;
-            padding-bottom: env(safe-area-inset-bottom); z-index: 50; flex-shrink: 0;
+        /* BOTTOM NAV (תחתון) */
+        .bottom-nav { 
+            height: 65px; background: white; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-around; 
+            align-items: center; padding-bottom: env(safe-area-inset-bottom); z-index: 50; flex-shrink: 0;
         }
-        .nav-btn {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            color: #94a3b8; width: 60px; cursor: pointer; transition: 0.2s;
-        }
-        .nav-btn i { font-size: 22px; margin-bottom: 2px; }
-        .nav-btn span { font-size: 10px; font-weight: 600; }
-        .nav-btn.active { color: #2563eb; transform: translateY(-2px); }
+        .nav-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; width: 60px; height: 100%; transition: 0.2s; cursor: pointer; }
+        .nav-btn i { font-size: 20px; margin-bottom: 3px; }
+        .nav-btn span { font-size: 10px; font-weight: 500; }
+        .nav-btn.active { color: #2563eb; border-top: 2px solid #2563eb; }
 
-        /* 4. תפריט צד נסתר (Drawer) - מחליף את העמודה הכהה */
-        .drawer-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100;
-            opacity: 0; pointer-events: none; transition: 0.3s;
-        }
+        /* DRAWER (תפריט צד נסתר) */
+        .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; opacity: 0; pointer-events: none; transition: 0.3s; }
         .drawer-overlay.open { opacity: 1; pointer-events: all; }
-        
-        .drawer-content {
-            position: absolute; top: 0; right: 0; bottom: 0; width: 280px;
-            background: #1e293b; color: white;
-            transform: translateX(100%); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex; flex-direction: column; box-shadow: -5px 0 20px rgba(0,0,0,0.3);
+        .drawer-content { 
+            position: absolute; top: 0; right: 0; bottom: 0; width: 280px; background: white; 
+            transform: translateX(100%); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column;
         }
         .drawer-overlay.open .drawer-content { transform: translateX(0); }
-
-        .drawer-item { padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); cursor: pointer; display: flex; gap: 12px; align-items: center; }
-        .drawer-item:active { background: rgba(255,255,255,0.1); }
+        .drawer-item { padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; gap: 12px; align-items: center; color: #334155; font-weight: 500; cursor: pointer; }
+        .drawer-item:active { background: #f8fafc; }
     </style>
 </head>
 <body>
 
-    <div class="app-header" id="header">
+    <div class="app-header">
         <div class="header-logo" onclick="goHome()">
-            <img src="https://saban-system.onrender.com/icons/icon-192.png" class="w-8 h-8 rounded-lg">
+            <img src="https://saban-system.onrender.com/icons/icon-192.png">
             <span>Saban<span class="text-blue-600">OS</span></span>
         </div>
-        
-        <div class="header-title" id="page-title">דף הבית</div>
-
-        <button onclick="toggleDrawer(true)" class="text-2xl text-slate-700 p-2">
-            <i class="fas fa-bars"></i>
-        </button>
+        <div class="page-title" id="page-title">דף הבית</div>
+        <button onclick="toggleDrawer(true)" class="text-slate-600 text-xl p-2"><i class="fas fa-bars"></i></button>
     </div>
 
     <div class="main-stage">
@@ -89,33 +64,34 @@
 
     <div class="bottom-nav">
         <div class="nav-btn active" onclick="goHome()" id="nav-home">
-            <i class="fas fa-th-large"></i>
-            <span>ראשי</span>
+            <i class="fas fa-home"></i><span>ראשי</span>
         </div>
         <div class="nav-btn" onclick="openApp('chat', 'מרכז תקשורת')" id="nav-chat">
-            <i class="fab fa-whatsapp"></i>
-            <span>צ'אט</span>
+            <i class="fab fa-whatsapp"></i><span>צ'אט</span>
         </div>
         <div class="nav-btn" onclick="openApp('drive', 'מסמכים')" id="nav-drive">
-            <i class="fas fa-folder"></i>
-            <span>דרייב</span>
+            <i class="fas fa-folder"></i><span>דרייב</span>
         </div>
         <div class="nav-btn" onclick="openApp('team', 'צוותים')" id="nav-team">
-            <i class="fas fa-users"></i>
-            <span>צוות</span>
+            <i class="fas fa-users"></i><span>צוות</span>
         </div>
     </div>
 
     <div id="drawer" class="drawer-overlay" onclick="toggleDrawer(false)">
         <div class="drawer-content" onclick="event.stopPropagation()">
-            <div class="p-6 bg-slate-900 font-bold text-xl border-b border-slate-700">תפריט מערכת</div>
-            <div class="flex-1 overflow-y-auto">
-                <div class="drawer-item" onclick="goHome(); toggleDrawer(false)"><i class="fas fa-home w-6 text-center"></i> פורטל</div>
-                <div class="drawer-item" onclick="openApp('truck', 'מסוף נהג'); toggleDrawer(false)"><i class="fas fa-truck w-6 text-center text-orange-400"></i> מסוף נהג</div>
-                <div class="drawer-item" onclick="location.reload()"><i class="fas fa-sync w-6 text-center"></i> רענן</div>
+            <div class="p-6 bg-slate-900 text-white">
+                <div class="text-xl font-bold">תפריט ראשי</div>
+                <div class="text-xs opacity-70">ח.סבן מערכות</div>
             </div>
-            <div class="p-4 border-t border-slate-700">
-                <div class="drawer-item text-red-400" onclick="alert('יציאה')"><i class="fas fa-sign-out-alt w-6 text-center"></i> יציאה (LOG)</div>
+            <div class="flex-1 overflow-y-auto">
+                <div class="drawer-item" onclick="goHome(); toggleDrawer(false)"><i class="fas fa-home w-5 text-center"></i> דף הבית</div>
+                <div class="drawer-item" onclick="openApp('truck', 'מסוף נהג'); toggleDrawer(false)"><i class="fas fa-truck w-5 text-center text-orange-500"></i> מסוף נהג (Truck)</div>
+                <div class="drawer-item" onclick="location.reload()"><i class="fas fa-sync w-5 text-center"></i> רענן מערכת</div>
+            </div>
+            <div class="p-4 border-t">
+                <div class="drawer-item text-red-500 bg-red-50 rounded-lg" onclick="alert('LOGOUT')">
+                    <i class="fas fa-sign-out-alt w-5 text-center"></i> יציאה (LOG)
+                </div>
             </div>
         </div>
     </div>
@@ -123,7 +99,7 @@
     <script>
         function goHome() {
             document.getElementById('main-frame').src = 'dashboard.html';
-            updateUI('home', '');
+            updateUI('home', 'דף הבית');
         }
 
         function openApp(id, title) {
@@ -131,7 +107,7 @@
             switch(id) {
                 case 'chat': url = 'comm-center.html'; break;
                 case 'drive': url = 'documents-drive.html'; break;
-                case 'team': url = 'team-view.html'; break; // דף חדש שנבנה למטה
+                case 'team': url = 'team-view.html'; break; 
                 case 'truck': url = 'driver-app.html'; break;
             }
             const frame = document.getElementById('main-frame');
@@ -140,21 +116,10 @@
         }
 
         function updateUI(id, title) {
-            // עדכון כפתור תחתון פעיל
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             const btn = document.getElementById('nav-' + id);
             if(btn) btn.classList.add('active');
-
-            // עדכון כותרת עליונה
-            const header = document.getElementById('header');
-            const titleEl = document.getElementById('page-title');
-            
-            if(id === 'home') {
-                header.classList.remove('show-title');
-            } else {
-                titleEl.innerText = title;
-                header.classList.add('show-title');
-            }
+            document.getElementById('page-title').innerText = title;
         }
 
         function toggleDrawer(show) {
@@ -162,8 +127,7 @@
             if(show) d.classList.add('open'); else d.classList.remove('open');
         }
 
-        // חיבור לפונקציות ילדים
-        window.openApp = openApp;
+        window.openApp = openApp; // חשיפה לילדים
     </script>
 </body>
 </html>
