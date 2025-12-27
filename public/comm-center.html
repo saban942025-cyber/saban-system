@@ -8,11 +8,7 @@
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
-      OneSignalDeferred.push(async function(OneSignal) {
-        await OneSignal.init({
-          appId: "07b81f2e-e812-424f-beca-36584b12ccf2",
-        });
-      });
+      OneSignalDeferred.push(async function(OneSignal) { await OneSignal.init({ appId: "07b81f2e-e812-424f-beca-36584b12ccf2" }); });
     </script>
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -32,6 +28,10 @@
         .msg-area { flex: 1; padding: 20px; overflow-y: auto; }
         .input-area { min-height: 60px; background: #f0f2f5; display: flex; align-items: center; padding: 5px 10px; gap: 10px; }
         .input-box { flex: 1; padding: 10px; border-radius: 8px; border: none; outline: none; }
+        
+        /* Drawer for Docs */
+        .doc-drawer { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top-left-radius: 20px; border-top-right-radius: 20px; height: 60vh; transform: translateY(100%); transition: 0.3s; z-index: 50; display: flex; flex-direction: column; }
+        .doc-drawer.open { transform: translateY(0); }
     </style>
 </head>
 <body>
@@ -53,8 +53,19 @@
         </div>
         <div class="msg-area" id="msg-area"></div>
         <div class="input-area">
+            <button onclick="toggleDocDrawer()" class="text-gray-500 hover:text-blue-500 transform hover:rotate-45 transition"><i class="fas fa-paperclip text-xl"></i></button>
             <input type="text" class="input-box" placeholder="הקלד הודעה...">
             <button class="text-green-600 text-xl"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <div id="doc-drawer" class="doc-drawer shadow-2xl">
+        <div class="p-4 border-b flex justify-between items-center bg-gray-50 rounded-t-2xl">
+            <span class="font-bold text-gray-700">צרף מסמך</span>
+            <button onclick="toggleDocDrawer()"><i class="fas fa-times text-gray-500"></i></button>
+        </div>
+        <div id="drawer-list" class="flex-1 overflow-y-auto p-4 space-y-2">
+            <div class="text-center text-gray-400 mt-4">טוען מסמכים...</div>
         </div>
     </div>
 
@@ -62,6 +73,9 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
+
+        // הכתובת החדשה לשליפת מסמכים
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw6tU2yOXn4BkP3xwlmgB8nKU-8u6BOSKXTXJjXsY9E86E_zYXpa9_aDxsPmd63X1Wd/exec";
 
         onSnapshot(query(collection(db, "users"), orderBy("name")), (snap) => {
             const list = document.getElementById('contacts-list');
@@ -86,6 +100,31 @@
             document.getElementById('chat-avatar').src = avatar || `https://ui-avatars.com/api/?name=${name}`;
         };
         window.closeChat = () => document.getElementById('conversation-view').classList.remove('active');
+
+        // Docs Logic
+        window.toggleDocDrawer = async () => {
+            const d = document.getElementById('doc-drawer');
+            const list = document.getElementById('drawer-list');
+            
+            if(d.classList.contains('open')) {
+                d.classList.remove('open');
+            } else {
+                d.classList.add('open');
+                // טעינת מסמכים רק אם המגירה ריקה או ישנה
+                try {
+                    const res = await fetch(SCRIPT_URL);
+                    const files = await res.json();
+                    list.innerHTML = '';
+                    files.forEach(f => {
+                       list.innerHTML += `
+                       <div class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50" onclick="alert('נשלח: ${f.name}')">
+                           <i class="fas fa-file text-gray-400"></i>
+                           <div class="text-sm font-bold truncate">${f.name}</div>
+                       </div>`;
+                    });
+                } catch(e) { list.innerHTML = '<div class="text-red-500 text-center">שגיאה בטעינה</div>'; }
+            }
+        };
     </script>
 </body>
 </html>
