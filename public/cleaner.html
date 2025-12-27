@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Saban Cleaner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+    <div class="bg-white p-8 rounded-xl shadow-xl text-center">
+        <h1 class="text-2xl font-bold mb-4">ניקוי משימות תקועות</h1>
+        <p class="mb-4 text-gray-600">יש לך משימות פתוחות במערכת. לחץ למחיקה.</p>
+        <button onclick="clearTasks()" class="bg-red-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-red-700">
+            🗑️ מחק את כל המשימות הפתוחות
+        </button>
+        <div id="status" class="mt-4 font-bold text-blue-600"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, query, where, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        
+        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
+
+        window.clearTasks = async () => {
+            document.getElementById('status').innerText = "סורק...";
+            const q = query(collection(db, "tasks"), where("status", "==", "pending"));
+            const snapshot = await getDocs(q);
+            
+            if (snapshot.empty) {
+                document.getElementById('status').innerText = "הכל נקי! אין משימות למחיקה.";
+                return;
+            }
+
+            let count = 0;
+            const promises = [];
+            snapshot.forEach((d) => {
+                promises.push(deleteDoc(doc(db, "tasks", d.id)));
+                count++;
+            });
+
+            await Promise.all(promises);
+            document.getElementById('status').innerText = `נמחקו ${count} משימות בהצלחה!`;
+        };
+    </script>
+</body>
+</html>
