@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SabanOS Pro</title>
-    <link rel="icon" href="https://saban-system.onrender.com/icons/icon-192.png">
     
+    <link rel="icon" type="image/png" href="https://saban-system.onrender.com/icons/icon-192.png">
+    <link rel="shortcut icon" type="image/png" href="https://saban-system.onrender.com/icons/icon-192.png">
+    <link rel="apple-touch-icon" href="https://saban-system.onrender.com/icons/icon-192.png">
+
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
@@ -19,7 +22,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
-        /* CSS קיים... בתוספת: */
+        /* CSS קיים... (אין שינוי בעיצוב) */
         body { margin: 0; padding: 0; background: #f8fafc; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
         
         .app-header { height: 60px; background: white; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border-bottom: 1px solid #e2e8f0; z-index: 50; }
@@ -27,163 +30,11 @@
         iframe { width: 100%; height: 100%; border: none; }
         .bottom-nav { height: 65px; background: white; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-around; align-items: center; padding-bottom: env(safe-area-inset-bottom); z-index: 50; }
         
-        /* THE NAG MODAL (הנודניק הקופץ) */
-        .nag-overlay { 
-            position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; 
-            display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);
-            display: none; /* מוסתר בהתחלה */
-        }
-        .nag-card {
-            background: white; width: 90%; max-width: 400px; border-radius: 20px; padding: 25px;
-            text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
+        /* THE NAG MODAL */
+        .nag-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); display: none; }
+        .nag-card { background: white; width: 90%; max-width: 400px; border-radius: 20px; padding: 25px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        
         .nag-icon { font-size: 50px; color: #ff3b30; margin-bottom: 15px; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
     </style>
 </head>
-<body>
-
-    <audio id="alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
-
-    <div class="app-header">
-        <div class="font-black text-xl text-slate-800 flex items-center gap-2" onclick="goHome()">
-            <img src="https://saban-system.onrender.com/icons/icon-192.png" class="w-8 h-8 rounded"> SabanOS
-        </div>
-        <div class="text-sm font-bold text-gray-500" id="header-title">דף הבית</div>
-        <i class="fas fa-bars text-xl text-slate-600" onclick="toggleDrawer(true)"></i>
-    </div>
-
-    <div class="main-stage">
-        <iframe id="main-frame" src="dashboard.html"></iframe>
-    </div>
-
-    <div class="bottom-nav">
-        <div class="nav-btn active" onclick="goHome()" id="nav-home"><i class="fas fa-home text-2xl text-gray-400"></i></div>
-        <div class="nav-btn" onclick="openApp('chat', 'צ\'אט')" id="nav-chat"><i class="fab fa-whatsapp text-2xl text-gray-400"></i></div>
-        <div class="nav-btn" onclick="openApp('tasks', 'משימות')" id="nav-tasks"><i class="fas fa-tasks text-2xl text-gray-400"></i></div>
-        <div class="nav-btn" onclick="openApp('harel', 'הראל')" id="nav-harel"><i class="fas fa-user-shield text-2xl text-red-500"></i></div>
-    </div>
-
-    <div id="nag-screen" class="nag-overlay">
-        <div class="nag-card">
-            <div class="nag-icon"><i class="fas fa-bell"></i></div>
-            <h2 class="text-2xl font-black text-slate-800 mb-2">הודעה מהמנכ"ל</h2>
-            <p class="text-slate-600 mb-4" id="nag-body">יש לאשר קבלת משימה זו כדי להמשיך</p>
-            
-            <div class="bg-gray-100 p-3 rounded-lg mb-4 text-sm font-bold text-slate-700" id="nag-content">
-                ...
-            </div>
-
-            <button onclick="confirmTask()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-lg shadow-lg active:scale-95 transition">
-                <i class="fas fa-check-circle"></i> מאשר קבלה
-            </button>
-        </div>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        
-        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
-
-        // Current User ID (במציאות זה יבוא מלוגין)
-        const MY_ID = 'vered'; // לדוגמה, אני ורד
-        const MY_NAME = 'ורד'; 
-
-        // --- NAG ENGINE ---
-        let activeTaskId = null;
-
-        // האזנה למשימות שמיועדות לי (או לכולם) ועדיין לא קראתי אותן
-        // שימו לב: הלוגיקה כאן פשוטה. אם ה-ID שלי לא נמצא במערך readBy, זה אומר שלא קראתי.
-        // במערכת גדולה צריך שאילתה מורכבת יותר, אבל זה יעבוד מצוין כאן.
-        
-        const qTasks = query(collection(db, "tasks"), where("status", "==", "pending"));
-
-        onSnapshot(qTasks, (snap) => {
-            snap.forEach(d => {
-                const t = d.data();
-                // האם המשימה מיועדת לי?
-                const isForMe = t.assignedTo === 'all' || t.assignedTo === MY_ID;
-                // האם כבר קראתי?
-                const alreadyRead = t.readBy && t.readBy.includes(MY_ID);
-
-                if (isForMe && !alreadyRead && t.mustConfirm) {
-                    // מצאנו משימה דחופה שלא קראתי!
-                    triggerNag(d.id, t);
-                }
-            });
-        });
-
-        function triggerNag(taskId, taskData) {
-            if(document.getElementById('nag-screen').style.display === 'flex') return; // כבר מוצג
-
-            activeTaskId = taskId;
-            document.getElementById('nag-body').innerText = `משימה חדשה מאת: ${taskData.createdBy}`;
-            document.getElementById('nag-content').innerText = taskData.title;
-            
-            // הפעלת צליל
-            document.getElementById('alert-sound').play().catch(()=>{});
-            
-            // הצגת מסך חוסם
-            document.getElementById('nag-screen').style.display = 'flex';
-        }
-
-        window.confirmTask = async () => {
-            if(!activeTaskId) return;
-
-            // עדכון ב-DB שקראתי
-            await updateDoc(doc(db, "tasks", activeTaskId), {
-                readBy: arrayUnion(MY_ID)
-            });
-
-            // רישום לוג
-            await addDoc(collection(db, "task_logs"), {
-                taskId: activeTaskId,
-                userId: MY_ID,
-                userName: MY_NAME,
-                action: 'confirm',
-                details: 'אישר קבלת משימה',
-                timestamp: serverTimestamp()
-            });
-
-            // סגירת מסך
-            document.getElementById('nag-screen').style.display = 'none';
-            activeTaskId = null;
-            Swal.fire('תודה', 'האישור נרשם במערכת', 'success');
-        };
-
-        // --- NAVIGATION ---
-        window.goHome = () => {
-            document.getElementById('main-frame').src = 'dashboard.html';
-            updateNav('nav-home');
-        };
-
-        window.openApp = (id, title) => {
-            let url = '';
-            switch(id) {
-                case 'chat': url = 'comm-center.html'; break;
-                case 'drive': url = 'documents-drive.html'; break;
-                case 'team': url = 'team-view.html'; break;
-                case 'harel': url = 'harel-tasks.html'; break; // אפליקציית הראל
-                case 'tasks': url = 'harel-tasks.html'; break; // או דף משימות לעובד (אם תרצה נבנה בנפרד)
-            }
-            document.getElementById('main-frame').src = url;
-            document.getElementById('header-title').innerText = title;
-            updateNav(`nav-${id}`);
-        };
-
-        function updateNav(id) {
-            document.querySelectorAll('.nav-btn i').forEach(el => el.classList.remove('text-blue-600'));
-            document.querySelectorAll('.nav-btn i').forEach(el => el.classList.add('text-gray-400'));
-            const btn = document.getElementById(id);
-            if(btn) {
-                const icon = btn.querySelector('i');
-                icon.classList.remove('text-gray-400');
-                icon.classList.add('text-blue-600');
-            }
-        }
-    </script>
-</body>
-</html>
