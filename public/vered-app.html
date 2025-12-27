@@ -6,94 +6,108 @@
     <title>Saban Ops | ורד</title>
     <link rel="icon" href="data:;base64,iVBORw0KGgo=">
     
-    <meta name="theme-color" content="#be123c"> <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#be123c">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <link rel="manifest" href="manifest-vered.json">
-    <link rel="apple-touch-icon" href="https://ui-avatars.com/api/?name=Vered&background=be123c&color=fff&size=180">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
-        /* --- Chameleon Theme Engine --- */
         :root {
-            --primary: #be123c;   /* Rose (Default) */
+            --primary: #be123c;   
             --primary-light: #fb7185;
             --bg-body: #fff1f2;
             --bg-card: #ffffff;
             --text-main: #881337;
-            --border: #ffe4e6;
         }
 
-        /* Ocean Theme */
-        body.theme-ocean {
-            --primary: #0369a1;
-            --primary-light: #38bdf8;
-            --bg-body: #f0f9ff;
-            --text-main: #0c4a6e;
-            --border: #e0f2fe;
-        }
-
-        /* Forest Theme */
-        body.theme-forest {
-            --primary: #15803d;
-            --primary-light: #4ade80;
-            --bg-body: #f0fdf4;
-            --text-main: #14532d;
-            --border: #dcfce7;
-        }
-
-        /* Royal Night Theme */
-        body.theme-royal {
-            --primary: #1e1b4b; /* Deep Indigo */
-            --primary-light: #6366f1;
-            --bg-body: #f8fafc;
-            --text-main: #0f172a;
-            --border: #e2e8f0;
-        }
-
-        body { background: var(--bg-body); font-family: 'Segoe UI', system-ui, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; transition: background 0.5s ease; }
+        body { background: var(--bg-body); font-family: 'Segoe UI', system-ui, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
         /* Header */
         .app-header { 
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); 
             color: white; padding: 20px; padding-top: max(20px, env(safe-area-inset-top)); 
             border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15); transition: 0.5s;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 20;
         }
         
         /* Cards */
-        .rose-card { background: var(--bg-card); border-radius: 16px; padding: 16px; margin-bottom: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid var(--border); position: relative; overflow: hidden; }
-        .rose-card::before { content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 4px; background: var(--primary-light); }
+        .rose-card { background: var(--bg-card); border-radius: 16px; padding: 16px; margin-bottom: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #ffe4e6; position: relative; }
         
-        .harel-task { background: var(--bg-body); border-color: var(--primary-light); }
-        .harel-task::before { background: var(--primary); }
+        /* Pin Button (Paperclip) */
+        .btn-pin {
+            position: fixed; bottom: 90px; left: 20px;
+            width: 50px; height: 50px; border-radius: 50%;
+            background: #ffffff; color: var(--primary);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; cursor: pointer; z-index: 40;
+            transition: 0.3s; border: 1px solid var(--primary-light);
+        }
+        .btn-pin:active { transform: scale(0.9); }
 
-        /* Buttons */
-        .btn-sos { background: var(--primary); color: white; border-radius: 12px; padding: 12px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: 0.2s; }
+        /* Documents Drawer (Modal style) */
+        .docs-drawer {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 60;
+            align-items: flex-end;
+        }
+        .docs-content {
+            background: white; width: 100%; border-top-left-radius: 20px; border-top-right-radius: 20px;
+            height: 70vh; display: flex; flex-direction: column; padding: 20px; animation: slideUp 0.3s;
+        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        .doc-item {
+            display: flex; align-items: center; gap: 12px; padding: 12px;
+            border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: 0.2s;
+        }
+        .doc-item:hover { background: #f8fafc; }
+        .doc-icon { width: 40px; height: 40px; background: #f1f5f9; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #64748b; }
         
-        .btn-quick { display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; color: var(--text-main); background: white; padding: 10px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); flex: 1; border: 1px solid var(--border); }
-        .btn-quick i { font-size: 20px; color: var(--primary); }
-
-        /* Theme Picker Modal */
-        .theme-option { width: 40px; height: 40px; border-radius: 50%; cursor: pointer; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: 0.2s; }
-        .theme-option:hover { transform: scale(1.1); }
+        /* Message Popup Style */
+        .msg-popup {
+            position: fixed; top: 20px; left: 20px; right: 20px;
+            background: white; border-radius: 16px; padding: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            border-right: 5px solid var(--primary);
+            z-index: 100; display: none; animation: slideDown 0.4s;
+        }
+        @keyframes slideDown { from { transform: translateY(-100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
         /* Tabs */
-        .tab-bar { background: white; border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom); display: flex; justify-content: space-around; position: fixed; bottom: 0; width: 100%; z-index: 50; }
-        .tab-btn { padding: 12px; color: var(--text-main); opacity: 0.6; display: flex; flex-direction: column; align-items: center; font-size: 10px; flex: 1; transition: 0.3s; }
-        .tab-btn.active { opacity: 1; font-weight: bold; color: var(--primary); transform: translateY(-2px); }
-        .tab-btn i { font-size: 20px; margin-bottom: 4px; }
+        .tab-bar { background: white; border-top: 1px solid #fecdd3; padding-bottom: env(safe-area-inset-bottom); display: flex; justify-content: space-around; position: fixed; bottom: 0; width: 100%; z-index: 50; }
+        .tab-btn { padding: 12px; color: #9f1239; opacity: 0.6; display: flex; flex-direction: column; align-items: center; font-size: 10px; flex: 1; }
+        .tab-btn.active { opacity: 1; font-weight: bold; color: var(--primary); }
 
-        .view-section { display: none; padding: 20px; padding-bottom: 90px; overflow-y: auto; height: 100%; }
+        .view-section { display: none; padding: 20px; padding-bottom: 120px; overflow-y: auto; height: 100%; }
         .view-section.active { display: block; }
     </style>
 </head>
 <body>
 
-    <audio id="sound-ping" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
-    <audio id="sound-alert" src="https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3"></audio>
+    <audio id="sound-msg" src="https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3"></audio>
+
+    <div id="msg-popup" class="msg-popup">
+        <div class="flex justify-between items-start mb-2">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center text-rose-600">
+                    <i class="fas fa-comment-dots"></i>
+                </div>
+                <div>
+                    <div class="font-bold text-sm text-gray-800" id="popup-sender">שם השולח</div>
+                    <div class="text-[10px] text-gray-500">הודעה חדשה / תיוג</div>
+                </div>
+            </div>
+            <button onclick="closePopup()" class="text-gray-400"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="text-sm text-gray-700 mb-3 line-clamp-2" id="popup-body">תוכן ההודעה...</div>
+        <button onclick="openChatFromPopup()" class="w-full bg-rose-600 text-white py-2 rounded-lg text-sm font-bold shadow-md active:scale-95 transition">
+            <i class="fas fa-reply"></i> כנס לצ'אט
+        </button>
+    </div>
 
     <div class="app-header">
         <div class="flex justify-between items-start mb-4">
@@ -101,200 +115,213 @@
                 <div class="text-xs opacity-90">אדמיניסטרציה וכספים</div>
                 <div class="text-2xl font-bold">ורד אידלסון</div>
             </div>
-            <div class="flex gap-2">
-                <button onclick="openThemePicker()" class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm hover:bg-white/30 transition">
-                    <i class="fas fa-palette"></i>
-                </button>
-                <div id="dnd-btn" class="bg-white/20 px-3 py-1 rounded-full text-xs flex items-center gap-1 cursor-pointer backdrop-blur-sm" onclick="toggleDND()">
-                    <i class="fas fa-bell"></i> <span>זמינה</span>
-                </div>
+            <div class="bg-white/20 px-3 py-1 rounded-full text-xs flex items-center gap-1 backdrop-blur-sm">
+                <i class="fas fa-circle text-green-300 text-[8px]"></i> <span>מחוברת</span>
             </div>
         </div>
         
         <div class="flex gap-3 justify-between">
             <div class="text-center bg-white/10 rounded-lg p-2 flex-1">
                 <div class="text-xl font-bold" id="stat-tasks">0</div>
-                <div class="text-[10px]">משימות הראל</div>
+                <div class="text-[10px]">משימות</div>
             </div>
             <div class="text-center bg-white/10 rounded-lg p-2 flex-1">
                 <div class="text-xl font-bold text-green-200">OK</div>
-                <div class="text-[10px]">סטטוס קומקס</div>
+                <div class="text-[10px]">קומקס</div>
             </div>
             <div class="text-center bg-white/10 rounded-lg p-2 flex-1">
-                <div class="text-xl font-bold" id="stat-alerts">0</div>
+                <div class="text-xl font-bold" id="stat-msgs">0</div>
                 <div class="text-[10px]">הודעות</div>
             </div>
         </div>
     </div>
 
     <div id="view-home" class="view-section active">
-        <div class="flex gap-3 mb-6">
-            <button class="btn-quick" onclick="window.open('tel:0505227724')"><i class="fas fa-phone"></i> הראל</button>
-            <button class="btn-quick" onclick="window.open('https://wa.me/972505227724', '_blank')"><i class="fab fa-whatsapp"></i> הראל</button>
-            <button class="btn-quick" onclick="window.open('documents-drive.html', '_blank')"><i class="fab fa-google-drive"></i> מסמכים</button>
-            <button class="btn-quick" onclick="openComaxTicket()"><i class="fas fa-headset"></i> קומקס</button>
-        </div>
-
         <h3 class="font-bold text-gray-800 mb-3 flex items-center gap-2"><i class="fas fa-crown text-yellow-500"></i> משימות מנכ"ל</h3>
-        <div id="harel-tasks-list">
-            <div class="text-center text-gray-400 text-sm py-4">אין משימות פתוחות 🎉</div>
+        <div id="harel-tasks-list" class="space-y-2">
+            <div class="text-center text-gray-400 text-sm py-4">אין משימות פתוחות</div>
         </div>
 
-        <h3 class="font-bold text-gray-800 mb-3 mt-6">התראות מערכת</h3>
-        <div id="notifications-list" class="space-y-2"></div>
+        <h3 class="font-bold text-gray-800 mb-3 mt-6">הודעות אחרונות</h3>
+        <div id="notifications-list" class="space-y-2">
+            </div>
     </div>
 
-    <div id="view-tech" class="view-section">
-        <h2 class="text-xl font-bold mb-4" style="color: var(--primary)">עמדות קומקס</h2>
-        <button onclick="openComaxTicket()" class="btn-sos mb-6"><i class="fas fa-exclamation-circle"></i> דווח תקלה (SOS)</button>
-        <div class="space-y-3">
-            <div class="rose-card flex justify-between items-center"><span>🖥️ עמדה 1 (דלפק)</span><span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">תקין</span></div>
-            <div class="rose-card flex justify-between items-center"><span>🖥️ עמדה 2 (חרש)</span><span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">תקין</span></div>
-        </div>
+    <div class="btn-pin" onclick="openDocsDrawer()">
+        <i class="fas fa-paperclip"></i>
     </div>
 
-    <div id="view-hr" class="view-section">
-        <h2 class="text-xl font-bold mb-4" style="color: var(--primary)">משאבי אנוש</h2>
-        <div class="grid grid-cols-3 gap-3 mb-6">
-            <button onclick="waContact('גליה')" class="btn-quick"><i class="fas fa-user-circle"></i> גליה</button>
-            <button onclick="waContact('לינה')" class="btn-quick"><i class="fas fa-user-circle"></i> לינה</button>
-            <button onclick="waContact('שרון')" class="btn-quick"><i class="fas fa-user-circle"></i> שרון</button>
+    <div id="docs-drawer" class="docs-drawer" onclick="if(event.target === this) closeDocsDrawer()">
+        <div class="docs-content">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h3 class="font-bold text-lg text-gray-800"><i class="fas fa-folder-open text-yellow-500"></i> מסמכים מהדרייב</h3>
+                <button onclick="closeDocsDrawer()" class="w-8 h-8 bg-gray-100 rounded-full"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div id="docs-list" class="flex-1 overflow-y-auto space-y-2">
+                <div class="text-center mt-10 text-gray-400"><i class="fas fa-circle-notch fa-spin"></i> טוען מסמכים...</div>
+            </div>
         </div>
     </div>
 
     <div class="tab-bar">
         <div class="tab-btn active" onclick="switchTab('home', this)"><i class="fas fa-home"></i><span>ראשי</span></div>
         <div class="tab-btn" onclick="switchTab('tech', this)"><i class="fas fa-server"></i><span>קומקס</span></div>
-        <div class="tab-btn" onclick="switchTab('hr', this)"><i class="fas fa-users"></i><span>צוות</span></div>
-        <div class="tab-btn" onclick="window.open('documents-drive.html', '_blank')"><i class="fas fa-folder"></i><span>דרייב</span></div>
+        <div class="tab-btn" onclick="window.open('comm-center.html', '_blank')"><i class="fab fa-whatsapp"></i><span>ווצאף</span></div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, where, orderBy, onSnapshot, updateDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, query, where, orderBy, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
-        // --- Theme Chameleon ---
-        window.openThemePicker = () => {
-            Swal.fire({
-                title: 'בחרי את הצבע שלך 🎨',
-                html: `
-                    <div class="flex justify-center gap-4 mt-4">
-                        <div class="theme-option" style="background: #be123c;" onclick="setTheme('')" title="ורד קלאסי"></div>
-                        <div class="theme-option" style="background: #0ea5e9;" onclick="setTheme('theme-ocean')" title="אוקיינוס"></div>
-                        <div class="theme-option" style="background: #16a34a;" onclick="setTheme('theme-forest')" title="טבע"></div>
-                        <div class="theme-option" style="background: #312e81;" onclick="setTheme('theme-royal')" title="רויאל"></div>
-                    </div>
-                `,
-                showConfirmButton: false
-            });
-        };
+        // כתובת הסקריפט (אותה כתובת שיש לך ב-documents-drive)
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwIwoPwUA7uKnylbBBLoq06os16t1OV5jxWuohGCXhuWt99JjMfdEp1wWV-rSCeSmaD/exec";
 
-        window.setTheme = (themeClass) => {
-            document.body.className = themeClass;
-            localStorage.setItem('vered_theme', themeClass);
-            Swal.close();
-        };
+        // --- 1. POPUP & Notifications Listener ---
+        // מאזינים לכל ההתראות שמיועדות לורד (משימות, תיוגים, והודעות צ'אט)
+        // לצורך ההדגמה אנו מניחים שה-ID שלה במערכת הוא 'vered' או הטלפון '0506662300'
+        const qNotify = query(collection(db, "notifications"), where("targetUser", "==", "vered"), orderBy("createdAt", "desc")); // יש לוודא שה-ID תואם למה שנשלח
 
-        // Load saved theme
-        const savedTheme = localStorage.getItem('vered_theme');
-        if (savedTheme) document.body.className = savedTheme;
-
-        // --- Notifications Listener ---
-        // מאזין להתראות שמכוונות ספציפית לורד (למשל תיוג מסמך או משימה מהראל)
-        // לצורך הדוגמה ה-ID של ורד במערכת הוא 'vered' (או הטלפון שלה)
-        const qNotify = query(collection(db, "notifications"), where("target", "==", "vered"), orderBy("createdAt", "desc")); // יש להתאים את ה-ID האמיתי
+        let lastPopupId = null;
 
         onSnapshot(qNotify, (snap) => {
             const list = document.getElementById('notifications-list');
             list.innerHTML = '';
-            let unreadCount = 0;
+            let unread = 0;
+
+            if (snap.empty) {
+                list.innerHTML = `<div class="text-sm text-gray-400 text-center">אין הודעות חדשות</div>`;
+            }
 
             snap.forEach(d => {
                 const n = d.data();
-                if (!n.read) {
-                    unreadCount++;
-                    // השמעת צליל רק אם זו התראה חדשה (מהדקה האחרונה)
-                    const isFresh = (Date.now() - n.createdAt?.seconds * 1000) < 60000;
-                    if (isFresh && !window.isDND) {
-                        document.getElementById(n.type === 'urgent' ? 'sound-alert' : 'sound-ping').play().catch(()=>{});
-                        // הודעה קופצת
-                        const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
-                        Toast.fire({ icon: 'info', title: n.title });
-                    }
+                if (!n.read) unread++;
+
+                // POPUP Logic: אם זו הודעה חדשה (מהדקה האחרונה) ולא ראינו אותה כבר
+                const isFresh = (Date.now() - (n.createdAt?.seconds * 1000)) < 15000; // 15 שניות
+                if (isFresh && !n.read && lastPopupId !== d.id) {
+                    showPopup(d.id, n.title || 'הודעה חדשה', n.body, n.link);
+                    lastPopupId = d.id;
+                    document.getElementById('sound-msg').play().catch(()=>{});
                 }
 
                 list.innerHTML += `
-                <div class="rose-card py-3 flex justify-between items-start ${n.read ? 'opacity-60' : ''}">
-                    <div>
-                        <div class="font-bold text-sm text-gray-800">${n.title}</div>
-                        <div class="text-xs text-gray-500">${n.body}</div>
-                        ${n.link ? `<a href="${n.link}" target="_blank" class="text-blue-600 text-xs underline mt-1 block">צפה בקישור</a>` : ''}
+                <div class="rose-card py-3 flex gap-3 items-start ${n.read ? 'opacity-60' : 'border-r-4 border-r-rose-500'}">
+                    <div class="bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center shrink-0">
+                        <i class="fas ${n.type === 'chat' ? 'fa-comment' : 'fa-bell'} text-gray-500"></i>
                     </div>
-                    ${!n.read ? `<button onclick="markRead('${d.id}')" class="text-xs bg-rose-100 text-rose-700 px-2 py-1 rounded">סמן כנקרא</button>` : '<i class="fas fa-check text-green-500 text-xs"></i>'}
+                    <div class="flex-1">
+                        <div class="font-bold text-sm text-gray-800">${n.title || 'התראה'}</div>
+                        <div class="text-xs text-gray-600 line-clamp-2">${n.body}</div>
+                        ${n.link ? `<button onclick="window.open('${n.link}','_blank')" class="text-rose-600 text-xs font-bold mt-1"><i class="fas fa-link"></i> פתח קישור</button>` : ''}
+                    </div>
+                    ${!n.read ? `<button onclick="markRead('${d.id}')" class="text-xs text-gray-400 hover:text-rose-600"><i class="fas fa-check"></i></button>` : ''}
                 </div>`;
             });
-            document.getElementById('stat-alerts').innerText = unreadCount;
+            document.getElementById('stat-msgs').innerText = unread;
         });
 
-        window.markRead = async (id) => {
-            await updateDoc(doc(db, "notifications", id), { read: true });
-        };
-
-        // --- Tasks from Harel ---
-        // סימולציה של האזנה למשימות מהראל
-        onSnapshot(query(collection(db, "orders"), where("taskType", "==", "harel_to_vered")), (snap) => {
-            const container = document.getElementById('harel-tasks-list');
-            container.innerHTML = '';
-            if(snap.empty) { container.innerHTML = '<div class="text-center text-gray-400 text-sm py-4">אין משימות פתוחות 🎉</div>'; }
+        // פונקציות פופ-אפ
+        let currentLink = null;
+        function showPopup(id, title, body, link) {
+            document.getElementById('popup-sender').innerText = title;
+            document.getElementById('popup-body').innerText = body;
+            currentLink = link || 'comm-center.html'; // ברירת מחדל לווצאף
             
-            snap.forEach(d => {
-                const t = d.data();
-                container.innerHTML += `
-                <div class="rose-card harel-task">
-                    <div class="font-bold text-rose-900">${t.text}</div>
-                    <div class="text-xs text-rose-600 mt-2 flex justify-between">
-                        <span><i class="fas fa-user-tie"></i> הראל</span>
-                        <span>${new Date(t.createdAt?.seconds*1000).toLocaleTimeString()}</span>
-                    </div>
-                </div>`;
-            });
-            document.getElementById('stat-tasks').innerText = snap.size;
-        });
+            const popup = document.getElementById('msg-popup');
+            popup.style.display = 'block';
+            
+            // סגירה אוטומטית אחרי 8 שניות
+            setTimeout(() => { popup.style.display = 'none'; }, 8000);
+        }
 
-        // --- Standard Functions ---
-        window.switchTab = (viewId, btn) => {
-            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById(`view-${viewId}`).classList.add('active');
-            btn.classList.add('active');
+        window.closePopup = () => document.getElementById('msg-popup').style.display = 'none';
+        window.openChatFromPopup = () => {
+            window.open(currentLink, '_blank');
+            closePopup();
         };
+        window.markRead = async (id) => await updateDoc(doc(db, "notifications", id), { read: true });
 
-        window.isDND = false;
-        window.toggleDND = () => {
-            window.isDND = !window.isDND;
-            const btn = document.getElementById('dnd-btn');
-            if (window.isDND) {
-                btn.style.background = '#fff'; btn.style.color = 'var(--primary)';
-                btn.innerHTML = `<i class="fas fa-moon"></i> <span>שקט</span>`;
-            } else {
-                btn.style.background = 'rgba(255,255,255,0.2)'; btn.style.color = 'white';
-                btn.innerHTML = `<i class="fas fa-bell"></i> <span>זמינה</span>`;
+
+        // --- 2. Paperclip (Pin) Logic ---
+        window.openDocsDrawer = async () => {
+            const drawer = document.getElementById('docs-drawer');
+            const list = document.getElementById('docs-list');
+            drawer.style.display = 'flex';
+            
+            if (list.children.length > 1) return; // לא לטעון אם כבר טען
+
+            try {
+                const res = await fetch(SCRIPT_URL);
+                const files = await res.json();
+                
+                list.innerHTML = ''; // ניקוי
+                
+                if (files.length === 0) {
+                    list.innerHTML = '<div class="text-center mt-4">אין קבצים</div>';
+                    return;
+                }
+
+                files.forEach(f => {
+                    const isImg = f.type.includes('image');
+                    const icon = isImg ? 'fa-image' : 'fa-file-pdf';
+                    const sourceLabel = f.source === 'comax' ? 'קומקס' : 'ידני';
+                    
+                    const div = document.createElement('div');
+                    div.className = 'doc-item';
+                    div.innerHTML = `
+                        <div class="doc-icon"><i class="fas ${icon}"></i></div>
+                        <div class="flex-1">
+                            <div class="font-bold text-sm text-gray-800">${f.name}</div>
+                            <div class="text-[10px] text-gray-500">
+                                <span class="bg-gray-100 px-1 rounded">${sourceLabel}</span> • ${new Date(f.date).toLocaleDateString()}
+                            </div>
+                        </div>
+                        <button class="w-8 h-8 rounded-full bg-rose-50 text-rose-600 hover:bg-rose-100 flex items-center justify-center">
+                            <i class="fas fa-paper-plane text-xs"></i>
+                        </button>
+                    `;
+                    div.onclick = () => sendDocument(f);
+                    list.appendChild(div);
+                });
+
+            } catch (e) {
+                list.innerHTML = '<div class="text-red-500 text-center">שגיאה בטעינת מסמכים</div>';
             }
         };
 
-        window.openComaxTicket = () => {
+        window.closeDocsDrawer = () => document.getElementById('docs-drawer').style.display = 'none';
+
+        // שליחת מסמך (מדמה שליחה בווצאף)
+        window.sendDocument = (file) => {
             Swal.fire({
-                title: 'תקלת קומקס',
-                input: 'textarea', placeholder: 'תיאור התקלה...', confirmButtonText: 'שלח', confirmButtonColor: 'var(--primary)'
-            }).then(r => { if(r.value) Swal.fire('נשלח','','success'); });
+                title: 'שליחת מסמך',
+                text: `לשלוח את "${file.name}"?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'שלח לווצאף',
+                confirmButtonColor: '#be123c'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const text = `היי, מצורף מסמך: ${file.name}\n${file.url}`;
+                    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                    closeDocsDrawer();
+                }
+            });
+        };
+        
+        // --- Tabs UI ---
+        window.switchTab = (viewId, btn) => {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            // אם יש ID כזה, תציג אותו
+             const view = document.getElementById(`view-${viewId}`);
+             if(view) view.classList.add('active');
+            btn.classList.add('active');
         };
 
-        window.waContact = (name) => {
-            const phones = { 'גליה': '0500000000', 'לינה': '0500000000', 'שרון': '0500000000' };
-            window.open(`https://wa.me/972${phones[name]?.replace(/^0/,'')}`, '_blank');
-        };
     </script>
 </body>
 </html>
