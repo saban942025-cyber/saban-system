@@ -3,174 +3,179 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Saban Prime Dashboard</title>
+    <title>Saban Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* עיצוב פרימיום כהה */
+        /* --- עיצוב זכוכית פרימיום כהה --- */
         body { 
             background: #0f172a; /* Slate 900 */
-            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #0f172a 70%);
-            color: white; font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
-            padding: 20px; min-height: 100vh;
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+            color: white; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh; padding: 20px; padding-bottom: 100px;
             -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
         }
 
-        /* אנימציית כניסה */
-        .fade-up { animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: translateY(20px); }
-        @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+        /* אנימציות */
+        .fade-in { animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards; opacity: 0; transform: translateY(10px); }
+        @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
 
-        /* כרטיסים בסגנון Glassmorphism */
-        .glass-card {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 24px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            transition: all 0.2s ease;
+        /* כרטיסי זכוכית */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        /* כפתורי אפליקציה */
+        .app-btn {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 18px;
+            padding: 16px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+            cursor: pointer; transition: all 0.2s;
             position: relative; overflow: hidden;
+            height: 110px;
         }
-        .glass-card:active { transform: scale(0.96); background: rgba(30, 41, 59, 0.9); border-color: rgba(255,255,255,0.2); }
-
-        /* כפתורי פעולה ענקיים */
-        .action-btn {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            height: 140px; text-align: center; gap: 12px;
-        }
+        .app-btn:active { transform: scale(0.96); background: rgba(255,255,255,0.1); }
         
         /* אייקונים זוהרים */
-        .icon-glow {
-            width: 56px; height: 56px; border-radius: 20px;
+        .icon-box {
+            width: 48px; height: 48px; border-radius: 14px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 26px; color: white;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
-            border: 1px solid rgba(255,255,255,0.1);
+            font-size: 22px; color: white;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
         }
+        .g-green { background: linear-gradient(135deg, #22c55e, #14532d); }
+        .g-blue { background: linear-gradient(135deg, #3b82f6, #1e3a8a); }
+        .g-purple { background: linear-gradient(135deg, #a855f7, #581c87); }
+        .g-orange { background: linear-gradient(135deg, #f97316, #7c2d12); }
+        .g-slate { background: linear-gradient(135deg, #64748b, #334155); }
 
-        /* גרדיאנטים לאייקונים */
-        .g-green { background: linear-gradient(135deg, #22c55e, #166534); box-shadow: 0 8px 16px rgba(34, 197, 94, 0.3); }
-        .g-orange { background: linear-gradient(135deg, #f97316, #c2410c); box-shadow: 0 8px 16px rgba(249, 115, 22, 0.3); }
-        .g-blue { background: linear-gradient(135deg, #3b82f6, #1e40af); box-shadow: 0 8px 16px rgba(59, 130, 246, 0.3); }
-        .g-purple { background: linear-gradient(135deg, #a855f7, #6b21a8); box-shadow: 0 8px 16px rgba(168, 85, 247, 0.3); }
-        .g-red { background: linear-gradient(135deg, #ef4444, #991b1b); box-shadow: 0 8px 16px rgba(239, 68, 68, 0.3); }
-
-        /* תגית סטטוס */
-        .live-tag {
-            position: absolute; top: 12px; right: 12px;
-            background: rgba(34, 197, 94, 0.2); color: #4ade80;
-            font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 20px;
-            border: 1px solid rgba(34, 197, 94, 0.3);
-            display: flex; items-center; gap: 4px;
-        }
-        .live-dot { w-2 h-2 rounded-full bg-green-400 animate-pulse; }
-
-        /* ווידג'ט עליון */
-        .hero-widget {
+        /* כותרת מקובעת חכמה */
+        .smart-header {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 24px; margin-bottom: 24px;
-            background: linear-gradient(135deg, #1e293b, #0f172a);
+            margin-bottom: 24px; padding-top: 10px;
+        }
+        .refresh-btn { 
+            width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.1); 
+            display: flex; align-items: center; justify-content: center; font-size: 14px;
         }
     </style>
 </head>
 <body>
 
-    <div class="glass-card hero-widget fade-up" style="animation-delay: 0ms;">
-        <div>
-            <div class="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">מפקד המערכת</div>
-            <h1 class="text-2xl font-black text-white leading-none">ראמי סבן</h1>
-            <div class="text-sm text-green-400 font-medium mt-2 flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_#22c55e]"></span>
-                המערכת מבצעית
+    <div class="smart-header fade-in" style="animation-delay: 0ms;">
+        <div onclick="window.location.reload()">
+            <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">מערכת הפעלה</div>
+            <div class="text-2xl font-black text-white flex items-center gap-2">
+                Saban<span class="text-blue-500">OS</span>
             </div>
         </div>
         <div class="text-right">
-            <div id="clock" class="text-3xl font-mono font-bold text-white opacity-90">00:00</div>
-            <div id="date" class="text-xs text-gray-500 font-bold uppercase">...</div>
+            <div id="clock" class="text-xl font-mono font-bold text-white">00:00</div>
+            <div id="date" class="text-[10px] text-gray-400 font-bold uppercase">...</div>
         </div>
     </div>
 
-    <div class="grid grid-cols-2 gap-4">
+    <div class="grid grid-cols-2 gap-4 fade-in" style="animation-delay: 100ms;">
         
-        <div onclick="nav('sidor-group.html', 'קבוצת סידור')" class="glass-card action-btn fade-up" style="animation-delay: 100ms;">
-            <div class="live-tag"><span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span> LIVE</div>
-            <div class="icon-glow g-green">
-                <i class="fas fa-users"></i>
-            </div>
-            <div>
-                <div class="font-bold text-lg">קבוצת סידור</div>
-                <div class="text-[11px] text-gray-400">ניהול שוטף</div>
+        <div class="app-btn" onclick="openParentApp('chat', 'מרכז תקשורת')">
+            <div class="icon-box g-green"><i class="fab fa-whatsapp"></i></div>
+            <div class="text-center">
+                <div class="font-bold text-sm">מרכז תקשורת</div>
+                <div class="text-[10px] text-gray-400">צ'אט, קבוצות</div>
             </div>
         </div>
 
-        <div onclick="nav('transfers.html', 'העברות מלאי')" class="glass-card action-btn fade-up" style="animation-delay: 200ms;">
-            <div class="icon-glow g-orange">
-                <i class="fas fa-dolly"></i>
-            </div>
-            <div>
-                <div class="font-bold text-lg">העברות</div>
-                <div class="text-[11px] text-gray-400">לוגיסטיקה וביצוע</div>
+        <div class="app-btn" onclick="openParentApp('drive', 'ארכיון מסמכים')">
+            <div class="icon-box g-blue"><i class="fas fa-folder-open"></i></div>
+            <div class="text-center">
+                <div class="font-bold text-sm">ארכיון מסמכים</div>
+                <div class="text-[10px] text-gray-400">דרייב, חשבוניות</div>
             </div>
         </div>
 
-        <div onclick="nav('hamal-ops.html', 'מפה מבצעית')" class="glass-card action-btn fade-up" style="animation-delay: 300ms;">
-            <div class="icon-glow g-blue">
-                <i class="fas fa-map-marked-alt"></i>
-            </div>
-            <div>
-                <div class="font-bold text-lg">מפה טקטית</div>
-                <div class="text-[11px] text-gray-400">מיקום כוחות</div>
+        <div class="app-btn" onclick="openParentApp('tasks', 'משימות וסידור')">
+            <div class="icon-box g-purple"><i class="fas fa-tasks"></i></div>
+            <div class="text-center">
+                <div class="font-bold text-sm">משימות</div>
+                <div class="text-[10px] text-gray-400">יואב, סידור</div>
             </div>
         </div>
 
-        <div onclick="nav('admin-god.html', 'לינקים ללקוח')" class="glass-card action-btn fade-up" style="animation-delay: 400ms;">
-            <div class="icon-glow g-purple">
-                <i class="fas fa-link"></i>
-            </div>
-            <div>
-                <div class="font-bold text-lg">לינק לקוח</div>
-                <div class="text-[11px] text-gray-400">שירות ופורטל</div>
+        <div class="app-btn" onclick="window.parent.sendMagicLink()">
+            <div class="icon-box g-orange"><i class="fas fa-magic"></i></div>
+            <div class="text-center">
+                <div class="font-bold text-sm">לינק קסם</div>
+                <div class="text-[10px] text-gray-400">שליחת הזמנה</div>
             </div>
         </div>
 
-        <div onclick="window.parent.triggerAlert('buzzer', 'בדיקת צופר מהחמ״ל')" class="glass-card fade-up col-span-2 flex items-center justify-between p-5 mt-2 active:scale-95 cursor-pointer border-red-900/30 hover:bg-red-900/20" style="animation-delay: 500ms;">
+    </div>
+
+    <div class="mt-6 fade-in" style="animation-delay: 200ms;">
+        <h3 class="text-xs font-bold text-gray-500 mb-3 uppercase tracking-wider">סטטוס מערכת</h3>
+        
+        <div class="glass-panel p-4 flex items-center justify-between mb-3" onclick="openParentApp('staff', 'צוות אונליין')">
             <div class="flex items-center gap-4">
-                <div class="icon-glow g-red w-10 h-10 text-lg">
-                    <i class="fas fa-bullhorn"></i>
+                <div class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700">
+                    <i class="fas fa-users text-blue-400"></i>
                 </div>
                 <div>
-                    <div class="font-bold text-red-100">צופר חירום</div>
-                    <div class="text-[10px] text-red-400">לחיצה לבדיקת מערכת</div>
+                    <div class="font-bold text-sm">צוות אונליין</div>
+                    <div class="text-[10px] text-green-400 font-bold flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                        <span id="staff-count">טוען...</span> מחוברים
+                    </div>
                 </div>
             </div>
-            <i class="fas fa-chevron-left text-red-500/50"></i>
+            <i class="fas fa-chevron-left text-gray-600"></i>
         </div>
 
-    </div>
-
-    <div class="mt-6 flex justify-between px-2 fade-up" style="animation-delay: 600ms;">
-        <div class="text-center">
-            <div class="text-2xl font-bold text-white">3</div>
-            <div class="text-[10px] text-gray-500 uppercase font-bold">נהגים פעילים</div>
-        </div>
-        <div class="text-center">
-            <div class="text-2xl font-bold text-white">12</div>
-            <div class="text-[10px] text-gray-500 uppercase font-bold">הזמנות פתוחות</div>
-        </div>
-        <div class="text-center">
-            <div class="text-2xl font-bold text-green-400">100%</div>
-            <div class="text-[10px] text-gray-500 uppercase font-bold">יעילות יומית</div>
+        <div class="glass-panel p-4 flex items-center justify-between" onclick="openParentApp('truck', 'מסוף נהג')">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700">
+                    <i class="fas fa-truck text-orange-400"></i>
+                </div>
+                <div>
+                    <div class="font-bold text-sm">נהגים פעילים</div>
+                    <div class="text-[10px] text-gray-400">מעקב משימות</div>
+                </div>
+            </div>
+            <i class="fas fa-chevron-left text-gray-600"></i>
         </div>
     </div>
 
-    <script>
-        // ניווט דרך האבא (index.html)
-        function nav(url, title) {
-            window.parent.loadPage(url, title);
-        }
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // שעון חי
+        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
+
+        // פונקציה לתקשורת עם המעטפת (Shell)
+        window.openParentApp = (id, title) => {
+            if (window.parent && window.parent.openApp) {
+                window.parent.openApp(id, title);
+            } else {
+                console.warn('לא נמצא הורה (Shell). מנסה לנווט ישירות...');
+                // Fallback למקרה שפותחים את הקובץ ישירות
+                let url = '';
+                if(id === 'chat') url = 'comm-center.html';
+                if(id === 'drive') url = 'documents-drive.html';
+                if(url) window.location.href = url;
+            }
+        };
+
+        // שעון
         function updateTime() {
             const now = new Date();
             document.getElementById('clock').innerText = now.toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'});
@@ -178,6 +183,11 @@
         }
         setInterval(updateTime, 1000);
         updateTime();
+
+        // מונה צוות
+        onSnapshot(query(collection(db, "users")), (snap) => {
+            document.getElementById('staff-count').innerText = snap.size;
+        });
     </script>
 </body>
 </html>
