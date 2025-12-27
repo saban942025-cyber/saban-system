@@ -2,62 +2,71 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saban Drive | ארכיון מסמכים</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Saban Drive | מאסטר</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <style>
-        body { background: #f8fafc; font-family: 'Segoe UI', system-ui, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        body { background: #f1f5f9; font-family: 'Segoe UI', system-ui, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
         /* Header */
-        .app-header { background: #1e293b; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 10; }
-        .refresh-btn { width: 32px; height: 32px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; }
-        .refresh-btn:hover { background: rgba(255,255,255,0.2); transform: rotate(180deg); }
+        .app-header { background: #1e293b; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 20; }
+        
+        /* Main Grid */
+        .main-area { flex: 1; overflow-y: auto; padding: 16px; padding-bottom: 80px; }
+        .docs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
 
-        /* Grid Area */
-        .main-area { flex: 1; overflow-y: auto; padding: 20px; }
-        .docs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
-
-        /* Document Card */
+        /* Card Design */
         .doc-card { 
             background: white; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: all 0.2s; position: relative;
-            display: flex; flex-direction: column; height: 260px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; flex-direction: column;
+            transition: transform 0.2s; position: relative;
         }
-        .doc-card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.08); border-color: #94a3b8; }
+        .doc-card:active { transform: scale(0.98); }
 
-        /* Card Header (Preview) */
+        /* Preview Section */
         .card-preview { 
-            height: 120px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; 
-            font-size: 48px; color: #cbd5e1; position: relative; cursor: pointer;
+            height: 100px; background: #f8fafc; display: flex; align-items: center; justify-content: center; 
+            font-size: 40px; color: #cbd5e1; cursor: pointer; position: relative;
         }
         .card-preview img { width: 100%; height: 100%; object-fit: cover; }
         
         /* Badges */
-        .source-badge { position: absolute; top: 8px; right: 8px; font-size: 10px; font-weight: bold; padding: 4px 8px; border-radius: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 5; }
-        .badge-manual { background: #dbeafe; color: #1e40af; } /* הועלה ידנית */
-        .badge-comax { background: #ffedd5; color: #9a3412; } /* הגיע במייל */
+        .badge { position: absolute; top: 6px; right: 6px; font-size: 9px; font-weight: bold; padding: 3px 6px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 5; }
+        .bg-manual { background: #dbeafe; color: #1e40af; } 
+        .bg-comax { background: #ffedd5; color: #9a3412; }
 
-        /* Card Content */
-        .card-body { padding: 12px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
-        .file-name { font-weight: 700; font-size: 13px; color: #334155; line-height: 1.3; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        /* Content */
+        .card-body { padding: 10px; flex: 1; display: flex; flex-direction: column; }
+        .file-name { font-weight: 700; font-size: 12px; color: #334155; line-height: 1.3; margin-bottom: 4px; height: 32px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+        .file-date { font-size: 10px; color: #94a3b8; display: flex; items-center; gap: 4px; }
+
+        /* Buttons Row (New!) */
+        .card-actions { 
+            padding: 8px; border-top: 1px solid #f1f5f9; background: #fff;
+            display: flex; gap: 8px; 
+        }
+        .btn-action {
+            flex: 1; height: 36px; border-radius: 8px; font-size: 12px; font-weight: bold;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            cursor: pointer; border: none; transition: 0.2s;
+        }
         
-        .meta-row { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #64748b; margin-top: 4px; }
+        /* WhatsApp Button */
+        .btn-wa { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .btn-wa:hover { background: #bbf7d0; }
+
+        /* App Tag Button */
+        .btn-tag { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+        .btn-tag:hover { background: #dbeafe; }
+
+        /* FAB */
+        .fab { position: fixed; bottom: 24px; left: 24px; width: 56px; height: 56px; background: #2563eb; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 10px 20px rgba(37, 99, 235, 0.4); cursor: pointer; z-index: 50; }
         
-        /* Actions Footer */
-        .card-actions { border-top: 1px solid #f1f5f9; padding: 10px; display: flex; gap: 8px; background: #fff; }
-        .action-btn { flex: 1; font-size: 11px; font-weight: bold; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0; background: #f8fafc; color: #475569; display: flex; align-items: center; justify-content: center; gap: 4px; cursor: pointer; transition: 0.2s; }
-        .action-btn:hover { background: #e2e8f0; }
-        .btn-tag { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
-        .btn-tag:hover { background: #dcfce7; }
-
-        /* Floating Button */
-        .fab { position: fixed; bottom: 30px; left: 30px; width: 56px; height: 56px; background: #2563eb; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 10px 20px rgba(37, 99, 235, 0.4); cursor: pointer; transition: 0.2s; z-index: 50; }
-        .fab:hover { transform: scale(1.1) rotate(90deg); background: #1d4ed8; }
-
-        .loader { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 14px; flex-direction: column; gap: 10px; }
+        /* Loader */
+        .loader-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 200px; color: #64748b; }
     </style>
 </head>
 <body>
@@ -65,24 +74,23 @@
     <div class="app-header">
         <div class="flex items-center gap-3">
             <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg">
-                <i class="fas fa-cloud text-sm"></i>
+                <i class="fas fa-folder-open text-sm"></i>
             </div>
             <div>
                 <h1 class="font-bold text-lg leading-tight">Saban Drive</h1>
-                <div class="text-[10px] opacity-70">ארכיון מסמכים מרכזי</div>
+                <div class="text-[10px] opacity-80" id="status-text">טוען...</div>
             </div>
         </div>
-        <div class="flex items-center gap-3">
-            <span id="counter" class="text-xs bg-slate-700 px-2 py-1 rounded-md">0 קבצים</span>
-            <div class="refresh-btn" onclick="loadFiles()"><i class="fas fa-sync-alt text-xs"></i></div>
-        </div>
+        <button onclick="loadFiles()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition">
+            <i class="fas fa-sync-alt text-xs"></i>
+        </button>
     </div>
 
     <div class="main-area">
         <div id="grid" class="docs-grid"></div>
-        <div id="loader" class="loader mt-20">
-            <i class="fas fa-circle-notch fa-spin text-3xl text-blue-500"></i>
-            <span>טוען מסמכים מהענן...</span>
+        <div id="loader" class="loader-container">
+            <i class="fas fa-circle-notch fa-spin text-3xl mb-3 text-blue-500"></i>
+            <span class="text-xs">מסנכרן מסמכים...</span>
         </div>
     </div>
 
@@ -91,20 +99,26 @@
     </div>
     <input type="file" id="fileInput" hidden onchange="handleUpload(this)">
 
-    <script>
-        // >>> שים כאן את ה-Web App URL מהשלב הקודם (Google Apps Script) <<<
-        const API_URL = "https://script.google.com/macros/s/AKfycbwIwoPwUA7uKnylbBBLoq06os16t1OV5jxWuohGCXhuWt99JjMfdEp1wWV-rSCeSmaD/exec"; 
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // רשימת צוות לתיוג מהיר (וואטסאפ)
+        // Firebase Config (אותו אחד כמו בשאר האפליקציות)
+        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
+
+        // >>> הכתובת החדשה שסיפקת <<<
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwIwoPwUA7uKnylbBBLoq06os16t1OV5jxWuohGCXhuWt99JjMfdEp1wWV-rSCeSmaD/exec";
+
+        // רשימת עובדים לתיוג
         const STAFF = [
-            { name: "הראל (מנכ\"ל)", phone: "972505227724" },
-            { name: "יואב (סידור)", phone: "972507855865" },
-            { name: "איציק (החרש)", phone: "972504482285" },
-            { name: "ראמי (תפעול)", phone: "972508860896" },
-            { name: "נהגים (כללי)", phone: "" } // יפתח בחירת איש קשר
+            { id: "harel", name: "הראל (מנכ\"ל)", phone: "972505227724" },
+            { id: "yoav", name: "יואב (סידור)", phone: "972507855865" },
+            { id: "itzik", name: "איציק (החרש)", phone: "972504482285" },
+            { id: "oren", name: "אורן (חצר)", phone: "972509001392" },
+            { id: "ali", name: "עלי (מנוף)", phone: "972500000606" }
         ];
 
-        async function loadFiles() {
+        window.loadFiles = async () => {
             const grid = document.getElementById('grid');
             const loader = document.getElementById('loader');
             
@@ -112,161 +126,138 @@
             loader.style.display = 'flex';
 
             try {
-                const res = await fetch(API_URL);
+                const res = await fetch(SCRIPT_URL);
                 const files = await res.json();
                 
-                document.getElementById('counter').innerText = `${files.length} קבצים`;
+                document.getElementById('status-text').innerText = `${files.length} מסמכים בארכיון`;
                 loader.style.display = 'none';
 
                 if (files.length === 0) {
-                    grid.innerHTML = `<div class="col-span-full text-center text-gray-400 mt-10">אין מסמכים להצגה</div>`;
+                    grid.innerHTML = `<div class="col-span-full text-center text-gray-400 mt-10">התיקייה ריקה</div>`;
                     return;
                 }
 
-                files.forEach(f => {
-                    renderCard(f, grid);
-                });
+                files.forEach(f => renderCard(f, grid));
 
             } catch (err) {
                 console.error(err);
-                loader.innerHTML = '<span class="text-red-500">שגיאה בטעינת הנתונים</span>';
+                document.getElementById('status-text').innerText = 'שגיאה בסנכרון';
+                loader.innerHTML = '<span class="text-red-500 text-xs">תקלה בחיבור לשרת</span>';
             }
-        }
+        };
 
         function renderCard(file, container) {
-            // זיהוי סוג קובץ
             const isImg = file.type.includes('image');
             const isPdf = file.type.includes('pdf');
-            const icon = isImg ? 'fa-file-image' : (isPdf ? 'fa-file-pdf text-red-500' : 'fa-file text-gray-400');
-            
-            // זיהוי מקור (לפי שם הקובץ או סימון מהשרת)
-            // נניח שהסקריפט מחזיר source: 'comax' או 'manual'
-            const isComax = file.source === 'comax';
-            const badgeHtml = isComax 
-                ? `<span class="source-badge badge-comax"><i class="fas fa-envelope"></i> קומקס</span>`
-                : `<span class="source-badge badge-manual"><i class="fas fa-user"></i> ראמי</span>`;
+            const icon = isImg ? 'fa-image text-blue-400' : (isPdf ? 'fa-file-pdf text-red-500' : 'fa-file text-gray-400');
+            const sourceBadge = file.source === 'comax' 
+                ? `<span class="badge bg-comax">Comax</span>` 
+                : `<span class="badge bg-manual">ידני</span>`;
 
-            // פורמט תאריך ושעה
-            const dateObj = new Date(file.date);
-            const dateStr = dateObj.toLocaleDateString('he-IL');
-            const timeStr = dateObj.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
-
-            const previewContent = isImg 
-                ? `<img src="${file.url}" loading="lazy">` 
-                : `<i class="fas ${icon}"></i>`;
+            const dateStr = new Date(file.date).toLocaleDateString('he-IL');
+            const preview = isImg ? `<img src="${file.url}" loading="lazy">` : `<i class="fas ${icon}"></i>`;
 
             const card = document.createElement('div');
             card.className = 'doc-card';
             card.innerHTML = `
-                ${badgeHtml}
+                ${sourceBadge}
                 <div class="card-preview" onclick="window.open('${file.url}', '_blank')">
-                    ${previewContent}
+                    ${preview}
                 </div>
                 <div class="card-body">
-                    <div>
-                        <div class="file-name" title="${file.name}">${file.name}</div>
-                        <div class="meta-row">
-                            <i class="far fa-clock"></i>
-                            <span>${dateStr} | ${timeStr}</span>
-                        </div>
-                    </div>
+                    <div class="file-name" title="${file.name}">${file.name}</div>
+                    <div class="file-date"><i class="far fa-clock"></i> ${dateStr}</div>
                 </div>
                 <div class="card-actions">
-                    <button class="action-btn" onclick="copyLink('${file.url}')">
-                        <i class="fas fa-link"></i> העתק
+                    <button class="btn-action btn-wa" onclick="shareToWhatsapp('${file.name}', '${file.url}')">
+                        <i class="fab fa-whatsapp text-lg"></i>
                     </button>
-                    <button class="action-btn btn-tag" onclick="tagStaff('${file.name}', '${file.url}')">
-                        <i class="fab fa-whatsapp"></i> תייג
+                    <button class="btn-action btn-tag" onclick="tagInApp('${file.name}', '${file.url}')">
+                        <i class="fas fa-bell text-lg"></i> תייג
                     </button>
                 </div>
             `;
             container.appendChild(card);
         }
 
-        // --- העלאת קובץ ---
-        async function handleUpload(input) {
+        // --- פעולות כפתורים ---
+
+        // 1. שיתוף לווצאף (חיצוני)
+        window.shareToWhatsapp = (name, url) => {
+            const text = `היי, קבל מסמך ממערכת סבן:\n*${name}*\n${url}`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+        };
+
+        // 2. תיוג באפליקציה (פנימי - כותב לפיירבייס)
+        window.tagInApp = (fileName, fileUrl) => {
+            const options = {};
+            STAFF.forEach(s => options[s.id] = s.name);
+
+            Swal.fire({
+                title: 'תיוג לאפליקציה',
+                text: 'בחר למי להקפיץ התראה:',
+                input: 'select',
+                inputOptions: options,
+                inputPlaceholder: 'בחר איש צוות...',
+                showCancelButton: true,
+                confirmButtonText: 'שלח התראה 🔔',
+                confirmButtonColor: '#2563eb'
+            }).then(async (result) => {
+                if (result.value) {
+                    const staffId = result.value;
+                    const staffName = STAFF.find(s => s.id === staffId).name;
+                    
+                    // כתיבה לקולקציית התראות ב-Firestore
+                    try {
+                        await addDoc(collection(db, "notifications"), {
+                            targetUser: staffId, // לדוגמה: 'yoav'
+                            type: 'document',
+                            title: 'מסמך חדש תויג עבורך',
+                            body: fileName,
+                            link: fileUrl,
+                            read: false,
+                            createdAt: serverTimestamp()
+                        });
+                        Swal.fire('נשלח!', `התראה נשלחה לאפליקציה של ${staffName}`, 'success');
+                    } catch (e) {
+                        console.error(e);
+                        Swal.fire('שגיאה', 'לא ניתן היה לשלוח התראה', 'error');
+                    }
+                }
+            });
+        };
+
+        // --- העלאה לדרייב ---
+        window.handleUpload = (input) => {
             const file = input.files[0];
             if (!file) return;
 
-            // המרה ל-Base64
             const reader = new FileReader();
             reader.readAsDataURL(file);
-            
             reader.onload = async () => {
                 const base64 = reader.result.split(',')[1];
                 
-                // תצוגת טעינה
-                Swal.fire({
-                    title: 'מעלה קובץ...',
-                    text: 'אנא המתן',
-                    allowOutsideClick: false,
-                    didOpen: () => Swal.showLoading()
-                });
+                Swal.fire({ title: 'מעלה...', didOpen: () => Swal.showLoading() });
 
                 try {
-                    const res = await fetch(API_URL, {
+                    const res = await fetch(SCRIPT_URL, {
                         method: 'POST',
-                        body: JSON.stringify({
-                            fileName: file.name,
-                            mimeType: file.type,
-                            fileBase64: base64
-                        })
+                        body: JSON.stringify({ fileName: file.name, mimeType: file.type, fileBase64: base64 })
                     });
                     const result = await res.json();
-
-                    if (result.success) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'הקובץ הועלה!',
-                            showConfirmButton: false,
-                            timer: 1500
-                        });
-                        loadFiles(); // רענון
-                    } else {
-                        throw new Error(result.error);
-                    }
+                    
+                    if(result.success) {
+                        Swal.fire('הצלחה', 'הקובץ בארכיון', 'success');
+                        window.loadFiles();
+                    } else { throw new Error(result.error); }
                 } catch (e) {
-                    Swal.fire('שגיאה', 'ההעלאה נכשלה', 'error');
+                    Swal.fire('נכשל', 'בדוק חיבור אינטרנט', 'error');
                 }
             };
-        }
-
-        // --- תיוג ושיתוף ---
-        window.tagStaff = (fileName, url) => {
-            // יצירת רשימת כפתורים לסוויט-אלרט
-            const buttonsHtml = STAFF.map(s => 
-                `<button onclick="sendToStaff('${s.phone}', '${fileName}', '${url}')" 
-                  class="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg mb-2 flex justify-between items-center hover:bg-green-50 hover:border-green-200 transition">
-                    <span class="font-bold text-gray-700">${s.name}</span>
-                    <i class="fab fa-whatsapp text-green-500 text-xl"></i>
-                 </button>`
-            ).join('');
-
-            Swal.fire({
-                title: 'תייג איש צוות',
-                html: `<div class="mt-4">${buttonsHtml}</div>`,
-                showConfirmButton: false,
-                showCloseButton: true
-            });
         };
 
-        window.sendToStaff = (phone, name, url) => {
-            const text = `*שיתוף קובץ ממערכת סבן* 📎\nשם: ${name}\nלינק: ${url}`;
-            const waLink = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
-            window.open(waLink, '_blank');
-            Swal.close();
-        };
-
-        window.copyLink = (url) => {
-            navigator.clipboard.writeText(url);
-            const Toast = Swal.mixin({
-                toast: true, position: 'top-end', showConfirmButton: false, timer: 2000
-            });
-            Toast.fire({ icon: 'success', title: 'הלינק הועתק!' });
-        };
-
-        // טעינה ראשונית
-        loadFiles();
+        // התחלה
+        window.loadFiles();
     </script>
 </body>
 </html>
