@@ -16,70 +16,63 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
+        /* --- Chameleon Theme Engine --- */
         :root {
-            --primary: #be123c;   
+            --primary: #be123c;   /* ברירת מחדל: ורד */
             --primary-light: #fb7185;
             --bg-body: #fff1f2;
             --bg-card: #ffffff;
             --text-main: #881337;
+            --border: #ffe4e6;
         }
 
-        body { background: var(--bg-body); font-family: 'Segoe UI', system-ui, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        /* ערכות נושא נוספות */
+        body.theme-ocean { --primary: #0369a1; --primary-light: #38bdf8; --bg-body: #f0f9ff; --text-main: #0c4a6e; --border: #e0f2fe; }
+        body.theme-forest { --primary: #15803d; --primary-light: #4ade80; --bg-body: #f0fdf4; --text-main: #14532d; --border: #dcfce7; }
+        body.theme-royal { --primary: #312e81; --primary-light: #6366f1; --bg-body: #eef2ff; --text-main: #1e1b4b; --border: #e0e7ff; }
+        body.theme-dark { --primary: #171717; --primary-light: #525252; --bg-body: #0a0a0a; --bg-card: #262626; --text-main: #e5e5e5; --border: #404040; color: white; }
+
+        body { background: var(--bg-body); color: var(--text-main); font-family: 'Segoe UI', system-ui, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; transition: background 0.5s ease, color 0.5s ease; }
         
         /* Header */
         .app-header { 
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); 
             color: white; padding: 20px; padding-top: max(20px, env(safe-area-inset-top)); 
             border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 20;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 20; transition: 0.5s;
         }
         
-        /* Cards */
-        .rose-card { background: var(--bg-card); border-radius: 16px; padding: 16px; margin-bottom: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #ffe4e6; position: relative; }
-        
-        /* Pin Button (Paperclip) */
+        /* Elements */
+        .rose-card { background: var(--bg-card); border-radius: 16px; padding: 16px; margin-bottom: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid var(--border); position: relative; }
+        .btn-quick { display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; color: var(--text-main); background: var(--bg-card); padding: 10px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); flex: 1; border: 1px solid var(--border); }
+        .btn-quick i { font-size: 20px; color: var(--primary); }
+
+        /* Pin Button */
         .btn-pin {
-            position: fixed; bottom: 90px; left: 20px;
-            width: 50px; height: 50px; border-radius: 50%;
-            background: #ffffff; color: var(--primary);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 22px; cursor: pointer; z-index: 40;
-            transition: 0.3s; border: 1px solid var(--primary-light);
+            position: fixed; bottom: 90px; left: 20px; width: 50px; height: 50px; border-radius: 50%;
+            background: var(--bg-card); color: var(--primary); border: 1px solid var(--primary-light);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center;
+            font-size: 22px; cursor: pointer; z-index: 40; transition: 0.3s;
         }
         .btn-pin:active { transform: scale(0.9); }
 
-        /* Documents Drawer (Modal style) */
-        .docs-drawer {
-            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 60;
-            align-items: flex-end;
-        }
-        .docs-content {
-            background: white; width: 100%; border-top-left-radius: 20px; border-top-right-radius: 20px;
-            height: 70vh; display: flex; flex-direction: column; padding: 20px; animation: slideUp 0.3s;
-        }
+        /* Drawer & Popup */
+        .docs-drawer { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 60; align-items: flex-end; }
+        .docs-content { background: var(--bg-card); width: 100%; border-top-left-radius: 20px; border-top-right-radius: 20px; height: 75vh; display: flex; flex-direction: column; padding: 20px; animation: slideUp 0.3s; color: var(--text-main); }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-
-        .doc-item {
-            display: flex; align-items: center; gap: 12px; padding: 12px;
-            border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: 0.2s;
-        }
-        .doc-item:hover { background: #f8fafc; }
-        .doc-icon { width: 40px; height: 40px; background: #f1f5f9; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #64748b; }
         
-        /* Message Popup Style */
         .msg-popup {
-            position: fixed; top: 20px; left: 20px; right: 20px;
-            background: white; border-radius: 16px; padding: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            border-right: 5px solid var(--primary);
-            z-index: 100; display: none; animation: slideDown 0.4s;
+            position: fixed; top: 20px; left: 20px; right: 20px; background: white; border-radius: 16px; padding: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25); border-right: 5px solid var(--primary); z-index: 100; display: none; animation: slideDown 0.4s; color: #333;
         }
         @keyframes slideDown { from { transform: translateY(-100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
+        /* Theme Picker */
+        .theme-dot { width: 35px; height: 35px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); cursor: pointer; }
+
         /* Tabs */
-        .tab-bar { background: white; border-top: 1px solid #fecdd3; padding-bottom: env(safe-area-inset-bottom); display: flex; justify-content: space-around; position: fixed; bottom: 0; width: 100%; z-index: 50; }
-        .tab-btn { padding: 12px; color: #9f1239; opacity: 0.6; display: flex; flex-direction: column; align-items: center; font-size: 10px; flex: 1; }
+        .tab-bar { background: var(--bg-card); border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom); display: flex; justify-content: space-around; position: fixed; bottom: 0; width: 100%; z-index: 50; }
+        .tab-btn { padding: 12px; color: var(--text-main); opacity: 0.6; display: flex; flex-direction: column; align-items: center; font-size: 10px; flex: 1; }
         .tab-btn.active { opacity: 1; font-weight: bold; color: var(--primary); }
 
         .view-section { display: none; padding: 20px; padding-bottom: 120px; overflow-y: auto; height: 100%; }
@@ -93,73 +86,59 @@
     <div id="msg-popup" class="msg-popup">
         <div class="flex justify-between items-start mb-2">
             <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center text-rose-600">
-                    <i class="fas fa-comment-dots"></i>
-                </div>
-                <div>
-                    <div class="font-bold text-sm text-gray-800" id="popup-sender">שם השולח</div>
-                    <div class="text-[10px] text-gray-500">הודעה חדשה / תיוג</div>
-                </div>
+                <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600"><i class="fas fa-bell"></i></div>
+                <div><div class="font-bold text-sm" id="popup-sender">מערכת</div><div class="text-[10px] text-gray-500">הודעה חדשה</div></div>
             </div>
             <button onclick="closePopup()" class="text-gray-400"><i class="fas fa-times"></i></button>
         </div>
-        <div class="text-sm text-gray-700 mb-3 line-clamp-2" id="popup-body">תוכן ההודעה...</div>
-        <button onclick="openChatFromPopup()" class="w-full bg-rose-600 text-white py-2 rounded-lg text-sm font-bold shadow-md active:scale-95 transition">
-            <i class="fas fa-reply"></i> כנס לצ'אט
-        </button>
+        <div class="text-sm mb-3" id="popup-body">...</div>
+        <button onclick="openChatFromPopup()" class="w-full py-2 rounded-lg text-sm font-bold text-white shadow" style="background: var(--primary)">פתח</button>
     </div>
 
     <div class="app-header">
         <div class="flex justify-between items-start mb-4">
-            <div>
-                <div class="text-xs opacity-90">אדמיניסטרציה וכספים</div>
-                <div class="text-2xl font-bold">ורד אידלסון</div>
-            </div>
-            <div class="bg-white/20 px-3 py-1 rounded-full text-xs flex items-center gap-1 backdrop-blur-sm">
-                <i class="fas fa-circle text-green-300 text-[8px]"></i> <span>מחוברת</span>
+            <div><div class="text-xs opacity-90">ניהול אדמיניסטרטיבי</div><div class="text-2xl font-bold">ורד אידלסון</div></div>
+            <div class="flex gap-2">
+                <button onclick="openThemePicker()" class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm"><i class="fas fa-palette"></i></button>
+                <div class="bg-white/20 px-3 py-1 rounded-full text-xs flex items-center gap-1 backdrop-blur-sm"><i class="fas fa-circle text-green-300 text-[8px]"></i> <span>אונליין</span></div>
             </div>
         </div>
-        
         <div class="flex gap-3 justify-between">
-            <div class="text-center bg-white/10 rounded-lg p-2 flex-1">
-                <div class="text-xl font-bold" id="stat-tasks">0</div>
-                <div class="text-[10px]">משימות</div>
-            </div>
-            <div class="text-center bg-white/10 rounded-lg p-2 flex-1">
-                <div class="text-xl font-bold text-green-200">OK</div>
-                <div class="text-[10px]">קומקס</div>
-            </div>
-            <div class="text-center bg-white/10 rounded-lg p-2 flex-1">
-                <div class="text-xl font-bold" id="stat-msgs">0</div>
-                <div class="text-[10px]">הודעות</div>
-            </div>
+            <div class="text-center bg-white/10 rounded-lg p-2 flex-1"><div class="text-xl font-bold" id="stat-tasks">0</div><div class="text-[10px]">משימות</div></div>
+            <div class="text-center bg-white/10 rounded-lg p-2 flex-1"><div class="text-xl font-bold text-green-200">OK</div><div class="text-[10px]">קומקס</div></div>
+            <div class="text-center bg-white/10 rounded-lg p-2 flex-1"><div class="text-xl font-bold" id="stat-msgs">0</div><div class="text-[10px]">הודעות</div></div>
         </div>
     </div>
 
     <div id="view-home" class="view-section active">
-        <h3 class="font-bold text-gray-800 mb-3 flex items-center gap-2"><i class="fas fa-crown text-yellow-500"></i> משימות מנכ"ל</h3>
-        <div id="harel-tasks-list" class="space-y-2">
-            <div class="text-center text-gray-400 text-sm py-4">אין משימות פתוחות</div>
+        <div class="flex gap-3 mb-6">
+            <button class="btn-quick" onclick="window.open('tel:0505227724')"><i class="fas fa-phone"></i> הראל</button>
+            <button class="btn-quick" onclick="window.open('https://wa.me/972505227724', '_blank')"><i class="fab fa-whatsapp"></i> הראל</button>
+            <button class="btn-quick" onclick="window.open('documents-drive.html', '_blank')"><i class="fab fa-google-drive"></i> דרייב</button>
+            <button class="btn-quick" onclick="openComaxTicket()"><i class="fas fa-headset"></i> קומקס</button>
         </div>
-
-        <h3 class="font-bold text-gray-800 mb-3 mt-6">הודעות אחרונות</h3>
-        <div id="notifications-list" class="space-y-2">
-            </div>
+        <h3 class="font-bold mb-3 flex items-center gap-2 opacity-80"><i class="fas fa-crown text-yellow-500"></i> משימות מנכ"ל</h3>
+        <div id="harel-tasks-list"><div class="text-center text-gray-400 text-sm py-4">אין משימות פתוחות</div></div>
+        <h3 class="font-bold mb-3 mt-6 opacity-80">הודעות אחרונות</h3>
+        <div id="notifications-list" class="space-y-2"></div>
     </div>
 
-    <div class="btn-pin" onclick="openDocsDrawer()">
-        <i class="fas fa-paperclip"></i>
+    <div id="view-tech" class="view-section">
+        <h2 class="text-xl font-bold mb-4 opacity-80">תקלות קומקס</h2>
+        <button onclick="openComaxTicket()" class="btn-sos mb-6 w-full py-3 rounded-xl font-bold text-white shadow-lg" style="background: var(--primary)"><i class="fas fa-exclamation-triangle"></i> דיווח תקלה</button>
+        <div class="rose-card flex justify-between"><span>עמדה 1</span><span class="text-green-600 font-bold text-xs">תקין</span></div>
     </div>
 
-    <div id="docs-drawer" class="docs-drawer" onclick="if(event.target === this) closeDocsDrawer()">
+    <div class="btn-pin" onclick="openDocsDrawer()"><i class="fas fa-paperclip"></i></div>
+
+    <div id="docs-drawer" class="docs-drawer" onclick="if(event.target===this) closeDocsDrawer()">
         <div class="docs-content">
-            <div class="flex justify-between items-center mb-4 border-b pb-3">
-                <h3 class="font-bold text-lg text-gray-800"><i class="fas fa-folder-open text-yellow-500"></i> מסמכים מהדרייב</h3>
-                <button onclick="closeDocsDrawer()" class="w-8 h-8 bg-gray-100 rounded-full"><i class="fas fa-times"></i></button>
+            <div class="flex justify-between items-center mb-4 border-b pb-3" style="border-color: var(--border)">
+                <h3 class="font-bold text-lg"><i class="fas fa-folder-open"></i> שליפת מסמך</h3>
+                <button onclick="closeDocsDrawer()"><i class="fas fa-times"></i></button>
             </div>
-            
             <div id="docs-list" class="flex-1 overflow-y-auto space-y-2">
-                <div class="text-center mt-10 text-gray-400"><i class="fas fa-circle-notch fa-spin"></i> טוען מסמכים...</div>
+                <div class="text-center mt-10 opacity-50"><i class="fas fa-circle-notch fa-spin"></i> טוען...</div>
             </div>
         </div>
     </div>
@@ -175,152 +154,89 @@
         import { getFirestore, collection, query, where, orderBy, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
-
-        // כתובת הסקריפט (אותה כתובת שיש לך ב-documents-drive)
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwIwoPwUA7uKnylbBBLoq06os16t1OV5jxWuohGCXhuWt99JjMfdEp1wWV-rSCeSmaD/exec";
 
-        // --- 1. POPUP & Notifications Listener ---
-        // מאזינים לכל ההתראות שמיועדות לורד (משימות, תיוגים, והודעות צ'אט)
-        // לצורך ההדגמה אנו מניחים שה-ID שלה במערכת הוא 'vered' או הטלפון '0506662300'
-        const qNotify = query(collection(db, "notifications"), where("targetUser", "==", "vered"), orderBy("createdAt", "desc")); // יש לוודא שה-ID תואם למה שנשלח
+        // --- Theme Chameleon ---
+        window.openThemePicker = () => {
+            Swal.fire({
+                title: 'בחרי צבע',
+                html: `
+                    <div class="flex justify-center gap-4 mt-4">
+                        <div class="theme-dot" style="background:#be123c" onclick="setTheme('')"></div>
+                        <div class="theme-dot" style="background:#0369a1" onclick="setTheme('theme-ocean')"></div>
+                        <div class="theme-dot" style="background:#15803d" onclick="setTheme('theme-forest')"></div>
+                        <div class="theme-dot" style="background:#312e81" onclick="setTheme('theme-royal')"></div>
+                        <div class="theme-dot" style="background:#171717" onclick="setTheme('theme-dark')"></div>
+                    </div>
+                `, showConfirmButton: false
+            });
+        };
+        window.setTheme = (cls) => { document.body.className = cls; localStorage.setItem('vered_theme', cls); Swal.close(); };
+        const saved = localStorage.getItem('vered_theme'); if(saved) document.body.className = saved;
 
-        let lastPopupId = null;
-
-        onSnapshot(qNotify, (snap) => {
-            const list = document.getElementById('notifications-list');
-            list.innerHTML = '';
+        // --- Notifications & Popup ---
+        let lastId = null;
+        onSnapshot(query(collection(db, "notifications"), where("targetUser", "==", "vered"), orderBy("createdAt", "desc")), (snap) => {
+            const list = document.getElementById('notifications-list'); list.innerHTML = '';
             let unread = 0;
-
-            if (snap.empty) {
-                list.innerHTML = `<div class="text-sm text-gray-400 text-center">אין הודעות חדשות</div>`;
-            }
-
             snap.forEach(d => {
                 const n = d.data();
-                if (!n.read) unread++;
-
-                // POPUP Logic: אם זו הודעה חדשה (מהדקה האחרונה) ולא ראינו אותה כבר
-                const isFresh = (Date.now() - (n.createdAt?.seconds * 1000)) < 15000; // 15 שניות
-                if (isFresh && !n.read && lastPopupId !== d.id) {
-                    showPopup(d.id, n.title || 'הודעה חדשה', n.body, n.link);
-                    lastPopupId = d.id;
-                    document.getElementById('sound-msg').play().catch(()=>{});
+                if(!n.read) unread++;
+                if(!n.read && (Date.now() - n.createdAt?.seconds*1000) < 15000 && lastId !== d.id) {
+                    showPopup(n.title, n.body, n.link); lastId = d.id; document.getElementById('sound-msg').play().catch(()=>{});
                 }
-
-                list.innerHTML += `
-                <div class="rose-card py-3 flex gap-3 items-start ${n.read ? 'opacity-60' : 'border-r-4 border-r-rose-500'}">
-                    <div class="bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center shrink-0">
-                        <i class="fas ${n.type === 'chat' ? 'fa-comment' : 'fa-bell'} text-gray-500"></i>
-                    </div>
-                    <div class="flex-1">
-                        <div class="font-bold text-sm text-gray-800">${n.title || 'התראה'}</div>
-                        <div class="text-xs text-gray-600 line-clamp-2">${n.body}</div>
-                        ${n.link ? `<button onclick="window.open('${n.link}','_blank')" class="text-rose-600 text-xs font-bold mt-1"><i class="fas fa-link"></i> פתח קישור</button>` : ''}
-                    </div>
-                    ${!n.read ? `<button onclick="markRead('${d.id}')" class="text-xs text-gray-400 hover:text-rose-600"><i class="fas fa-check"></i></button>` : ''}
-                </div>`;
+                list.innerHTML += `<div class="rose-card py-2 opacity-${n.read?'60':'100'}"><div class="font-bold text-sm">${n.title||'הודעה'}</div><div class="text-xs opacity-70">${n.body}</div></div>`;
             });
             document.getElementById('stat-msgs').innerText = unread;
         });
 
-        // פונקציות פופ-אפ
-        let currentLink = null;
-        function showPopup(id, title, body, link) {
-            document.getElementById('popup-sender').innerText = title;
+        let popupLink = '';
+        function showPopup(title, body, link) {
+            document.getElementById('popup-sender').innerText = title || 'הודעה';
             document.getElementById('popup-body').innerText = body;
-            currentLink = link || 'comm-center.html'; // ברירת מחדל לווצאף
-            
-            const popup = document.getElementById('msg-popup');
-            popup.style.display = 'block';
-            
-            // סגירה אוטומטית אחרי 8 שניות
-            setTimeout(() => { popup.style.display = 'none'; }, 8000);
+            popupLink = link || 'comm-center.html';
+            document.getElementById('msg-popup').style.display = 'block';
+            setTimeout(() => document.getElementById('msg-popup').style.display='none', 8000);
         }
+        window.closePopup = () => document.getElementById('msg-popup').style.display='none';
+        window.openChatFromPopup = () => { window.open(popupLink, '_blank'); closePopup(); };
 
-        window.closePopup = () => document.getElementById('msg-popup').style.display = 'none';
-        window.openChatFromPopup = () => {
-            window.open(currentLink, '_blank');
-            closePopup();
-        };
-        window.markRead = async (id) => await updateDoc(doc(db, "notifications", id), { read: true });
-
-
-        // --- 2. Paperclip (Pin) Logic ---
+        // --- Docs Pin ---
         window.openDocsDrawer = async () => {
-            const drawer = document.getElementById('docs-drawer');
+            document.getElementById('docs-drawer').style.display = 'flex';
             const list = document.getElementById('docs-list');
-            drawer.style.display = 'flex';
-            
-            if (list.children.length > 1) return; // לא לטעון אם כבר טען
-
+            if(list.children.length > 1) return;
             try {
-                const res = await fetch(SCRIPT_URL);
-                const files = await res.json();
-                
-                list.innerHTML = ''; // ניקוי
-                
-                if (files.length === 0) {
-                    list.innerHTML = '<div class="text-center mt-4">אין קבצים</div>';
-                    return;
-                }
-
+                const res = await fetch(SCRIPT_URL); const files = await res.json();
+                list.innerHTML = '';
                 files.forEach(f => {
-                    const isImg = f.type.includes('image');
-                    const icon = isImg ? 'fa-image' : 'fa-file-pdf';
-                    const sourceLabel = f.source === 'comax' ? 'קומקס' : 'ידני';
-                    
-                    const div = document.createElement('div');
-                    div.className = 'doc-item';
-                    div.innerHTML = `
-                        <div class="doc-icon"><i class="fas ${icon}"></i></div>
-                        <div class="flex-1">
-                            <div class="font-bold text-sm text-gray-800">${f.name}</div>
-                            <div class="text-[10px] text-gray-500">
-                                <span class="bg-gray-100 px-1 rounded">${sourceLabel}</span> • ${new Date(f.date).toLocaleDateString()}
-                            </div>
-                        </div>
-                        <button class="w-8 h-8 rounded-full bg-rose-50 text-rose-600 hover:bg-rose-100 flex items-center justify-center">
-                            <i class="fas fa-paper-plane text-xs"></i>
-                        </button>
-                    `;
-                    div.onclick = () => sendDocument(f);
-                    list.appendChild(div);
+                    const icon = f.type.includes('image') ? 'fa-image' : 'fa-file-pdf';
+                    list.innerHTML += `
+                    <div class="flex items-center gap-3 p-3 border-b border-[var(--border)] cursor-pointer hover:bg-black/5 transition" onclick="sendDoc('${f.name}','${f.url}')">
+                        <div class="w-10 h-10 rounded bg-gray-100 flex items-center justify-center text-gray-500"><i class="fas ${icon}"></i></div>
+                        <div class="flex-1"><div class="font-bold text-sm">${f.name}</div><div class="text-[10px] opacity-60">${new Date(f.date).toLocaleDateString()}</div></div>
+                        <i class="fas fa-paper-plane text-[var(--primary)]"></i>
+                    </div>`;
                 });
-
-            } catch (e) {
-                list.innerHTML = '<div class="text-red-500 text-center">שגיאה בטעינת מסמכים</div>';
-            }
+            } catch(e) { list.innerHTML = 'שגיאה בטעינה'; }
+        };
+        window.closeDocsDrawer = () => document.getElementById('docs-drawer').style.display='none';
+        window.sendDoc = (name, url) => {
+            const text = `מצורף מסמך: ${name}\n${url}`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+            closeDocsDrawer();
         };
 
-        window.closeDocsDrawer = () => document.getElementById('docs-drawer').style.display = 'none';
-
-        // שליחת מסמך (מדמה שליחה בווצאף)
-        window.sendDocument = (file) => {
-            Swal.fire({
-                title: 'שליחת מסמך',
-                text: `לשלוח את "${file.name}"?`,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'שלח לווצאף',
-                confirmButtonColor: '#be123c'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    const text = `היי, מצורף מסמך: ${file.name}\n${file.url}`;
-                    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-                    closeDocsDrawer();
-                }
-            });
-        };
-        
-        // --- Tabs UI ---
-        window.switchTab = (viewId, btn) => {
-            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            // אם יש ID כזה, תציג אותו
-             const view = document.getElementById(`view-${viewId}`);
-             if(view) view.classList.add('active');
+        // --- App Nav Override (Prevent Exit) ---
+        window.switchTab = (id, btn) => {
+            document.querySelectorAll('.view-section').forEach(e => e.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active'));
+            document.getElementById('view-'+id).classList.add('active');
             btn.classList.add('active');
         };
+        // דחיפת היסטוריה כדי שהכפתור "חזור" בטלפון לא יסגור את האפליקציה אלא יישאר בה
+        history.pushState(null, null, location.href);
+        window.onpopstate = () => history.go(1);
 
     </script>
 </body>
