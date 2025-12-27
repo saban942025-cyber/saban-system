@@ -6,45 +6,142 @@
     <title>Teams</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-</head>
-<body class="bg-white p-4">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body { background: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 16px; }
+        
+        /* עיצוב הכרטיס */
+        .staff-card {
+            background: white; border-radius: 16px; padding: 16px;
+            display: flex; flex-direction: column; align-items: center; text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
+            position: relative; overflow: hidden; transition: 0.2s;
+        }
+        .staff-card:active { transform: scale(0.98); }
 
-    <div class="text-xs font-bold text-slate-400 uppercase mb-4 tracking-wider">אנשי קשר</div>
-    <div id="team-list" class="space-y-3"></div>
+        .card-avatar { 
+            width: 70px; height: 70px; border-radius: 50%; object-fit: cover; 
+            border: 3px solid #f1f5f9; margin-bottom: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        
+        .status-dot {
+            position: absolute; top: 15px; right: 15px;
+            width: 10px; height: 10px; background: #22c55e; border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        /* כפתורי פעולה */
+        .actions-row { display: flex; gap: 8px; width: 100%; margin-top: 12px; }
+        .act-btn { 
+            flex: 1; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            font-size: 14px; cursor: pointer; transition: 0.2s; color: white;
+        }
+        .btn-wa { background: #25d366; }
+        .btn-call { background: #3b82f6; }
+        .btn-pop { background: #f97316; } /* כתום להתראה */
+    </style>
+</head>
+<body>
+
+    <div class="flex justify-between items-center mb-4">
+        <div class="text-sm font-bold text-slate-400 uppercase tracking-wider">ניהול צוות</div>
+        <div class="text-xs bg-white px-2 py-1 rounded border text-slate-500" id="count">טוען...</div>
+    </div>
+    
+    <div id="team-grid" class="grid grid-cols-2 gap-4">
+        </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
+        // טעינת אנשי צוות
         onSnapshot(query(collection(db, "users"), orderBy("name")), (snap) => {
-            const list = document.getElementById('team-list');
-            list.innerHTML = '';
+            const grid = document.getElementById('team-grid');
+            grid.innerHTML = '';
+            let counter = 0;
             
             snap.forEach(d => {
                 const u = d.data();
+                const uid = d.id; // המזהה של המשתמש (חשוב לשליחת ההודעה)
+                
                 if(u.type === 'client') return;
+                counter++;
 
-                const avatar = u.avatar || `https://ui-avatars.com/api/?name=${u.name}`;
-                const badge = u.role?.includes('מנהל') ? '<i class="fas fa-crown text-yellow-500 text-xs"></i>' : '';
+                const avatar = u.avatar || `https://ui-avatars.com/api/?name=${u.name}&background=random`;
+                const role = u.role || 'צוות';
+                const badge = u.role?.includes('מנהל') ? '<i class="fas fa-crown text-yellow-500"></i>' : '';
 
-                list.innerHTML += `
-                <div class="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-xl">
-                    <div class="flex items-center gap-3">
-                        <img src="${avatar}" class="w-10 h-10 rounded-full border border-white shadow-sm">
-                        <div>
-                            <div class="font-bold text-sm text-slate-800">${u.name} ${badge}</div>
-                            <div class="text-xs text-slate-500">${u.role || 'צוות'}</div>
+                // יצירת הכרטיס
+                const card = document.createElement('div');
+                card.className = 'staff-card';
+                card.innerHTML = `
+                    <div class="status-dot"></div>
+                    <img src="${avatar}" class="card-avatar">
+                    <div class="font-bold text-slate-800 text-sm mb-1">${u.name} ${badge}</div>
+                    <div class="text-xs text-slate-400 bg-slate-50 px-2 py-1 rounded">${role}</div>
+                    
+                    <div class="actions-row">
+                        <div class="act-btn btn-wa" onclick="window.open('https://wa.me/972${u.phone?.replace(/^0/,'')}', '_blank')">
+                            <i class="fab fa-whatsapp"></i>
+                        </div>
+                        <div class="act-btn btn-call" onclick="window.open('tel:${u.phone}')">
+                            <i class="fas fa-phone"></i>
+                        </div>
+                        <div class="act-btn btn-pop" id="btn-pop-${uid}">
+                            <i class="fas fa-bullhorn"></i>
                         </div>
                     </div>
-                    <div class="flex gap-2">
-                        <a href="https://wa.me/972${u.phone?.replace(/^0/,'')}" target="_blank" class="w-8 h-8 rounded-lg bg-green-100 text-green-600 flex items-center justify-center"><i class="fab fa-whatsapp"></i></a>
-                        <a href="tel:${u.phone}" class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center"><i class="fas fa-phone"></i></a>
-                    </div>
-                </div>`;
+                `;
+                
+                grid.appendChild(card);
+
+                // הוספת מאזין לכפתור הפופ-אפ (כדי למנוע בעיות עם גרשיים בשם)
+                document.getElementById(`btn-pop-${uid}`).onclick = () => sendPopup(uid, u.name);
             });
+            document.getElementById('count').innerText = counter + ' מחוברים';
         });
+
+        // פונקציית שליחת הודעה מתפרצת (POPUP)
+        window.sendPopup = async (targetId, targetName) => {
+            const { value: text } = await Swal.fire({
+                title: `הודעה מתפרצת ל${targetName}`,
+                input: 'textarea',
+                inputPlaceholder: 'כתוב הודעה דחופה...',
+                inputAttributes: { 'aria-label': 'כתוב הודעה דחופה' },
+                showCancelButton: true,
+                confirmButtonText: 'שגר התראה 🚀',
+                confirmButtonColor: '#f97316',
+                cancelButtonText: 'ביטול'
+            });
+
+            if (text) {
+                try {
+                    // כתיבה למסד הנתונים - האפליקציה של העובד מאזינה לזה
+                    await addDoc(collection(db, "notifications"), {
+                        targetUser: targetId, // לדוגמה: 'vered' או ה-ID האמיתי
+                        title: 'הודעה ממנהל',
+                        body: text,
+                        type: 'urgent', // סוג דחוף
+                        read: false,
+                        createdAt: serverTimestamp()
+                    });
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'נשלח!',
+                        text: `ההודעה תקפוץ אצל ${targetName} מיד.`,
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                } catch (e) {
+                    console.error(e);
+                    Swal.fire('שגיאה', 'לא ניתן לשלוח את ההודעה', 'error');
+                }
+            }
+        }
     </script>
 </body>
 </html>
