@@ -14,20 +14,13 @@
         /* Header & Actions */
         .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 15px 20px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); flex-wrap: wrap; gap: 15px; }
         .page-title { font-size: 24px; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 10px; }
-        
         .actions-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
         
-        /* הכפתור החדש - דרייב מרכזי */
-        .btn-drive { 
-            background: #2563eb; color: white; padding: 10px 20px; border-radius: 10px; 
-            font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 8px; 
-            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3); transition: 0.2s; 
-        }
+        /* Drive Button */
+        .btn-drive { background: #2563eb; color: white; padding: 10px 20px; border-radius: 10px; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3); transition: 0.2s; }
         .btn-drive:hover { background: #1d4ed8; transform: translateY(-2px); }
 
         .btn-new { background: #0f172a; color: white; padding: 10px 20px; border-radius: 10px; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 8px; transition: 0.2s; }
-        .btn-broadcast { background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); color: white; padding: 10px 20px; border-radius: 10px; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 8px; }
-
         .search-bar { background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 15px; border-radius: 12px; width: 200px; display: flex; align-items: center; gap: 10px; }
 
         /* Cards Layout */
@@ -44,12 +37,20 @@
         .user-name { font-weight: 800; font-size: 18px; color: #334155; margin-bottom: 2px; }
         .user-role { font-size: 12px; font-weight: 700; color: #64748b; background: #f1f5f9; padding: 4px 10px; border-radius: 20px; display: inline-block; margin-bottom: 10px; }
         
-        .driver-actions { display: flex; gap: 8px; margin-top: 10px; margin-bottom: 10px; }
-        .btn-app-driver { flex: 1; background: #2563eb; color: white; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 12px; display: flex; justify-content: center; align-items: center; gap: 5px; }
-        .btn-task { width: 100%; background: #f8fafc; border: 1px dashed #cbd5e1; color: #475569; padding: 8px; border-radius: 10px; font-weight: bold; font-size: 13px; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        /* App Buttons */
+        .app-btn-row { margin-top: 10px; margin-bottom: 10px; }
+        .btn-app { width: 100%; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 13px; display: flex; justify-content: center; align-items: center; gap: 6px; color: white; transition: 0.2s; }
+        .btn-app:hover { opacity: 0.9; }
         
+        /* Specific Colors */
+        .bg-oren { background: #475569; } /* אפור כהה - חרש */
+        .bg-tamir { background: #1e40af; } /* כחול כהה - תלמיד */
+        .bg-itzik { background: linear-gradient(135deg, #f97316 0%, #c2410c 100%); } /* כתום - מנהל */
+        .bg-yoav { background: #374151; } /* אפור פחם - סידור */
+        .bg-driver { background: #2563eb; } /* כחול - נהג */
+        .bg-task { background: #f8fafc; color: #475569; border: 1px dashed #cbd5e1; } /* ברירת מחדל */
+
         .comm-row { display: flex; justify-content: center; gap: 10px; margin-top: 10px; border-top: 1px solid #f1f5f9; padding-top: 10px; }
-        .comm-btn { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; background: #f1f5f9; color: #64748b; }
     </style>
 </head>
 <body>
@@ -60,11 +61,8 @@
             <div><span>ניהול ארגון</span><span class="text-xs font-normal text-gray-500 block" id="counter">טוען...</span></div>
         </div>
         <div class="actions-bar">
-            <button onclick="window.open('documents-drive.html', '_blank')" class="btn-drive">
-                <i class="fab fa-google-drive"></i> ארכיון מסמכים
-            </button>
-            
-            <button onclick="Swal.fire('כריזה','הודעה נשלחה','success')" class="btn-broadcast"><i class="fas fa-bullhorn"></i> כריזה</button>
+            <button onclick="window.open('documents-drive.html', '_blank')" class="btn-drive"><i class="fab fa-google-drive"></i> ארכיון מסמכים</button>
+            <button onclick="Swal.fire('כריזה','הודעה נשלחה','success')" class="btn-new" style="background: #ef4444;"><i class="fas fa-bullhorn"></i></button>
             <div class="search-bar"><i class="fas fa-search text-gray-400"></i><input type="text" id="search" onkeyup="filterGrid()" placeholder="חיפוש..." class="bg-transparent border-none outline-none text-sm w-full"></div>
             <button onclick="openEditModal()" class="btn-new"><i class="fas fa-plus"></i></button>
         </div>
@@ -92,10 +90,35 @@
                 
                 const avatar = p.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=random&color=fff`;
                 let stripClass = p.branch === 'harash' ? 'strip-harash' : (p.branch === 'logistics' ? 'strip-logistics' : 'strip-main');
-                let specialBtn = `<button onclick="openTaskModal('${p.name}')" class="btn-task"><i class="fas fa-tasks"></i> משימה</button>`;
                 
-                if (p.name.includes('יואב')) specialBtn = `<button onclick="window.open('yoav-app.html', '_blank')" class="btn-app-driver" style="background:#374151"><i class="fas fa-network-wired"></i> סידור</button>`;
-                if (p.type === 'driver') specialBtn = `<div class="driver-actions"><button onclick="window.open('driver-app.html?uid=${p.phone}', '_blank')" class="btn-app-driver"><i class="fas fa-truck"></i> נהג</button></div>` + specialBtn;
+                // --- לוגיקת הכפתורים החכמה ---
+                let appButton = '';
+
+                // 1. יואב (סידור)
+                if (p.name.includes('יואב')) {
+                    appButton = `<button onclick="window.open('yoav-app.html', '_blank')" class="btn-app bg-yoav"><i class="fas fa-network-wired"></i> מערכת סידור</button>`;
+                }
+                // 2. איציק (מנהל החרש)
+                else if (p.name.includes('איציק')) {
+                    appButton = `<button onclick="window.open('itzik-app.html', '_blank')" class="btn-app bg-itzik"><i class="fas fa-store"></i> ניהול סניף</button>`;
+                }
+                // 3. אורן (חצרן החרש)
+                else if (p.name.includes('אורן')) {
+                    appButton = `<button onclick="window.open('oren-app.html', '_blank')" class="btn-app bg-oren"><i class="fas fa-dolly"></i> מסוף חצר</button>`;
+                }
+                // 4. תמיר (חצרן התלמיד)
+                else if (p.name.includes('תמיר')) {
+                    appButton = `<button onclick="window.open('tamir-app.html', '_blank')" class="btn-app bg-tamir"><i class="fas fa-warehouse"></i> מסוף חצר</button>`;
+                }
+                // 5. נהגים (עלי / חכמת / כללי)
+                else if (p.type === 'driver') {
+                    let driverLink = p.name.includes('עלי') ? 'ali-app.html' : 'driver-app.html';
+                    appButton = `<button onclick="window.open('${driverLink}?uid=${p.phone}', '_blank')" class="btn-app bg-driver"><i class="fas fa-truck"></i> מסוף נהג</button>`;
+                }
+                // 6. עובדים כלליים (משימה)
+                else {
+                    appButton = `<button onclick="openTaskModal('${p.name}')" class="btn-app bg-task"><i class="fas fa-tasks"></i> שגר משימה</button>`;
+                }
 
                 grid.innerHTML += `
                 <div class="staff-card item-row" data-name="${p.name}">
@@ -104,8 +127,9 @@
                         <img src="${avatar}" class="user-img">
                         <div class="user-name">${p.name}</div>
                         <div class="user-role">${p.role||'צוות'}</div>
-                        ${specialBtn}
+                        <div class="app-btn-row">${appButton}</div>
                         <div class="comm-row">
+                            <button onclick="window.open('mailto:${p.email||''}')" class="comm-btn text-gray-500"><i class="fas fa-envelope"></i></button>
                             <button onclick="window.open('https://wa.me/972${p.phone?.replace(/^0/,'')}', '_blank')" class="comm-btn text-green-500"><i class="fab fa-whatsapp"></i></button>
                         </div>
                     </div>
@@ -114,8 +138,8 @@
             document.getElementById('counter').innerText = `${staffCount} אנשי צוות`;
         });
 
-        window.openEditModal = () => Swal.fire('בקרוב', 'הוספת עובד חדש', 'info');
-        window.openTaskModal = (name) => Swal.fire('משימה', `שליחת משימה ל${name}`, 'question');
+        window.openEditModal = () => Swal.fire('בקרוב', 'הוספת עובד', 'info');
+        window.openTaskModal = (name) => Swal.fire('משימה', `שליחה ל${name}`, 'question');
         window.filterGrid = () => { const term = document.getElementById('search').value.toLowerCase(); document.querySelectorAll('.item-row').forEach(row => row.style.display = row.getAttribute('data-name').toLowerCase().includes(term) ? 'flex' : 'none'); };
     </script>
 </body>
