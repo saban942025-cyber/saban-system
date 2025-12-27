@@ -12,8 +12,8 @@
       OneSignalDeferred.push(async function(OneSignal) {
         await OneSignal.init({
           appId: "07b81f2e-e812-424f-beca-36584b12ccf2",
-          safari_web_id: "web.onesignal.auto.6476576c-3432-4e56-8976-5656565656", // אופציונלי
-          notifyButton: { enable: true }, // כפתור פעמון להרשמה
+          safari_web_id: "web.onesignal.auto.6476576c-3432-4e56-8976-5656565656",
+          notifyButton: { enable: true, size: 'medium', theme: 'default', position: 'bottom-left', showCredit: false },
           allowLocalhostAsSecureOrigin: true,
         });
       });
@@ -22,8 +22,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     <style>
-        /* איפוס ועיצוב בסיס */
+        /* עיצוב נקי ללא סרגלים מיותרים */
         body { margin: 0; padding: 0; background: #f8fafc; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: system-ui, -apple-system, sans-serif; }
         
         /* HEADER */
@@ -35,7 +36,7 @@
         .header-logo img { width: 32px; height: 32px; border-radius: 6px; }
         .page-title { font-weight: 600; color: #64748b; font-size: 14px; position: absolute; left: 50%; transform: translateX(-50%); }
 
-        /* MAIN STAGE */
+        /* STAGE */
         .main-stage { flex: 1; position: relative; background: #f1f5f9; width: 100%; overflow: hidden; }
         iframe { width: 100%; height: 100%; border: none; display: block; }
 
@@ -58,6 +59,7 @@
         }
         .drawer-overlay.open .drawer-content { transform: translateX(0); }
         .drawer-item { padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; gap: 12px; align-items: center; color: #334155; font-weight: 500; cursor: pointer; }
+        .drawer-item:active { background: #f8fafc; }
     </style>
 </head>
 <body>
