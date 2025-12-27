@@ -115,7 +115,10 @@
                     let driverLink = p.name.includes('עלי') ? 'ali-app.html' : 'driver-app.html';
                     appButton = `<button onclick="window.open('${driverLink}?uid=${p.phone}', '_blank')" class="btn-app bg-driver"><i class="fas fa-truck"></i> מסוף נהג</button>`;
                 }
-                // 6. עובדים כלליים (משימה)
+                else if (p.name.includes('ורד')) {
+                 appButton = `<button onclick="window.open('vered-app.html', '_blank')" class="btn-app" style="background: #be123c;"><i class="fas fa-crown"></i> אדמיניסטרציה</button>`;
+                 }    
+                // 7. עובדים כלליים (משימה)
                 else {
                     appButton = `<button onclick="openTaskModal('${p.name}')" class="btn-app bg-task"><i class="fas fa-tasks"></i> שגר משימה</button>`;
                 }
