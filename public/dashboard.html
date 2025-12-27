@@ -3,27 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dashboard</title>
+    <title>Saban Dashboard</title>
     
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function(OneSignal) {
-        const isHealthy = await new Promise(r => {
-            try { let req = indexedDB.open("test"); req.onsuccess=()=>{req.result.close();r(true)}; req.onerror=()=>r(false); }
-            catch(e){r(false)}
+        // בדיקת תקינות לפני הפעלה
+        const isHealthy = await new Promise(resolve => {
+            try { 
+                let req = window.indexedDB.open("test_check"); 
+                req.onsuccess = () => { req.result.close(); resolve(true); }; 
+                req.onerror = () => resolve(false); 
+            } catch(e) { resolve(false); }
         });
-        if(isHealthy) await OneSignal.init({ appId: "07b81f2e-e812-424f-beca-36584b12ccf2" });
+
+        if (isHealthy) {
+            await OneSignal.init({ appId: "07b81f2e-e812-424f-beca-36584b12ccf2" });
+        } else {
+            console.log("Dashboard: Notifications disabled (Restricted Mode)");
+        }
       });
     </script>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { background: #0f172a; background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #0f172a 70%); color: white; font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 20px; padding-bottom: 100px; min-height: 100vh; -webkit-tap-highlight-color: transparent; }
-        .glass-btn { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 20px; height: 120px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+        /* עיצוב פרימיום כהה */
+        body { 
+            background: #0f172a; 
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #0f172a 70%);
+            color: white; font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+            padding: 20px; padding-bottom: 100px; min-height: 100vh;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* כרטיסי זכוכית */
+        .glass-btn {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+            padding: 20px; height: 120px; cursor: pointer; transition: 0.2s;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
         .glass-btn:active { transform: scale(0.96); background: rgba(30, 41, 59, 0.9); border-color: rgba(255,255,255,0.2); }
-        .icon-glow { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; color: white; box-shadow: 0 8px 16px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); }
+
+        /* אייקונים זוהרים */
+        .icon-glow {
+            width: 48px; height: 48px; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; color: white;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
         .g-green { background: linear-gradient(135deg, #22c55e, #14532d); }
         .g-blue { background: linear-gradient(135deg, #3b82f6, #1e3a8a); }
         .g-purple { background: linear-gradient(135deg, #a855f7, #581c87); }
@@ -48,27 +83,71 @@
     </div>
 
     <div class="grid grid-cols-2 gap-4">
+        
         <div class="glass-btn" onclick="openApp('chat', 'מרכז תקשורת')">
             <div class="icon-glow g-green"><i class="fab fa-whatsapp"></i></div>
-            <div class="font-bold text-sm">תקשורת</div>
+            <div class="text-center">
+                <div class="font-bold text-sm">תקשורת</div>
+                <div class="text-[10px] text-gray-400">צ'אט, קבוצות</div>
+            </div>
         </div>
+
         <div class="glass-btn" onclick="openApp('drive', 'ארכיון מסמכים')">
             <div class="icon-glow g-blue"><i class="fas fa-folder-open"></i></div>
-            <div class="font-bold text-sm">מסמכים</div>
+            <div class="text-center">
+                <div class="font-bold text-sm">מסמכים</div>
+                <div class="text-[10px] text-gray-400">דרייב, חשבוניות</div>
+            </div>
         </div>
+
         <div class="glass-btn" onclick="openApp('harel', 'משימות הראל')">
             <div class="icon-glow g-red"><i class="fas fa-tasks"></i></div>
-            <div class="font-bold text-sm">משימות</div>
+            <div class="text-center">
+                <div class="font-bold text-sm">משימות</div>
+                <div class="text-[10px] text-gray-400">ניהול שוטף</div>
+            </div>
         </div>
+
         <div class="glass-btn" onclick="openApp('calendar', 'יומן חכם')">
             <div class="icon-glow g-orange"><i class="fas fa-calendar-alt"></i></div>
-            <div class="font-bold text-sm">יומן</div>
+            <div class="text-center">
+                <div class="font-bold text-sm">יומן</div>
+                <div class="text-[10px] text-gray-400">פגישות ולו"ז</div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="mt-6 flex justify-between px-4">
+        <div class="text-center" onclick="openApp('team', 'צוותים')">
+            <div class="text-2xl font-bold text-white"><i class="fas fa-users text-blue-400"></i></div>
+            <div class="text-[10px] text-gray-500 uppercase font-bold">צוות</div>
+        </div>
+        <div class="text-center" onclick="openApp('truck', 'נהגים')">
+            <div class="text-2xl font-bold text-white"><i class="fas fa-truck text-orange-400"></i></div>
+            <div class="text-[10px] text-gray-500 uppercase font-bold">נהגים</div>
+        </div>
+        <div class="text-center">
+            <div class="text-2xl font-bold text-green-400">100%</div>
+            <div class="text-[10px] text-gray-500 uppercase font-bold">יעילות</div>
         </div>
     </div>
 
     <script>
-        function openApp(id, title) { if (window.parent && window.parent.openApp) window.parent.openApp(id, title); }
-        setInterval(() => document.getElementById('clock').innerText = new Date().toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'}), 1000);
+        // פונקציית ניווט בטוחה (מתקשרת עם האבא index.html)
+        function openApp(id, title) {
+            if (window.parent && window.parent.openApp) {
+                window.parent.openApp(id, title);
+            } else {
+                console.warn("No parent shell found. Cannot navigate.");
+            }
+        }
+
+        // שעון חי
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'});
+        }, 1000);
     </script>
 </body>
 </html>
