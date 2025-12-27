@@ -6,33 +6,13 @@
     <title>SabanOS Pro</title>
     
     <link rel="icon" href="data:;base64,iVBORw0KGgo=">
-    <link rel="shortcut icon" href="https://saban-system.onrender.com/icons/icon-192.png">
-    <link rel="apple-touch-icon" href="https://saban-system.onrender.com/icons/icon-192.png">
-
+    
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function(OneSignal) {
-        // שלב 1: בדיקת תקינות הדפדפן (System Check)
-        const isSystemHealthy = await new Promise((resolve) => {
-            try {
-                const req = window.indexedDB.open("test_db");
-                req.onsuccess = () => { req.result.close(); resolve(true); };
-                req.onerror = () => resolve(false);
-            } catch (e) {
-                resolve(false);
-            }
-        });
-
-        // שלב 2: הפעלה רק אם המערכת תקינה
-        if (isSystemHealthy) {
-            await OneSignal.init({ 
-                appId: "07b81f2e-e812-424f-beca-36584b12ccf2", 
-                notifyButton: { enable: true } 
-            });
-        } else {
-            console.log("SabanOS: OneSignal Skipped (Restricted Mode Detected)");
-        }
+        const isHealthy = await new Promise(r => { try { let q=indexedDB.open("t");q.onsuccess=()=>{q.result.close();r(true)};q.onerror=()=>r(false);}catch{r(false)}});
+        if(isHealthy) await OneSignal.init({ appId: "07b81f2e-e812-424f-beca-36584b12ccf2" });
       });
     </script>
 
@@ -41,69 +21,49 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
-        /* CSS מלא */
         body { margin: 0; padding: 0; background: #f8fafc; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
         
-        .app-header { height: 60px; background: white; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border-bottom: 1px solid #e2e8f0; z-index: 50; flex-shrink: 0; }
-        .header-logo { font-weight: 800; font-size: 18px; color: #0f172a; display: flex; align-items: center; gap: 8px; cursor: pointer; }
-        .header-logo img { width: 32px; height: 32px; border-radius: 6px; }
-        .page-title { font-weight: 600; color: #64748b; font-size: 14px; position: absolute; left: 50%; transform: translateX(-50%); }
-
-        .main-stage { flex: 1; position: relative; background: #f1f5f9; width: 100%; overflow: hidden; }
-        iframe { width: 100%; height: 100%; border: none; display: block; }
-
-        .bottom-nav { height: 65px; background: white; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-around; align-items: center; padding-bottom: env(safe-area-inset-bottom); z-index: 50; flex-shrink: 0; }
-        .nav-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; width: 60px; height: 100%; transition: 0.2s; cursor: pointer; }
+        .app-header { height: 60px; background: white; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border-bottom: 1px solid #e2e8f0; z-index: 50; }
+        .main-stage { flex: 1; width: 100%; height: 100%; position: relative; }
+        iframe { width: 100%; height: 100%; border: none; }
+        .bottom-nav { height: 65px; background: white; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-around; align-items: center; padding-bottom: env(safe-area-inset-bottom); z-index: 50; }
+        
+        .nav-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; width: 60px; height: 100%; }
+        .nav-btn.active { color: #2563eb; border-top: 2px solid #2563eb; }
         .nav-btn i { font-size: 20px; margin-bottom: 3px; }
         .nav-btn span { font-size: 10px; font-weight: 500; }
-        .nav-btn.active { color: #2563eb; border-top: 2px solid #2563eb; }
 
-        /* Drawer */
-        .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; opacity: 0; pointer-events: none; transition: 0.3s; }
-        .drawer-overlay.open { opacity: 1; pointer-events: all; }
-        .drawer-content { position: absolute; top: 0; right: 0; bottom: 0; width: 280px; background: white; transform: translateX(100%); transition: 0.3s; display: flex; flex-direction: column; }
-        .drawer-overlay.open .drawer-content { transform: translateX(0); }
-        .drawer-item { padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; gap: 12px; align-items: center; color: #334155; font-weight: 500; cursor: pointer; }
-
-        /* Nag Bar */
-        .nag-bar { background: #fef9c3; border-bottom: 1px solid #fde047; padding: 8px 16px; display: flex; align-items: center; justify-content: space-between; animation: slideDown 0.3s ease-out; z-index: 40; }
-        .nag-bar.hidden { display: none; }
-        @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
-
-        /* Nag Modal */
-        .nag-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); display: none; }
-        .nag-card { background: white; width: 90%; max-width: 400px; border-radius: 20px; padding: 25px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .nag-icon { font-size: 50px; color: #ff3b30; margin-bottom: 15px; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        /* THE BLOCKER (חסימת מסך אדומה) */
+        .blocker-overlay { 
+            position: fixed; inset: 0; background: rgba(220, 38, 38, 0.98); /* אדום דם */
+            z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            display: none; padding: 20px; text-align: center; color: white;
+        }
+        .blocker-card { background: white; color: #1e293b; padding: 25px; border-radius: 20px; width: 100%; max-width: 340px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); animation: shake 0.5s infinite; }
+        @keyframes shake { 0% {transform: translate(1px, 1px) rotate(0deg);} 10% {transform: translate(-1px, -2px) rotate(-1deg);} 20% {transform: translate(-3px, 0px) rotate(1deg);} 30% {transform: translate(3px, 2px) rotate(0deg);} 40% {transform: translate(1px, -1px) rotate(1deg);} 50% {transform: translate(-1px, 2px) rotate(-1deg);} 60% {transform: translate(-3px, 1px) rotate(0deg);} 70% {transform: translate(3px, 1px) rotate(-1deg);} 80% {transform: translate(-1px, -1px) rotate(1deg);} 90% {transform: translate(1px, 2px) rotate(0deg);} 100% {transform: translate(1px, -2px) rotate(-1deg);} }
+        
+        .siren-icon { font-size: 50px; color: #ef4444; margin-bottom: 15px; animation: pulse 0.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body>
 
-    <audio id="alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
+    <audio id="siren-sound" loop>
+        <source src="https://cdn.freesound.org/previews/337/337000_5769786-lq.mp3" type="audio/mpeg">
+    </audio>
 
     <div class="app-header">
-        <div class="header-logo" onclick="goHome()">
-            <img src="https://saban-system.onrender.com/icons/icon-192.png">
-            <span>Saban<span class="text-blue-600">OS</span></span>
-        </div>
-        <div class="page-title" id="header-title">דף הבית</div>
-        <button onclick="toggleDrawer(true)" class="text-slate-600 text-xl p-2"><i class="fas fa-bars"></i></button>
+        <div class="font-black text-xl text-slate-800 flex items-center gap-2" onclick="goHome()">SabanOS</div>
+        <div class="text-sm font-bold text-gray-500" id="header-title">דף הבית</div>
+        <i class="fas fa-bars text-xl text-slate-600"></i>
     </div>
 
-    <div id="nag-bar" class="nag-bar hidden">
+    <div id="nag-bar" class="hidden bg-yellow-100 p-2 flex justify-between items-center px-4 border-b border-yellow-200">
         <div class="flex items-center gap-2">
-            <div class="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 border border-yellow-200">
-                <i class="fas fa-bell animate-swing"></i>
-            </div>
-            <div>
-                <div class="text-[10px] font-bold text-yellow-800 uppercase tracking-wider">תזכורת פתוחה</div>
-                <div class="text-xs text-yellow-900 font-bold truncate max-w-[150px]" id="nag-text">...</div>
-            </div>
+            <i class="fas fa-bell text-yellow-600 animate-swing"></i>
+            <span class="text-xs font-bold text-yellow-800" id="nag-text">...</span>
         </div>
-        <button onclick="openApp('harel', 'משימות הראל')" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm transition">
-            טפל עכשיו <i class="fas fa-arrow-left mr-1"></i>
-        </button>
+        <button class="text-xs bg-yellow-500 text-white px-2 py-1 rounded font-bold" onclick="openApp('harel', 'משימות')">פתח</button>
     </div>
 
     <div class="main-stage">
@@ -112,37 +72,24 @@
 
     <div class="bottom-nav">
         <div class="nav-btn active" onclick="goHome()" id="nav-home"><i class="fas fa-home"></i><span>ראשי</span></div>
-        <div class="nav-btn" onclick="openApp('chat', 'מרכז תקשורת')" id="nav-chat"><i class="fab fa-whatsapp"></i><span>צ'אט</span></div>
+        <div class="nav-btn" onclick="openApp('chat', 'צ\'אט')" id="nav-chat"><i class="fab fa-whatsapp"></i><span>צ'אט</span></div>
         <div class="nav-btn" onclick="openApp('drive', 'מסמכים')" id="nav-drive"><i class="fas fa-folder"></i><span>דרייב</span></div>
         <div class="nav-btn" onclick="openApp('harel', 'משימות')" id="nav-harel"><i class="fas fa-tasks"></i><span>משימות</span></div>
     </div>
 
-    <div id="drawer" class="drawer-overlay" onclick="toggleDrawer(false)">
-        <div class="drawer-content" onclick="event.stopPropagation()">
-            <div class="p-6 bg-slate-900 text-white">
-                <div class="text-xl font-bold">תפריט</div>
-                <div class="text-xs opacity-70">ח.סבן מערכות</div>
+    <div id="blocker" class="blocker-overlay">
+        <div class="blocker-card">
+            <div class="siren-icon"><i class="fas fa-radiation-alt"></i></div>
+            <h2 class="text-2xl font-black mb-1">התראה מהמנכ"ל!</h2>
+            <p class="text-gray-500 mb-4 text-xs font-bold">עצור הכל ואשר קבלה</p>
+            
+            <div class="bg-red-50 border-2 border-red-100 p-3 rounded-xl mb-4 text-center">
+                <div class="text-xs font-bold text-red-400 uppercase mb-1">נושא ההודעה:</div>
+                <div class="text-xl font-black text-red-600 leading-tight" id="blocker-msg">...</div>
             </div>
-            <div class="flex-1 overflow-y-auto">
-                <div class="drawer-item" onclick="goHome(); toggleDrawer(false)"><i class="fas fa-home w-5 text-center"></i> דף הבית</div>
-                <div class="drawer-item" onclick="openApp('harel', 'משימות הראל'); toggleDrawer(false)"><i class="fas fa-user-shield w-5 text-center text-red-500"></i> משימות מנכ"ל</div>
-                <div class="drawer-item" onclick="openApp('calendar', 'יומן'); toggleDrawer(false)"><i class="fas fa-calendar-alt w-5 text-center text-blue-500"></i> יומן ארגוני</div>
-                <div class="drawer-item" onclick="location.reload()"><i class="fas fa-sync w-5 text-center"></i> רענן</div>
-            </div>
-            <div class="p-4 border-t">
-                <div class="drawer-item text-red-500 bg-red-50 rounded-lg" onclick="alert('LOGOUT')"><i class="fas fa-sign-out-alt w-5 text-center"></i> יציאה (LOG)</div>
-            </div>
-        </div>
-    </div>
 
-    <div id="nag-screen" class="nag-overlay">
-        <div class="nag-card">
-            <div class="nag-icon"><i class="fas fa-bell"></i></div>
-            <h2 class="text-2xl font-black text-slate-800 mb-2">הודעה מהמנכ"ל</h2>
-            <p class="text-slate-600 mb-4" id="nag-body">יש לאשר קבלת משימה זו</p>
-            <div class="bg-gray-100 p-3 rounded-lg mb-4 text-sm font-bold text-slate-700" id="nag-content">...</div>
-            <button onclick="confirmTask()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-lg shadow-lg active:scale-95 transition">
-                <i class="fas fa-check-circle"></i> מאשר קבלה
+            <button onclick="confirmTask()" class="w-full bg-red-600 hover:bg-red-700 text-white py-4 rounded-xl font-bold text-lg shadow-lg active:scale-95 transition flex items-center justify-center gap-2">
+                <span id="btn-text">מאשר שראיתי</span> <i class="fas fa-check-double"></i>
             </button>
         </div>
     </div>
@@ -153,47 +100,94 @@
         
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
-        // Current User Mock
+        // זיהוי משתמש (לדמו: ורד) - במציאות זה יבוא מלוגין
         const MY_ID = 'vered'; 
+        const MY_NAME = 'ורד'; 
 
-        // Nag Engine
         let activeTaskId = null;
+        let audio = document.getElementById('siren-sound');
+
+        // האזנה למשימות בזמן אמת
         onSnapshot(query(collection(db, "tasks"), where("status", "==", "pending")), (snap) => {
+            let foundBlocker = false;
             let foundNag = false;
+            
             snap.forEach(d => {
                 const t = d.data();
                 const isForMe = t.assignedTo === 'all' || t.assignedTo === MY_ID;
-                const alreadyRead = t.readBy && t.readBy.includes(MY_ID);
+                const notRead = !t.readBy || !t.readBy.includes(MY_ID);
 
-                // משימה דחופה
-                if (isForMe && !alreadyRead && t.mustConfirm && !foundNag) {
-                    triggerNag(d.id, t);
-                    foundNag = true;
-                }
-                
-                // משימה רגילה לסרגל העליון
-                if(isForMe && !t.mustConfirm && !foundNag) {
-                     const bar = document.getElementById('nag-bar');
-                     bar.classList.remove('hidden');
-                     document.getElementById('nag-text').innerText = t.title;
+                if (isForMe && notRead) {
+                    // משימה דחופה חוסמת
+                    if (t.mustConfirm) {
+                        triggerBlocker(d.id, t.title);
+                        foundBlocker = true;
+                    } 
+                    // משימה רגילה
+                    else {
+                        document.getElementById('nag-text').innerText = t.title;
+                        foundNag = true;
+                    }
                 }
             });
+
+            if(!foundBlocker) {
+                document.getElementById('blocker').style.display = 'none';
+                audio.pause();
+                audio.currentTime = 0;
+            }
+
+            if(foundNag) document.getElementById('nag-bar').classList.remove('hidden');
+            else document.getElementById('nag-bar').classList.add('hidden');
         });
 
-        function triggerNag(taskId, taskData) {
-            if(document.getElementById('nag-screen').style.display === 'flex') return;
-            activeTaskId = taskId;
-            document.getElementById('nag-body').innerText = `משימה חדשה מאת: ${taskData.createdBy || 'המערכת'}`;
-            document.getElementById('nag-content').innerText = taskData.title;
-            document.getElementById('alert-sound').play().catch(()=>{});
-            document.getElementById('nag-screen').style.display = 'flex';
+        function triggerBlocker(id, title) {
+            if(document.getElementById('blocker').style.display === 'flex') return;
+            
+            activeTaskId = id;
+            document.getElementById('blocker-msg').innerText = title;
+            document.getElementById('blocker').style.display = 'flex';
+            
+            // ניסיון הפעלת סאונד (דורש אינטראקציה בדפדפנים מסוימים)
+            audio.play().catch(e => console.log("Click page to enable audio"));
         }
 
         window.confirmTask = async () => {
             if(!activeTaskId) return;
-            await updateDoc(doc(db, "tasks", activeTaskId), { readBy: arrayUnion(MY_ID) });
-            document.getElementById('nag-screen').style.display = 'none';
-            activeTaskId = null;
+            
+            const btn = document.querySelector('#blocker button');
+            const originalText = document.getElementById('btn-text').innerText;
+            document.getElementById('btn-text').innerText = 'מעדכן שרת...';
+            btn.disabled = true;
+
+            try {
+                // 1. עדכון משימה ב-DB (זה החלק הקריטי!)
+                await updateDoc(doc(db, "tasks", activeTaskId), { 
+                    readBy: arrayUnion(MY_ID) 
+                });
+                
+                // 2. רישום לוג להראל
+                await addDoc(collection(db, "task_logs"), {
+                    taskId: activeTaskId,
+                    userId: MY_ID,
+                    userName: MY_NAME,
+                    action: 'confirm',
+                    details: 'אישרה קבלה',
+                    timestamp: serverTimestamp()
+                });
+
+                // הצלחה
+                document.getElementById('blocker').style.display = 'none';
+                audio.pause();
+                activeTaskId = null;
+                
+            } catch (error) {
+                console.error("Error confirming:", error);
+                alert("שגיאה באישור. נסה שוב.");
+            } finally {
+                document.getElementById('btn-text').innerText = originalText;
+                btn.disabled = false;
+            }
         };
 
         window.goHome = () => { document.getElementById('main-frame').src = 'dashboard.html'; updateNav('nav-home'); }
@@ -210,7 +204,6 @@
             document.getElementById('header-title').innerText = title;
             updateNav(`nav-${id}`);
         }
-        window.toggleDrawer = (s) => document.getElementById('drawer').classList.toggle('open', s);
         
         function updateNav(id) {
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
