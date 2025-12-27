@@ -9,9 +9,20 @@
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function(OneSignal) {
-        /* בדיקת תקינות דפדפן למניעת קריסות */
-        const isHealthy = await new Promise(r => { try { let q=indexedDB.open("t");q.onsuccess=()=>{q.result.close();r(true)};q.onerror=()=>r(false);}catch{r(false)}});
-        if(isHealthy) await OneSignal.init({ appId: "07b81f2e-e812-424f-beca-36584b12ccf2" });
+        // מנגנון בדיקה: האם הדפדפן מאפשר לשמור נתונים?
+        const isSystemHealthy = await new Promise(resolve => {
+            try { 
+                let req = window.indexedDB.open("health_check"); 
+                req.onsuccess = () => { req.result.close(); resolve(true); }; 
+                req.onerror = () => resolve(false); 
+            } catch(e) { resolve(false); }
+        });
+
+        if (isSystemHealthy) {
+            await OneSignal.init({ appId: "07b81f2e-e812-424f-beca-36584b12ccf2" });
+        } else {
+            console.warn("OneSignal Disabled: Private Mode Detected");
+        }
       });
     </script>
 
@@ -96,13 +107,14 @@
 
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
-        // הכתובת של ה"מוח" (GAS) - וודא שזו הכתובת הנכונה מהפריסה האחרונה שלך!
+        // >>> הכתובת של גוגל אפס סקריפט (חשוב!) <<<
+        // אנא וודא שזו הכתובת העדכנית שלך מהפריסה האחרונה
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw6tU2yOXn4BkP3xwlmgB8nKU-8u6BOSKXTXJjXsY9E86E_zYXpa9_aDxsPmd63X1Wd/exec";
 
         let usersMap = {};
         let myChart = null;
 
-        // טעינת משתמשים
+        // טעינת עובדים
         onSnapshot(query(collection(db, "users")), (snap) => {
             const sel = document.getElementById('task-assign');
             let html = '<option value="all">📢 כולם (הודעה מתפרצת)</option>';
@@ -114,7 +126,7 @@
             sel.innerHTML = html;
         });
 
-        // האזנה למשימות + עדכון פיד + גרפים
+        // האזנה למשימות
         onSnapshot(query(collection(db, "tasks"), orderBy("createdAt", "desc"), limit(50)), (snap) => {
             const feed = document.getElementById('live-feed-list');
             feed.innerHTML = '';
@@ -142,6 +154,7 @@
                     </div>
                 </div>`;
 
+                // סטטיסטיקה
                 if (t.assignedTo !== 'all') {
                     if (!stats[t.assignedTo]) stats[t.assignedTo] = { name: assigneeName, total: 0, read: 0 };
                     stats[t.assignedTo].total++;
@@ -180,33 +193,48 @@
 
             if(!title) return Swal.fire('שגיאה', 'יש לכתוב נושא', 'error');
 
-            // 1. שמירה ב-DB (זה החלק שמפעיל את החסימה במסך של העובד)
-            await addDoc(collection(db, "tasks"), {
-                title: title,
-                desc: document.getElementById('task-desc').value,
-                assignedTo: assignTo,
-                mustConfirm: mustConfirm,
-                createdBy: 'הראל',
-                createdAt: serverTimestamp(),
-                status: 'pending',
-                readBy: []
+            Swal.fire({
+                title: 'משגר משימה...',
+                didOpen: () => Swal.showLoading()
             });
 
-            // 2. שליחת Push דרך "המוח" (Google Apps Script) כדי לעקוף את שגיאת ה-CORS
-            fetch(SCRIPT_URL, {
-                method: "POST",
-                mode: 'no-cors', // חשוב כדי למנוע שגיאות בדפדפן
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    action: "send_push",
-                    title: "משימה דחופה מהראל",
-                    message: title
-                })
-            });
+            // 1. שליחת Push דרך "המוח" (עוקף שגיאת CORS)
+            try {
+                // המפתח כאן לא משנה, השליחה האמיתית מתבצעת בגוגל סקריפט
+                await fetch(SCRIPT_URL, {
+                    method: "POST",
+                    mode: 'no-cors', // קריטי! מונע שגיאות בדפדפן
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        action: "send_push",
+                        title: "הודעה מהמנכ\"ל",
+                        message: title
+                    })
+                });
+            } catch(e) { console.warn("Push trigger warning:", e); }
 
-            Swal.fire({icon: 'success', title: 'שוגר!', timer: 1000, showConfirmButton: false});
-            document.getElementById('task-title').value = '';
-            switchView('feed', document.querySelectorAll('.nav-item')[1]);
+            // 2. שמירה ב-DB (זה החלק הקריטי שחוסם את המסך)
+            try {
+                await addDoc(collection(db, "tasks"), {
+                    title: title,
+                    desc: document.getElementById('task-desc').value,
+                    assignedTo: assignTo,
+                    mustConfirm: mustConfirm,
+                    createdBy: 'הראל',
+                    createdAt: serverTimestamp(),
+                    status: 'pending',
+                    readBy: []
+                });
+
+                Swal.fire({icon: 'success', title: 'שוגר בהצלחה!', timer: 1500, showConfirmButton: false});
+                document.getElementById('task-title').value = '';
+                switchView('feed', document.querySelectorAll('.nav-item')[1]);
+
+            } catch (e) {
+                // אם גם זה נכשל, הדפדפן כנראה במצב מוגבל מאוד
+                console.error(e);
+                Swal.fire('תקלה', 'לא ניתן לשמור. וודא שאינך במצב גלישה בסתר', 'error');
+            }
         };
 
         window.switchView = (viewId, btn) => {
