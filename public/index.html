@@ -10,7 +10,7 @@
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function(OneSignal) {
-        await OneSignal.init({ appId: "07b81f2e-e812-424f-beca-36584b12ccf2", safari_web_id: "web.onesignal.auto.6476576c-3432-4e56-8976-5656565656", notifyButton: { enable: true } });
+        await OneSignal.init({ appId: "07b81f2e-e812-424f-beca-36584b12ccf2", notifyButton: { enable: true } });
       });
     </script>
 
@@ -19,62 +19,40 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
-        body { margin: 0; padding: 0; background: #f8fafc; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: system-ui, -apple-system, sans-serif; }
+        /* CSS קיים... בתוספת: */
+        body { margin: 0; padding: 0; background: #f8fafc; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
         
-        /* HEADER */
-        .app-header { height: 60px; background: white; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border-bottom: 1px solid #e2e8f0; z-index: 50; flex-shrink: 0; }
-        .header-logo { font-weight: 800; font-size: 18px; color: #0f172a; display: flex; align-items: center; gap: 8px; cursor: pointer; }
-        .header-logo img { width: 32px; height: 32px; border-radius: 6px; }
-        .page-title { font-weight: 600; color: #64748b; font-size: 14px; position: absolute; left: 50%; transform: translateX(-50%); }
-
-        /* THE NAG BAR (הנודניק) */
-        .nag-bar { background: #fef9c3; border-bottom: 1px solid #fde047; padding: 8px 16px; display: flex; align-items: center; justify-content: space-between; animation: slideDown 0.3s ease-out; z-index: 40; }
-        .nag-bar.hidden { display: none; }
-        @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
-
-        /* MAIN STAGE */
-        .main-stage { flex: 1; position: relative; background: #f1f5f9; width: 100%; overflow: hidden; }
-        iframe { width: 100%; height: 100%; border: none; display: block; }
-
-        /* BOTTOM NAV */
-        .bottom-nav { height: 65px; background: white; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-around; align-items: center; padding-bottom: env(safe-area-inset-bottom); z-index: 50; flex-shrink: 0; }
-        .nav-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; width: 60px; height: 100%; transition: 0.2s; cursor: pointer; }
-        .nav-btn.active { color: #2563eb; border-top: 2px solid #2563eb; }
-        .nav-btn i { font-size: 20px; margin-bottom: 3px; }
-        .nav-btn span { font-size: 10px; font-weight: 500; }
-
-        /* DRAWER */
-        .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; opacity: 0; pointer-events: none; transition: 0.3s; }
-        .drawer-overlay.open { opacity: 1; pointer-events: all; }
-        .drawer-content { position: absolute; top: 0; right: 0; bottom: 0; width: 280px; background: white; transform: translateX(100%); transition: 0.3s; display: flex; flex-direction: column; }
-        .drawer-overlay.open .drawer-content { transform: translateX(0); }
-        .drawer-item { padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; gap: 12px; align-items: center; color: #334155; font-weight: 500; cursor: pointer; }
+        .app-header { height: 60px; background: white; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border-bottom: 1px solid #e2e8f0; z-index: 50; }
+        .main-stage { flex: 1; width: 100%; height: 100%; position: relative; }
+        iframe { width: 100%; height: 100%; border: none; }
+        .bottom-nav { height: 65px; background: white; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-around; align-items: center; padding-bottom: env(safe-area-inset-bottom); z-index: 50; }
+        
+        /* THE NAG MODAL (הנודניק הקופץ) */
+        .nag-overlay { 
+            position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; 
+            display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);
+            display: none; /* מוסתר בהתחלה */
+        }
+        .nag-card {
+            background: white; width: 90%; max-width: 400px; border-radius: 20px; padding: 25px;
+            text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        .nag-icon { font-size: 50px; color: #ff3b30; margin-bottom: 15px; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body>
 
-    <div class="app-header">
-        <div class="header-logo" onclick="goHome()">
-            <img src="https://saban-system.onrender.com/icons/icon-192.png">
-            <span>Saban<span class="text-blue-600">OS</span></span>
-        </div>
-        <div class="page-title" id="header-title">דף הבית</div>
-        <button onclick="toggleDrawer(true)" class="text-slate-600 text-xl p-2"><i class="fas fa-bars"></i></button>
-    </div>
+    <audio id="alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
 
-    <div id="nag-bar" class="nag-bar hidden">
-        <div class="flex items-center gap-2">
-            <div class="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 border border-yellow-200">
-                <i class="fas fa-bell animate-swing"></i>
-            </div>
-            <div>
-                <div class="text-[10px] font-bold text-yellow-800 uppercase tracking-wider">תזכורת פתוחה</div>
-                <div class="text-xs text-yellow-900 font-bold truncate max-w-[150px]" id="nag-text">...</div>
-            </div>
+    <div class="app-header">
+        <div class="font-black text-xl text-slate-800 flex items-center gap-2" onclick="goHome()">
+            <img src="https://saban-system.onrender.com/icons/icon-192.png" class="w-8 h-8 rounded"> SabanOS
         </div>
-        <button onclick="openApp('calendar', 'יומן משימות')" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm transition">
-            טפל עכשיו <i class="fas fa-arrow-left mr-1"></i>
-        </button>
+        <div class="text-sm font-bold text-gray-500" id="header-title">דף הבית</div>
+        <i class="fas fa-bars text-xl text-slate-600" onclick="toggleDrawer(true)"></i>
     </div>
 
     <div class="main-stage">
@@ -82,82 +60,129 @@
     </div>
 
     <div class="bottom-nav">
-        <div class="nav-btn active" onclick="goHome()" id="nav-home"><i class="fas fa-home"></i><span>ראשי</span></div>
-        <div class="nav-btn" onclick="openApp('chat', 'מרכז תקשורת')" id="nav-chat"><i class="fab fa-whatsapp"></i><span>צ'אט</span></div>
-        <div class="nav-btn" onclick="openApp('drive', 'מסמכים')" id="nav-drive"><i class="fas fa-folder"></i><span>דרייב</span></div>
-        <div class="nav-btn" onclick="openApp('calendar', 'יומן')" id="nav-calendar"><i class="fas fa-calendar-alt"></i><span>יומן</span></div>
+        <div class="nav-btn active" onclick="goHome()" id="nav-home"><i class="fas fa-home text-2xl text-gray-400"></i></div>
+        <div class="nav-btn" onclick="openApp('chat', 'צ\'אט')" id="nav-chat"><i class="fab fa-whatsapp text-2xl text-gray-400"></i></div>
+        <div class="nav-btn" onclick="openApp('tasks', 'משימות')" id="nav-tasks"><i class="fas fa-tasks text-2xl text-gray-400"></i></div>
+        <div class="nav-btn" onclick="openApp('harel', 'הראל')" id="nav-harel"><i class="fas fa-user-shield text-2xl text-red-500"></i></div>
     </div>
 
-    <div id="drawer" class="drawer-overlay" onclick="toggleDrawer(false)">
-        <div class="drawer-content" onclick="event.stopPropagation()">
-            <div class="p-6 bg-slate-900 text-white">
-                <div class="text-xl font-bold">תפריט</div>
-                <div class="text-xs opacity-70">ח.סבן מערכות</div>
+    <div id="nag-screen" class="nag-overlay">
+        <div class="nag-card">
+            <div class="nag-icon"><i class="fas fa-bell"></i></div>
+            <h2 class="text-2xl font-black text-slate-800 mb-2">הודעה מהמנכ"ל</h2>
+            <p class="text-slate-600 mb-4" id="nag-body">יש לאשר קבלת משימה זו כדי להמשיך</p>
+            
+            <div class="bg-gray-100 p-3 rounded-lg mb-4 text-sm font-bold text-slate-700" id="nag-content">
+                ...
             </div>
-            <div class="flex-1 overflow-y-auto">
-                <div class="drawer-item" onclick="goHome(); toggleDrawer(false)"><i class="fas fa-home w-5 text-center"></i> דף הבית</div>
-                <div class="drawer-item" onclick="openApp('team', 'צוותים'); toggleDrawer(false)"><i class="fas fa-users w-5 text-center text-purple-500"></i> ניהול צוות</div>
-                <div class="drawer-item" onclick="openApp('truck', 'מסוף נהג'); toggleDrawer(false)"><i class="fas fa-truck w-5 text-center text-orange-500"></i> מסוף נהג</div>
-                <div class="drawer-item" onclick="location.reload()"><i class="fas fa-sync w-5 text-center"></i> רענן</div>
-            </div>
-            <div class="p-4 border-t">
-                <div class="drawer-item text-red-500 bg-red-50 rounded-lg" onclick="alert('LOGOUT')"><i class="fas fa-sign-out-alt w-5 text-center"></i> יציאה (LOG)</div>
-            </div>
+
+            <button onclick="confirmTask()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-lg shadow-lg active:scale-95 transition">
+                <i class="fas fa-check-circle"></i> מאשר קבלה
+            </button>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
-        // --- NAG BAR LOGIC ---
-        // מאזין למשימות שטרם בוצעו (done == false)
-        onSnapshot(query(collection(db, "calendar"), where("done", "==", false)), (snap) => {
-            const bar = document.getElementById('nag-bar');
-            if (!snap.empty) {
-                const count = snap.size;
-                const task = snap.docs[0].data(); // לוקח את המשימה הראשונה
-                bar.classList.remove('hidden');
-                document.getElementById('nag-text').innerText = `${task.title} ${count > 1 ? `(+${count-1})` : ''}`;
-            } else {
-                bar.classList.add('hidden');
-            }
+        // Current User ID (במציאות זה יבוא מלוגין)
+        const MY_ID = 'vered'; // לדוגמה, אני ורד
+        const MY_NAME = 'ורד'; 
+
+        // --- NAG ENGINE ---
+        let activeTaskId = null;
+
+        // האזנה למשימות שמיועדות לי (או לכולם) ועדיין לא קראתי אותן
+        // שימו לב: הלוגיקה כאן פשוטה. אם ה-ID שלי לא נמצא במערך readBy, זה אומר שלא קראתי.
+        // במערכת גדולה צריך שאילתה מורכבת יותר, אבל זה יעבוד מצוין כאן.
+        
+        const qTasks = query(collection(db, "tasks"), where("status", "==", "pending"));
+
+        onSnapshot(qTasks, (snap) => {
+            snap.forEach(d => {
+                const t = d.data();
+                // האם המשימה מיועדת לי?
+                const isForMe = t.assignedTo === 'all' || t.assignedTo === MY_ID;
+                // האם כבר קראתי?
+                const alreadyRead = t.readBy && t.readBy.includes(MY_ID);
+
+                if (isForMe && !alreadyRead && t.mustConfirm) {
+                    // מצאנו משימה דחופה שלא קראתי!
+                    triggerNag(d.id, t);
+                }
+            });
         });
 
-        // --- NAVIGATION LOGIC ---
+        function triggerNag(taskId, taskData) {
+            if(document.getElementById('nag-screen').style.display === 'flex') return; // כבר מוצג
+
+            activeTaskId = taskId;
+            document.getElementById('nag-body').innerText = `משימה חדשה מאת: ${taskData.createdBy}`;
+            document.getElementById('nag-content').innerText = taskData.title;
+            
+            // הפעלת צליל
+            document.getElementById('alert-sound').play().catch(()=>{});
+            
+            // הצגת מסך חוסם
+            document.getElementById('nag-screen').style.display = 'flex';
+        }
+
+        window.confirmTask = async () => {
+            if(!activeTaskId) return;
+
+            // עדכון ב-DB שקראתי
+            await updateDoc(doc(db, "tasks", activeTaskId), {
+                readBy: arrayUnion(MY_ID)
+            });
+
+            // רישום לוג
+            await addDoc(collection(db, "task_logs"), {
+                taskId: activeTaskId,
+                userId: MY_ID,
+                userName: MY_NAME,
+                action: 'confirm',
+                details: 'אישר קבלת משימה',
+                timestamp: serverTimestamp()
+            });
+
+            // סגירת מסך
+            document.getElementById('nag-screen').style.display = 'none';
+            activeTaskId = null;
+            Swal.fire('תודה', 'האישור נרשם במערכת', 'success');
+        };
+
+        // --- NAVIGATION ---
         window.goHome = () => {
             document.getElementById('main-frame').src = 'dashboard.html';
-            updateUI('home', 'דף הבית');
-        }
+            updateNav('nav-home');
+        };
 
         window.openApp = (id, title) => {
             let url = '';
             switch(id) {
                 case 'chat': url = 'comm-center.html'; break;
                 case 'drive': url = 'documents-drive.html'; break;
-                case 'team': url = 'team-view.html'; break; 
-                case 'truck': url = 'driver-app.html'; break;
-                case 'calendar': url = 'calendar-app.html'; break; // <--- החדש
-                case 'tasks': url = 'calendar-app.html'; break; // גם משימות מוביל ליומן
+                case 'team': url = 'team-view.html'; break;
+                case 'harel': url = 'harel-tasks.html'; break; // אפליקציית הראל
+                case 'tasks': url = 'harel-tasks.html'; break; // או דף משימות לעובד (אם תרצה נבנה בנפרד)
             }
-            const frame = document.getElementById('main-frame');
-            if(!frame.src.includes(url)) frame.src = url;
-            updateUI(id, title);
-        }
-
-        function updateUI(id, title) {
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            const btn = document.getElementById('nav-' + id);
-            // אם אין כפתור תחתון מתאים (למשל נהג), לא נורא
-            if(btn) btn.classList.add('active');
-            
+            document.getElementById('main-frame').src = url;
             document.getElementById('header-title').innerText = title;
-        }
+            updateNav(`nav-${id}`);
+        };
 
-        window.toggleDrawer = (show) => {
-            const d = document.getElementById('drawer');
-            if(show) d.classList.add('open'); else d.classList.remove('open');
+        function updateNav(id) {
+            document.querySelectorAll('.nav-btn i').forEach(el => el.classList.remove('text-blue-600'));
+            document.querySelectorAll('.nav-btn i').forEach(el => el.classList.add('text-gray-400'));
+            const btn = document.getElementById(id);
+            if(btn) {
+                const icon = btn.querySelector('i');
+                icon.classList.remove('text-gray-400');
+                icon.classList.add('text-blue-600');
+            }
         }
     </script>
 </body>
