@@ -3,204 +3,228 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Saban Drive Pro</title>
+    <title>Saban Archive</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <style>
-        body { 
-            background: #0f172a; 
-            color: white; font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
-            padding: 20px; padding-bottom: 80px; min-height: 100vh;
-        }
+        /* עיצוב בהיר ומקצועי */
+        body { background: #f8fafc; color: #1e293b; font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding-bottom: 90px; -webkit-tap-highlight-color: transparent; }
         
-        .drive-card {
-            background: rgba(30, 41, 59, 0.6);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 16px; margin-bottom: 12px;
-            display: flex; align-items: center; justify-content: space-between;
-            transition: 0.2s;
+        .header-section { background: white; padding: 20px 20px 10px 20px; position: sticky; top: 0; z-index: 40; border-bottom: 1px solid #e2e8f0; }
+        
+        .doc-card { 
+            background: white; border: 1px solid #e2e8f0; border-radius: 12px; 
+            padding: 16px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: 0.2s;
         }
-        .drive-card:active { background: rgba(255,255,255,0.1); }
+        .doc-card:active { transform: scale(0.98); background: #f1f5f9; }
 
-        .file-icon {
-            width: 40px; height: 40px; border-radius: 8px;
-            background: rgba(59, 130, 246, 0.2); color: #60a5fa;
-            display: flex; align-items: center; justify-content: center; font-size: 18px;
+        .icon-box { 
+            width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;
         }
-        .pdf-icon { background: rgba(239, 68, 68, 0.2); color: #f87171; }
-        .sheet-icon { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
-        .img-icon { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
-
-        /* כפתור העלאה צף */
-        .fab-btn {
-            position: fixed; bottom: 90px; left: 20px;
-            width: 56px; height: 56px; border-radius: 50%;
-            background: #2563eb; color: white;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 24px; box-shadow: 0 10px 25px rgba(37, 99, 235, 0.5);
-            transition: 0.2s; z-index: 50;
-        }
-        .fab-btn:active { transform: scale(0.9); }
+        .ic-pdf { background: #fee2e2; color: #ef4444; } /* אדום */
+        .ic-xls { background: #dcfce7; color: #22c55e; } /* ירוק */
+        .ic-img { background: #f3e8ff; color: #a855f7; } /* סגול */
+        .ic-doc { background: #dbeafe; color: #3b82f6; } /* כחול */
 
         /* תגיות */
-        .tag-badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; background: rgba(255,255,255,0.1); margin-top: 4px; display: inline-block; }
+        .filter-chip { 
+            padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; 
+            background: #f1f5f9; color: #64748b; margin-left: 8px; cursor: pointer; border: 1px solid transparent;
+        }
+        .filter-chip.active { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+
+        /* כפתור צף */
+        .fab { 
+            position: fixed; bottom: 30px; left: 24px; width: 60px; height: 60px; 
+            background: #2563eb; color: white; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; font-size: 24px; 
+            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.4); z-index: 50;
+        }
     </style>
 </head>
 <body>
 
-    <div class="flex justify-between items-center mb-6">
-        <div>
-            <h1 class="text-2xl font-black">המסמכים שלי</h1>
-            <p class="text-xs text-slate-400">ארכיון מלא + העלאה</p>
+    <div class="header-section">
+        <div class="flex justify-between items-center mb-4">
+            <div>
+                <h1 class="text-2xl font-black text-slate-800">ארכיון מסמכים</h1>
+                <p class="text-xs text-slate-500 font-bold">ח.סבן תשתיות וניהול</p>
+            </div>
+            <div class="bg-slate-100 p-2 rounded-full text-slate-600">
+                <i class="fas fa-folder-open text-xl"></i>
+            </div>
         </div>
-        <div class="bg-blue-600 w-10 h-10 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/30">
-            <i class="fas fa-cloud"></i>
+
+        <div class="relative mb-4">
+            <input type="text" id="search" onkeyup="filterDocs()" placeholder="חיפוש לפי שם או תגית..." class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-10 text-sm focus:outline-none focus:border-blue-500 focus:bg-white transition">
+            <i class="fas fa-search absolute right-3 top-3.5 text-slate-400"></i>
+        </div>
+
+        <div class="flex overflow-x-auto pb-2 no-scrollbar">
+            <div class="filter-chip active" onclick="setFilter('all', this)">הכל</div>
+            <div class="filter-chip" onclick="setFilter('חשבונית', this)">חשבוניות</div>
+            <div class="filter-chip" onclick="setFilter('חוזה', this)">חוזים</div>
+            <div class="filter-chip" onclick="setFilter('תוכנית', this)">תוכניות</div>
+            <div class="filter-chip" onclick="setFilter('תמונה', this)">תמונות</div>
         </div>
     </div>
 
-    <div class="relative mb-6">
-        <input type="text" id="search-input" onkeyup="filterFiles()" placeholder="חיפוש לפי שם או תגית..." class="w-full bg-slate-800 border border-slate-700 rounded-xl py-3 px-4 pr-10 text-sm focus:outline-none focus:border-blue-500">
-        <i class="fas fa-search absolute left-4 top-3.5 text-slate-500"></i>
-    </div>
-
-    <div id="file-list">
-        <div class="text-center text-slate-500 mt-10">
-            <i class="fas fa-circle-notch fa-spin text-2xl mb-2"></i>
-            <div>טוען מסמכים...</div>
+    <div id="doc-list" class="p-4 space-y-3">
+        <div class="text-center pt-20">
+            <i class="fas fa-circle-notch fa-spin text-blue-600 text-3xl mb-3"></i>
+            <div class="text-slate-400 text-sm">מושך נתונים מהארכיון...</div>
         </div>
     </div>
 
-    <button class="fab-btn" onclick="openUploadModal()">
+    <button class="fab" onclick="openUpload()">
         <i class="fas fa-plus"></i>
     </button>
 
     <script>
-        // >>> שים כאן את הלינק המעודכן מגוגל <<<
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyOe2eImk6TLNdwWbWHyurBYCA5X6lZ_TO85eBAaZcwMKOSpcy16MYhj86GFB3v1ly_/exec";
+        // ✅ הלינק הישיר לסקריפט המסמכים (הפעיל והתקין)
+        const DOCS_API = "https://script.google.com/macros/s/AKfycbwIwoPwUA7uKnylbBBLoq06os16t1OV5jxWuohGCXhuWt99JjMfdEp1wWV-rSCeSmaD/exec";
 
-        let allFiles = [];
+        let dbFiles = [];
+        let currentFilter = 'all';
 
-        async function loadFiles() {
+        // 1. טעינת קבצים (REAL DATA)
+        async function init() {
             try {
-                const response = await fetch(SCRIPT_URL);
-                const data = await response.json();
+                const res = await fetch(DOCS_API);
+                const data = await res.json();
                 
                 if (data.status === 'success') {
-                    allFiles = data.files;
-                    renderFiles(allFiles);
+                    dbFiles = data.files;
+                    render();
                 }
-            } catch (error) {
-                console.error(error);
-                document.getElementById('file-list').innerHTML = `<div class="text-center text-red-400">שגיאת טעינה. וודא שהסקריפט מעודכן.</div>`;
+            } catch (e) {
+                document.getElementById('doc-list').innerHTML = `
+                <div class="text-center text-red-500 pt-10">
+                    <i class="fas fa-wifi text-4xl mb-2"></i><br>שגיאת תקשורת
+                </div>`;
             }
         }
 
-        function renderFiles(files) {
-            const list = document.getElementById('file-list');
-            list.innerHTML = '';
+        // 2. הצגת קבצים
+        function render() {
+            const container = document.getElementById('doc-list');
+            const term = document.getElementById('search').value.toLowerCase();
             
-            if (files.length === 0) {
-                list.innerHTML = '<div class="text-center text-slate-500">לא נמצאו קבצים</div>';
+            const filtered = dbFiles.filter(f => {
+                const matchText = f.name.toLowerCase().includes(term) || (f.desc && f.desc.toLowerCase().includes(term));
+                const matchTag = currentFilter === 'all' || (f.desc && f.desc.includes(currentFilter));
+                return matchText && matchTag;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="text-center text-slate-400 pt-10">לא נמצאו מסמכים</div>';
                 return;
             }
 
-            files.forEach(file => {
-                let iconClass = 'file-icon';
-                let icon = 'fa-file';
+            container.innerHTML = filtered.map(f => {
+                let iconClass = 'ic-doc';
+                let icon = 'fa-file-alt';
                 
-                if(file.type.includes('pdf')) { iconClass += ' pdf-icon'; icon = 'fa-file-pdf'; }
-                else if(file.type.includes('spreadsheet') || file.type.includes('csv')) { iconClass += ' sheet-icon'; icon = 'fa-file-excel'; }
-                else if(file.type.includes('image')) { iconClass += ' img-icon'; icon = 'fa-image'; }
+                if (f.type.includes('pdf')) { iconClass = 'ic-pdf'; icon = 'fa-file-pdf'; }
+                else if (f.type.includes('sheet') || f.type.includes('csv') || f.type.includes('excel')) { iconClass = 'ic-xls'; icon = 'fa-file-excel'; }
+                else if (f.type.includes('image')) { iconClass = 'ic-img'; icon = 'fa-image'; }
 
-                list.innerHTML += `
-                <div class="drive-card" onclick="window.open('${file.url}', '_blank')">
-                    <div class="flex items-center gap-3">
-                        <div class="${iconClass}"><i class="fas ${icon}"></i></div>
-                        <div>
-                            <div class="font-bold text-sm truncate w-40">${file.name}</div>
-                            <div class="flex gap-2 items-center">
-                                <span class="tag-badge text-[10px]">${file.desc}</span>
-                                <span class="text-[10px] text-slate-400">${file.date.split(',')[0]}</span>
+                return `
+                <div class="doc-card" onclick="window.open('${f.url}', '_blank')">
+                    <div class="flex items-center gap-4">
+                        <div class="icon-box ${iconClass}"><i class="fas ${icon}"></i></div>
+                        <div class="overflow-hidden">
+                            <div class="font-bold text-slate-800 text-sm truncate w-48">${f.name}</div>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="bg-slate-100 text-slate-500 text-[10px] px-2 py-0.5 rounded">${f.desc || 'כללי'}</span>
+                                <span class="text-[10px] text-slate-400">${f.date ? f.date.split(',')[0] : ''}</span>
                             </div>
                         </div>
                     </div>
-                    <i class="fas fa-chevron-left text-slate-600 text-xs"></i>
+                    <i class="fas fa-chevron-left text-slate-300 text-xs"></i>
                 </div>`;
-            });
+            }).join('');
         }
 
-        function filterFiles() {
-            const term = document.getElementById('search-input').value.toLowerCase();
-            const filtered = allFiles.filter(f => f.name.toLowerCase().includes(term) || f.desc.toLowerCase().includes(term));
-            renderFiles(filtered);
-        }
+        // 3. סינון
+        window.setFilter = (tag, btn) => {
+            currentFilter = tag;
+            document.querySelectorAll('.filter-chip').forEach(el => el.classList.remove('active'));
+            btn.classList.add('active');
+            render();
+        };
+        window.filterDocs = () => render();
 
-        async function openUploadModal() {
+        // 4. העלאת קובץ (REAL UPLOAD)
+        window.openUpload = async () => {
             const { value: formValues } = await Swal.fire({
-                title: 'העלאת קובץ חדש',
+                title: 'העלאת מסמך לארכיון',
                 html: `
-                    <input type="file" id="swal-input-file" class="swal2-input" style="border:none">
-                    <select id="swal-input-tag" class="swal2-select w-full mt-2">
-                        <option value="כללי">🏷️ תיוג: כללי</option>
-                        <option value="חשבונית">💰 חשבונית</option>
-                        <option value="חוזה">📜 חוזה</option>
-                        <option value="תוכנית">🏗️ תוכנית עבודה</option>
-                        <option value="תמונה">📷 תמונה מהשטח</option>
-                    </select>
+                    <div class="text-right">
+                        <label class="text-xs font-bold text-slate-500">קובץ:</label>
+                        <input type="file" id="up-file" class="w-full bg-slate-50 border p-2 rounded mb-3 text-sm">
+                        <label class="text-xs font-bold text-slate-500">תיוג:</label>
+                        <select id="up-tag" class="w-full bg-slate-50 border p-2 rounded text-sm font-bold">
+                            <option value="כללי">כללי</option>
+                            <option value="חשבונית">💰 חשבונית / קבלה</option>
+                            <option value="חוזה">📜 חוזה</option>
+                            <option value="תוכנית">🏗️ תוכנית עבודה</option>
+                            <option value="תמונה">📷 תמונה מהשטח</option>
+                        </select>
+                    </div>
                 `,
-                focusConfirm: false,
-                confirmButtonText: 'העלה לדרייב',
+                confirmButtonText: 'שמור בדרייב',
+                confirmButtonColor: '#2563eb',
                 showCancelButton: true,
                 preConfirm: () => {
-                    return [
-                        document.getElementById('swal-input-file').files[0],
-                        document.getElementById('swal-input-tag').value
-                    ]
+                    const file = document.getElementById('up-file').files[0];
+                    const tag = document.getElementById('up-tag').value;
+                    if (!file) Swal.showValidationMessage('חובה לבחור קובץ');
+                    return { file, tag };
                 }
             });
 
-            if (formValues && formValues[0]) {
-                uploadFile(formValues[0], formValues[1]);
-            }
-        }
-
-        function uploadFile(file, tag) {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = async function() {
-                const base64Data = reader.result.split(',')[1]; // הסרת ה-header של ה-base64
-                
-                Swal.fire({ title: 'מעלה קובץ...', didOpen: () => Swal.showLoading() });
-
-                try {
-                    await fetch(SCRIPT_URL, {
-                        method: "POST",
-                        mode: 'no-cors',
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            action: "upload_file",
-                            fileName: file.name,
-                            mimeType: file.type,
-                            fileData: base64Data,
-                            tag: tag
-                        })
+            if (formValues) {
+                const reader = new FileReader();
+                reader.readAsDataURL(formValues.file);
+                reader.onload = async () => {
+                    const base64 = reader.result.split(',')[1];
+                    
+                    Swal.fire({ 
+                        title: 'מעלה לארכיון...', 
+                        text: 'נא להמתין',
+                        allowOutsideClick: false,
+                        didOpen: () => Swal.showLoading() 
                     });
 
-                    Swal.fire('הצלחה', 'הקובץ עלה לדרייב!', 'success');
-                    setTimeout(loadFiles, 2000); // רענון הרשימה
+                    try {
+                        await fetch(DOCS_API, {
+                            method: "POST",
+                            mode: 'no-cors',
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                action: "upload_file",
+                                fileName: formValues.file.name,
+                                mimeType: formValues.file.type,
+                                fileData: base64,
+                                tag: formValues.tag
+                            })
+                        });
 
-                } catch (e) {
-                    Swal.fire('שגיאה', 'ההעלאה נכשלה', 'error');
-                }
-            };
-        }
+                        Swal.fire('הצלחה', 'המסמך נשמר ומאובטח', 'success');
+                        setTimeout(init, 2000); // רענון
+                    } catch (e) {
+                        Swal.fire('שגיאה', 'ההעלאה נכשלה', 'error');
+                    }
+                };
+            }
+        };
 
-        // טעינה בהתחלה
-        loadFiles();
+        // הפעלה
+        init();
     </script>
 </body>
 </html>
