@@ -11,47 +11,55 @@
         body { 
             background: #0f172a; 
             background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #0f172a 80%);
-            height: 100vh; display: flex; align-items: center; justify-content: center; font-family: sans-serif;
+            height: 100vh; display: flex; align-items: center; justify-content: center; font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow: hidden;
         }
         .login-card {
-            background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(20px);
+            background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.1); padding: 40px;
             border-radius: 24px; width: 90%; max-width: 400px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            text-align: center;
+            text-align: center; animation: fadeIn 0.8s ease-out;
         }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
         .input-field {
             background: rgba(15, 23, 42, 0.6); border: 1px solid #334155;
             color: white; width: 100%; padding: 14px; border-radius: 12px; margin-bottom: 16px;
             outline: none; transition: 0.3s;
         }
-        .input-field:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3); }
+        .input-field:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3); background: rgba(15, 23, 42, 0.8); }
+        
         .login-btn {
             background: linear-gradient(135deg, #2563eb, #1d4ed8);
             width: 100%; padding: 14px; border-radius: 12px; color: white; font-weight: bold; font-size: 16px;
-            margin-top: 10px; transition: 0.2s; box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+            margin-top: 10px; transition: 0.2s; box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3); cursor: pointer;
         }
         .login-btn:active { transform: scale(0.96); }
-    </style>
+    </script>
 </head>
 <body>
 
     <div class="login-card">
-        <div class="mb-6">
-            <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/30">
-                <i class="fas fa-fingerprint text-3xl text-white"></i>
+        <div class="mb-8">
+            <div class="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-500/20">
+                <i class="fas fa-fingerprint text-4xl text-white"></i>
             </div>
-            <h1 class="text-2xl font-black text-white">Saban<span class="text-blue-500">OS</span></h1>
-            <p class="text-slate-400 text-sm">מערכת ניהול ובקרה</p>
+            <h1 class="text-3xl font-black text-white tracking-tight">Saban<span class="text-blue-500">OS</span></h1>
+            <p class="text-slate-400 text-sm font-medium mt-1">מערכת שליטה ובקרה</p>
         </div>
 
         <form id="login-form" onsubmit="event.preventDefault(); handleLogin();">
             <input type="email" id="email" class="input-field" placeholder="אימייל ארגוני" required>
             <input type="password" id="password" class="input-field" placeholder="סיסמה" required>
-            <button type="submit" class="login-btn">כניסה למערכת</button>
+            <button type="submit" class="login-btn">
+                <i class="fas fa-sign-in-alt ml-2"></i> כניסה מאובטחת
+            </button>
         </form>
         
-        <div id="loader" class="hidden mt-4 text-blue-400 text-sm font-bold animate-pulse">מאמת פרטים...</div>
+        <div id="loader" class="hidden mt-6 flex items-center justify-center gap-2 text-blue-400 text-sm font-bold">
+            <i class="fas fa-circle-notch fa-spin"></i> מאמת פרטים...
+        </div>
     </div>
 
     <script type="module">
@@ -71,41 +79,54 @@
             loader.classList.remove('hidden');
 
             try {
-                // 1. ניסיון התחברות
+                // 1. אימות מול Firebase Auth
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
 
-                // 2. בדיקה ב-DB אם צריך להחליף סיסמה
-                const userDoc = await getDoc(doc(db, "users", email));
+                // 2. משיכת נתוני משתמש מה-DB
+                const userDoc = await getDoc(doc(db, "users", email)); // שימוש באימייל כמפתח
                 
-                if (userDoc.exists() && userDoc.data().mustChangePassword) {
-                    loader.classList.add('hidden');
-                    // דרישת החלפת סיסמה
-                    await promptNewPassword(user, email);
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+
+                    // 3. האם נדרשת החלפת סיסמה?
+                    if (userData.mustChangePassword) {
+                        loader.classList.add('hidden');
+                        await promptNewPassword(user, email);
+                    } else {
+                        // הכל תקין - שמירת Email בזיכרון ומעבר
+                        localStorage.setItem('saban_user_email', email);
+                        window.location.href = "index.html";
+                    }
                 } else {
-                    // הכל תקין - מעבר למוח
-                    window.location.href = "index.html";
+                    throw new Error("User data not found in DB");
                 }
 
             } catch (error) {
+                console.error(error);
                 loader.classList.add('hidden');
                 Swal.fire({
                     icon: 'error',
-                    title: 'שגיאת התחברות',
-                    text: 'שם משתמש או סיסמה שגויים',
-                    confirmButtonColor: '#ef4444'
+                    title: 'שגיאת כניסה',
+                    text: 'שם משתמש או סיסמה שגויים, או שאין לך הרשאות.',
+                    confirmButtonColor: '#ef4444',
+                    background: '#1e293b',
+                    color: '#fff'
                 });
             }
         };
 
         async function promptNewPassword(user, email) {
             const { value: newPass } = await Swal.fire({
-                title: 'החלפת סיסמה ראשונית',
-                text: 'מטעמי אבטחה, עליך לבחור סיסמה חדשה',
+                title: 'החלפת סיסמה נדרשת',
+                text: 'זוהי כניסה ראשונה. נא לבחור סיסמה אישית.',
                 input: 'password',
-                inputPlaceholder: 'סיסמה חדשה (מינימום 6 תווים)',
+                inputPlaceholder: 'סיסמה חדשה (6 תווים לפחות)',
                 allowOutsideClick: false,
                 confirmButtonText: 'שמור וכנס',
+                confirmButtonColor: '#2563eb',
+                background: '#1e293b',
+                color: '#fff',
                 inputValidator: (value) => {
                     if (!value || value.length < 6) return 'הסיסמה חייבת להיות בת 6 תווים לפחות';
                 }
@@ -114,10 +135,13 @@
             if (newPass) {
                 try {
                     await updatePassword(user, newPass);
-                    // עדכון ב-DB שלא צריך להחליף יותר
                     await updateDoc(doc(db, "users", email), { mustChangePassword: false });
                     
-                    Swal.fire('הצלחה', 'הסיסמה עודכנה!', 'success').then(() => {
+                    localStorage.setItem('saban_user_email', email); // שמירה
+                    
+                    Swal.fire({
+                        icon: 'success', title: 'הסיסמה עודכנה!', timer: 1500, showConfirmButton: false, background: '#1e293b', color: '#fff'
+                    }).then(() => {
                         window.location.href = "index.html";
                     });
                 } catch (e) {
