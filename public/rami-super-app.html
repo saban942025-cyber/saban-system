@@ -2,207 +2,120 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Rami's Command Center</title>
-    
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#ffffff">
-    <meta name="mobile-web-app-capable" content="yes">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rami Command</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    <style>
-        body { background-color: #f3f4f6; color: #1f2937; font-family: -apple-system, BlinkMacSystemFont, sans-serif; overflow-x: hidden; }
-        
-        #sidebar { transition: transform 0.3s ease-in-out; transform: translateX(100%); z-index: 50; }
-        #sidebar.open { transform: translateX(0); }
-        .overlay { transition: opacity 0.3s; pointer-events: none; opacity: 0; }
-        .overlay.open { pointer-events: auto; opacity: 1; }
-
-        .app-card { background: white; border-radius: 24px; padding: 20px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); transition: all 0.2s; border: 1px solid #f3f4f6; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; cursor: pointer; position: relative; overflow: hidden; }
-        .app-card:active { transform: scale(0.95); }
-        .app-icon { width: 56px; height: 56px; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; margin-bottom: 4px; box-shadow: 0 8px 15px -3px rgba(0,0,0,0.1); }
-
-        .mirror-frame { border: 4px solid #1f2937; border-radius: 30px; background: #000; overflow: hidden; position: relative; height: 500px; width: 300px; margin: 0 auto; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
-        .mirror-screen { background: #f0fdf4; height: 100%; width: 100%; overflow-y: auto; padding: 15px; }
-        
-        .g-blue { background: linear-gradient(135deg, #3b82f6, #2563eb); }
-        .g-purple { background: linear-gradient(135deg, #a855f7, #7c3aed); }
-        .g-orange { background: linear-gradient(135deg, #f97316, #ea580c); }
-        .g-dark { background: linear-gradient(135deg, #374151, #1f2937); }
-    </style>
+    <style>body{background:#f3f4f6;}</style>
 </head>
 <body>
 
-    <div id="overlay" class="overlay fixed inset-0 bg-black/50 z-40" onclick="toggleMenu()"></div>
-
-    <aside id="sidebar" class="fixed top-0 right-0 h-full w-3/4 max-w-xs bg-white shadow-2xl p-6 flex flex-col justify-between">
+    <div class="bg-white p-4 shadow-sm flex justify-between items-center sticky top-0 z-20">
         <div>
-            <div class="flex items-center justify-between mb-8">
-                <h2 class="text-2xl font-black text-slate-800">Saban<span class="text-blue-600">OS</span></h2>
-                <button onclick="toggleMenu()" class="text-slate-400 text-xl"><i class="fas fa-times"></i></button>
-            </div>
-            <nav class="space-y-4">
-                <a href="#" class="flex items-center gap-4 text-slate-600 font-bold p-3 rounded-xl bg-slate-50"><i class="fas fa-home text-blue-500"></i> ראשי</a>
-                <a href="admin-console.html" class="flex items-center gap-4 text-slate-600 font-bold p-3 rounded-xl hover:bg-slate-50"><i class="fas fa-users-cog text-purple-500"></i> ניהול משתמשים</a>
-                <a href="documents-drive.html" class="flex items-center gap-4 text-slate-600 font-bold p-3 rounded-xl hover:bg-slate-50"><i class="fas fa-folder text-yellow-500"></i> ארכיון מסמכים</a>
-            </nav>
+            <div class="text-xs text-slate-400 font-bold tracking-widest uppercase">חדר בקרה</div>
+            <h1 class="text-xl font-black text-slate-800">Saban<span class="text-blue-600">OS</span></h1>
         </div>
-        <div class="border-t pt-6">
-            <div class="flex items-center gap-3">
-                <img src="https://ui-avatars.com/api/?name=Rami+M&background=0f172a&color=fff" class="w-10 h-10 rounded-full">
-                <div>
-                    <div class="font-bold text-sm">ראמי מסארוה</div>
-                    <div class="text-xs text-slate-400">Super Admin</div>
-                </div>
-            </div>
-        </div>
-    </aside>
+        <img src="https://ui-avatars.com/api/?name=Rami&background=000&color=fff" class="w-10 h-10 rounded-full">
+    </div>
 
-    <header class="bg-white sticky top-0 z-30 px-6 py-4 flex justify-between items-center shadow-sm">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center border border-blue-200 shadow-sm">
-                <i class="fas fa-crown text-sm"></i>
-            </div>
-            <div>
-                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">מרכז שליטה</div>
-                <h1 class="text-xl font-black text-slate-800">שלום, ראמי</h1>
-            </div>
-        </div>
-        <button onclick="toggleMenu()" class="text-slate-700 text-2xl focus:outline-none">
-            <i class="fas fa-bars"></i>
-        </button>
-    </header>
-
-    <main class="p-6 max-w-5xl mx-auto space-y-8">
+    <div class="max-w-5xl mx-auto p-4 space-y-6">
         
-        <section>
-            <h3 class="text-sm font-bold text-slate-400 mb-4 flex items-center gap-2"><i class="fas fa-th-large"></i> אפליקציות</h3>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="app-card" onclick="openApp('users')"><div class="app-icon g-purple"><i class="fas fa-users"></i></div><div class="font-bold text-slate-700 text-sm">צוות</div></div>
-                <div class="app-card" onclick="openApp('drive')"><div class="app-icon g-orange"><i class="fas fa-cloud"></i></div><div class="font-bold text-slate-700 text-sm">Saban Drive</div></div>
-                <div class="app-card" onclick="Swal.fire('בקרוב')"><div class="app-icon g-blue"><i class="fas fa-tasks"></i></div><div class="font-bold text-slate-700 text-sm">סידור עבודה</div></div>
-                <div class="app-card" onclick="Swal.fire('בקרוב')"><div class="app-icon g-dark"><i class="fas fa-eye"></i></div><div class="font-bold text-slate-700 text-sm">המלשינון</div></div>
+        <div class="grid grid-cols-2 gap-3">
+            <div onclick="location.href='admin-console.html'" class="bg-white p-4 rounded-2xl shadow-sm text-center border border-slate-100 active:scale-95 transition">
+                <i class="fas fa-users text-2xl text-purple-500 mb-2"></i>
+                <div class="font-bold text-sm">צוות</div>
             </div>
-        </section>
-
-        <section class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
-            <div class="flex justify-between items-center mb-6">
-                <div>
-                    <h2 class="text-lg font-black text-slate-800">🛠️ חדר מצב טכני</h2>
-                    <p class="text-xs text-slate-500">שיקוף מסך ופתרון תקלות לצוות</p>
-                </div>
-                <button class="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl text-xs font-bold" onclick="refreshUserList()"><i class="fas fa-sync-alt"></i> רענן</button>
+            <div onclick="location.href='documents-drive.html'" class="bg-white p-4 rounded-2xl shadow-sm text-center border border-slate-100 active:scale-95 transition">
+                <i class="fas fa-folder-open text-2xl text-yellow-500 mb-2"></i>
+                <div class="font-bold text-sm">מסמכים</div>
             </div>
+        </div>
 
-            <div class="flex gap-3 overflow-x-auto pb-4 no-scrollbar" id="support-users-list">
-                <div class="flex-shrink-0 text-center opacity-50">טוען...</div>
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+            <h2 class="font-bold text-slate-700 mb-4 flex items-center gap-2">
+                <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span> מעקב זמן אמת
+            </h2>
+            
+            <div id="users-grid" class="space-y-3">
+                <div class="text-center text-slate-400 text-sm">מפעיל רדאר...</div>
             </div>
+        </div>
 
-            <div id="mirror-area" class="hidden mt-6 bg-slate-50 rounded-2xl p-6 border border-slate-200">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-bold text-slate-700 flex items-center gap-2"><i class="fas fa-satellite-dish text-red-500 animate-pulse"></i> שיקוף חי: <span id="mirror-target-name" class="text-blue-600">...</span></h3>
-                    <button onclick="closeMirror()" class="text-slate-400 hover:text-red-500"><i class="fas fa-times-circle text-xl"></i></button>
-                </div>
-
-                <div class="mirror-frame">
-                    <div class="mirror-screen">
-                        <div class="text-center mb-4"><span class="text-[10px] font-bold bg-green-200 text-green-800 px-2 py-1 rounded-full">מחובר</span></div>
-                        <h4 class="text-xs font-bold text-slate-500 uppercase mb-2">משימות פתוחות כרגע:</h4>
-                        <div id="mirror-tasks" class="space-y-2"></div>
-                        <h4 class="text-xs font-bold text-slate-500 uppercase mt-6 mb-2">פעילות אחרונה:</h4>
-                        <div id="mirror-last-log" class="text-xs font-mono bg-slate-100 p-2 rounded border border-slate-200 text-slate-600">אין נתונים</div>
-                    </div>
-                </div>
-                
-                <div class="text-center mt-4">
-                    <button onclick="sendPushToTarget()" class="bg-blue-600 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg"><i class="fas fa-bell"></i> שלח "פינג" לבדיקה</button>
-                </div>
-            </div>
-        </section>
-
-    </main>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, query, where, onSnapshot, orderBy, limit, addDoc, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const app = initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" });
         const db = getFirestore(app);
-        let currentMirrorEmail = null;
 
-        window.refreshUserList = () => {
-            const list = document.getElementById('support-users-list');
-            onSnapshot(collection(db, "users"), (snapshot) => {
-                list.innerHTML = '';
-                const now = new Date();
-                snapshot.forEach(doc => {
-                    const u = doc.data();
-                    const avatar = u.photoUrl || `https://ui-avatars.com/api/?name=${u.name}&background=${u.color || 'ccc'}&color=fff`;
-                    let statusColor = 'bg-gray-400'; let lastSeenText = 'לא ידוע';
-                    if (u.lastSeen) {
-                        const lastSeenDate = u.lastSeen.toDate();
-                        const diffMinutes = (now - lastSeenDate) / 1000 / 60;
-                        lastSeenText = lastSeenDate.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'});
-                        if (diffMinutes < 2) statusColor = 'bg-green-500 animate-pulse'; 
-                        else if (diffMinutes < 10) statusColor = 'bg-yellow-500';
-                    }
-                    const el = document.createElement('div');
-                    el.className = 'flex-shrink-0 text-center cursor-pointer group bg-white p-3 rounded-2xl border border-slate-100 shadow-sm min-w-[100px] hover:border-blue-500 transition';
-                    el.onclick = () => startMirroring(u);
-                    el.innerHTML = `
-                        <div class="relative inline-block">
-                            <img src="${avatar}" class="w-12 h-12 rounded-full object-cover border-2 border-white shadow-md">
-                            <div class="absolute bottom-0 right-0 w-3.5 h-3.5 ${statusColor} border-2 border-white rounded-full"></div>
+        // האזנה חיה
+        onSnapshot(collection(db, "users"), (snapshot) => {
+            const grid = document.getElementById('users-grid');
+            grid.innerHTML = '';
+            const now = new Date();
+
+            snapshot.forEach(doc => {
+                const u = doc.data();
+                
+                // חישוב זמן
+                let isOnline = false;
+                let lastSeenStr = 'מנותק';
+                
+                if (u.lastSeen) {
+                    const lastDate = u.lastSeen.toDate();
+                    const diffSec = (now - lastDate) / 1000;
+                    lastSeenStr = lastDate.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'});
+                    if (diffSec < 70) isOnline = true; // אם שידר ב-70 שניות אחרונות
+                }
+
+                const statusColor = isOnline ? 'bg-green-500' : 'bg-gray-300';
+                const statusBorder = isOnline ? 'border-green-500' : 'border-transparent';
+                const opacity = isOnline ? 'opacity-100' : 'opacity-60';
+
+                grid.innerHTML += `
+                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border ${statusBorder} transition-all duration-300 ${opacity}">
+                        <div class="flex items-center gap-3">
+                            <div class="relative">
+                                <img src="${u.photoUrl || 'https://ui-avatars.com/api/?name='+u.name}" class="w-10 h-10 rounded-full">
+                                <div class="absolute bottom-0 right-0 w-3 h-3 ${statusColor} border-2 border-white rounded-full"></div>
+                            </div>
+                            <div>
+                                <div class="font-bold text-sm text-slate-800">${u.name}</div>
+                                <div class="text-[10px] text-slate-500">${isOnline ? 'מחובר עכשיו' : 'נראה: ' + lastSeenStr}</div>
+                            </div>
                         </div>
-                        <div class="font-bold text-xs mt-2 text-slate-700 truncate w-20 mx-auto">${u.name.split(' ')[0]}</div>
-                        <div class="text-[9px] text-slate-400">${lastSeenText}</div>
-                        <div class="text-[9px] font-bold text-blue-600 mt-1">${u.device || 'Mobile'}</div>
-                    `;
-                    list.appendChild(el);
+                        <button onclick="pingUser('${u.email}', '${u.name}')" class="bg-white border border-slate-200 text-slate-600 w-8 h-8 rounded-full shadow-sm hover:text-blue-600 active:scale-90 transition">
+                            <i class="fas fa-bell"></i>
+                        </button>
+                    </div>
+                `;
+            });
+        });
+
+        window.pingUser = async (email, name) => {
+            const { value: msg } = await Swal.fire({
+                title: `שליחה ל-${name}`,
+                input: 'text',
+                inputPlaceholder: 'הודעה מתפרצת...',
+                showCancelButton: true,
+                confirmButtonText: 'שגר 🚀'
+            });
+
+            if (msg) {
+                await addDoc(collection(db, "tasks"), {
+                    title: "הודעה מראמי",
+                    desc: msg,
+                    assignedTo: email,
+                    status: 'pending',
+                    mustConfirm: true,
+                    createdAt: serverTimestamp()
                 });
-            });
+                Swal.fire({icon: 'success', title: 'נשלח', timer: 1500, showConfirmButton: false});
+            }
         };
-
-        window.startMirroring = (user) => {
-            currentMirrorEmail = user.email;
-            document.getElementById('mirror-area').classList.remove('hidden');
-            document.getElementById('mirror-target-name').innerText = user.name;
-            document.getElementById('mirror-last-log').innerText = user.lastAction || "אין פעילות רשומה";
-
-            const qTasks = query(collection(db, "tasks"), where("assignedTo", "==", user.email), where("status", "==", "pending"));
-            onSnapshot(qTasks, (snap) => {
-                const container = document.getElementById('mirror-tasks');
-                container.innerHTML = '';
-                if (snap.empty) container.innerHTML = '<div class="text-center text-gray-400 text-xs py-4">אין משימות פתוחות</div>';
-                snap.forEach(d => {
-                    const t = d.data();
-                    container.innerHTML += `
-                        <div class="bg-white p-2 rounded border border-l-4 border-l-red-500 shadow-sm mb-2 text-right">
-                            <div class="font-bold text-xs">${t.title}</div>
-                            ${t.mustConfirm ? '<span class="text-[8px] bg-red-100 text-red-600 px-1 rounded">התראה אדומה</span>' : ''}
-                        </div>`;
-                });
-            });
-        };
-
-        window.closeMirror = () => { document.getElementById('mirror-area').classList.add('hidden'); currentMirrorEmail = null; };
-        
-        window.sendPushToTarget = async () => {
-            if(!currentMirrorEmail) return;
-            Swal.fire({ title: 'שולח...', timer: 1000, didOpen: () => Swal.showLoading() });
-            await addDoc(collection(db, "tasks"), {
-                title: "בדיקת טכנאי 🛠️", desc: "ראמי מבצע בדיקת תקינות למכשיר שלך",
-                assignedTo: currentMirrorEmail, mustConfirm: true, status: 'pending', createdAt: serverTimestamp()
-            });
-            Swal.fire('נשלח!', 'אם העובד מחובר (ירוק), המסך שלו יאדים.', 'success');
-        };
-
-        window.toggleMenu = () => { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('open'); };
-        window.openApp = (page) => { if(page === 'users') window.location.href = 'admin-console.html'; else if(page === 'drive') window.location.href = 'documents-drive.html'; };
-        refreshUserList();
     </script>
 </body>
 </html>
