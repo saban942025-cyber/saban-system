@@ -6,7 +6,6 @@
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0f172a">
-    
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -23,19 +22,39 @@
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
+      
+      // בדיקת בריאות למסד הנתונים לפני שמנסים להפעיל את OneSignal
+      async function checkDatabaseHealth() {
+          return new Promise((resolve) => {
+              try {
+                  let req = window.indexedDB.open("test_health");
+                  req.onsuccess = () => { req.result.close(); resolve(true); };
+                  req.onerror = () => resolve(false);
+              } catch (e) {
+                  resolve(false);
+              }
+          });
+      }
+
       OneSignalDeferred.push(async function(OneSignal) {
-        await OneSignal.init({ 
-            appId: "07b81f2e-e812-424f-beca-36584b12ccf2",
-            serviceWorkerParam: { scope: '/' },
-            serviceWorkerPath: 'OneSignalSDKWorker.js'
-        });
+        const isHealthy = await checkDatabaseHealth();
+        
+        if (isHealthy) {
+            console.log("Database healthy, initializing OneSignal...");
+            await OneSignal.init({ 
+                appId: "07b81f2e-e812-424f-beca-36584b12ccf2",
+                serviceWorkerParam: { scope: '/' },
+                serviceWorkerPath: 'OneSignalSDKWorker.js'
+            });
+        } else {
+            console.warn("⚠️ הדפדפן חוסם גישה ל-Database (אולי גלישה בסתר?). ההתראות החיצוניות בוטלו כדי למנוע קריסה.");
+        }
       });
     </script>
 
     <style>
         body { margin: 0; padding: 0; background: #0f172a; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, sans-serif; user-select: none; -webkit-tap-highlight-color: transparent; }
         
-        /* Start Gate Styles */
         #permission-gate { position: fixed; inset: 0; background: #0f172a; z-index: 100000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: white; }
         
         .action-btn { 
@@ -51,7 +70,6 @@
         @keyframes pulseBlue { 0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(37, 99, 235, 0); } 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); } }
         @keyframes pulseRed { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
-        /* Blocker & UI Styles */
         .blocker-overlay { position: fixed; inset: 0; background: rgba(220, 38, 38, 0.98); z-index: 99999; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px; color: white; text-align: center; }
         .blocker-card { background: white; color: #1e293b; padding: 30px; border-radius: 24px; width: 100%; max-width: 360px; box-shadow: 0 25px 60px rgba(0,0,0,0.5); position: relative; animation: popIn 0.3s; }
         @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -62,7 +80,6 @@
         .bottom-nav { height: 65px; background: white; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-around; align-items: center; padding-bottom: env(safe-area-inset-bottom); }
         .nav-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; width: 60px; height: 100%; }
         .nav-btn.active { color: #2563eb; border-top: 2px solid #2563eb; }
-        
         .unmute-btn { position: absolute; top: 10px; right: 10px; background: #fee2e2; color: #ef4444; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; animation: bounce 1s infinite; cursor: pointer; }
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
     </style>
@@ -73,6 +90,10 @@
         <div class="mb-6 text-center">
             <h1 class="text-4xl font-black mb-1">Saban<span class="text-blue-500">OS</span></h1>
             <p class="text-slate-400 text-sm">מערכת הפעלה ארגונית</p>
+        </div>
+        
+        <div id="pwa-warning" class="hidden text-xs text-orange-400 bg-orange-900/30 p-2 rounded mb-4 max-w-xs border border-orange-500/50">
+            <i class="fas fa-exclamation-triangle"></i> גלישה בסתר מזוהה. מומלץ לעבור לדפדפן רגיל לקבלת התראות.
         </div>
 
         <button id="install-btn" class="action-btn btn-install" onclick="installPWA()">
@@ -85,8 +106,8 @@
 
         <div id="ios-hint" class="hidden mt-6 bg-slate-800 p-4 rounded-xl text-xs text-left max-w-xs border border-slate-700">
             <div class="font-bold text-blue-400 mb-1">📢 משתמשי אייפון:</div>
-            1. לחץ על כפתור השיתוף <i class="fas fa-share-square"></i> למטה בדפדפן.<br>
-            2. בחר <b>"הוסף למסך הבית"</b> (Add to Home Screen).
+            1. לחץ על כפתור השיתוף <i class="fas fa-share-square"></i> למטה.<br>
+            2. בחר <b>"הוסף למסך הבית"</b>.
         </div>
 
         <div id="loading-txt" class="mt-8 text-xs font-mono font-bold animate-pulse text-blue-400">מאתחל מערכת...</div>
@@ -119,22 +140,13 @@
     <div id="blocker" class="blocker-overlay">
         <div class="blocker-card">
             <div class="unmute-btn" onclick="Siren.play()"><i class="fas fa-volume-up"></i></div>
-            
-            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce text-red-600 text-3xl">
-                <i class="fas fa-bell"></i>
-            </div>
+            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce text-red-600 text-3xl"><i class="fas fa-bell"></i></div>
             <h2 class="text-2xl font-black mb-2">קריאה דחופה!</h2>
             <div class="bg-red-50 p-4 rounded-xl border border-red-100 mb-4 font-bold text-red-900 text-lg leading-tight" id="blocker-msg">...</div>
-            
             <div id="doc-action-area" class="hidden mb-4">
-                <button onclick="openAttachedDoc()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2">
-                    <i class="fas fa-file-pdf"></i> פתח מסמך
-                </button>
+                <button onclick="openAttachedDoc()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2"><i class="fas fa-file-pdf"></i> פתח מסמך</button>
             </div>
-            
-            <button onclick="confirmTask()" class="w-full border-2 border-slate-200 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-50">
-                <i class="fas fa-check"></i> מאשר קבלה
-            </button>
+            <button onclick="confirmTask()" class="w-full border-2 border-slate-200 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-50"><i class="fas fa-check"></i> מאשר קבלה</button>
         </div>
     </div>
 
@@ -149,14 +161,12 @@
         let currentUserData = null;
         let deferredPrompt;
 
-        // --- Service Worker Registration ---
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log("SW Registered Successfully"))
-                .catch(err => console.error("SW Registration Failed", err));
+                .then(reg => console.log("SW OK"))
+                .catch(err => console.error("SW Fail", err));
         }
 
-        // --- PWA Logic ---
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
@@ -194,87 +204,51 @@
             }
         };
 
-        // --- מנוע סאונד פנימי (Siren) ---
         const Siren = {
             ctx: null, osc: null, gain: null, lfo: null,
-            init: function() { 
-                try {
-                    const AudioContext = window.AudioContext || window.webkitAudioContext;
-                    this.ctx = new AudioContext(); 
-                    this.playSilent(); 
-                } catch(e) { console.error("Audio API not supported"); }
-            },
-            playSilent: function() { 
-                // משחרר את הנעילה של הדפדפן
-                if(!this.ctx) return;
-                const o=this.ctx.createOscillator();
-                const g=this.ctx.createGain();
-                g.gain.value=0.001;
-                o.connect(g);
-                g.connect(this.ctx.destination);
-                o.start();
-                o.stop(this.ctx.currentTime+0.1); 
-            },
+            init: function() { try { const AC = window.AudioContext || window.webkitAudioContext; this.ctx = new AC(); this.playSilent(); } catch(e) {} },
+            playSilent: function() { if(!this.ctx)return; const o=this.ctx.createOscillator();const g=this.ctx.createGain();g.gain.value=0.001;o.connect(g);g.connect(this.ctx.destination);o.start();o.stop(this.ctx.currentTime+0.1); },
             play: function() {
-                if (!this.ctx) this.init(); 
-                if (this.ctx.state === 'suspended') this.ctx.resume();
-                
-                // יצירת סירנה
-                this.osc = this.ctx.createOscillator(); 
-                this.gain = this.ctx.createGain(); 
-                this.lfo = this.ctx.createOscillator(); 
-                const lfoGain = this.ctx.createGain();
-                
-                this.osc.type = 'sawtooth'; 
-                this.lfo.type = 'sine'; 
-                this.lfo.frequency.value = 2; // מהירות הסירנה
-                
-                this.lfo.connect(lfoGain); 
-                lfoGain.connect(this.osc.frequency); 
-                lfoGain.gain.value = 200; // טווח גובה הצליל
-                
-                this.osc.frequency.value = 600; 
-                this.osc.connect(this.gain); 
-                this.gain.connect(this.ctx.destination);
-                
-                this.gain.gain.value = 0.5; // עוצמה
-                this.osc.start(); 
-                this.lfo.start();
+                if (!this.ctx) this.init(); if (this.ctx.state === 'suspended') this.ctx.resume();
+                this.osc = this.ctx.createOscillator(); this.gain = this.ctx.createGain(); this.lfo = this.ctx.createOscillator(); const lfoGain = this.ctx.createGain();
+                this.osc.type = 'sawtooth'; this.lfo.type = 'sine'; this.lfo.frequency.value = 2;
+                this.lfo.connect(lfoGain); lfoGain.connect(this.osc.frequency); lfoGain.gain.value = 200;
+                this.osc.frequency.value = 600; this.osc.connect(this.gain); this.gain.connect(this.ctx.destination);
+                this.gain.gain.value = 0.5; this.osc.start(); this.lfo.start();
             },
-            stop: function() { 
-                if(this.osc){
-                    try{ this.osc.stop(); this.lfo.stop(); } catch(e){} 
-                    this.osc=null; 
-                } 
-            }
+            stop: function() { if(this.osc){try{this.osc.stop();this.lfo.stop();}catch(e){} this.osc=null;} }
         };
 
-        // --- לוגיקת זיהוי משתמש והפעלה ---
         onAuthStateChanged(auth, async (user) => {
             const statusTxt = document.getElementById('loading-txt');
             
             if (user) {
-                statusTxt.innerText = "מושך נתוני עובד...";
+                statusTxt.innerText = "מושך נתונים...";
                 statusTxt.className = "mt-8 text-xs font-mono font-bold text-blue-400 animate-pulse";
 
                 try {
-                    // משיכת נתונים ישירות מה-DB (מתעלם מ-Cache אם ה-SW מוגדר נכון)
                     const userDoc = await getDoc(doc(db, "users", user.email));
                     
                     if (userDoc.exists()) {
                         currentUserData = { uid: user.email, ...userDoc.data() };
-                        
                         statusTxt.innerText = `מחובר: ${currentUserData.name}`;
                         statusTxt.className = "mt-8 text-xs font-mono font-bold text-green-500";
                         
                         document.getElementById('user-name-display').innerText = currentUserData.name;
                         document.getElementById('user-avatar').src = currentUserData.photoUrl || `https://ui-avatars.com/api/?name=${currentUserData.name}&background=${currentUserData.color}&color=fff`;
                         
-                        // חיבור OneSignal
+                        // כאן התיקון הקריטי של OneSignal Safe Mode
                         if(window.OneSignalDeferred) {
-                            OneSignalDeferred.push(function(OneSignal) { 
-                                OneSignal.login(user.email); 
-                                console.log("Linked OneSignal to:", user.email);
+                            OneSignalDeferred.push(async function(OneSignal) { 
+                                // בדיקה אם IDB תקין
+                                try {
+                                    let req = window.indexedDB.open("test");
+                                    req.onsuccess = () => { req.result.close(); OneSignal.login(user.email); };
+                                    req.onerror = () => console.warn("Incognito mode detected, notifications disabled");
+                                } catch(e) {
+                                    console.warn("OneSignal Login Skipped (Private Mode)");
+                                    document.getElementById('pwa-warning').classList.remove('hidden');
+                                }
                             });
                         }
                     } else {
@@ -291,39 +265,25 @@
             }
         });
 
-        // --- הפעלה ראשית (כפתור אדום) ---
         window.startSystem = async () => {
-            Siren.init(); // אתחול אודיו
+            Siren.init();
             try { if ('wakeLock' in navigator) await navigator.wakeLock.request('screen'); } catch(e) {}
-            
             document.getElementById('permission-gate').style.display = 'none';
             document.getElementById('main-frame').src = 'dashboard.html';
             startListening();
         };
 
-        // --- האזנה למשימות ---
         function startListening() {
             if (!currentUserData) return;
-            
             onSnapshot(query(collection(db, "tasks"), where("status", "==", "pending")), (snap) => {
                 let foundUrgent = false;
                 snap.forEach(d => {
                     const t = d.data();
                     const isForMe = t.assignedTo === 'all' || t.assignedTo === currentUserData.uid;
                     const notRead = !t.readBy || !t.readBy.includes(currentUserData.uid);
-                    
-                    if (isForMe && notRead && t.mustConfirm) { 
-                        triggerBlocker(d.id, t); 
-                        foundUrgent = true; 
-                    }
+                    if (isForMe && notRead && t.mustConfirm) { triggerBlocker(d.id, t); foundUrgent = true; }
                 });
-                
-                if (!foundUrgent) { 
-                    document.getElementById('blocker').style.display = 'none'; 
-                    Siren.stop(); 
-                }
-            }, (error) => {
-                console.error("Listening failed:", error);
+                if (!foundUrgent) { document.getElementById('blocker').style.display = 'none'; Siren.stop(); }
             });
         }
 
@@ -337,33 +297,12 @@
             Siren.play();
         }
 
-        // --- פעולות UI ---
         window.openAttachedDoc = () => { if(activeDocLink) window.open(activeDocLink, '_blank'); };
-        
-        window.confirmTask = async () => { 
-            if(!activeTaskId)return; 
-            try { 
-                await updateDoc(doc(db,"tasks",activeTaskId),{readBy:arrayUnion(currentUserData.uid)}); 
-                document.getElementById('blocker').style.display='none'; 
-                Siren.stop(); 
-                activeTaskId=null; 
-            } catch(e) { console.error(e); } 
-        };
-        
+        window.confirmTask = async () => { if(!activeTaskId)return; try{ await updateDoc(doc(db,"tasks",activeTaskId),{readBy:arrayUnion(currentUserData.uid)}); document.getElementById('blocker').style.display='none'; Siren.stop(); activeTaskId=null; }catch(e){} };
         window.logout = () => { signOut(auth).then(() => window.location.href = "login.html"); };
-        
         window.goHome = () => { document.getElementById('main-frame').src = 'dashboard.html'; updateNav('nav-home'); };
-        
-        window.openApp = (id, t) => { 
-            let u=id==='harel'?'harel-tasks.html':id==='drive'?'documents-drive.html':id==='chat'?'comm-center.html':id==='calendar'?'calendar-app.html':''; 
-            if(u){ document.getElementById('main-frame').src=u; updateNav(`nav-${id}`); } 
-        };
-        
-        function updateNav(id) { 
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); 
-            const btn = document.getElementById(id); 
-            if(btn) btn.classList.add('active'); 
-        }
+        window.openApp = (id, t) => { let u=id==='harel'?'harel-tasks.html':id==='drive'?'documents-drive.html':id==='chat'?'comm-center.html':id==='calendar'?'calendar-app.html':''; if(u){document.getElementById('main-frame').src=u;updateNav(`nav-${id}`);} };
+        function updateNav(id) { document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); const btn = document.getElementById(id); if(btn) btn.classList.add('active'); }
     </script>
 </body>
 </html>
