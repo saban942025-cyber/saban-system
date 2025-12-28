@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Saban Admin Setup</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-slate-900 text-white flex flex-col items-center justify-center h-screen">
+    
+    <div class="bg-slate-800 p-8 rounded-2xl shadow-2xl text-center max-w-md w-full">
+        <h1 class="text-3xl font-black mb-2 text-blue-500">מנהל מערכת</h1>
+        <p class="text-slate-400 mb-6">לחץ כדי לאפס ולהקים את כל המשתמשים מחדש עם סיסמת ברירת מחדל: <b>SabanSaban</b></p>
+        
+        <button onclick="setupUsers()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition transform active:scale-95">
+            🚀 הקם משתמשים (Re-Seed)
+        </button>
+        
+        <div id="log" class="mt-4 text-xs text-left font-mono bg-black p-4 rounded h-40 overflow-auto text-green-400">
+            מוכן לפעולה...
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        const app = initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" });
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // רשימת העובדים להקמה
+        const usersToCreate = [
+            { email: 'harel@saban.os', name: 'הראל סבן', role: 'מנכ"ל', color: '000000' },
+            { email: 'vered@saban.os', name: 'ורד', role: 'מזכירות', color: 'ec4899' },
+            { email: 'yossi@saban.os', name: 'יוסי', role: 'נהג', color: 'f97316' },
+            { email: 'ahmed@saban.os', name: 'אחמד', role: 'מנהל עבודה', color: '22c55e' }
+        ];
+
+        const DEFAULT_PASS = "SabanSaban"; 
+
+        window.setupUsers = async () => {
+            const log = document.getElementById('log');
+            log.innerHTML = "מתחיל תהליך...<br>";
+            
+            for (const user of usersToCreate) {
+                try {
+                    // יצירת משתמש ב-Auth (אם קיים הוא יזרוק שגיאה, וזה בסדר - נעדכן רק את הדאטה)
+                    log.innerHTML += `> מעבד את ${user.name}...<br>`;
+                    
+                    try {
+                        await createUserWithEmailAndPassword(auth, user.email, DEFAULT_PASS);
+                        log.innerHTML += `  ✅ נוצר משתמש Auth<br>`;
+                    } catch (e) {
+                        log.innerHTML += `  ℹ️ משתמש כבר קיים (מדלג יצירה)<br>`;
+                    }
+
+                    // כתיבה ל-DB (דורס נתונים קודמים כדי לוודא תקינות)
+                    // אנו שומרים את האימייל כ-ID של המסמך כדי שיהיה קל למצוא
+                    await setDoc(doc(db, "users", user.email), {
+                        name: user.name,
+                        role: user.role,
+                        email: user.email,
+                        color: user.color,
+                        mustChangePassword: true // מחייב החלפת סיסמה!
+                    });
+                    
+                    log.innerHTML += `  ✅ נשמר ב-Database<br>`;
+
+                } catch (err) {
+                    log.innerHTML += `❌ שגיאה: ${err.message}<br>`;
+                }
+            }
+            log.innerHTML += "<br>✨ התהליך הסתיים!";
+            Swal.fire('בוצע', 'כל המשתמשים הוגדרו.', 'success');
+        };
+    </script>
+</body>
+</html>
