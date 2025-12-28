@@ -3,208 +3,415 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SabanOS</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0f172a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SabanOS">
+    
+    <link rel="icon" type="image/png" href="https://ui-avatars.com/api/?name=S+O&background=2563eb&color=fff&size=32&rounded=true&bold=true">
+    <link rel="apple-touch-icon" href="https://ui-avatars.com/api/?name=S+O&background=2563eb&color=fff&size=192&rounded=true&bold=true">
+
+    <title>SabanOS Core</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        try {
+            // בדיקת מסד נתונים למניעת קריסה בגלישה בסתר
+            let req = window.indexedDB.open("test");
+            req.onsuccess = () => { req.result.close(); };
+            await OneSignal.init({ 
+                appId: "07b81f2e-e812-424f-beca-36584b12ccf2",
+                serviceWorkerParam: { scope: '/' },
+                serviceWorkerPath: 'OneSignalSDKWorker.js'
+            });
+        } catch (e) { console.warn("Push disabled (Private Mode)"); }
+      });
+    </script>
 
     <style>
-        body { background: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+        body { margin: 0; padding: 0; background: #0f172a; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, sans-serif; user-select: none; -webkit-tap-highlight-color: transparent; }
         
-        /* מסך כניסה (חובה ללחיצה) */
-        #start-gate { position: fixed; inset: 0; background: #0f172a; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
-        .pulse-btn { background: linear-gradient(135deg, #3b82f6, #2563eb); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); animation: pulse-blue 2s infinite; cursor: pointer; margin-top: 20px; }
-        @keyframes pulse-blue { 0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(59, 130, 246, 0); } 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } }
+        /* --- מסך פתיחה (Gate) --- */
+        #permission-gate { position: fixed; inset: 0; background: #0f172a; z-index: 100000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: white; }
+        
+        .action-btn { 
+            margin-top: 30px; width: 240px; padding: 16px; border-radius: 16px; 
+            display: flex; align-items: center; justify-content: center; gap: 12px;
+            font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+        .btn-install { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border: 1px solid #3b82f6; animation: pulseBlue 2s infinite; }
+        .btn-start { background: #ef4444; color: white; border: 1px solid #b91c1c; display: none; animation: pulseRed 2s infinite; }
 
-        /* מסך התראה יוקרתי */
-        #alert-overlay { display: none; position: fixed; inset: 0; background: rgba(220, 38, 38, 0.95); backdrop-filter: blur(10px); z-index: 90; flex-direction: column; align-items: center; justify-content: center; animation: fadeIn 0.3s; }
-        .alert-card { background: white; width: 90%; max-width: 350px; border-radius: 24px; padding: 30px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-        
-        /* דשבורד */
-        .glass-header { background: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; }
-        .nav-bar { background: white; border-top: 1px solid #e2e8f0; height: 65px; display: flex; justify-content: space-around; align-items: center; }
-        .nav-item { color: #94a3b8; display: flex; flex-direction: column; align-items: center; font-size: 10px; font-weight: bold; }
-        .nav-item.active { color: #2563eb; }
-        .nav-item i { font-size: 20px; margin-bottom: 2px; }
+        @keyframes pulseBlue { 0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(37, 99, 235, 0); } 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); } }
+        @keyframes pulseRed { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+
+        /* --- האפליקציה הראשית --- */
+        .app-header { height: 60px; background: white; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border-bottom: 1px solid #e2e8f0; }
+        .main-stage { flex: 1; width: 100%; height: 100%; position: relative; background: #f8fafc; }
+        iframe { width: 100%; height: 100%; border: none; }
+        .bottom-nav { height: 65px; background: white; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-around; align-items: center; padding-bottom: env(safe-area-inset-bottom); }
+        .nav-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; width: 60px; height: 100%; transition: 0.2s; }
+        .nav-btn.active { color: #2563eb; transform: translateY(-2px); }
+        .nav-btn i { font-size: 20px; margin-bottom: 2px; }
+
+        /* --- התראת חירום (אדום) --- */
+        .blocker-overlay { position: fixed; inset: 0; background: rgba(220, 38, 38, 0.98); z-index: 99999; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px; color: white; text-align: center; }
+        .blocker-card { background: white; color: #1e293b; padding: 30px; border-radius: 24px; width: 100%; max-width: 360px; box-shadow: 0 25px 60px rgba(0,0,0,0.5); position: relative; animation: popIn 0.3s; }
+        @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .unmute-btn { position: absolute; top: 10px; right: 10px; background: #fee2e2; color: #ef4444; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; animation: bounce 1s infinite; cursor: pointer; }
+
+        /* --- התראת צ'אט (בועה עליונה) --- */
+        #msg-toast { position: fixed; top: -100px; left: 16px; right: 16px; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); padding: 12px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 1px solid #e2e8f0; z-index: 50; display: flex; align-items: center; gap: 12px; transition: top 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div id="start-gate">
-        <div class="text-3xl font-black mb-1">Saban<span class="text-blue-500">OS</span></div>
-        <p class="text-slate-400 text-sm">מערכת מבצעית</p>
-        <div class="pulse-btn" onclick="startShift()">
-            <i class="fas fa-fingerprint"></i>
+    <div id="permission-gate">
+        <div class="mb-6 text-center">
+            <h1 class="text-4xl font-black mb-1">Saban<span class="text-blue-500">OS</span></h1>
+            <p class="text-slate-400 text-sm">מערכת הפעלה ארגונית</p>
         </div>
-        <div class="mt-8 text-xs text-slate-500 font-mono" id="user-status">מזהה עובד...</div>
+
+        <button id="install-btn" class="action-btn btn-install" onclick="installPWA()">
+            <i class="fas fa-download"></i> התקן לנייד
+        </button>
+
+        <button id="start-btn" class="action-btn btn-start" onclick="startSystem()">
+            <i class="fas fa-power-off"></i> התחל משמרת
+        </button>
+
+        <div id="ios-hint" class="hidden mt-6 bg-slate-800 p-4 rounded-xl text-xs text-left max-w-xs border border-slate-700">
+            <div class="font-bold text-blue-400 mb-1">📢 משתמשי אייפון:</div>
+            1. לחץ על כפתור השיתוף <i class="fas fa-share-square"></i> למטה.<br>
+            2. בחר <b>"הוסף למסך הבית"</b>.
+        </div>
+
+        <div id="loading-txt" class="mt-8 text-xs font-mono font-bold animate-pulse text-blue-400">מאתחל מערכת...</div>
     </div>
 
-    <div id="main-app" class="hidden flex-1 flex flex-col h-full">
-        <div class="glass-header">
-            <div class="flex items-center gap-3">
-                <img id="avatar" src="" class="w-10 h-10 rounded-xl border border-slate-200">
-                <div>
-                    <div class="font-bold text-slate-800 leading-tight" id="user-name">...</div>
-                    <div class="text-[10px] text-green-500 font-bold flex items-center gap-1">
-                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> מחובר
-                    </div>
-                </div>
+    <div class="app-header">
+        <div onclick="goHome()" class="flex items-center gap-2 cursor-pointer">
+            <img id="user-avatar" src="" class="w-8 h-8 rounded-lg border object-cover bg-slate-200">
+            <div>
+                <span class="font-black text-sm text-slate-800 block leading-none">SabanOS</span>
+                <span id="user-name-display" class="text-[10px] text-slate-500">...</span>
             </div>
-            <button onclick="logout()" class="bg-slate-100 p-2 rounded-lg text-slate-500"><i class="fas fa-sign-out-alt"></i></button>
         </div>
+        <button onclick="logout()" class="text-xs bg-slate-100 text-slate-500 px-3 py-1.5 rounded-full border border-slate-200">
+            <i class="fas fa-sign-out-alt"></i> יציאה
+        </button>
+    </div>
 
-        <iframe id="content-frame" src="dashboard.html" class="flex-1 w-full border-none bg-slate-50"></iframe>
+    <div class="main-stage">
+        <iframe id="main-frame" src=""></iframe>
+    </div>
 
-        <div class="nav-bar">
-            <div class="nav-item active" onclick="nav('dashboard.html', this)"><i class="fas fa-home"></i> בית</div>
-            <div class="nav-item" onclick="nav('comm-center.html', this)"><i class="fab fa-whatsapp"></i> צ'אט</div>
-            <div class="nav-item" onclick="nav('documents-drive.html', this)"><i class="fas fa-folder-open"></i> דרייב</div>
-            <div class="nav-item" onclick="nav('harel-tasks.html', this)"><i class="fas fa-tasks"></i> משימות</div>
+    <div class="bottom-nav">
+        <div class="nav-btn active" onclick="openApp('home', this)" id="nav-home">
+            <i class="fas fa-home"></i> בית
+        </div>
+        <div class="nav-btn" onclick="openApp('chat', this)" id="nav-chat">
+            <i class="fab fa-whatsapp"></i> צ'אט
+        </div>
+        <div class="nav-btn" onclick="openApp('drive', this)" id="nav-drive">
+            <i class="fas fa-folder-open"></i> דרייב
+        </div>
+        <div class="nav-btn" onclick="openApp('tasks', this)" id="nav-tasks">
+            <i class="fas fa-tasks"></i> משימות
         </div>
     </div>
 
-    <div id="alert-overlay">
-        <div class="alert-card">
-            <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl animate-bounce">
-                <i class="fas fa-bell"></i>
+    <div id="msg-toast" onclick="openApp('chat', document.getElementById('nav-chat'))">
+        <div class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-white shrink-0">
+            <i class="fab fa-whatsapp text-xl"></i>
+        </div>
+        <div class="overflow-hidden">
+            <div class="font-bold text-sm text-slate-800" id="toast-sender">...</div>
+            <div class="text-xs text-slate-500 truncate" id="toast-text">...</div>
+        </div>
+    </div>
+
+    <div id="blocker" class="blocker-overlay">
+        <div class="blocker-card">
+            <div class="unmute-btn" onclick="Siren.play()"><i class="fas fa-volume-up"></i></div>
+            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce text-red-600 text-3xl"><i class="fas fa-bell"></i></div>
+            <h2 class="text-2xl font-black mb-2">קריאה דחופה!</h2>
+            <div class="bg-red-50 p-4 rounded-xl border border-red-100 mb-4 font-bold text-red-900 text-lg leading-tight" id="blocker-msg">...</div>
+            <div id="doc-action-area" class="hidden mb-4">
+                <button onclick="openAttachedDoc()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2"><i class="fas fa-file-pdf"></i> פתח מסמך</button>
             </div>
-            <h2 class="text-xl font-black text-slate-800 mb-2">הודעה חדשה!</h2>
-            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-slate-700 font-medium mb-6" id="alert-msg">...</div>
-            <button onclick="confirmAlert()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-blue-700 transition">
-                מאשר קבלה <i class="fas fa-check ml-1"></i>
-            </button>
+            <button onclick="confirmTask()" class="w-full border-2 border-slate-200 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-50"><i class="fas fa-check"></i> מאשר קבלה</button>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, updateDoc, onSnapshot, collection, query, where, serverTimestamp, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
+        import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, getDoc, serverTimestamp, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        
         const app = initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" });
         const auth = getAuth(app);
         const db = getFirestore(app);
         
-        let currentUser = null;
+        let currentUserData = null;
         let activeTaskId = null;
-        let audioCtx = null;
+        let deferredPrompt;
 
-        // --- מנוע סאונד עדין (Chime) ---
-        function playGentleChime() {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-
-            const t = audioCtx.currentTime;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-
-            // צליל פעמון (Sine wave)
-            osc.type = 'sine';
-            // תדר מתחיל גבוה ויורד מעט (אפקט "דינג")
-            osc.frequency.setValueAtTime(800, t);
-            osc.frequency.exponentialRampToValueAtTime(500, t + 0.1);
-
-            // עוצמה: מתחילה ודועכת
-            gain.gain.setValueAtTime(0.5, t);
-            gain.gain.exponentialRampToValueAtTime(0.01, t + 1.5);
-
-            osc.start(t);
-            osc.stop(t + 1.5);
+        // PWA Registration
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(err => console.log(err));
         }
 
-        // 1. זיהוי משתמש
-        onAuthStateChanged(auth, async (user) => {
-            if (!user) { window.location.href = 'login.html'; return; }
-            
-            const docSnap = await getDoc(doc(db, "users", user.email));
-            if (docSnap.exists()) {
-                currentUser = { email: user.email, ...docSnap.data() };
-                document.getElementById('user-status').innerText = "שלום " + currentUser.name;
-                document.getElementById('user-name').innerText = currentUser.name;
-                document.getElementById('avatar').src = currentUser.photoUrl || `https://ui-avatars.com/api/?name=${currentUser.name}&background=${currentUser.color}&color=fff`;
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+        // --- PWA UI Logic ---
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault(); deferredPrompt = e;
+            if (!isStandalone) document.getElementById('install-btn').style.display = 'flex';
+            else document.getElementById('start-btn').style.display = 'flex';
+        });
+
+        window.addEventListener('load', () => {
+            if (isStandalone) {
+                document.getElementById('install-btn').style.display = 'none';
+                document.getElementById('start-btn').style.display = 'flex';
+            } else {
+                if(isIOS) {
+                    document.getElementById('ios-hint').classList.remove('hidden');
+                    document.getElementById('start-btn').style.display = 'flex';
+                } else {
+                    document.getElementById('install-btn').style.display = 'flex';
+                }
             }
         });
 
-        // 2. התחלת משמרת
-        window.startShift = () => {
-            // אתחול סאונד ראשוני (שקט) כדי לשחרר חסימה
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            audioCtx.resume();
-
-            document.getElementById('start-gate').style.display = 'none';
-            document.getElementById('main-app').classList.remove('hidden');
-            
-            // הפעלת מנועים
-            startHeartbeat();
-            listenForTasks();
+        window.installPWA = async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    document.getElementById('install-btn').style.display = 'none';
+                    document.getElementById('start-btn').style.display = 'flex';
+                }
+                deferredPrompt = null;
+            }
         };
 
-        // 3. דופק (Heartbeat) - כל 10 שניות
-        function startHeartbeat() {
-            setInterval(() => {
-                if(!currentUser) return;
-                updateDoc(doc(db, "users", currentUser.email), {
+        // --- מערכת סאונד כפולה (Audio Engine) ---
+        const AudioEngine = {
+            ctx: null,
+            init: function() { try { const AC = window.AudioContext || window.webkitAudioContext; this.ctx = new AC(); this.unlock(); } catch(e){} },
+            unlock: function() { 
+                if(!this.ctx) return;
+                const o=this.ctx.createOscillator(); const g=this.ctx.createGain(); g.gain.value=0.001;
+                o.connect(g); g.connect(this.ctx.destination); o.start(); o.stop(this.ctx.currentTime+0.1); 
+            },
+            
+            // סירנה למשימות דחופות (Sawtooth)
+            playSiren: function() {
+                if (!this.ctx) this.init(); if (this.ctx.state === 'suspended') this.ctx.resume();
+                this.sirenOsc = this.ctx.createOscillator(); 
+                this.sirenGain = this.ctx.createGain();
+                this.lfo = this.ctx.createOscillator(); 
+                const lfoGain = this.ctx.createGain();
+                
+                this.sirenOsc.type = 'sawtooth'; 
+                this.lfo.type = 'sine'; this.lfo.frequency.value = 2;
+                this.lfo.connect(lfoGain); lfoGain.connect(this.sirenOsc.frequency); lfoGain.gain.value = 200;
+                
+                this.sirenOsc.frequency.value = 600; 
+                this.sirenOsc.connect(this.sirenGain); this.sirenGain.connect(this.ctx.destination);
+                this.sirenGain.gain.value = 0.5;
+                
+                this.sirenOsc.start(); this.lfo.start();
+            },
+            stopSiren: function() { 
+                if(this.sirenOsc){ try{this.sirenOsc.stop();this.lfo.stop();}catch(e){} this.sirenOsc=null; } 
+            },
+
+            // צליל עדין להודעות (Sine chime)
+            playChime: function() {
+                if (!this.ctx) this.init(); if (this.ctx.state === 'suspended') this.ctx.resume();
+                const o = this.ctx.createOscillator();
+                const g = this.ctx.createGain();
+                o.connect(g); g.connect(this.ctx.destination);
+                
+                o.type = 'sine';
+                o.frequency.setValueAtTime(800, this.ctx.currentTime);
+                o.frequency.exponentialRampToValueAtTime(500, this.ctx.currentTime + 0.3);
+                
+                g.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.5);
+                
+                o.start(); o.stop(this.ctx.currentTime + 0.5);
+            }
+        };
+
+        // --- לוגיקת זיהוי משתמש ---
+        onAuthStateChanged(auth, async (user) => {
+            const statusTxt = document.getElementById('loading-txt');
+            if (user) {
+                statusTxt.innerText = "טוען נתונים...";
+                try {
+                    const userDoc = await getDoc(doc(db, "users", user.email));
+                    if (userDoc.exists()) {
+                        currentUserData = { uid: user.email, ...userDoc.data() };
+                        statusTxt.innerText = `מחובר: ${currentUserData.name}`;
+                        statusTxt.className = "mt-8 text-xs font-mono font-bold text-green-500";
+                        
+                        document.getElementById('user-name-display').innerText = currentUserData.name;
+                        document.getElementById('user-avatar').src = currentUserData.photoUrl || `https://ui-avatars.com/api/?name=${currentUserData.name}&background=${currentUserData.color}&color=fff`;
+                        
+                        // חיבור OneSignal
+                        if(window.OneSignalDeferred) OneSignalDeferred.push(function(OneSignal) { OneSignal.login(user.email); });
+                        
+                        // הפעלת דופק
+                        startHeartbeat(user.email);
+
+                    } else { statusTxt.innerText = "שגיאה: משתמש לא קיים"; }
+                } catch (error) { statusTxt.innerText = "שגיאת רשת"; }
+            } else { window.location.href = "login.html"; }
+        });
+
+        // --- הפעלה ראשית ---
+        window.startSystem = async () => {
+            AudioEngine.init();
+            try { if ('wakeLock' in navigator) await navigator.wakeLock.request('screen'); } catch(e) {}
+            
+            document.getElementById('permission-gate').style.display = 'none';
+            document.getElementById('main-frame').src = 'dashboard.html';
+            
+            startTaskListener();
+            startChatListener();
+        };
+
+        // --- מנגנון הלב הפועם (Heartbeat) ---
+        function startHeartbeat(email) {
+            const beat = () => {
+                const device = /Mobile/i.test(navigator.userAgent) ? 'Mobile' : 'Desktop';
+                updateDoc(doc(db, "users", email), {
                     lastSeen: serverTimestamp(),
                     status: 'online',
-                    device: /Mobile/.test(navigator.userAgent) ? 'Mobile' : 'Desktop'
-                }).catch(e => console.log("Offline mode"));
-            }, 10000);
+                    device: device
+                }).catch(()=>{});
+            };
+            beat();
+            setInterval(beat, 60000); // כל דקה
         }
 
-        // 4. האזנה למשימות
-        function listenForTasks() {
-            const q = query(collection(db, "tasks"), where("assignedTo", "==", currentUser.email), where("status", "==", "pending"));
+        // --- האזנה למשימות דחופות ---
+        function startTaskListener() {
+            if (!currentUserData) return;
+            onSnapshot(query(collection(db, "tasks"), where("status", "==", "pending")), (snap) => {
+                let foundUrgent = false;
+                snap.forEach(d => {
+                    const t = d.data();
+                    const isForMe = t.assignedTo === 'all' || t.assignedTo === currentUserData.uid;
+                    const notRead = !t.readBy || !t.readBy.includes(currentUserData.uid);
+                    if (isForMe && notRead && t.mustConfirm) { 
+                        triggerBlocker(d.id, t); 
+                        foundUrgent = true; 
+                    }
+                });
+                if (!foundUrgent) { 
+                    document.getElementById('blocker').style.display = 'none'; 
+                    AudioEngine.stopSiren(); 
+                }
+            });
+        }
+
+        function triggerBlocker(id, taskData) {
+            if (document.getElementById('blocker').style.display === 'flex') return;
+            activeTaskId = id;
+            document.getElementById('blocker-msg').innerText = taskData.title;
+            if (taskData.docLink) { window.activeDocLink = taskData.docLink; document.getElementById('doc-action-area').classList.remove('hidden'); } 
+            else { document.getElementById('doc-action-area').classList.add('hidden'); }
             
-            onSnapshot(q, (snapshot) => {
-                snapshot.docChanges().forEach((change) => {
+            document.getElementById('blocker').style.display = 'flex';
+            AudioEngine.playSiren();
+            
+            // עדכון לוג
+            updateDoc(doc(db, "users", currentUserData.uid), { lastAction: "קיבל התראה דחופה" });
+        }
+
+        // --- האזנה להודעות צ'אט ---
+        function startChatListener() {
+            // מאזין להודעה האחרונה שנוצרה
+            const q = query(collection(db, "chats"), orderBy("createdAt", "desc"), limit(1));
+            
+            onSnapshot(q, (snap) => {
+                snap.docChanges().forEach((change) => {
                     if (change.type === "added") {
-                        const task = change.doc.data();
-                        // וודא שלא נקרא כבר
-                        if (!task.readBy || !task.readBy.includes(currentUser.email)) {
-                            triggerAlert(change.doc.id, task.title);
+                        const msg = change.doc.data();
+                        
+                        // אם זה לא אני, ועדיין לא קראתי
+                        if (msg.email !== currentUserData.uid && (!msg.readBy || !msg.readBy.includes(currentUserData.uid))) {
+                            
+                            // אם אני לא בתוך הצ'אט כרגע - הצג התראה
+                            const currentFrame = document.getElementById('main-frame').src;
+                            if (!currentFrame.includes('comm-center.html')) {
+                                showChatToast(msg.senderName, msg.text);
+                            }
                         }
                     }
                 });
             });
         }
 
-        function triggerAlert(id, title) {
-            activeTaskId = id;
-            document.getElementById('alert-msg').innerText = title;
-            document.getElementById('alert-overlay').style.display = 'flex';
+        function showChatToast(sender, text) {
+            const toast = document.getElementById('msg-toast');
+            document.getElementById('toast-sender').innerText = sender;
+            document.getElementById('toast-text').innerText = text;
             
-            // ניגון צליל עדין בלופ (כל 2 שניות)
-            playGentleChime();
-            window.alertInterval = setInterval(playGentleChime, 2500);
+            toast.style.top = "16px"; // החלקה למטה
+            AudioEngine.playChime(); // צליל עדין
+            
+            setTimeout(() => { toast.style.top = "-100px"; }, 4000); // העלמה
         }
 
-        window.confirmAlert = async () => {
-            if(!activeTaskId) return;
-            clearInterval(window.alertInterval); // הפסקת צליל
+        // --- UI Actions ---
+        window.openAttachedDoc = () => { if(window.activeDocLink) window.open(window.activeDocLink, '_blank'); };
+        
+        window.confirmTask = async () => { 
+            if(!activeTaskId)return; 
+            try{ 
+                await updateDoc(doc(db,"tasks",activeTaskId),{readBy:arrayUnion(currentUserData.uid)}); 
+                document.getElementById('blocker').style.display='none'; 
+                AudioEngine.stopSiren(); 
+                activeTaskId=null; 
+            } catch(e){} 
+        };
+        
+        window.logout = () => signOut(auth).then(() => window.location.href="login.html");
+        window.goHome = () => { document.getElementById('main-frame').src = 'dashboard.html'; updateNavState(document.getElementById('nav-home')); };
+        
+        window.openApp = (page, el) => {
+            let url = '';
+            if(page === 'home') url = 'dashboard.html';
+            if(page === 'chat') url = 'comm-center.html';
+            if(page === 'drive') url = 'documents-drive.html';
+            if(page === 'tasks') url = 'harel-tasks.html';
             
-            await updateDoc(doc(db, "tasks", activeTaskId), {
-                readBy: arrayUnion(currentUser.email),
-                status: 'read'
-            });
-            
-            document.getElementById('alert-overlay').style.display = 'none';
-            activeTaskId = null;
+            if(url) {
+                document.getElementById('main-frame').src = url;
+                if(el) updateNavState(el);
+            }
         };
 
-        // UI Helpers
-        window.nav = (url, el) => {
-            document.getElementById('content-frame').src = url;
-            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        function updateNavState(el) {
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             el.classList.add('active');
-        };
-        window.logout = () => signOut(auth).then(() => location.reload());
+        }
     </script>
 </body>
 </html>
