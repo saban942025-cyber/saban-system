@@ -17,8 +17,6 @@
         .filter-chip { padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; background: white; border: 1px solid #e2e8f0; color: #64748b; margin-left: 8px; cursor: pointer; transition: 0.2s; white-space: nowrap; }
         .filter-chip.active { background: #2563eb; color: white; border-color: #2563eb; }
         .fab-upload { position: fixed; bottom: 30px; left: 24px; width: 64px; height: 64px; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; box-shadow: 0 10px 25px rgba(37, 99, 235, 0.4); z-index: 50; }
-        
-        /* כפתור שיתוף בתוך הכרטיס */
         .share-btn { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #94a3b8; margin-right: 8px; border: 1px solid #e2e8f0; }
         .share-btn:active { background: #eff6ff; color: #2563eb; border-color: #2563eb; }
     </style>
@@ -56,21 +54,19 @@
     <button class="fab-upload" onclick="openUpload()"><i class="fas fa-plus"></i></button>
 
     <script type="module">
-        // Firebase Imports (חובה כדי לשלוח משימה)
+        // הוספנו את getDocs כדי לשלוף משתמשים
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, serverTimestamp, getDocs, query } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
         
-        // Google Scripts (Docs & Alerts)
+        // הלינקים שלך (וודא שהם מעודכנים)
         const DOCS_API = "https://script.google.com/macros/s/AKfycbzu62mOPdMtttJVtVFncilG6rnxlfJ65ykMHNpGvkBzDoL3ECttcJ5uK2RAYIydveM9/exec";
-        // הוסף כאן את ה-URL של סקריפט ההתראות שיצרת קודם (Saban Alerts)
-        const ALERTS_API = "https://script.google.com/macros/s/AKfycbzu62mOPdMtttJVtVFncilG6rnxlfJ65ykMHNpGvkBzDoL3ECttcJ5uK2RAYIydveM9/exec"; // החלף ב-URL הנכון אם הוא שונה
+        const ALERTS_API = "https://script.google.com/macros/s/AKfycbzu62mOPdMtttJVtVFncilG6rnxlfJ65ykMHNpGvkBzDoL3ECttcJ5uK2RAYIydveM9/exec";
 
         let dbFiles = [];
         let currentFilter = 'all';
 
-        // הופך לפונקציה גלובלית כדי שה-HTML יכיר
         window.init = async () => { loadData(); };
         
         async function loadData() {
@@ -131,27 +127,46 @@
                 denyButtonColor: '#ef4444'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // WhatsApp
                     const text = `היי, מצורף מסמך לעיונך: ${name} \n${url}`;
                     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
                 } else if (result.isDenied) {
-                    // Send to Team
                     selectUserAndSend(url, name);
                 }
             });
         };
 
+        // --- התיקון: פונקציה ששולפת משתמשים אמיתיים ---
+        async function getUsersList() {
+            try {
+                const usersRef = collection(db, "users");
+                const snapshot = await getDocs(usersRef);
+                
+                let usersOptions = { 'all': '📢 כולם (הודעה מתפרצת)' };
+                
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    // מציג שם + תפקיד אם קיים
+                    usersOptions[doc.id] = data.name + (data.role ? ` (${data.role})` : '');
+                });
+                return usersOptions;
+            } catch (error) {
+                console.error("Error fetching users:", error);
+                // גיבוי למקרה של תקלה
+                return { 'all': '📢 כולם (שגיאת טעינת משתמשים)' };
+            }
+        }
+
         async function selectUserAndSend(url, name) {
-            // רשימת עובדים מדמה - אפשר לשלוף מ-Firebase אם רוצים
+            // קודם שולפים את המשתמשים
+            Swal.fire({ title: 'טוען אנשי קשר...', didOpen: () => Swal.showLoading() });
+            const realUsers = await getUsersList();
+            Swal.close();
+
+            // ואז מציגים את הבחירה
             const { value: userId } = await Swal.fire({
                 title: 'בחר עובד להקפצה',
                 input: 'select',
-                inputOptions: {
-                    'all': '📢 כולם (הודעה מתפרצת)',
-                    'vered': 'ורד (מזכירות)',
-                    'yossi': 'יוסי (נהג)',
-                    'ahmed': 'אחמד (שטח)'
-                },
+                inputOptions: realUsers, // משתמשים ברשימה האמיתית
                 inputPlaceholder: 'בחר נמען...',
                 showCancelButton: true,
                 confirmButtonText: 'שגר התראה 🚀'
@@ -161,20 +176,18 @@
                 Swal.fire({ title: 'משגר...', didOpen: () => Swal.showLoading() });
                 
                 try {
-                    // 1. יצירת משימה חוסמת ב-Firebase
                     await addDoc(collection(db, "tasks"), {
                         title: "מסמך לעיון דחוף: " + name,
                         desc: "נשלח מהארכיון. יש לאשר צפייה.",
-                        docLink: url, // הלינק למסמך
+                        docLink: url,
                         assignedTo: userId,
-                        mustConfirm: true, // מפעיל את המסך האדום
+                        mustConfirm: true,
                         createdBy: 'הראל',
                         createdAt: serverTimestamp(),
                         status: 'pending',
                         readBy: []
                     });
 
-                    // 2. שליחת Push דרך הגוגל סקריפט
                     fetch(ALERTS_API, {
                         method: "POST",
                         mode: 'no-cors',
@@ -196,12 +209,10 @@
         window.setFilter = (tag, btn) => { currentFilter = tag; document.querySelectorAll('.filter-chip').forEach(el => el.classList.remove('active')); btn.classList.add('active'); renderList(); };
         window.filterDocs = () => renderList();
         
-        // פונקציית העלאה (כמו קודם) - קוצרה לנוחות
-        window.openUpload = async () => { /* ... אותו קוד העלאה מקודם ... */ 
-             // (תעתיק לכאן את פונקציית openUpload המלאה מהקוד הקודם כדי לשמור על היכולת להעלות)
-             const { value: formValues } = await Swal.fire({
+        window.openUpload = async () => {
+            const { value: formValues } = await Swal.fire({
                 title: 'העלאה',
-                html: '<input type="file" id="up-file" class="swal2-input"><select id="up-tag" class="swal2-input"><option value="כללי">כללי</option><option value="חשבונית">חשבונית</option></select>',
+                html: '<input type="file" id="up-file" class="swal2-input"><select id="up-tag" class="swal2-input"><option value="כללי">כללי</option><option value="חשבונית">חשבונית</option><option value="חוזה">חוזה</option><option value="תוכנית">תוכנית</option><option value="תמונה">תמונה</option></select>',
                 preConfirm: () => [document.getElementById('up-file').files[0], document.getElementById('up-tag').value]
             });
             if(formValues && formValues[0]) {
@@ -209,9 +220,11 @@
                 reader.readAsDataURL(formValues[0]);
                 reader.onload = async () => {
                     const base64 = reader.result.split(',')[1];
-                    Swal.showLoading();
-                    await fetch(DOCS_API, { method: "POST", mode: 'no-cors', headers:{"Content-Type":"application/json"}, body: JSON.stringify({action:"upload_file", fileName:formValues[0].name, mimeType:formValues[0].type, fileData:base64, tag:formValues[1]})});
-                    Swal.fire('הצלחה','','success'); setTimeout(loadData, 2000);
+                    Swal.fire({ title: 'מעלה...', didOpen: () => Swal.showLoading() });
+                    try {
+                        await fetch(DOCS_API, { method: "POST", mode: 'no-cors', headers:{"Content-Type":"application/json"}, body: JSON.stringify({action:"upload_file", fileName:formValues[0].name, mimeType:formValues[0].type, fileData:base64, tag:formValues[1]})});
+                        Swal.fire('הצלחה','','success'); setTimeout(loadData, 2000);
+                    } catch (e) { Swal.fire('שגיאה','','error'); }
                 }
             }
         };
