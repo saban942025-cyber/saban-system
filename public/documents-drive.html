@@ -3,120 +3,333 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Saban Drive</title>
+    <title>Saban Drive Pro</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <style>
-        body { background: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding-bottom: 90px; }
-        .header-sticky { background: rgba(255,255,255,0.95); backdrop-filter: blur(5px); padding: 16px; position: sticky; top: 0; z-index: 40; border-bottom: 1px solid #e2e8f0; }
-        .doc-card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 12px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
-        .icon-box { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
-        .ic-pdf { background: #fef2f2; color: #ef4444; } .ic-xls { background: #f0fdf4; color: #22c55e; } .ic-img { background: #faf5ff; color: #a855f7; } .ic-doc { background: #eff6ff; color: #3b82f6; } 
-        .share-btn { width: 36px; height: 36px; border-radius: 50%; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 14px; }
-        .fab-upload { position: fixed; bottom: 30px; left: 24px; width: 60px; height: 60px; background: #2563eb; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 10px 25px rgba(37, 99, 235, 0.4); z-index: 50; }
+        body { 
+            background: #f8fafc; 
+            color: #334155; 
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+            padding-bottom: 100px; /* מקום לתפריט התחתון באפליקציה הראשית */
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* כותרת דביקה */
+        .header-sticky { 
+            background: rgba(255,255,255,0.95); 
+            backdrop-filter: blur(5px); 
+            padding: 16px 20px 10px 20px; 
+            position: sticky; top: 0; z-index: 40; 
+            border-bottom: 1px solid #e2e8f0; 
+        }
+
+        /* כרטיס קובץ */
+        .doc-card { 
+            background: white; 
+            border: 1px solid #e2e8f0; 
+            border-radius: 16px; 
+            padding: 12px; 
+            margin-bottom: 12px; 
+            display: flex; align-items: center; justify-content: space-between; 
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02); 
+            transition: transform 0.1s;
+        }
+        .doc-card:active { transform: scale(0.98); background: #f1f5f9; }
+
+        /* אייקונים לפי סוג */
+        .icon-box { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+        .ic-pdf { background: #fef2f2; color: #ef4444; } 
+        .ic-xls { background: #f0fdf4; color: #22c55e; } 
+        .ic-img { background: #faf5ff; color: #a855f7; } 
+        .ic-doc { background: #eff6ff; color: #3b82f6; } 
+
+        /* תגיות סינון */
+        .filter-chip { 
+            padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; 
+            background: white; border: 1px solid #e2e8f0; color: #64748b; margin-left: 8px; 
+            cursor: pointer; transition: 0.2s; white-space: nowrap; 
+        }
+        .filter-chip.active { background: #2563eb; color: white; border-color: #2563eb; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2); }
+
+        /* כפתור שיתוף */
+        .share-btn { 
+            width: 38px; height: 38px; border-radius: 50%; 
+            background: #f1f5f9; color: #2563eb; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 14px; border: 1px solid #e2e8f0;
+            z-index: 10;
+        }
+        .share-btn:active { background: #2563eb; color: white; }
+
+        /* כפתור העלאה צף */
+        .fab-upload { 
+            position: fixed; bottom: 90px; left: 24px; width: 60px; height: 60px; 
+            background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; 
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+            font-size: 24px; box-shadow: 0 10px 25px rgba(37, 99, 235, 0.4); z-index: 50; 
+            transition: 0.2s;
+        }
+        .fab-upload:active { transform: rotate(90deg) scale(0.9); }
     </style>
 </head>
 <body>
 
     <div class="header-sticky">
-        <h1 class="text-xl font-black text-slate-800">המסמכים שלי</h1>
-        <input type="text" id="search" onkeyup="renderList()" placeholder="חיפוש..." class="w-full mt-3 bg-slate-100 border-none rounded-xl py-3 px-4 text-sm font-medium focus:bg-white transition">
+        <div class="flex justify-between items-center mb-4">
+            <div>
+                <h1 class="text-2xl font-black text-slate-800 tracking-tight">המסמכים שלי</h1>
+                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">ארכיון חברה</p>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+                <i class="fas fa-cloud-download-alt"></i>
+            </div>
+        </div>
+
+        <div class="relative mb-4">
+            <input type="text" id="search" onkeyup="renderList()" placeholder="חיפוש קובץ..." class="w-full bg-slate-100 border-none rounded-2xl py-3.5 px-12 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+            <i class="fas fa-search absolute right-4 top-3.5 text-slate-400"></i>
+        </div>
+
+        <div class="flex overflow-x-auto pb-2 no-scrollbar">
+            <div class="filter-chip active" onclick="setFilter('all', this)">הכל</div>
+            <div class="filter-chip" onclick="setFilter('חשבונית', this)">💰 חשבוניות</div>
+            <div class="filter-chip" onclick="setFilter('חוזה', this)">📜 חוזים</div>
+            <div class="filter-chip" onclick="setFilter('תוכנית', this)">🏗️ תוכניות</div>
+            <div class="filter-chip" onclick="setFilter('תמונה', this)">📷 תמונות</div>
+        </div>
     </div>
 
-    <div id="doc-list" class="p-4 space-y-3">
-        <div class="text-center pt-20 text-slate-400">טוען...</div>
+    <div id="doc-list" class="p-4 space-y-3 min-h-[300px]">
+        <div class="text-center pt-20 animate-pulse">
+            <div class="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full mx-auto mb-4 animate-spin"></div>
+            <div class="text-slate-400 text-sm font-medium">טוען מהענן...</div>
+        </div>
     </div>
 
-    <button class="fab-upload" onclick="openUpload()"><i class="fas fa-plus"></i></button>
+    <button class="fab-upload" onclick="openUpload()">
+        <i class="fas fa-plus"></i>
+    </button>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         
+        // הגדרות Firebase
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
         
-        // וודא שזה הלינק העדכני שיצרת
+        // ה-API של גוגל סקריפט (וודא שזה הלינק המעודכן שלך שעובד עם המלשינון)
         const DOCS_API = "https://script.google.com/macros/s/AKfycbzu62mOPdMtttJVtVFncilG6rnxlfJ65ykMHNpGvkBzDoL3ECttcJ5uK2RAYIydveM9/exec";
         
         let dbFiles = [];
+        let currentFilter = 'all';
 
+        // 1. טעינת קבצים
         window.init = async () => {
-            const res = await fetch(DOCS_API + "?t=" + new Date().getTime());
-            const data = await res.json();
-            if (data.status === 'success') { dbFiles = data.files; renderList(); }
-        };
-
-        window.renderList = () => {
-            const container = document.getElementById('doc-list');
-            const term = document.getElementById('search').value.toLowerCase();
-            const filtered = dbFiles.filter(f => f.name.toLowerCase().includes(term));
-
-            container.innerHTML = filtered.map(f => `
-                <div class="doc-card">
-                    <div class="flex items-center gap-3 w-full" onclick="window.open('${f.url}', '_blank')">
-                        <div class="icon-box ${f.type.includes('pdf') ? 'ic-pdf' : 'ic-doc'}"><i class="fas fa-file-alt"></i></div>
-                        <div class="overflow-hidden">
-                            <div class="font-bold text-sm truncate w-40">${f.name}</div>
-                            <div class="text-[10px] text-slate-400">${f.desc || 'כללי'}</div>
-                        </div>
-                    </div>
-                    <button class="share-btn" onclick="shareDoc('${f.url}', '${f.name}')">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
-                </div>
-            `).join('');
-        };
-
-        // --- תיקון: שליפת משתמשים אמיתיים ---
-        window.shareDoc = async (url, name) => {
-            // 1. שלוף את המשתמשים מ-Firebase
-            Swal.showLoading();
-            const usersSnap = await getDocs(collection(db, "users"));
-            let userOptions = { 'all': '📢 כולם (הודעה מתפרצת)' };
-            
-            usersSnap.forEach(doc => {
-                const u = doc.data();
-                // המפתח הוא האימייל (זה מה שחשוב!), הערך הוא השם
-                userOptions[u.email] = `${u.name} (${u.jobTitle || u.role})`; 
-            });
-            Swal.close();
-
-            // 2. הצג בחירה
-            const { value: selectedEmail } = await Swal.fire({
-                title: 'שליחת מסמך',
-                text: name,
-                input: 'select',
-                inputOptions: userOptions,
-                inputPlaceholder: 'בחר עובד מהרשימה',
-                showCancelButton: true,
-                confirmButtonText: 'שגר התראה 🚀'
-            });
-
-            if (selectedEmail) {
-                // 3. יצירת משימה עם האימייל המדויק
-                await addDoc(collection(db, "tasks"), {
-                    title: "קיבלת מסמך חדש",
-                    desc: name,
-                    docLink: url,
-                    assignedTo: selectedEmail, // כאן נכנס האימייל המדויק (למשל vered@saban.os)
-                    mustConfirm: true,
-                    createdBy: localStorage.getItem('saban_user_email') || 'System',
-                    createdAt: serverTimestamp(),
-                    status: 'pending',
-                    readBy: []
-                });
-
-                Swal.fire('נשלח!', 'ההתראה הוקפצה למסך של העובד.', 'success');
+            try {
+                // הוספת Timestamp כדי למנוע Cache
+                const res = await fetch(DOCS_API + "?t=" + new Date().getTime());
+                const data = await res.json();
+                
+                if (data.status === 'success') {
+                    dbFiles = data.files;
+                    renderList();
+                } else {
+                    document.getElementById('doc-list').innerHTML = '<div class="text-center pt-10 text-red-400">שגיאת טעינה מהשרת</div>';
+                }
+            } catch (e) {
+                console.error(e);
+                document.getElementById('doc-list').innerHTML = '<div class="text-center pt-10 text-slate-400">אין חיבור לאינטרנט</div>';
             }
         };
 
-        window.openUpload = async () => { 
-            /* כאן תעתיק את פונקציית ההעלאה הרגילה שלך אם חסרה */ 
-            Swal.fire('פונקציית העלאה', 'יש להעתיק מהקוד הקודם', 'info');
+        // 2. הצגת רשימה
+        window.renderList = () => {
+            const container = document.getElementById('doc-list');
+            const term = document.getElementById('search').value.toLowerCase();
+            
+            const filtered = dbFiles.filter(f => {
+                const matchText = f.name.toLowerCase().includes(term) || (f.desc && f.desc.toLowerCase().includes(term));
+                const matchTag = currentFilter === 'all' || (f.desc && f.desc.includes(currentFilter));
+                return matchText && matchTag;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                <div class="text-center text-slate-400 pt-10">
+                    <i class="fas fa-folder-open text-4xl mb-3 opacity-30"></i>
+                    <div>לא נמצאו קבצים</div>
+                </div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(f => {
+                let iconClass = 'ic-doc'; let icon = 'fa-file-alt';
+                
+                if (f.type.includes('pdf')) { iconClass = 'ic-pdf'; icon = 'fa-file-pdf'; }
+                else if (f.type.includes('sheet') || f.type.includes('csv') || f.type.includes('excel')) { iconClass = 'ic-xls'; icon = 'fa-file-excel'; }
+                else if (f.type.includes('image')) { iconClass = 'ic-img'; icon = 'fa-image'; }
+
+                return `
+                <div class="doc-card">
+                    <div class="flex items-center gap-3 w-full" onclick="window.open('${f.url}', '_blank')">
+                        <div class="icon-box ${iconClass}"><i class="fas ${icon}"></i></div>
+                        <div class="overflow-hidden">
+                            <div class="font-bold text-slate-800 text-sm truncate w-36">${f.name}</div>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="bg-slate-100 text-slate-500 text-[10px] px-2 py-0.5 rounded font-bold">${f.desc || 'כללי'}</span>
+                                <span class="text-[10px] text-slate-400">${f.date ? f.date.split(',')[0] : ''}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="share-btn" onclick="shareDoc('${f.url}', '${f.name}')">
+                        <i class="fas fa-share-alt"></i>
+                    </button>
+                </div>`;
+            }).join('');
         };
 
+        // 3. לוגיקת סינון
+        window.setFilter = (tag, btn) => {
+            currentFilter = tag;
+            document.querySelectorAll('.filter-chip').forEach(el => el.classList.remove('active'));
+            btn.classList.add('active');
+            renderList();
+        };
+
+        // 4. העלאת קובץ
+        window.openUpload = async () => {
+            const { value: formValues } = await Swal.fire({
+                title: 'העלאת קובץ חדש',
+                html: `
+                    <div class="text-right">
+                        <label class="block text-xs font-bold text-slate-500 mb-1">בחר קובץ:</label>
+                        <input type="file" id="up-file" class="w-full bg-slate-50 border border-slate-200 p-2 rounded-lg mb-4 text-sm">
+                        <label class="block text-xs font-bold text-slate-500 mb-1">תיוג:</label>
+                        <select id="up-tag" class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-lg text-sm font-bold">
+                            <option value="כללי">📁 כללי</option>
+                            <option value="חשבונית">💰 חשבונית</option>
+                            <option value="חוזה">📜 חוזה</option>
+                            <option value="תוכנית">🏗️ תוכנית</option>
+                            <option value="תמונה">📷 תמונה</option>
+                        </select>
+                    </div>
+                `,
+                confirmButtonText: 'שמור בארכיון',
+                confirmButtonColor: '#2563eb',
+                showCancelButton: true,
+                cancelButtonText: 'ביטול',
+                preConfirm: () => {
+                    const file = document.getElementById('up-file').files[0];
+                    const tag = document.getElementById('up-tag').value;
+                    if (!file) Swal.showValidationMessage('חובה לבחור קובץ');
+                    return { file, tag };
+                }
+            });
+
+            if (formValues) {
+                const reader = new FileReader();
+                reader.readAsDataURL(formValues.file);
+                reader.onload = async () => {
+                    const base64 = reader.result.split(',')[1];
+                    
+                    Swal.fire({ title: 'מעלה...', didOpen: () => Swal.showLoading() });
+
+                    try {
+                        // מצב no-cors עיוור
+                        await fetch(DOCS_API, {
+                            method: "POST",
+                            mode: 'no-cors',
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                action: "upload_file",
+                                fileName: formValues.file.name,
+                                mimeType: formValues.file.type,
+                                fileData: base64,
+                                tag: formValues.tag
+                            })
+                        });
+
+                        Swal.fire('הצלחה', 'הקובץ נשלח לשמירה', 'success');
+                        setTimeout(init, 3000); // רענון
+
+                    } catch (e) {
+                        Swal.fire('שגיאה', 'ההעלאה נכשלה', 'error');
+                    }
+                };
+            }
+        };
+
+        // 5. שיתוף מסמך (הפונקציה המתוקנת עם targetEmail)
+        window.shareDoc = async (url, name) => {
+            // שליפת משתמשים אמיתיים
+            Swal.fire({ title: 'טוען אנשי קשר...', didOpen: () => Swal.showLoading(), showConfirmButton: false });
+            
+            try {
+                const usersSnap = await getDocs(collection(db, "users"));
+                let userOptions = { 'all': '📢 כולם (הודעה מתפרצת)' };
+                
+                usersSnap.forEach(doc => {
+                    const u = doc.data();
+                    // המפתח הוא האימייל, הערך הוא השם לתצוגה
+                    userOptions[u.email] = `${u.name} (${u.jobTitle || u.role})`; 
+                });
+                
+                Swal.close();
+
+                // בחירת נמען
+                const { value: selectedEmail } = await Swal.fire({
+                    title: 'שליחת מסמך',
+                    text: `למי לשלוח את "${name}"?`,
+                    input: 'select',
+                    inputOptions: userOptions,
+                    inputPlaceholder: 'בחר עובד מהרשימה',
+                    showCancelButton: true,
+                    confirmButtonText: 'שגר התראה 🚀',
+                    confirmButtonColor: '#ef4444'
+                });
+
+                if (selectedEmail) {
+                    Swal.fire({ title: 'משגר...', didOpen: () => Swal.showLoading() });
+
+                    // א. יצירת משימה ב-Firebase (מקפיץ מסך אדום)
+                    await addDoc(collection(db, "tasks"), {
+                        title: "קיבלת מסמך חדש",
+                        desc: name,
+                        docLink: url,
+                        assignedTo: selectedEmail, // אימייל מדוייק לסינון ב-Index
+                        mustConfirm: true,
+                        createdBy: localStorage.getItem('saban_user_email') || 'System',
+                        createdAt: serverTimestamp(),
+                        status: 'pending',
+                        readBy: []
+                    });
+
+                    // ב. שליחת Push דרך הגוגל סקריפט (OneSignal)
+                    await fetch(DOCS_API, {
+                        method: "POST",
+                        mode: 'no-cors',
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            action: "send_push",
+                            title: "מסמך דחוף מהראל 🚨",
+                            message: "לחץ לפתיחת המסמך: " + name,
+                            targetEmail: selectedEmail // שולחים את האימייל ל-OneSignal
+                        })
+                    });
+
+                    Swal.fire('נשלח!', 'ההתראה הוקפצה למסך של העובד.', 'success');
+                }
+            } catch (e) {
+                console.error(e);
+                Swal.fire('שגיאה', 'לא ניתן לטעון אנשי קשר', 'error');
+            }
+        };
+
+        // הפעלה ראשונית
         init();
     </script>
 </body>
