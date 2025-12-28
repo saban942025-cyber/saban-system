@@ -10,30 +10,15 @@
     
     <style>
         body { background: #0f172a; color: #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 20px; }
-        
-        /* Glassmorphism Card */
-        .crm-card {
-            background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3); overflow: hidden;
-        }
-
-        /* Input Styling */
+        .crm-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3); overflow: hidden; }
         .form-group label { display: block; font-size: 11px; font-weight: bold; color: #94a3b8; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .form-input { 
-            width: 100%; background: #1e293b; border: 1px solid #334155; color: white; 
-            padding: 10px 14px; border-radius: 10px; font-size: 14px; transition: 0.2s; outline: none;
-        }
+        .form-input { width: 100%; background: #1e293b; border: 1px solid #334155; color: white; padding: 10px 14px; border-radius: 10px; font-size: 14px; transition: 0.2s; outline: none; }
         .form-input:focus { border-color: #3b82f6; background: #0f172a; }
-
-        /* Toggle Switch */
         .toggle-checkbox:checked { right: 0; border-color: #10b981; }
         .toggle-checkbox:checked + .toggle-label { background-color: #10b981; }
-        
-        /* Table */
         .user-row { border-bottom: 1px solid #1e293b; transition: 0.15s; }
         .user-row:hover { background: rgba(255,255,255,0.03); }
-        .user-row:last-child { border-bottom: none; }
+        .pass-hidden { font-family: monospace; letter-spacing: 2px; color: #64748b; }
     </style>
 </head>
 <body>
@@ -60,7 +45,9 @@
                         <button onclick="resetForm()" class="text-xs text-slate-500 hover:text-white">נקה טופס</button>
                     </div>
 
-                    <input type="hidden" id="edit-mode-email"> <div class="space-y-4">
+                    <input type="hidden" id="edit-mode-email"> 
+
+                    <div class="space-y-4">
                         <div class="grid grid-cols-2 gap-3">
                             <div class="form-group col-span-2">
                                 <label>שם מלא</label>
@@ -107,21 +94,13 @@
 
                         <div class="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50 mt-2">
                             <label class="block text-[10px] font-bold text-slate-500 mb-2 uppercase">אינטגרציות מערכת</label>
-                            
                             <div class="flex items-center justify-between mb-2">
                                 <span class="text-sm"><i class="fas fa-calendar-alt w-5 text-blue-400"></i> יומן מערכת</span>
-                                <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
-                                    <input type="checkbox" id="toggle-calendar" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
-                                    <label for="toggle-calendar" class="toggle-label block overflow-hidden h-5 rounded-full bg-slate-600 cursor-pointer"></label>
-                                </div>
+                                <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in"><input type="checkbox" id="toggle-calendar" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"/><label for="toggle-calendar" class="toggle-label block overflow-hidden h-5 rounded-full bg-slate-600 cursor-pointer"></label></div>
                             </div>
-                            
                             <div class="flex items-center justify-between">
                                 <span class="text-sm"><i class="fas fa-bell w-5 text-yellow-400"></i> תזכורות</span>
-                                <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
-                                    <input type="checkbox" id="toggle-reminders" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
-                                    <label for="toggle-reminders" class="toggle-label block overflow-hidden h-5 rounded-full bg-slate-600 cursor-pointer"></label>
-                                </div>
+                                <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in"><input type="checkbox" id="toggle-reminders" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"/><label for="toggle-reminders" class="toggle-label block overflow-hidden h-5 rounded-full bg-slate-600 cursor-pointer"></label></div>
                             </div>
                         </div>
 
@@ -140,7 +119,7 @@
                             <span id="user-count" class="bg-slate-700 text-xs px-2 py-0.5 rounded-full text-slate-300">0</span>
                         </div>
                         <div class="relative">
-                            <input type="text" id="search-box" onkeyup="filterUsers()" placeholder="חיפוש מהיר..." class="bg-slate-800 border-none text-xs rounded-full py-2 px-4 pl-8 w-40 focus:w-60 transition-all text-white">
+                            <input type="text" id="search-box" onkeyup="filterUsers()" placeholder="חיפוש..." class="bg-slate-800 border-none text-xs rounded-full py-2 px-4 pl-8 w-40 focus:w-60 transition-all text-white">
                             <i class="fas fa-search absolute left-3 top-2.5 text-slate-500 text-xs"></i>
                         </div>
                     </div>
@@ -151,25 +130,22 @@
                                 <tr>
                                     <th class="p-4">עובד</th>
                                     <th class="p-4">תפקיד</th>
-                                    <th class="p-4">קשר</th>
-                                    <th class="p-4">אינטגרציות</th>
-                                    <th class="p-4 w-20"></th>
+                                    <th class="p-4">סיסמה ואבטחה</th>
+                                    <th class="p-4 w-24">פעולות</th>
                                 </tr>
                             </thead>
-                            <tbody id="users-table-body">
-                                </tbody>
+                            <tbody id="users-table-body"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
         </div>
-
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, createUserWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const app = initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" });
         const db = getFirestore(app);
@@ -177,100 +153,101 @@
 
         let usersCache = [];
 
-        // האזנה בזמן אמת
         onSnapshot(collection(db, "users"), (snapshot) => {
             usersCache = [];
             snapshot.forEach(d => usersCache.push(d.data()));
             renderTable(usersCache);
         });
 
-        // פונקציית שמירה (הקמה או עריכה)
+        // פונקציה לאיפוס סיסמה (אדמיניסטרטיבי)
+        window.handlePasswordAction = async (email) => {
+            const { value: action } = await Swal.fire({
+                title: 'ניהול סיסמה',
+                text: `עבור המשתמש: ${email}`,
+                icon: 'warning',
+                showDenyButton: true,
+                showCancelButton: true,
+                confirmButtonText: '🔄 כפה איפוס ב-DB',
+                denyButtonText: '📧 שלח לינק לאיפוס',
+                cancelButtonText: '👁️ הצג סיסמת ברירת מחדל',
+                confirmButtonColor: '#f59e0b',
+                denyButtonColor: '#3b82f6',
+                background: '#1e293b', color: '#fff'
+            });
+
+            if (action === true) { // כפה איפוס ב-DB
+                await updateDoc(doc(db, "users", email), { mustChangePassword: true });
+                Swal.fire({title:'עודכן', text: 'המשתמש יחויב להחליף סיסמה בכניסה הבאה.', icon: 'success', background: '#1e293b', color: '#fff'});
+            } else if (action === false) { // שלח מייל
+                try {
+                    await sendPasswordResetEmail(auth, email);
+                    Swal.fire({title:'נשלח', text: 'לינק לאיפוס סיסמה נשלח למייל של העובד.', icon: 'success', background: '#1e293b', color: '#fff'});
+                } catch (e) {
+                    Swal.fire({title:'שגיאה', text: 'לא ניתן לשלוח מייל כרגע', icon: 'error', background: '#1e293b', color: '#fff'});
+                }
+            } else { // ביטול / הצג ברירת מחדל
+                Swal.fire({
+                    title: 'סיסמת ברירת מחדל',
+                    html: '<div class="text-xl font-mono bg-slate-700 p-2 rounded text-yellow-400">SabanSaban</div><div class="text-sm mt-2 text-slate-400">זו הסיסמה רק עבור משתמשים חדשים שטרם שינו אותה.</div>',
+                    background: '#1e293b', color: '#fff'
+                });
+            }
+        };
+
         window.saveUser = async () => {
             const email = document.getElementById('inp-email').value.trim().toLowerCase();
             const name = document.getElementById('inp-name').value;
             const role = document.getElementById('inp-role').value;
             const jobTitle = document.getElementById('inp-job').value;
-            let phone = document.getElementById('inp-phone').value.replace(/\D/g, ''); // רק מספרים
+            let phone = document.getElementById('inp-phone').value.replace(/\D/g, ''); 
             const photoUrl = document.getElementById('inp-photo').value;
             const hasCalendar = document.getElementById('toggle-calendar').checked;
             const hasReminders = document.getElementById('toggle-reminders').checked;
 
-            if (!email || !name) return Swal.fire('חסרים שדות חובה', 'נא למלא שם ואימייל', 'warning');
-
-            // פירמוט טלפון לפורמט בינלאומי (+972)
+            if (!email || !name) return Swal.fire('חסרים שדות חובה', '', 'warning');
             if (phone.startsWith('0')) phone = phone.substring(1);
             if (phone && !phone.startsWith('972')) phone = '972' + phone;
 
-            Swal.fire({ title: 'מעבד נתונים...', didOpen: () => Swal.showLoading(), background: '#1e293b', color: '#fff' });
+            Swal.fire({ title: 'שומר...', didOpen: () => Swal.showLoading(), background: '#1e293b', color: '#fff' });
 
             try {
-                // 1. שמירה ב-DB
                 await setDoc(doc(db, "users", email), {
                     name, email, role, jobTitle, phone, photoUrl,
                     integrations: { calendar: hasCalendar, reminders: hasReminders },
                     color: Math.floor(Math.random()*16777215).toString(16),
-                    mustChangePassword: true // תמיד נכון לחדש, או לשמר קיים בעריכה (אפשר לשפר לוגיקה)
-                }, { merge: true }); // merge=true לא דורס שדות קיימים אם זו עריכה
+                    mustChangePassword: true 
+                }, { merge: true }); 
 
-                // 2. ניסיון יצירת Auth (אם לא קיים)
-                let isNew = false;
-                try {
-                    await createUserWithEmailAndPassword(auth, email, "SabanSaban");
-                    isNew = true;
-                } catch(e) { /* משתמש קיים */ }
+                try { await createUserWithEmailAndPassword(auth, email, "SabanSaban"); } catch(e) {}
 
-                // 3. הצלחה + לינק לווצאף
-                const magicLink = `https://saban-system.onrender.com/welcome.html`; // החלף ב-URL שלך!
-                
-                // הודעה חכמה
+                const magicLink = `https://saban-system.onrender.com/welcome.html`; 
                 let whatsappMsg = `היי ${name}, ברוכים הבאים לצוות SabanOS! 🚀\n`;
-                whatsappMsg += `הוקם עבורך משתמש במערכת.\n\n`;
-                whatsappMsg += `👤 שם משתמש: ${email}\n`;
-                whatsappMsg += `🔑 סיסמה ראשונית: SabanSaban\n\n`;
-                whatsappMsg += `👇 לחץ על הלינק להתקנה והגדרה ראשונית:\n${magicLink}`;
-
+                whatsappMsg += `👤 משתמש: ${email}\n🔑 סיסמה: SabanSaban\n👇 להתקנה:\n${magicLink}`;
                 const waLink = `https://wa.me/${phone}?text=${encodeURIComponent(whatsappMsg)}`;
 
                 Swal.fire({
-                    title: isNew ? 'העובד הוקם בהצלחה!' : 'הפרטים עודכנו',
-                    html: `
-                        <div class="text-sm text-slate-300 mb-4">המשתמש מוכן לעבודה.</div>
-                        <a href="${waLink}" target="_blank" class="bg-[#25D366] text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg hover:bg-[#128C7E] transition">
-                            <i class="fab fa-whatsapp text-xl"></i> שלח לינק קסם בווצאף
-                        </a>
-                    `,
-                    icon: 'success',
-                    background: '#1e293b', color: '#fff',
-                    showConfirmButton: false,
-                    showCloseButton: true
+                    title: 'העובד נשמר!',
+                    html: `<a href="${waLink}" target="_blank" class="bg-[#25D366] text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg"><i class="fab fa-whatsapp"></i> שלח פרטים בווצאף</a>`,
+                    icon: 'success', background: '#1e293b', color: '#fff', showConfirmButton: false, showCloseButton: true
                 });
-
                 resetForm();
 
-            } catch (e) {
-                Swal.fire('שגיאה', e.message, 'error');
-            }
+            } catch (e) { Swal.fire('שגיאה', e.message, 'error'); }
         };
 
         window.editUser = (email) => {
             const user = usersCache.find(u => u.email === email);
             if (!user) return;
-
             document.getElementById('edit-mode-email').value = user.email;
             document.getElementById('inp-email').value = user.email;
-            document.getElementById('inp-email').disabled = true; // אי אפשר לשנות אימייל בעריכה
-            
+            document.getElementById('inp-email').disabled = true;
             document.getElementById('inp-name').value = user.name;
             document.getElementById('inp-role').value = user.role;
             document.getElementById('inp-job').value = user.jobTitle || 'איש דלפק';
-            
-            // המרת טלפון לתצוגה רגילה (050...)
             let phoneDisplay = user.phone || '';
             if(phoneDisplay.startsWith('972')) phoneDisplay = '0' + phoneDisplay.substring(3);
             document.getElementById('inp-phone').value = phoneDisplay;
-
             document.getElementById('inp-photo').value = user.photoUrl || '';
-            
             document.getElementById('toggle-calendar').checked = user.integrations?.calendar || false;
             document.getElementById('toggle-reminders').checked = user.integrations?.reminders || false;
         };
@@ -295,9 +272,10 @@
                 else if(user.role === 'מנהל') roleBadge = 'bg-blue-500/20 text-blue-300 border-blue-500/50';
                 else roleBadge = 'bg-slate-700 text-slate-400 border-slate-600';
 
-                // אייקונים פעילים
-                const calActive = user.integrations?.calendar ? 'text-blue-400' : 'text-slate-700';
-                const remActive = user.integrations?.reminders ? 'text-yellow-400' : 'text-slate-700';
+                // סטטוס אבטחה
+                const passStatus = user.mustChangePassword 
+                    ? '<span class="text-orange-400 text-[10px] bg-orange-900/20 px-2 py-1 rounded flex items-center gap-1 w-fit"><i class="fas fa-exclamation-circle"></i> איפוס נדרש</span>' 
+                    : '<span class="text-green-400 text-[10px] bg-green-900/20 px-2 py-1 rounded flex items-center gap-1 w-fit"><i class="fas fa-lock"></i> מוגן</span>';
 
                 list.innerHTML += `
                     <tr class="user-row group">
@@ -315,19 +293,17 @@
                             </div>
                         </td>
                         <td class="p-4">
-                            <a href="https://wa.me/${user.phone}" target="_blank" class="text-green-500 hover:text-green-400 transition">
-                                <i class="fab fa-whatsapp text-lg"></i>
-                            </a>
-                        </td>
-                        <td class="p-4">
-                            <div class="flex gap-3 text-lg">
-                                <i class="fas fa-calendar-alt ${calActive}" title="יומן"></i>
-                                <i class="fas fa-bell ${remActive}" title="תזכורות"></i>
+                            <div class="flex flex-col gap-1">
+                                <div class="pass-hidden text-xs">••••••••</div>
+                                ${passStatus}
+                                <button onclick="handlePasswordAction('${user.email}')" class="text-[10px] text-blue-400 hover:text-blue-300 underline text-right">ניהול סיסמה</button>
                             </div>
                         </td>
                         <td class="p-4 text-left">
-                            <button onclick="editUser('${user.email}')" class="text-blue-400 hover:bg-blue-900/30 p-2 rounded transition"><i class="fas fa-pencil-alt"></i></button>
-                            <button onclick="deleteUser('${user.email}')" class="text-red-400 hover:bg-red-900/30 p-2 rounded transition ml-1"><i class="fas fa-trash"></i></button>
+                            <div class="flex gap-2 justify-end">
+                                <button onclick="editUser('${user.email}')" class="w-8 h-8 rounded bg-slate-700 hover:bg-blue-600 text-white transition"><i class="fas fa-pencil-alt text-xs"></i></button>
+                                <button onclick="deleteUser('${user.email}')" class="w-8 h-8 rounded bg-slate-700 hover:bg-red-600 text-white transition"><i class="fas fa-trash text-xs"></i></button>
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -336,7 +312,7 @@
 
         window.filterUsers = () => {
             const term = document.getElementById('search-box').value.toLowerCase();
-            const filtered = usersCache.filter(u => u.name.toLowerCase().includes(term) || u.email.toLowerCase().includes(term) || u.role.toLowerCase().includes(term));
+            const filtered = usersCache.filter(u => u.name.toLowerCase().includes(term) || u.email.toLowerCase().includes(term));
             renderTable(filtered);
         };
         
