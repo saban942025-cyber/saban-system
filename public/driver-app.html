@@ -3,277 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Saban Driver | חכמת</title>
-    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
-    <link rel="manifest" href="manifest-driver.json">
+    <title>Saban Driver</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+
     <style>
-        body { background: #111827; color: white; font-family: 'Segoe UI', system-ui, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        .view-section { flex: 1; display: none; flex-direction: column; overflow-y: auto; padding-bottom: 80px; }
-        .view-section.active { display: flex; }
+        body { background: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding-bottom: 80px; user-select: none; }
+        .card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); border: 1px solid #e2e8f0; }
+        .btn { width: 100%; padding: 14px; border-radius: 12px; font-weight: bold; font-size: 16px; text-align: center; transition: 0.2s; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-primary { background: #f97316; color: white; box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3); }
+        .btn-primary:active { transform: scale(0.97); }
+        .btn-waze { background: #33ccff; color: white; }
         
-        /* Mission Card */
-        .card-mission { margin: 15px; border-radius: 20px; overflow: hidden; background: white; color: #1f2937; position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
-        .theme-transfer .header-bg { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); }
-        .theme-client .header-bg { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); }
-        .theme-urgent .header-bg { background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); animation: pulse 0.8s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
-
-        .mission-header { padding: 20px; color: white; display: flex; justify-content: space-between; align-items: flex-start; }
-        .mission-body { padding: 20px; text-align: center; }
-        
-        .btn-main { width: 100%; padding: 18px; border-radius: 15px; font-size: 18px; font-weight: 900; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-        .btn-main:active { transform: scale(0.98); }
-        .status-start { background: #10b981; } .status-arrived { background: #f59e0b; } .status-done { background: #6366f1; }
-
-        /* Chat */
-        .msg-bubble { max-width: 80%; padding: 8px 12px; border-radius: 8px; margin: 5px 10px; font-size: 14px; position: relative; color: black; }
-        .msg-in { align-self: flex-start; background: white; border-top-right-radius: 0; }
-        .msg-out { align-self: flex-end; background: #d9fdd3; border-top-left-radius: 0; }
-
-        /* Nav */
-        .nav-bar { position: fixed; bottom: 0; width: 100%; background: #1f2937; border-top: 1px solid #374151; display: flex; justify-content: space-around; padding: 15px 0; z-index: 50; }
-        .nav-item { text-align: center; color: #9ca3af; font-size: 10px; width: 50%; }
-        .nav-item.active { color: #f59e0b; }
-        .nav-item i { font-size: 24px; margin-bottom: 2px; }
-        .badge { position: absolute; top: 10px; right: 20%; background: red; width: 10px; height: 10px; border-radius: 50%; display: none; border: 2px solid #1f2937; }
+        canvas { border: 2px dashed #cbd5e1; border-radius: 12px; background: #f8fafc; width: 100%; height: 200px; touch-action: none; }
     </style>
 </head>
-<body onclick="stopAlert()">
+<body>
 
-    <div class="p-4 bg-gray-800 flex justify-between items-center border-b border-gray-700">
-        <div>
-            <div class="text-xs text-gray-400">נהג מחובר</div>
-            <div class="font-bold text-lg" id="driver-name">חכמת</div>
-        </div>
-        <div class="bg-green-900 text-green-400 text-xs px-2 py-1 rounded flex items-center gap-2">
-            <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div> GPS ON
+    <div class="bg-slate-900 text-white p-5 pb-8 rounded-b-3xl shadow-lg mb-[-20px] relative z-0">
+        <div class="flex justify-between items-center">
+            <div>
+                <div class="text-xs text-orange-400 font-bold uppercase">נהג פעיל</div>
+                <div class="text-2xl font-black">משאית 404</div>
+            </div>
+            <div class="bg-white/10 p-2 rounded-lg"><i class="fas fa-truck text-2xl"></i></div>
         </div>
     </div>
 
-    <div id="view-mission" class="view-section active">
-        <div id="state-waiting" class="flex flex-col items-center justify-center h-full text-gray-500 mt-20">
-            <div class="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mb-6 animate-pulse">
-                <i class="fas fa-satellite-dish text-4xl text-gray-600"></i>
-            </div>
-            <h2 class="text-xl font-bold">ממתין למשימות...</h2>
-            <p class="text-sm opacity-50 mt-2">המערכת מאזינה בזמן אמת</p>
-        </div>
-
-        <div id="state-mission" class="card-mission hidden theme-client">
-            <div class="header-bg mission-header">
+    <div class="px-4 relative z-10">
+        
+        <div class="card">
+            <div class="flex justify-between items-start mb-4">
                 <div>
-                    <div class="text-xs uppercase font-bold opacity-80" id="task-type-label">הובלה</div>
-                    <div class="text-2xl font-black mt-1" id="client-name">...</div>
+                    <div class="text-xs text-gray-400 font-bold">יעד המשלוח</div>
+                    <div class="text-xl font-bold text-slate-800">פרויקט "מגדלי הים"</div>
+                    <div class="text-sm text-gray-500">רחוב העצמאות 55, נתניה</div>
                 </div>
-                <i class="fas fa-box text-4xl opacity-80" id="type-icon"></i>
+                <a href="https://waze.com/ul?q=נתניה" target="_blank" class="bg-blue-100 text-blue-600 p-3 rounded-full shadow-sm">
+                    <i class="fab fa-waze text-2xl"></i>
+                </a>
             </div>
-            <div class="mission-body">
-                <div class="text-lg font-bold mb-1 text-gray-800" id="dest-address">...</div>
-                <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 mb-6 text-sm text-right text-gray-700 leading-relaxed" id="mission-desc">...</div>
-                
-                <button onclick="openWaze()" class="w-full bg-[#33ccff] text-white font-bold py-3 rounded-xl mb-3 flex items-center justify-center gap-2 shadow-sm">
-                    <i class="fab fa-waze text-2xl"></i> סע ליעד
-                </button>
-                
-                <button id="main-btn" class="btn-main status-start" onclick="nextStatus()">
-                    <i class="fas fa-play"></i> יצאתי לדרך
-                </button>
+            
+            <div class="flex gap-2 mb-4">
+                <div class="bg-orange-50 text-orange-700 px-3 py-1 rounded-lg text-xs font-bold border border-orange-100">📦 משטחים: 3</div>
+                <div class="bg-blue-50 text-blue-700 px-3 py-1 rounded-lg text-xs font-bold border border-blue-100">🏗️ מנוף נדרש</div>
+            </div>
+
+            <div class="border-t pt-4">
+                <div class="text-xs font-bold text-gray-400 mb-2">פעולות נהג</div>
+                <label class="btn bg-white border border-slate-200 text-slate-600 mb-2">
+                    <i class="fas fa-camera"></i> צלם הוכחת מסירה
+                    <input type="file" accept="image/*" capture="environment" hidden onchange="handleImage(this)">
+                </label>
+                <div id="img-preview" class="hidden text-xs text-green-600 font-bold text-center mb-2">📸 תמונה נקלטה בהצלחה</div>
             </div>
         </div>
-    </div>
 
-    <div id="view-chat" class="view-section" style="background: #efeae2;">
-        <div id="chat-msgs" class="flex-1 flex flex-col p-4 overflow-y-auto gap-2"></div>
-        <div class="p-3 bg-gray-200 flex gap-2">
-            <input id="msg-input" class="flex-1 p-3 rounded-full text-black outline-none shadow-sm" placeholder="הודעה למשרד...">
-            <button onclick="sendMessage()" class="bg-[#00a884] w-12 h-12 rounded-full text-white shadow-lg flex items-center justify-center"><i class="fas fa-paper-plane"></i></button>
+        <div class="card">
+            <div class="flex justify-between items-center mb-2">
+                <div class="text-sm font-bold text-slate-700">חתימת מקבל (על המסך)</div>
+                <button onclick="clearPad()" class="text-xs text-red-500 font-bold">נקה</button>
+            </div>
+            <canvas id="signature-pad"></canvas>
+            
+            <input id="receiver-name" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl mt-3 text-sm" placeholder="שם המקבל">
+            
+            <button onclick="finishDelivery()" class="btn btn-primary mt-4">
+                <i class="fas fa-check-circle"></i> אשר מסירה וסיים
+            </button>
         </div>
-    </div>
 
-    <div class="nav-bar">
-        <div class="nav-item active" onclick="switchView('mission', this)"><i class="fas fa-truck"></i> משימה</div>
-        <div class="nav-item" onclick="switchView('chat', this)">
-            <div class="relative inline-block"><i class="fas fa-comments"></i><div id="chat-badge" class="badge"></div></div> הודעות
-        </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, where, onSnapshot, serverTimestamp, doc, updateDoc, setDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
-        // IDENTITY
-        const params = new URLSearchParams(window.location.search);
-        let DRIVER = { 
-            uid: params.get('uid') || '0500000607', 
-            name: params.get('name') || 'חכמת' 
-        };
-        document.getElementById('driver-name').innerText = DRIVER.name;
+        // אתחול משטח חתימה
+        const canvas = document.getElementById('signature-pad');
+        function resizeCanvas() {
+            const ratio =  Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext("2d").scale(ratio, ratio);
+        }
+        window.onresize = resizeCanvas;
+        resizeCanvas();
 
-        // SOUNDS (Gentle Doorbell)
-        const alertAudio = new Audio('https://actions.google.com/sounds/v1/doors/door_bell_1.ogg');
-        
-        window.stopAlert = () => {
-            // הנהג נגע במסך - מפסיקים את ההתראה
-            if(!alertAudio.paused) {
-                alertAudio.pause();
-                alertAudio.currentTime = 0;
+        const signaturePad = new SignaturePad(canvas, { backgroundColor: 'rgb(248, 250, 252)' });
+
+        window.clearPad = () => signaturePad.clear();
+
+        window.handleImage = (input) => {
+            if(input.files.length > 0) {
+                document.getElementById('img-preview').classList.remove('hidden');
             }
         };
 
-        // --- 1. MISSION LISTENER ---
-        let currentOrder = null;
-        const q = query(
-            collection(db, "orders"), 
-            where("driverId", "==", DRIVER.name),
-            where("status", "in", ["assigned", "en_route", "arrived"])
-        );
-
-        onSnapshot(q, (snap) => {
-            if (snap.empty) {
-                document.getElementById('state-waiting').classList.remove('hidden');
-                document.getElementById('state-mission').classList.add('hidden');
-                return;
+        window.finishDelivery = async () => {
+            const name = document.getElementById('receiver-name').value;
+            
+            if (signaturePad.isEmpty() || !name) {
+                return Swal.fire('חסרים פרטים', 'יש למלא שם מקבל ולחתום', 'warning');
             }
 
-            const tasks = snap.docs.map(d => ({id: d.id, ...d.data()}));
-            tasks.sort((a,b) => b.createdAt - a.createdAt);
-            const latest = tasks[0];
+            // סימולציית שמירה
+            Swal.fire({
+                title: 'שולח נתונים...',
+                didOpen: () => Swal.showLoading()
+            });
 
-            if (!currentOrder || currentOrder.id !== latest.id) {
-                // מנגן את הפעמון
-                alertAudio.play().catch(()=>{}); 
-                
-                Swal.fire({
-                    title: 'משימה חדשה!',
-                    text: 'התקבלה נסיעה מהמשרד',
-                    icon: 'info',
-                    timer: 3000,
-                    showConfirmButton: false,
-                    toast: true,
-                    position: 'top'
+            try {
+                // שמירת הלוג ב-Firebase כדי שהראל יראה
+                await addDoc(collection(db, "task_logs"), {
+                    taskId: 'delivery-123',
+                    userId: 'driver-yossi',
+                    userName: 'יוסי הנהג',
+                    action: 'delivery_done',
+                    details: `מסירה הושלמה ל-${name}`,
+                    timestamp: serverTimestamp()
                 });
 
-                switchView('mission', document.querySelector('.nav-item'));
+                // שליחת התראה להראל (דרך גוגל סקריפט - וודא שעדכנת את ה-URL!)
+                const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw6tU2yOXn4BkP3xwlmgB8nKU-8u6BOSKXTXJjXsY9E86E_zYXpa9_aDxsPmd63X1Wd/exec"; 
+                
+                fetch(SCRIPT_URL, {
+                    method: "POST",
+                    mode: 'no-cors',
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        action: "send_push",
+                        title: "משלוח הושלם! 🚚",
+                        message: `יוסי מסר את הסחורה ל-${name} בנתניה`
+                    })
+                });
+
+                Swal.fire('הצלחה!', 'תעודת משלוח דיגיטלית נשלחה.', 'success');
+                signaturePad.clear();
+                document.getElementById('receiver-name').value = '';
+                document.getElementById('img-preview').classList.add('hidden');
+
+            } catch (e) {
+                console.error(e);
+                Swal.fire('שגיאה', 'בדוק חיבור רשת', 'error');
             }
-
-            currentOrder = latest;
-            renderMission(latest);
-            document.getElementById('state-waiting').classList.add('hidden');
-            document.getElementById('state-mission').classList.remove('hidden');
-        });
-
-        function renderMission(order) {
-            const card = document.getElementById('state-mission');
-            const label = document.getElementById('task-type-label');
-            const icon = document.getElementById('type-icon');
-            
-            card.classList.remove('theme-transfer', 'theme-client', 'theme-supplier', 'theme-urgent');
-            let theme = 'theme-client', txt = 'הובלה', ico = 'fa-box';
-
-            if (order.taskType === 'urgent') { theme = 'theme-urgent'; txt = 'דחוף 🔥'; ico = 'fa-fire'; }
-            else if (order.taskType === 'transfer') { theme = 'theme-transfer'; txt = 'העברה'; ico = 'fa-exchange-alt'; }
-            
-            card.classList.add(theme);
-            label.innerText = txt;
-            icon.className = `fas ${ico} text-4xl opacity-80`;
-
-            document.getElementById('client-name').innerText = order.clientName;
-            document.getElementById('dest-address').innerText = order.address || '';
-            document.getElementById('mission-desc').innerText = order.text || '';
-
-            const btn = document.getElementById('main-btn');
-            if(order.status === 'assigned') {
-                btn.className = 'btn-main status-start';
-                btn.innerHTML = '<i class="fas fa-play"></i> יצאתי לדרך';
-                btn.onclick = () => updateStatus('en_route');
-            } else if (order.status === 'en_route') {
-                btn.className = 'btn-main status-arrived';
-                btn.innerHTML = '<i class="fas fa-map-marker-alt"></i> הגעתי';
-                btn.onclick = () => updateStatus('arrived');
-            } else {
-                btn.className = 'btn-main status-done';
-                btn.innerHTML = '<i class="fas fa-check"></i> סיימתי';
-                btn.onclick = () => updateStatus('done');
-            }
-        }
-
-        window.updateStatus = async (s) => {
-            stopAlert();
-            if(!currentOrder) return;
-            if (s === 'done') confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-            await updateDoc(doc(db, "orders", currentOrder.id), { status: s, lastUpdate: serverTimestamp() });
-        };
-
-        window.openWaze = () => {
-            stopAlert();
-            if(!currentOrder) return;
-            window.open(`https://waze.com/ul?q=${encodeURIComponent(currentOrder.address || '')}&navigate=yes`, '_blank');
-        };
-
-        // --- 2. CHAT SYSTEM ---
-        const chatId = `chat_${DRIVER.uid}`; 
-        
-        onSnapshot(query(collection(db, `chats/${chatId}/messages`)), (snap) => {
-            const container = document.getElementById('chat-msgs');
-            container.innerHTML = '';
-            
-            const msgs = snap.docs.map(d => d.data()).sort((a,b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
-            
-            msgs.forEach(m => {
-                const isMe = m.sender === DRIVER.name;
-                container.innerHTML += `<div class="msg-bubble ${isMe?'msg-out':'msg-in'}">${!isMe ? `<div class="text-[10px] font-bold text-orange-600 mb-1">${m.sender}</div>` : ''}${m.text}</div>`;
-            });
-            container.scrollTop = container.scrollHeight;
-            
-            if(document.getElementById('view-chat').style.display === 'none' && !snap.empty) {
-                const last = msgs[msgs.length-1];
-                if(last && last.sender !== DRIVER.name) {
-                     document.getElementById('chat-badge').style.display = 'block';
-                }
-            }
-        });
-
-        window.sendMessage = async () => {
-            stopAlert();
-            const input = document.getElementById('msg-input');
-            const txt = input.value.trim();
-            if(!txt) return;
-            input.value = '';
-            
-            await addDoc(collection(db, `chats/${chatId}/messages`), { 
-                text: txt, 
-                sender: DRIVER.name, 
-                timestamp: serverTimestamp() 
-            });
-        };
-
-        // --- GPS ---
-        if ("geolocation" in navigator) {
-            navigator.geolocation.watchPosition((pos) => {
-                setDoc(doc(db, "drivers_location", DRIVER.uid), {
-                    name: DRIVER.name,
-                    lat: pos.coords.latitude,
-                    lng: pos.coords.longitude,
-                    timestamp: serverTimestamp(),
-                    active: true
-                }, { merge: true });
-            }, null, { enableHighAccuracy: true });
-        }
-
-        window.switchView = (v, btn) => {
-            stopAlert();
-            document.querySelectorAll('.view-section').forEach(e => e.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
-            document.getElementById(`view-${v}`).classList.add('active');
-            if(btn) btn.classList.add('active');
-            if(v==='chat') document.getElementById('chat-badge').style.display='none';
         };
     </script>
 </body>
