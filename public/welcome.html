@@ -12,8 +12,10 @@
         .step-icon { width: 60px; height: 60px; border-radius: 50%; background: #1e293b; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; font-size: 24px; color: #94a3b8; transition: 0.3s; border: 2px solid #334155; }
         .step-active { border-color: #3b82f6; color: #3b82f6; background: rgba(59, 130, 246, 0.1); box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
         .step-done { border-color: #10b981; color: white; background: #10b981; }
-        .btn-action { background: linear-gradient(135deg, #2563eb, #1d4ed8); width: 100%; padding: 16px; border-radius: 16px; font-weight: bold; font-size: 18px; margin-top: 30px; transition: 0.2s; box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4); cursor: pointer; }
+        .btn-action { background: linear-gradient(135deg, #2563eb, #1d4ed8); width: 100%; padding: 16px; border-radius: 16px; font-weight: bold; font-size: 18px; margin-top: 30px; transition: 0.2s; box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4); cursor: pointer; border: none; }
         .btn-action:active { transform: scale(0.96); }
+        .btn-error { background: #ef4444; animation: shake 0.5s; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
     </style>
 </head>
 <body>
@@ -43,40 +45,73 @@
     <script>
         let currentStep = 1;
         
-        // צליל מערכת קצר ומוטמע בקוד (לא דורש אינטרנט או טעינה)
-        const SYSTEM_BEEP = "data:audio/mp3;base64,//NExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//NExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//NExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//NExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//NExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq";
-        
+        // אתחול OneSignal
         window.OneSignalDeferred = window.OneSignalDeferred || [];
         
-        function nextStep() {
-            if(currentStep === 1) {
-                // שלב 1: אישור סאונד עם קובץ מקומי
-                const audio = new Audio(SYSTEM_BEEP);
-                audio.volume = 0.5;
-                
-                // הניסיון לנגן
-                const playPromise = audio.play();
+        // פונקציה שמייצרת צליל דיגיטלי (ללא קובץ) - עובד ב-100% מהמקרים
+        function playDigitalBeep() {
+            return new Promise((resolve, reject) => {
+                try {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (!AudioContext) {
+                        resolve(); // דפדפן ישן מאוד, נדלג
+                        return;
+                    }
+                    
+                    const ctx = new AudioContext();
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
 
-                if (playPromise !== undefined) {
-                    playPromise.then(_ => {
-                        // הצלחה - עוברים שלב
-                        finishStep1();
-                    })
-                    .catch(error => {
-                        // כישלון - מנסים שוב בשיטה אגרסיבית יותר (לחיצה שנייה ודאית תעבוד)
-                        console.log("Audio blocked, retrying user interaction requirement.");
-                        document.getElementById('main-btn').innerText = "לחץ שוב לאישור";
-                        document.getElementById('main-btn').style.background = "#e11d48"; // אדום כדי למשוך תשומת לב
-                    });
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+
+                    osc.frequency.value = 600; // תדר הצליל
+                    osc.type = 'sine';
+                    
+                    // הנמכה הדרגתית של הצליל (Fade out)
+                    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.5);
+
+                    osc.start();
+                    setTimeout(() => {
+                        osc.stop();
+                        resolve(); // הצליח!
+                    }, 500);
+
+                } catch (e) {
+                    console.error("Audio Context Error", e);
+                    // אם נכשל בגלל חסימת משתמש
+                    reject(e);
+                }
+            });
+        }
+
+        async function nextStep() {
+            const btn = document.getElementById('main-btn');
+
+            if(currentStep === 1) {
+                // שלב 1: מנסים לנגן צליל
+                try {
+                    await playDigitalBeep();
+                    
+                    // אם עברנו את השורה למעלה, סימן שהצליל נוגן והדפדפן אישר אודיו
+                    finishStep1();
+                    
+                } catch (error) {
+                    // אם נכשל, משנים את הכפתור לאדום ומבקשים לחיצה נוספת
+                    console.log("User interaction required");
+                    btn.innerText = "לחץ שוב לאישור ידני";
+                    btn.classList.add('btn-error');
+                    // בפעם הבאה שהמשתמש ילחץ, זה יעבוד כי זו אינטראקציה ישירה
                 }
             } 
             else if(currentStep === 2) {
-                // שלב 2: אישור התראות
+                // שלב 2: התראות
                 document.getElementById('step2').classList.remove('step-active');
                 document.getElementById('step2').classList.add('step-done');
                 document.getElementById('step3').classList.add('step-active');
 
-                // טעינת OneSignal
+                // טעינת סקריפט ההתראות
                 const script = document.createElement('script');
                 script.src = "https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js";
                 script.defer = true;
@@ -88,31 +123,33 @@
                 });
 
                 document.getElementById('title').innerText = "הכל מוכן!";
-                document.getElementById('desc').innerText = "המערכת הוגדרה בהצלחה. לחץ לכניסה.";
-                document.getElementById('main-btn').innerText = "כנס למערכת 🚀";
-                document.getElementById('main-btn').className = "btn-action bg-green-600";
+                document.getElementById('desc').innerText = "המערכת הוגדרה בהצלחה.";
+                btn.innerText = "כנס למערכת 🚀";
+                btn.className = "btn-action bg-green-600 shadow-lg shadow-green-900/50";
                 
-                // אפקט חגיגה קטן
-                const successAudio = new Audio(SYSTEM_BEEP);
-                successAudio.play();
+                // צליל הצלחה
+                playDigitalBeep();
                 
                 currentStep = 3;
             }
             else if(currentStep === 3) {
-                // סיום - מעבר ללוגין
+                // מעבר ללוגין
                 window.location.href = "login.html";
             }
         }
 
         function finishStep1() {
+            const btn = document.getElementById('main-btn');
+            
             document.getElementById('step1').classList.remove('step-active');
             document.getElementById('step1').classList.add('step-done');
             document.getElementById('step2').classList.add('step-active');
             
             document.getElementById('title').innerText = "אישור התראות";
-            document.getElementById('desc').innerText = "חובה לאשר קבלת התראות כדי לקבל משימות דחופות בזמן אמת.";
-            document.getElementById('main-btn').innerText = "אשר התראות";
-            document.getElementById('main-btn').style.background = ""; // איפוס צבע אם שונה
+            document.getElementById('desc').innerText = "כדי לקבל משימות דחופות בזמן אמת, אשר את קבלת ההתראות בחלונית שתקפוץ.";
+            btn.innerText = "אשר התראות";
+            btn.classList.remove('btn-error');
+            
             currentStep = 2;
         }
     </script>
