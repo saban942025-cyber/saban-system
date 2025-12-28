@@ -3,14 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SabanOS Pro</title>
+    <title>SabanOS Core</title>
     
-    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
-
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
@@ -20,39 +14,69 @@
       });
     </script>
 
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <style>
         body { margin: 0; padding: 0; background: #f8fafc; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+        
+        /* Header */
         .app-header { height: 60px; background: white; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border-bottom: 1px solid #e2e8f0; z-index: 50; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+        .status-online { background: #22c55e; box-shadow: 0 0 8px #22c55e; }
+        .status-offline { background: #ef4444; }
+
+        /* Main Stage */
         .main-stage { flex: 1; width: 100%; height: 100%; position: relative; }
         iframe { width: 100%; height: 100%; border: none; }
+
+        /* Bottom Nav */
         .bottom-nav { height: 65px; background: white; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-around; align-items: center; padding-bottom: env(safe-area-inset-bottom); z-index: 50; }
-        .nav-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; width: 60px; height: 100%; }
+        .nav-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; width: 60px; height: 100%; transition: 0.2s; }
         .nav-btn.active { color: #2563eb; border-top: 2px solid #2563eb; }
-        .nav-btn i { font-size: 20px; margin-bottom: 3px; }
-        .nav-btn span { font-size: 10px; font-weight: 500; }
+        .nav-btn:active { transform: scale(0.9); }
+
+        /* THE BLOCKER (POPUP) */
+        .blocker-overlay { 
+            position: fixed; inset: 0; background: rgba(220, 38, 38, 0.96); 
+            z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            display: none; padding: 20px; text-align: center; color: white; backdrop-filter: blur(5px);
+        }
+        .blocker-card { 
+            background: white; color: #1e293b; padding: 30px; border-radius: 24px; width: 100%; max-width: 360px; 
+            box-shadow: 0 25px 60px rgba(0,0,0,0.5); animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+        }
+        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         
-        /* חוסם מסך */
-        .blocker-overlay { position: fixed; inset: 0; background: rgba(220, 38, 38, 0.98); z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; display: none; padding: 20px; text-align: center; color: white; }
-        .blocker-card { background: white; color: #1e293b; padding: 25px; border-radius: 20px; width: 100%; max-width: 340px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); animation: shake 0.5s infinite; }
-        @keyframes shake { 0%, 100% {transform: translateX(0);} 25% {transform: translateX(-2px);} 75% {transform: translateX(2px);} }
+        .pulse-ring { 
+            display: flex; align-items: center; justify-content: center; width: 80px; height: 80px; 
+            background: #fee2e2; border-radius: 50%; margin: 0 auto 20px auto; animation: pulseRed 1.5s infinite; 
+        }
+        @keyframes pulseRed { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
     </style>
 </head>
 <body>
 
-    <audio id="siren-sound" loop><source src="https://cdn.freesound.org/previews/337/337000_5769786-lq.mp3" type="audio/mpeg"></audio>
+    <audio id="siren-sound" loop src="https://cdn.freesound.org/previews/337/337000_5769786-lq.mp3"></audio>
 
     <div class="app-header">
-        <div class="font-black text-xl text-slate-800 flex items-center gap-2" onclick="goHome()">SabanOS <span class="text-xs text-blue-600 bg-blue-100 px-2 rounded-full">Pro</span></div>
-        <div class="text-sm font-bold text-gray-500" id="header-title">דף הבית</div>
-        <i class="fas fa-bars text-xl text-slate-600"></i>
+        <div onclick="goHome()" class="flex items-center gap-2 cursor-pointer">
+            <img src="https://ui-avatars.com/api/?name=S+O&background=0f172a&color=fff" class="w-8 h-8 rounded-lg">
+            <span class="font-black text-lg text-slate-800 tracking-tight">Saban<span class="text-blue-600">OS</span></span>
+        </div>
+        <div class="flex items-center gap-2 bg-slate-50 px-3 py-1 rounded-full border border-slate-100">
+            <div id="status-light" class="status-dot status-offline"></div>
+            <span id="page-title" class="text-xs font-bold text-slate-500">טוען...</span>
+        </div>
     </div>
 
-    <div id="nag-bar" class="hidden bg-yellow-100 p-2 flex justify-between items-center px-4 border-b border-yellow-200">
-        <div class="flex items-center gap-2">
-            <i class="fas fa-bell text-yellow-600 animate-swing"></i>
-            <span class="text-xs font-bold text-yellow-800" id="nag-text">...</span>
+    <div id="nag-bar" class="hidden bg-yellow-400 text-yellow-900 p-3 px-4 flex justify-between items-center shadow-md z-40 relative">
+        <div class="flex items-center gap-3">
+            <div class="bg-white/30 p-1.5 rounded-full"><i class="fas fa-bell animate-swing"></i></div>
+            <span class="text-xs font-black" id="nag-text">...</span>
         </div>
-        <button class="text-xs bg-yellow-500 text-white px-2 py-1 rounded font-bold" onclick="window.openApp('harel', 'משימות')">פתח</button>
+        <button onclick="openApp('harel', 'משימות')" class="bg-white text-yellow-900 px-3 py-1 rounded-full text-xs font-bold shadow-sm">פתח</button>
     </div>
 
     <div class="main-stage">
@@ -60,17 +84,35 @@
     </div>
 
     <div class="bottom-nav">
-        <div class="nav-btn active" onclick="goHome()" id="nav-home"><i class="fas fa-home"></i><span>ראשי</span></div>
-        <div class="nav-btn" onclick="openApp('chat', 'צ\'אט')" id="nav-chat"><i class="fab fa-whatsapp"></i><span>צ'אט</span></div>
-        <div class="nav-btn" onclick="openApp('drive', 'מסמכים')" id="nav-drive"><i class="fas fa-folder"></i><span>דרייב</span></div>
-        <div class="nav-btn" onclick="openApp('harel', 'משימות')" id="nav-harel"><i class="fas fa-tasks"></i><span>משימות</span></div>
+        <div class="nav-btn active" onclick="goHome()" id="nav-home"><i class="fas fa-home text-xl mb-1"></i><span class="text-[10px] font-bold">בית</span></div>
+        <div class="nav-btn" onclick="openApp('chat', 'צ\'אט')" id="nav-chat"><i class="fab fa-whatsapp text-xl mb-1"></i><span class="text-[10px] font-bold">צ'אט</span></div>
+        <div class="nav-btn" onclick="openApp('drive', 'הארכיון')" id="nav-drive"><i class="fas fa-folder-open text-xl mb-1"></i><span class="text-[10px] font-bold">דרייב</span></div>
+        <div class="nav-btn" onclick="openApp('harel', 'משימות')" id="nav-harel"><i class="fas fa-tasks text-xl mb-1"></i><span class="text-[10px] font-bold">משימות</span></div>
     </div>
 
     <div id="blocker" class="blocker-overlay">
-        <div class="text-6xl mb-4 animate-bounce">🚨</div>
-        <h2 class="text-3xl font-black mb-1">הודעה דחופה!</h2>
-        <div class="text-xl mt-2 font-bold bg-white text-red-600 px-4 py-2 rounded-lg" id="blocker-msg">...</div>
-        <button onclick="confirmTask()" class="mt-8 bg-white text-red-600 px-8 py-4 rounded-full font-black text-xl shadow-xl active:scale-95">מאשר קבלה</button>
+        <div class="blocker-card text-center">
+            <div class="pulse-ring">
+                <i class="fas fa-exclamation-triangle text-3xl text-red-600"></i>
+            </div>
+            
+            <h2 class="text-2xl font-black mb-1">התראה מהמנכ"ל</h2>
+            <p class="text-slate-500 text-xs mb-4">נדרשת התייחסות מיידית כדי להמשיך</p>
+            
+            <div class="bg-red-50 border border-red-100 p-4 rounded-xl mb-4">
+                <div class="text-lg font-black text-red-900 leading-tight" id="blocker-msg">...</div>
+            </div>
+
+            <div id="doc-action-area" class="hidden mb-6">
+                <button onclick="openAttachedDoc()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg transform transition active:scale-95">
+                    <i class="fas fa-file-pdf text-lg"></i> צפה במסמך המצורף
+                </button>
+            </div>
+
+            <button onclick="confirmTask()" class="w-full border-2 border-red-600 text-red-600 py-3 rounded-xl font-bold text-lg hover:bg-red-50 transition active:scale-95">
+                <i class="fas fa-check double"></i> מאשר קבלה
+            </button>
+        </div>
     </div>
 
     <script type="module">
@@ -78,36 +120,108 @@
         import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
-        const MY_ID = 'vered'; 
-        let activeTaskId = null;
-        let audio = document.getElementById('siren-sound');
 
-        // --- פונקציות גלובליות (חובה להצמיד ל-window) ---
+        // *** הגדרה קריטית ***
+        // כדי לבדוק דינמיקה, שנה את זה ל-'harel' בחלון אחד ול-'vered' בחלון השני
+        const MY_ID = 'vered'; 
         
-        window.goHome = () => {
-            document.getElementById('main-frame').src = 'dashboard.html';
-            updateNav('nav-home');
-            document.getElementById('header-title').innerText = 'דף הבית';
+        let activeTaskId = null;
+        let activeDocLink = null;
+        const audio = document.getElementById('siren-sound');
+
+        // אינדיקטור חיבור
+        document.getElementById('status-light').classList.remove('status-offline');
+        document.getElementById('status-light').classList.add('status-online');
+        document.getElementById('page-title').innerText = "מחובר: " + MY_ID;
+
+        // --- הלב הפועם (האזנה ל-Firebase) ---
+        onSnapshot(query(collection(db, "tasks"), where("status", "==", "pending")), (snap) => {
+            let foundUrgent = false;
+
+            snap.forEach(d => {
+                const t = d.data();
+                // האם המשימה עבורי?
+                const isForMe = t.assignedTo === 'all' || t.assignedTo === MY_ID;
+                const notRead = !t.readBy || !t.readBy.includes(MY_ID);
+
+                if (isForMe && notRead) {
+                    // זיהוי סוג ההתראה
+                    if (t.mustConfirm) {
+                        triggerBlocker(d.id, t);
+                        foundUrgent = true;
+                    } else {
+                        // התראה שקטה (צהובה)
+                        document.getElementById('nag-bar').classList.remove('hidden');
+                        document.getElementById('nag-text').innerText = t.title;
+                    }
+                }
+            });
+
+            if (!foundUrgent) {
+                document.getElementById('blocker').style.display = 'none';
+                audio.pause();
+                audio.currentTime = 0;
+            }
+        });
+
+        function triggerBlocker(id, taskData) {
+            if (document.getElementById('blocker').style.display === 'flex') return; // כבר פתוח
+
+            activeTaskId = id;
+            document.getElementById('blocker-msg').innerText = taskData.title;
+            
+            // טיפול במסמך מצורף
+            const docArea = document.getElementById('doc-action-area');
+            if (taskData.docLink) {
+                activeDocLink = taskData.docLink;
+                docArea.classList.remove('hidden');
+            } else {
+                activeDocLink = null;
+                docArea.classList.add('hidden');
+            }
+
+            // הפעלת הפיצוץ
+            document.getElementById('blocker').style.display = 'flex';
+            audio.play().catch(e => console.log("User needs to interact first"));
+        }
+
+        // --- פונקציות גלובליות שנחשפות לאפליקציות הפנימיות ---
+
+        window.openAttachedDoc = () => {
+            if(activeDocLink) window.open(activeDocLink, '_blank');
         };
 
+        window.confirmTask = async () => {
+            if(!activeTaskId) return;
+            try {
+                await updateDoc(doc(db, "tasks", activeTaskId), { readBy: arrayUnion(MY_ID) });
+                document.getElementById('blocker').style.display = 'none';
+                audio.pause();
+                
+                // שליחת פידבק לצד השני (אופציונלי - לייצר לוג)
+                await addDoc(collection(db, "task_logs"), {
+                    taskId: activeTaskId, userId: MY_ID, action: 'confirmed', timestamp: serverTimestamp()
+                });
+
+                activeTaskId = null;
+            } catch (e) { console.error(e); }
+        };
+
+        window.goHome = () => { document.getElementById('main-frame').src = 'dashboard.html'; updateNav('nav-home'); document.getElementById('page-title').innerText = "ראשי"; };
+        
         window.openApp = (id, title) => {
-            console.log("Navigating to:", id);
             let url = '';
             switch(id) {
-                case 'chat': url = 'comm-center.html'; break;
-                case 'drive': url = 'documents-drive.html'; break;
-                case 'team': url = 'team-view.html'; break;
                 case 'harel': url = 'harel-tasks.html'; break;
+                case 'drive': url = 'documents-drive.html'; break;
+                case 'chat': url = 'comm-center.html'; break;
                 case 'calendar': url = 'calendar-app.html'; break;
-                case 'truck': url = 'driver-app.html'; break; // אם קיים
+                case 'truck': url = 'driver-app.html'; break;
             }
-            
             if(url) {
                 document.getElementById('main-frame').src = url;
-                document.getElementById('header-title').innerText = title;
                 updateNav(`nav-${id}`);
-            } else {
-                console.error("No URL found for app ID:", id);
+                document.getElementById('page-title').innerText = title || "SabanOS";
             }
         };
 
@@ -116,43 +230,6 @@
             const btn = document.getElementById(id);
             if(btn) btn.classList.add('active');
         }
-
-        window.confirmTask = async () => {
-            if(!activeTaskId) return;
-            try {
-                await updateDoc(doc(db, "tasks", activeTaskId), { readBy: arrayUnion(MY_ID) });
-                document.getElementById('blocker').style.display = 'none';
-                audio.pause();
-                activeTaskId = null;
-            } catch (e) { console.error(e); }
-        };
-
-        // האזנה למשימות
-        onSnapshot(query(collection(db, "tasks"), where("status", "==", "pending")), (snap) => {
-            let foundBlocker = false;
-            snap.forEach(d => {
-                const t = d.data();
-                const isForMe = t.assignedTo === 'all' || t.assignedTo === MY_ID;
-                const notRead = !t.readBy || !t.readBy.includes(MY_ID);
-
-                if (isForMe && notRead) {
-                    if (t.mustConfirm) {
-                        activeTaskId = d.id;
-                        document.getElementById('blocker-msg').innerText = t.title;
-                        document.getElementById('blocker').style.display = 'flex';
-                        audio.play().catch(()=>{});
-                        foundBlocker = true;
-                    } else {
-                        document.getElementById('nag-bar').classList.remove('hidden');
-                        document.getElementById('nag-text').innerText = t.title;
-                    }
-                }
-            });
-            if(!foundBlocker) {
-                document.getElementById('blocker').style.display = 'none';
-                audio.pause();
-            }
-        });
     </script>
 </body>
 </html>
