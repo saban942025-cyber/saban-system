@@ -9,8 +9,8 @@
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function(OneSignal) {
-        const isHealthy = await new Promise(r => { try { let q=indexedDB.open("t");q.onsuccess=()=>{q.result.close();r(true)};q.onerror=()=>r(false);}catch{r(false)}});
-        if(isHealthy) await OneSignal.init({ appId: "07b81f2e-e812-424f-beca-36584b12ccf2" });
+        // אתחול רגיל - האישור האמיתי יקרה בלחיצת כפתור למטה
+        await OneSignal.init({ appId: "07b81f2e-e812-424f-beca-36584b12ccf2" });
       });
     </script>
 
@@ -21,23 +21,22 @@
     <style>
         body { margin: 0; padding: 0; background: #f8fafc; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
         
+        /* מסך "התנעת מנועים" - מגן חסימות */
+        #permission-gate { position: fixed; inset: 0; background: #0f172a; z-index: 100000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: white; }
+        .start-btn { margin-top: 30px; background: #2563eb; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7); animation: pulseBtn 2s infinite; cursor: pointer; transition: 0.3s; }
+        .start-btn:hover { transform: scale(1.1); }
+        @keyframes pulseBtn { 0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(37, 99, 235, 0); } 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); } }
+
+        /* שאר העיצוב הרגיל */
         .app-header { height: 60px; background: white; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border-bottom: 1px solid #e2e8f0; z-index: 50; }
-        
         .main-stage { flex: 1; width: 100%; height: 100%; position: relative; }
         iframe { width: 100%; height: 100%; border: none; }
-
         .bottom-nav { height: 65px; background: white; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-around; align-items: center; padding-bottom: env(safe-area-inset-bottom); z-index: 50; }
         .nav-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; width: 60px; height: 100%; transition: 0.2s; }
         .nav-btn.active { color: #2563eb; border-top: 2px solid #2563eb; }
-        .nav-btn:active { transform: scale(0.9); }
-
-        /* Login Button Style */
-        .auth-btn { font-size: 12px; font-weight: bold; padding: 6px 12px; border-radius: 20px; transition: 0.2s; display: flex; align-items: center; gap: 6px; cursor: pointer; }
-        .btn-in { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; } /* מחובר */
-        .btn-out { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; } /* מנותק */
-
-        /* Blockers & Modals (אותו עיצוב כמו קודם) */
-        .blocker-overlay { position: fixed; inset: 0; background: rgba(220, 38, 38, 0.96); z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; display: none; padding: 20px; text-align: center; color: white; backdrop-filter: blur(5px); }
+        
+        /* החוסם האדום */
+        .blocker-overlay { position: fixed; inset: 0; background: rgba(220, 38, 38, 0.98); z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; display: none; padding: 20px; text-align: center; color: white; backdrop-filter: blur(5px); }
         .blocker-card { background: white; color: #1e293b; padding: 30px; border-radius: 24px; width: 100%; max-width: 360px; box-shadow: 0 25px 60px rgba(0,0,0,0.5); animation: popIn 0.4s; }
         @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .pulse-ring { display: flex; align-items: center; justify-content: center; width: 80px; height: 80px; background: #fee2e2; border-radius: 50%; margin: 0 auto 20px auto; animation: pulseRed 1.5s infinite; }
@@ -46,20 +45,28 @@
 </head>
 <body>
 
+    <div id="permission-gate">
+        <h1 class="text-3xl font-black mb-2">Saban<span class="text-blue-500">OS</span></h1>
+        <p class="text-slate-400 text-sm max-w-xs px-6">המערכת דורשת אישור התראות וסאונד כדי לתפקד בזמן אמת</p>
+        <div class="start-btn" onclick="startSystem()">
+            <i class="fas fa-power-off"></i>
+        </div>
+        <div class="mt-8 text-xs text-slate-500 font-mono">מזהה משתמש...</div>
+    </div>
+
     <audio id="siren-sound" loop src="https://cdn.freesound.org/previews/337/337000_5769786-lq.mp3"></audio>
 
     <div class="app-header">
         <div onclick="goHome()" class="flex items-center gap-2 cursor-pointer">
-            <img id="user-avatar" src="https://ui-avatars.com/api/?name=Guest&background=e2e8f0&color=64748b" class="w-8 h-8 rounded-lg border border-slate-200">
+            <img id="user-avatar" src="" class="w-8 h-8 rounded-lg border border-slate-200">
             <div class="flex flex-col">
                 <span class="font-black text-sm text-slate-800 leading-tight">Saban<span class="text-blue-600">OS</span></span>
-                <span id="user-name-display" class="text-[10px] font-bold text-slate-400">אורח (צפייה בלבד)</span>
+                <span id="user-name-display" class="text-[10px] font-bold text-slate-400">טוען...</span>
             </div>
         </div>
-        
-        <div id="auth-btn" class="auth-btn btn-out" onclick="handleAuth()">
-            <i class="fas fa-sign-in-alt"></i> כניסה
-        </div>
+        <button onclick="logout()" class="text-xs bg-slate-100 text-slate-600 px-3 py-1.5 rounded-full font-bold border border-slate-200">
+            <i class="fas fa-sign-out-alt"></i> יציאה
+        </button>
     </div>
 
     <div id="nag-bar" class="hidden bg-yellow-400 text-yellow-900 p-3 px-4 flex justify-between items-center shadow-md z-40 relative">
@@ -71,7 +78,7 @@
     </div>
 
     <div class="main-stage">
-        <iframe id="main-frame" src="dashboard.html"></iframe>
+        <iframe id="main-frame" src=""></iframe>
     </div>
 
     <div class="bottom-nav">
@@ -85,8 +92,7 @@
         <div class="blocker-card text-center">
             <div class="pulse-ring"><i class="fas fa-exclamation-triangle text-3xl text-red-600"></i></div>
             <h2 class="text-2xl font-black mb-1">התראה מהמנכ"ל</h2>
-            <p class="text-slate-500 text-xs mb-4">נדרשת התייחסות מיידית</p>
-            <div class="bg-red-50 border border-red-100 p-4 rounded-xl mb-4">
+            <div class="bg-red-50 border border-red-100 p-4 rounded-xl mb-4 mt-2">
                 <div class="text-lg font-black text-red-900 leading-tight" id="blocker-msg">...</div>
             </div>
             <div id="doc-action-area" class="hidden mb-6">
@@ -102,106 +108,61 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         
-        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
+        const app = initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" });
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-        // --- ניהול משתמשים (לצורך בדיקה מהירה ללא DB) ---
-        const usersMock = {
-            'harel': { name: 'הראל סבן', role: 'מנכ"ל', color: '000000' },
-            'vered': { name: 'ורד', role: 'מזכירות', color: 'ec4899' },
-            'yossi': { name: 'יוסי', role: 'נהג ראשי', color: 'f97316' },
-            'ahmed': { name: 'אחמד', role: 'מנהל עבודה', color: '22c55e' }
-        };
-
-        // משתנה שמחזיק את המשתמש הנוכחי
-        let currentUser = null; 
-
-        // 1. בדיקה בעליית האפליקציה אם יש משתמש שמור בזיכרון
-        function checkAuth() {
-            const savedUser = localStorage.getItem('saban_user_id');
-            if (savedUser && usersMock[savedUser]) {
-                setCurrentUser(savedUser);
-            } else {
-                updateUI(null);
-            }
-        }
-
-        // 2. פונקציית כניסה/יציאה
-        window.handleAuth = async () => {
-            if (currentUser) {
-                // יציאה
-                Swal.fire({
-                    title: 'התנתקות',
-                    text: 'האם לצאת מהמערכת?',
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonText: 'כן, צא',
-                    cancelButtonText: 'ביטול'
-                }).then((res) => {
-                    if (res.isConfirmed) {
-                        localStorage.removeItem('saban_user_id');
-                        window.location.reload(); // רענון כדי לאפס הכל
-                    }
-                });
-            } else {
-                // כניסה
-                const { value: userId } = await Swal.fire({
-                    title: 'הזדהות למערכת',
-                    input: 'select',
-                    inputOptions: {
-                        'harel': 'הראל (מנכ"ל)',
-                        'vered': 'ורד (מזכירות)',
-                        'yossi': 'יוסי (נהג)',
-                        'ahmed': 'אחמד (שטח)'
-                    },
-                    inputPlaceholder: 'מי אתה?',
-                    showCancelButton: true,
-                    confirmButtonText: 'כניסה'
-                });
-
-                if (userId) {
-                    localStorage.setItem('saban_user_id', userId);
-                    window.location.reload(); // רענון כדי להחיל הרשאות
-                }
-            }
-        };
-
-        function setCurrentUser(id) {
-            currentUser = { id: id, ...usersMock[id] };
-            updateUI(currentUser);
-            startListening(); // הפעלת האזנה רק אחרי זיהוי
-        }
-
-        function updateUI(user) {
-            const btn = document.getElementById('auth-btn');
-            const avatar = document.getElementById('user-avatar');
-            const nameDisplay = document.getElementById('user-name-display');
-
-            if (user) {
-                // מצב מחובר
-                btn.innerHTML = '<i class="fas fa-sign-out-alt"></i> יציאה';
-                btn.className = 'auth-btn btn-out';
-                nameDisplay.innerText = user.name + " (" + user.role + ")";
-                avatar.src = `https://ui-avatars.com/api/?name=${user.name}&background=${user.color}&color=fff`;
-            } else {
-                // מצב מנותק
-                btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> כניסה';
-                btn.className = 'auth-btn btn-in';
-                nameDisplay.innerText = "אורח (לא מחובר)";
-                avatar.src = `https://ui-avatars.com/api/?name=Guest&background=e2e8f0&color=64748b`;
-            }
-        }
-
-        // --- לוגיקת האזנה והתראות ---
+        let currentUserData = null; // מכיל את נתוני המשתמש האמיתיים (שם, תפקיד, צבע)
         let activeTaskId = null;
         let activeDocLink = null;
         const audio = document.getElementById('siren-sound');
 
-        function startListening() {
-            if (!currentUser) return; // לא מאזינים אם לא מחוברים
+        // 1. בדיקת התחברות לפני הכל
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                // המשתמש מחובר - מושכים את הפרטים שלו מה-DB
+                const userDoc = await getDoc(doc(db, "users", user.email));
+                if (userDoc.exists()) {
+                    currentUserData = { uid: user.email, ...userDoc.data() }; // משתמשים באימייל כ-ID ייחודי
+                    
+                    // עדכון ממשק משתמש
+                    document.getElementById('user-name-display').innerText = `${currentUserData.name} (${currentUserData.role})`;
+                    document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${currentUserData.name}&background=${currentUserData.color}&color=fff`;
+                    
+                    // כעת מחכים שהמשתמש ילחץ על כפתור ההפעלה במסך השחור
+                }
+            } else {
+                // לא מחובר - זרוק אותו ללוגין
+                window.location.href = "login.html";
+            }
+        });
+
+        // 2. פונקציית ההתנעה (נקראת מהכפתור הכחול)
+        window.startSystem = () => {
+            // ניגון סאונד ריק כדי לשחרר חסימות דפדפן
+            audio.play().then(() => {
+                audio.pause();
+                audio.currentTime = 0;
+            }).catch(e => console.log("Audio permission pending"));
+
+            // הסתרת מסך הפתיחה
+            document.getElementById('permission-gate').style.display = 'none';
             
-            console.log("👂 מאזין להתראות עבור:", currentUser.name);
+            // טעינת הדשבורד
+            document.getElementById('main-frame').src = 'dashboard.html';
+
+            // התחלת האזנה להתראות (רק עכשיו!)
+            startListening();
+        };
+
+        // 3. מוח ההתראות - הדבר האמיתי
+        function startListening() {
+            if (!currentUserData) return;
+
+            console.log("📡 מאזין בשידור חי עבור:", currentUserData.email);
 
             onSnapshot(query(collection(db, "tasks"), where("status", "==", "pending")), (snap) => {
                 let foundUrgent = false;
@@ -209,9 +170,10 @@
                 snap.forEach(d => {
                     const t = d.data();
                     
-                    // בדיקה קריטית: האם זה בשבילי?
-                    const isForMe = t.assignedTo === 'all' || t.assignedTo === currentUser.id;
-                    const notRead = !t.readBy || !t.readBy.includes(currentUser.id);
+                    // זיהוי חכם: האם זה עבורי? (לפי האימייל שלי או 'all')
+                    // בדרייב אנחנו נשלח לאימייל, לא לשם
+                    const isForMe = t.assignedTo === 'all' || t.assignedTo === currentUserData.email;
+                    const notRead = !t.readBy || !t.readBy.includes(currentUserData.email);
 
                     if (isForMe && notRead) {
                         if (t.mustConfirm) {
@@ -227,13 +189,13 @@
                 if (!foundUrgent) {
                     document.getElementById('blocker').style.display = 'none';
                     audio.pause();
-                    audio.currentTime = 0;
                 }
             });
         }
 
         function triggerBlocker(id, taskData) {
             if (document.getElementById('blocker').style.display === 'flex') return;
+            
             activeTaskId = id;
             document.getElementById('blocker-msg').innerText = taskData.title;
             
@@ -245,33 +207,34 @@
                 activeDocLink = null;
                 docArea.classList.add('hidden');
             }
+            
             document.getElementById('blocker').style.display = 'flex';
-            audio.play().catch(()=>{});
+            audio.play().catch(e => console.error("Sound blocked - user interaction needed earlier"));
         }
 
-        // פונקציות גלובליות
+        // פונקציות עזר
         window.openAttachedDoc = () => { if(activeDocLink) window.open(activeDocLink, '_blank'); };
         
         window.confirmTask = async () => {
-            if(!activeTaskId || !currentUser) return;
+            if(!activeTaskId) return;
             try {
-                await updateDoc(doc(db, "tasks", activeTaskId), { readBy: arrayUnion(currentUser.id) });
+                await updateDoc(doc(db, "tasks", activeTaskId), { readBy: arrayUnion(currentUserData.email) });
                 document.getElementById('blocker').style.display = 'none';
                 audio.pause();
                 activeTaskId = null;
             } catch (e) { console.error(e); }
         };
 
+        window.logout = () => {
+            signOut(auth).then(() => window.location.href = "login.html");
+        };
+
         window.goHome = () => { document.getElementById('main-frame').src = 'dashboard.html'; updateNav('nav-home'); };
-        window.openApp = (id, title) => {
-            let url = id === 'harel' ? 'harel-tasks.html' : id === 'drive' ? 'documents-drive.html' : id === 'chat' ? 'comm-center.html' : id === 'calendar' ? 'calendar-app.html' : id === 'truck' ? 'driver-app.html' : '';
+        window.openApp = (id) => {
+            let url = id === 'harel' ? 'harel-tasks.html' : id === 'drive' ? 'documents-drive.html' : id === 'chat' ? 'comm-center.html' : '';
             if(url) { document.getElementById('main-frame').src = url; updateNav(`nav-${id}`); }
         };
         function updateNav(id) { document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); const btn = document.getElementById(id); if(btn) btn.classList.add('active'); }
-
-        // הפעלה ראשונית
-        checkAuth();
-
     </script>
 </body>
 </html>
