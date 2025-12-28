@@ -56,21 +56,37 @@
         .g-purple { background: linear-gradient(135deg, #a855f7, #581c87); }
         .g-orange { background: linear-gradient(135deg, #f97316, #7c2d12); }
         .g-red { background: linear-gradient(135deg, #ef4444, #991b1b); }
+
+        /* אנימציית פעימה לנקודה הירוקה */
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+            70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+        .status-pulse { animation: pulse-green 2s infinite; }
     </style>
 </head>
 <body>
 
-    <div class="glass-btn mb-6 !flex-row !justify-between !items-center !h-auto !p-6" style="background: linear-gradient(135deg, #1e293b, #0f172a);">
-        <div>
-            <div class="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">מערכת ראשית</div>
-            <h1 class="text-2xl font-black text-white">Saban OS</h1>
-            <div class="text-sm text-green-400 font-medium mt-2 flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_#22c55e]"></span>
-                פעיל
+    <div class="glass-btn mb-6 !flex-row !justify-between !items-center !h-auto !p-5" style="background: linear-gradient(135deg, #1e293b, #0f172a);">
+        <div class="flex items-center gap-4">
+            <div class="relative">
+                <img id="user-avatar" src="" class="w-14 h-14 rounded-2xl object-cover border-2 border-white/10 shadow-lg bg-slate-700">
+                <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-[#0f172a] rounded-full status-pulse"></div>
+            </div>
+            
+            <div>
+                <div class="text-gray-400 text-[10px] font-bold uppercase tracking-wider mb-0.5" id="user-role">טוען...</div>
+                <h1 class="text-xl font-black text-white leading-tight" id="user-name">...</h1>
+                <div class="text-[10px] text-green-400 font-bold mt-1 flex items-center gap-1">
+                    <i class="fas fa-wifi text-[8px]"></i> מחובר למערכת
+                </div>
             </div>
         </div>
-        <div class="text-right">
+        
+        <div class="text-right pl-2 border-r border-white/10 pr-4 mr-2">
             <div id="clock" class="text-2xl font-mono font-bold text-white opacity-90">00:00</div>
+            <div id="date" class="text-[10px] text-gray-400 font-bold uppercase">...</div>
         </div>
     </div>
 
@@ -107,7 +123,7 @@
                 <div class="text-[10px] text-gray-400">פגישות ולו"ז</div>
             </div>
         </div>
-        
+
         </div>
 
     <div class="mt-6 flex justify-between px-4">
@@ -131,31 +147,49 @@
         
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
 
-        // בדיקת הרשאות והוספת כפתור אדמין
+        // 1. זיהוי המשתמש והצגת פרטים
         const userEmail = localStorage.getItem('saban_user_email');
         
         if (userEmail) {
             getDoc(doc(db, "users", userEmail)).then(snap => {
                 if (snap.exists()) {
                     const user = snap.data();
-                    // אם המשתמש הוא מנכ"ל - הוסף כפתור ניהול
+                    
+                    // עדכון טקסטים
+                    document.getElementById('user-name').innerText = user.name;
+                    document.getElementById('user-role').innerText = user.jobTitle || user.role;
+                    
+                    // עדכון תמונה (אם אין, השתמש באווטאר גנרי חכם)
+                    const avatarUrl = user.photoUrl || `https://ui-avatars.com/api/?name=${user.name}&background=${user.color || '64748b'}&color=fff`;
+                    document.getElementById('user-avatar').src = avatarUrl;
+
+                    // הוספת כפתור ניהול אם זה מנכ"ל
                     if (user.role === 'מנכ״ל') {
-                        const grid = document.getElementById('apps-grid');
-                        const adminBtn = document.createElement('div');
-                        adminBtn.className = 'glass-btn';
-                        // פותח בחלון חדש או באותו פרייים - לבחירתך. כאן זה בחלון המלא.
-                        adminBtn.onclick = () => window.parent.location.href = 'admin-console.html';
-                        adminBtn.innerHTML = `
-                            <div class="icon-glow g-purple"><i class="fas fa-user-shield"></i></div>
-                            <div class="text-center">
-                                <div class="font-bold text-sm">ניהול</div>
-                                <div class="text-[10px] text-gray-400">כוח אדם</div>
-                            </div>
-                        `;
-                        grid.appendChild(adminBtn);
+                        addAdminButton();
                     }
+                } else {
+                    // מקרה קצה: המשתמש נמחק מהדאטה בייס
+                    window.location.href = 'login.html';
                 }
-            });
+            }).catch(err => console.error("Error loading user:", err));
+        } else {
+            // לא מחובר
+            window.location.href = 'login.html';
+        }
+
+        function addAdminButton() {
+            const grid = document.getElementById('apps-grid');
+            const adminBtn = document.createElement('div');
+            adminBtn.className = 'glass-btn';
+            adminBtn.onclick = () => window.parent.location.href = 'admin-console.html';
+            adminBtn.innerHTML = `
+                <div class="icon-glow g-purple"><i class="fas fa-user-shield"></i></div>
+                <div class="text-center">
+                    <div class="font-bold text-sm">ניהול</div>
+                    <div class="text-[10px] text-gray-400">כוח אדם</div>
+                </div>
+            `;
+            grid.appendChild(adminBtn);
         }
 
         // ניווט דרך האבא
@@ -167,10 +201,16 @@
             }
         };
 
-        setInterval(() => {
+        // שעון ותאריך
+        function updateTime() {
             const now = new Date();
             document.getElementById('clock').innerText = now.toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'});
-        }, 1000);
+            
+            const dateOptions = { weekday: 'short', day: 'numeric', month: 'numeric' };
+            document.getElementById('date').innerText = now.toLocaleDateString('he-IL', dateOptions);
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
     </script>
 </body>
 </html>
