@@ -6,61 +6,59 @@
     <title>SabanOS Core</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({ appId: "07b81f2e-e812-424f-beca-36584b12ccf2" });
+      });
+    </script>
 
     <style>
-        body { margin: 0; padding: 0; background: #f8fafc; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+        body { margin: 0; padding: 0; background: #0f172a; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
         
-        /* Start Gate */
-        #permission-gate { position: fixed; inset: 0; background: #0f172a; z-index: 100000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: white; }
-        .start-btn { margin-top: 30px; background: #2563eb; width: 90px; height: 90px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7); animation: pulseBtn 2s infinite; cursor: pointer; transition: 0.3s; border: 4px solid #1e40af; }
-        .start-btn:active { transform: scale(0.9); background: #1e40af; }
-        @keyframes pulseBtn { 0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7); } 70% { box-shadow: 0 0 0 25px rgba(37, 99, 235, 0); } 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); } }
+        /* מסך התנעה */
+        #permission-gate { position: fixed; inset: 0; background: #0f172a; z-index: 100000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
+        .start-btn { margin-top: 30px; background: #ef4444; width: 100px; height: 100px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px; border: 4px solid #b91c1c; animation: pulseRed 1.5s infinite; cursor: pointer; box-shadow: 0 0 30px rgba(239, 68, 68, 0.5); }
+        @keyframes pulseRed { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 25px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
-        /* Blocker */
-        .blocker-overlay { position: fixed; inset: 0; background: rgba(220, 38, 38, 0.98); z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; display: none; padding: 20px; text-align: center; color: white; }
-        .blocker-card { background: white; color: #1e293b; padding: 30px; border-radius: 24px; width: 100%; max-width: 360px; box-shadow: 0 25px 60px rgba(0,0,0,0.5); animation: popIn 0.4s; position: relative; }
-        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        
-        /* Layout */
-        .app-header { height: 60px; background: white; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border-bottom: 1px solid #e2e8f0; z-index: 50; }
-        .main-stage { flex: 1; width: 100%; height: 100%; position: relative; }
+        /* חוסם אדום */
+        .blocker-overlay { position: fixed; inset: 0; background: rgba(220, 38, 38, 0.98); z-index: 99999; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px; color: white; text-align: center; }
+        .blocker-card { background: white; color: #1e293b; padding: 30px; border-radius: 24px; width: 100%; max-width: 360px; box-shadow: 0 25px 60px rgba(0,0,0,0.5); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        /* Header & Nav */
+        .app-header { height: 60px; background: white; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border-bottom: 1px solid #e2e8f0; }
+        .main-stage { flex: 1; width: 100%; height: 100%; position: relative; background: #f8fafc; }
         iframe { width: 100%; height: 100%; border: none; }
-        .bottom-nav { height: 65px; background: white; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-around; align-items: center; padding-bottom: env(safe-area-inset-bottom); z-index: 50; }
-        .nav-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; width: 60px; height: 100%; transition: 0.2s; }
+        .bottom-nav { height: 65px; background: white; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-around; align-items: center; padding-bottom: env(safe-area-inset-bottom); }
+        .nav-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; width: 60px; height: 100%; }
         .nav-btn.active { color: #2563eb; border-top: 2px solid #2563eb; }
-
-        /* Unmute helper */
-        .unmute-hint { position: absolute; top: 10px; right: 10px; background: #fee2e2; color: #dc2626; padding: 8px; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; animation: bounce 1s infinite; }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
     </style>
 </head>
 <body>
 
     <div id="permission-gate">
-        <div class="mb-4 text-center">
-            <h1 class="text-4xl font-black mb-1">Saban<span class="text-blue-500">OS</span></h1>
-            <p class="text-slate-400 text-sm">התנעת מערכת</p>
-        </div>
+        <h1 class="text-3xl font-black mb-2">Saban<span class="text-blue-500">OS</span></h1>
+        <p class="text-slate-400 text-sm">לחץ להפעלת משמרת</p>
         <div class="start-btn" onclick="startSystem()">
             <i class="fas fa-power-off"></i>
         </div>
-        <div class="mt-8 text-xs text-slate-500 font-mono" id="loading-txt">טוען משתמש...</div>
+        <div id="loading-txt" class="mt-8 text-xs text-slate-500 font-mono">מזהה עובד...</div>
     </div>
 
     <audio id="siren-sound" loop preload="auto" src="https://cdn.freesound.org/previews/337/337000_5769786-lq.mp3"></audio>
 
     <div class="app-header">
-        <div onclick="goHome()" class="flex items-center gap-2 cursor-pointer">
-            <img id="user-avatar" src="" class="w-8 h-8 rounded-lg border border-slate-200">
-            <div class="flex flex-col">
-                <span class="font-black text-sm text-slate-800 leading-tight">Saban<span class="text-blue-600">OS</span></span>
-                <span id="user-name-display" class="text-[10px] font-bold text-slate-400">...</span>
+        <div onclick="goHome()" class="flex items-center gap-2">
+            <img id="user-avatar" src="" class="w-8 h-8 rounded-lg border">
+            <div>
+                <span class="font-black text-sm text-slate-800 block leading-none">SabanOS</span>
+                <span id="user-name-display" class="text-[10px] text-slate-500">...</span>
             </div>
         </div>
-        <button onclick="logout()" class="text-xs bg-slate-50 text-slate-500 px-3 py-1.5 rounded-full border border-slate-200">
-            <i class="fas fa-sign-out-alt"></i>
-        </button>
+        <button onclick="logout()" class="text-xs bg-slate-100 px-3 py-1 rounded-full"><i class="fas fa-sign-out-alt"></i></button>
     </div>
 
     <div class="main-stage">
@@ -68,36 +66,27 @@
     </div>
 
     <div class="bottom-nav">
-        <div class="nav-btn active" onclick="goHome()" id="nav-home"><i class="fas fa-home text-xl mb-1"></i><span class="text-[10px] font-bold">בית</span></div>
-        <div class="nav-btn" onclick="openApp('chat', 'צ\'אט')" id="nav-chat"><i class="fab fa-whatsapp text-xl mb-1"></i><span class="text-[10px] font-bold">צ'אט</span></div>
-        <div class="nav-btn" onclick="openApp('drive', 'הארכיון')" id="nav-drive"><i class="fas fa-folder-open text-xl mb-1"></i><span class="text-[10px] font-bold">דרייב</span></div>
-        <div class="nav-btn" onclick="openApp('harel', 'משימות')" id="nav-harel"><i class="fas fa-tasks text-xl mb-1"></i><span class="text-[10px] font-bold">משימות</span></div>
+        <div class="nav-btn active" onclick="goHome()" id="nav-home"><i class="fas fa-home text-xl"></i><span class="text-[10px] font-bold">בית</span></div>
+        <div class="nav-btn" onclick="openApp('chat', 'צ\'אט')" id="nav-chat"><i class="fab fa-whatsapp text-xl"></i><span class="text-[10px] font-bold">צ'אט</span></div>
+        <div class="nav-btn" onclick="openApp('drive', 'הארכיון')" id="nav-drive"><i class="fas fa-folder-open text-xl"></i><span class="text-[10px] font-bold">דרייב</span></div>
+        <div class="nav-btn" onclick="openApp('harel', 'משימות')" id="nav-harel"><i class="fas fa-tasks text-xl"></i><span class="text-[10px] font-bold">משימות</span></div>
     </div>
 
     <div id="blocker" class="blocker-overlay">
-        <div class="blocker-card text-center">
-            
-            <div class="unmute-hint" onclick="forcePlaySound()">
-                <i class="fas fa-volume-mute"></i>
+        <div class="blocker-card">
+            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce text-red-600 text-3xl">
+                <i class="fas fa-bell"></i>
             </div>
-
-            <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-                <i class="fas fa-exclamation-triangle text-3xl text-red-600"></i>
-            </div>
+            <h2 class="text-2xl font-black mb-2">קריאה דחופה!</h2>
+            <div class="bg-red-50 p-4 rounded-xl border border-red-100 mb-4 font-bold text-red-900 text-lg" id="blocker-msg">...</div>
             
-            <h2 class="text-2xl font-black mb-1 text-slate-800">התראה מתפרצת!</h2>
-            
-            <div class="bg-red-50 border border-red-100 p-4 rounded-xl mb-4 mt-2">
-                <div class="text-lg font-black text-red-900 leading-tight" id="blocker-msg">...</div>
-            </div>
-            
-            <div id="doc-action-area" class="hidden mb-6">
-                <button onclick="openAttachedDoc()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg">
-                    <i class="fas fa-file-pdf text-lg"></i> צפה במסמך המצורף
+            <div id="doc-action-area" class="hidden mb-4">
+                <button onclick="openAttachedDoc()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2">
+                    <i class="fas fa-file-pdf"></i> פתח מסמך
                 </button>
             </div>
             
-            <button onclick="confirmTask()" class="w-full border-2 border-slate-200 text-slate-400 py-3 rounded-xl font-bold text-lg hover:bg-slate-50 transition">
+            <button onclick="confirmTask()" class="w-full border-2 border-slate-200 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-50">
                 <i class="fas fa-check"></i> מאשר קבלה
             </button>
         </div>
@@ -116,62 +105,81 @@
         let activeTaskId = null;
         let activeDocLink = null;
         const audio = document.getElementById('siren-sound');
+        let wakeLock = null;
 
-        // 1. זיהוי משתמש
+        // 1. כניסה למערכת
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 const userDoc = await getDoc(doc(db, "users", user.email));
                 if (userDoc.exists()) {
                     currentUserData = { uid: user.email, ...userDoc.data() };
-                    document.getElementById('loading-txt').innerText = `שלום, ${currentUserData.name}`;
+                    document.getElementById('loading-txt').innerText = `מחובר כ: ${currentUserData.name}`;
                     
-                    // עדכון UI
                     document.getElementById('user-name-display').innerText = currentUserData.name;
-                    const avatar = currentUserData.photoUrl || `https://ui-avatars.com/api/?name=${currentUserData.name}&background=${currentUserData.color}&color=fff`;
-                    document.getElementById('user-avatar').src = avatar;
+                    document.getElementById('user-avatar').src = currentUserData.photoUrl || `https://ui-avatars.com/api/?name=${currentUserData.name}&background=${currentUserData.color}&color=fff`;
+
+                    // *** צימוד קריטי ל-OneSignal ***
+                    OneSignalDeferred.push(function(OneSignal) {
+                        OneSignal.login(user.email); // זה מחבר את האימייל למכשיר!
+                        console.log("OneSignal Linked to:", user.email);
+                    });
                 }
             } else {
                 window.location.href = "login.html";
             }
         });
 
-        // 2. הפעלה (Start Engine)
-        window.startSystem = () => {
-            // טריק קריטי: ניגון ועצירה מידית כדי "לפרוץ" את חסימת האודיו
+        // 2. הפעלת מנועים (כולל Hack לשמירה על סאונד חי)
+        window.startSystem = async () => {
+            // ניגון התחלתי לשחרור חסימה
             audio.volume = 0.01;
-            audio.play().then(() => {
+            try {
+                await audio.play();
                 audio.pause();
                 audio.currentTime = 0;
-                audio.volume = 1.0; // החזרת עוצמה למקסימום
-                console.log("Audio unlocked!");
-            }).catch(e => console.error("Audio block:", e));
+                audio.volume = 1.0;
+            } catch(e) { console.error("Audio block:", e); }
+
+            // הפעלת Keep-Alive לאודיו (נגן שקט ברקע)
+            startSilentOscillator();
+
+            // מניעת כיבוי מסך (במובייל)
+            try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch(e) {}
 
             document.getElementById('permission-gate').style.display = 'none';
             document.getElementById('main-frame').src = 'dashboard.html';
-            
             startListening();
         };
 
-        // 3. האזנה
+        // טכניקה לשמירת AudioContext פתוח
+        function startSilentOscillator() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                gain.gain.value = 0.001; // כמעט שקט מוחלט
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                // מנגן צליל בלתי נשמע שמחזיק את ה"רמקול" של הדפדפן פתוח
+            } catch(e) {}
+        }
+
+        // 3. האזנה להתראות
         function startListening() {
             if (!currentUserData) return;
-            console.log("Listening for:", currentUserData.email);
-
+            
             onSnapshot(query(collection(db, "tasks"), where("status", "==", "pending")), (snap) => {
                 let foundUrgent = false;
 
                 snap.forEach(d => {
                     const t = d.data();
-                    
-                    // בדיקת התאמה מדוייקת: אימייל מול אימייל
-                    const isForMe = t.assignedTo === 'all' || t.assignedTo === currentUserData.email;
-                    const notRead = !t.readBy || !t.readBy.includes(currentUserData.email);
+                    const isForMe = t.assignedTo === 'all' || t.assignedTo === currentUserData.uid;
+                    const notRead = !t.readBy || !t.readBy.includes(currentUserData.uid);
 
-                    if (isForMe && notRead) {
-                        if (t.mustConfirm) {
-                            triggerBlocker(d.id, t);
-                            foundUrgent = true;
-                        }
+                    if (isForMe && notRead && t.mustConfirm) {
+                        triggerBlocker(d.id, t);
+                        foundUrgent = true;
                     }
                 });
 
@@ -189,35 +197,23 @@
             activeTaskId = id;
             document.getElementById('blocker-msg').innerText = taskData.title;
             
-            const docArea = document.getElementById('doc-action-area');
             if (taskData.docLink) {
                 activeDocLink = taskData.docLink;
-                docArea.classList.remove('hidden');
+                document.getElementById('doc-action-area').classList.remove('hidden');
             } else {
-                activeDocLink = null;
-                docArea.classList.add('hidden');
+                document.getElementById('doc-action-area').classList.add('hidden');
             }
             
             document.getElementById('blocker').style.display = 'flex';
-            
-            // הפעלת סירנה
-            audio.play().catch(e => {
-                console.warn("Auto-play blocked", e);
-                // אייקון הרמקול כבר יופיע ויהיה ניתן ללחיצה
-            });
+            audio.play().catch(e => console.log("Sound autoplay blocked by OS"));
         }
-        
-        // פונקציית גיבוי למקרה שהסאונד לא עבד אוטומטית
-        window.forcePlaySound = () => {
-            audio.play();
-        };
 
         window.openAttachedDoc = () => { if(activeDocLink) window.open(activeDocLink, '_blank'); };
         
         window.confirmTask = async () => {
             if(!activeTaskId) return;
             try {
-                await updateDoc(doc(db, "tasks", activeTaskId), { readBy: arrayUnion(currentUserData.email) });
+                await updateDoc(doc(db, "tasks", activeTaskId), { readBy: arrayUnion(currentUserData.uid) });
                 document.getElementById('blocker').style.display = 'none';
                 audio.pause();
                 activeTaskId = null;
