@@ -3,38 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Saban Archive Pro</title>
+    <title>Saban Drive</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <style>
-        body { background: #f8fafc; color: #334155; font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding-bottom: 100px; -webkit-tap-highlight-color: transparent; }
-        .header-sticky { background: rgba(255,255,255,0.95); backdrop-filter: blur(5px); padding: 16px 20px 10px 20px; position: sticky; top: 0; z-index: 40; border-bottom: 1px solid #e2e8f0; }
-        .doc-card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 16px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02); }
-        .icon-box { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+        body { background: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding-bottom: 90px; }
+        .header-sticky { background: rgba(255,255,255,0.95); backdrop-filter: blur(5px); padding: 16px; position: sticky; top: 0; z-index: 40; border-bottom: 1px solid #e2e8f0; }
+        .doc-card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 12px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+        .icon-box { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
         .ic-pdf { background: #fef2f2; color: #ef4444; } .ic-xls { background: #f0fdf4; color: #22c55e; } .ic-img { background: #faf5ff; color: #a855f7; } .ic-doc { background: #eff6ff; color: #3b82f6; } 
-        .filter-chip { padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; background: white; border: 1px solid #e2e8f0; color: #64748b; margin-left: 8px; cursor: pointer; transition: 0.2s; white-space: nowrap; }
-        .filter-chip.active { background: #2563eb; color: white; border-color: #2563eb; }
-        .fab-upload { position: fixed; bottom: 30px; left: 24px; width: 64px; height: 64px; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; box-shadow: 0 10px 25px rgba(37, 99, 235, 0.4); z-index: 50; }
-        .share-btn { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #94a3b8; margin-right: 8px; border: 1px solid #e2e8f0; }
-        .share-btn:active { background: #eff6ff; color: #2563eb; border-color: #2563eb; }
+        .share-btn { width: 36px; height: 36px; border-radius: 50%; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+        .fab-upload { position: fixed; bottom: 30px; left: 24px; width: 60px; height: 60px; background: #2563eb; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 10px 25px rgba(37, 99, 235, 0.4); z-index: 50; }
     </style>
 </head>
 <body>
 
     <div class="header-sticky">
-        <div class="flex justify-between items-center mb-4">
-            <div>
-                <h1 class="text-2xl font-black text-slate-800 tracking-tight">הארכיון</h1>
-                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">ח.סבן תשתיות</p>
-            </div>
-            <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100"><i class="fas fa-cloud-download-alt"></i></div>
-        </div>
-        <div class="relative mb-4">
-            <input type="text" id="search" onkeyup="filterDocs()" placeholder="חיפוש קובץ..." class="w-full bg-slate-100 border-none rounded-2xl py-3.5 px-12 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
-            <i class="fas fa-search absolute right-4 top-3.5 text-slate-400"></i>
-        </div>
+        <h1 class="text-xl font-black text-slate-800">המסמכים שלי</h1>
+        <input type="text" id="search" onkeyup="renderList()" placeholder="חיפוש..." class="w-full mt-3 bg-slate-100 border-none rounded-xl py-3 px-4 text-sm font-medium focus:bg-white transition">
+    </div>
+
+    <div id="doc-list" class="p-4 space-y-3">
+        <div class="text-center pt-20 text-slate-400">טוען...</div>
+    </div>
+
+    <button class="fab-upload" onclick="openUpload()"><i class="fas fa-plus"></i></button>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        
+        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
+        
+        // כתובות הסקריפטים שלך
+        const DOCS_API = "https://script.google.com/macros/s/AKfycbzu62mOPdMtttJVtVFncilG6rnxlfJ65ykMHNpGvkBzDoL3ECttcJ5uK2RAYIydveM9/exec";
+        
+        let dbFiles = [];
+
+        window.init = async () => {
+            const res = await fetch(DOCS_API + "?t=" + new Date().getTime());
+            const data = await res.json();
+            if (data.status === 'success') { dbFiles = data.files; renderList(); }
+        };
+
+        window.renderList = () => {
+            const container = document.getElementById('doc-list');
+            const term = document.getElementById('search').value.toLowerCase();
+            const filtered = dbFiles.filter(f => f.name.toLowerCase().includes(term));
+
+            container.innerHTML = filtered.map(f => `
+                <div class="doc-card">
+                    <div class="flex items-center gap-3 w-full" onclick="window.open('${f.url}', '_blank')">
+                        <div class="icon-box ${f.type.includes('pdf') ? 'ic-pdf' : 'ic-doc'}"><i class="fas fa-file-alt"></i></div>
+                        <div class="overflow-hidden">
+                            <div class="font-bold text-sm truncate w-40">${f.name}</div>
+                            <div class="text-[10px] text-slate-400">${f.desc || 'כללי'}</div>
+                        </div>
+                    </div>
+                    <button class="share-btn" onclick="shareDoc('${f.url}', '${f.name}')">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            `).join('');
+        };
+
+        window.shareDoc = async (url, name) => {
+            const { value: userId } = await Swal.fire({
+                title: 'למי לשלוח?',
+                input: 'select',
+                inputOptions: { 'all': '📢 כולם', 'vered': 'ורד', 'harel': 'הראל', 'yossi': 'יוסי' },
+                inputPlaceholder: 'בחר איש צוות',
+                showCancelButton: true,
+                confirmButtonText: 'שגר התראה 🚀'
+            });
+
+            if (userId) {
+                // יצירת המשימה שתפעיל את ה"מוח" בצד השני
+                await addDoc(collection(db, "tasks"), {
+                    title: "קיבלת מסמך חדש",
+                    desc: name,
+                    docLink: url, // הלינק מועבר כאן
+                    assignedTo: userId,
+                    mustConfirm: true, // זה מה שמפעיל את הסירנה
+                    createdBy: 'Saban Drive',
+                    createdAt: serverTimestamp(),
+                    status: 'pending',
+                    readBy: []
+                });
+
+                // שליחת Push לטלפון
+                fetch(DOCS_API, {
+                    method: "POST", mode: 'no-cors', headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ action: "send_push", title: "מסמך חדש בדרייב", message: name })
+                });
+
+                Swal.fire('נשלח!', 'המסמך הוקפץ למסך של העובד', 'success');
+            }
+        };
+
+        window.openUpload = async () => { /* קוד ההעלאה הרגיל שלך... */ };
+
+        init();
+    </script>
+</body>
+</html>        </div>
         <div class="flex overflow-x-auto pb-2 no-scrollbar">
             <div class="filter-chip active" onclick="setFilter('all', this)">הכל</div>
             <div class="filter-chip" onclick="setFilter('חשבונית', this)">💰 חשבונית</div>
