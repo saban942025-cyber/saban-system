@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rami Command</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ffffff">
+    <meta name="mobile-web-app-capable" content="yes">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -11,111 +16,184 @@
 </head>
 <body>
 
-    <div class="bg-white p-4 shadow-sm flex justify-between items-center sticky top-0 z-20">
+    <div id="overlay" class="overlay fixed inset-0 bg-black/50 z-40 hidden" onclick="toggleMenu()"></div>
+
+    <aside id="sidebar" class="fixed top-0 right-0 h-full w-3/4 max-w-xs bg-white shadow-2xl p-6 flex flex-col justify-between transform translate-x-full transition-transform duration-300 z-50">
         <div>
-            <div class="text-xs text-slate-400 font-bold tracking-widest uppercase">חדר בקרה</div>
-            <h1 class="text-xl font-black text-slate-800">Saban<span class="text-blue-600">OS</span></h1>
-        </div>
-        <img src="https://ui-avatars.com/api/?name=Rami&background=000&color=fff" class="w-10 h-10 rounded-full">
-    </div>
-
-    <div class="max-w-5xl mx-auto p-4 space-y-6">
-        
-        <div class="grid grid-cols-2 gap-3">
-            <div onclick="location.href='admin-console.html'" class="bg-white p-4 rounded-2xl shadow-sm text-center border border-slate-100 active:scale-95 transition">
-                <i class="fas fa-users text-2xl text-purple-500 mb-2"></i>
-                <div class="font-bold text-sm">צוות</div>
+            <div class="flex items-center justify-between mb-8">
+                <h2 class="text-2xl font-black text-slate-800">Saban<span class="text-blue-600">OS</span></h2>
+                <button onclick="toggleMenu()" class="text-slate-400 text-xl"><i class="fas fa-times"></i></button>
             </div>
-            <div onclick="location.href='documents-drive.html'" class="bg-white p-4 rounded-2xl shadow-sm text-center border border-slate-100 active:scale-95 transition">
-                <i class="fas fa-folder-open text-2xl text-yellow-500 mb-2"></i>
-                <div class="font-bold text-sm">מסמכים</div>
-            </div>
+            <nav class="space-y-4">
+                <a href="#" class="flex items-center gap-4 text-slate-600 font-bold p-3 rounded-xl bg-slate-50"><i class="fas fa-home text-blue-500"></i> ראשי</a>
+                <a href="admin-console.html" class="flex items-center gap-4 text-slate-600 font-bold p-3 rounded-xl hover:bg-slate-50"><i class="fas fa-users-cog text-purple-500"></i> ניהול משתמשים</a>
+                <a href="documents-drive.html" class="flex items-center gap-4 text-slate-600 font-bold p-3 rounded-xl hover:bg-slate-50"><i class="fas fa-folder text-yellow-500"></i> מסמכים</a>
+            </nav>
         </div>
-
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-            <h2 class="font-bold text-slate-700 mb-4 flex items-center gap-2">
-                <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span> מעקב זמן אמת
-            </h2>
-            
-            <div id="users-grid" class="space-y-3">
-                <div class="text-center text-slate-400 text-sm">מפעיל רדאר...</div>
+        <div class="border-t pt-6">
+            <div class="flex items-center gap-3">
+                <img src="https://ui-avatars.com/api/?name=Rami+M&background=0f172a&color=fff" class="w-10 h-10 rounded-full">
+                <div>
+                    <div class="font-bold text-sm">ראמי מסארוה</div>
+                    <div class="text-xs text-slate-400">Super Admin</div>
+                </div>
             </div>
         </div>
+    </aside>
 
-    </div>
+    <header class="bg-white sticky top-0 z-30 px-6 py-4 flex justify-between items-center shadow-sm">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center border border-blue-200 shadow-sm">
+                <i class="fas fa-crown text-sm"></i>
+            </div>
+            <div>
+                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">מרכז שליטה</div>
+                <h1 class="text-xl font-black text-slate-800">שלום, ראמי</h1>
+            </div>
+        </div>
+        <button onclick="toggleMenu()" class="text-slate-700 text-2xl focus:outline-none"><i class="fas fa-bars"></i></button>
+    </header>
+
+    <main class="p-6 max-w-5xl mx-auto space-y-8">
+        <section>
+            <h3 class="text-sm font-bold text-slate-400 mb-4 flex items-center gap-2"><i class="fas fa-th-large"></i> אפליקציות</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-2xl shadow-sm text-center border border-slate-100 cursor-pointer hover:shadow-md transition" onclick="openApp('users')">
+                    <div class="w-14 h-14 mx-auto rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white text-2xl mb-2 shadow-lg shadow-purple-200"><i class="fas fa-users"></i></div>
+                    <div class="font-bold text-slate-700 text-sm">צוות</div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm text-center border border-slate-100 cursor-pointer hover:shadow-md transition" onclick="openApp('drive')">
+                    <div class="w-14 h-14 mx-auto rounded-xl bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white text-2xl mb-2 shadow-lg shadow-orange-200"><i class="fas fa-cloud"></i></div>
+                    <div class="font-bold text-slate-700 text-sm">דרייב</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-lg font-black text-slate-800">🛠️ חדר מצב טכני</h2>
+                    <p class="text-xs text-slate-500">סטטוס עובדים בזמן אמת</p>
+                </div>
+                <button class="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl text-xs font-bold" onclick="refreshUserList()"><i class="fas fa-sync-alt"></i> רענן</button>
+            </div>
+
+            <div class="flex gap-3 overflow-x-auto pb-4 no-scrollbar" id="support-users-list">
+                <div class="flex-shrink-0 text-center opacity-50">טוען...</div>
+            </div>
+
+            <div id="mirror-area" class="hidden mt-6 bg-slate-50 rounded-2xl p-6 border border-slate-200">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-slate-700 flex items-center gap-2"><i class="fas fa-satellite-dish text-red-500 animate-pulse"></i> שיקוף: <span id="mirror-target-name" class="text-blue-600">...</span></h3>
+                    <button onclick="closeMirror()" class="text-slate-400 hover:text-red-500"><i class="fas fa-times-circle text-xl"></i></button>
+                </div>
+                <div class="border-4 border-slate-800 rounded-3xl bg-black overflow-hidden relative h-[400px] w-[250px] mx-auto shadow-2xl">
+                    <div class="bg-slate-100 h-full w-full overflow-y-auto p-4">
+                        <div class="text-center mb-4"><span class="text-[10px] font-bold bg-green-200 text-green-800 px-2 py-1 rounded-full">מחובר</span></div>
+                        <h4 class="text-xs font-bold text-slate-500 uppercase mb-2">משימות פתוחות:</h4>
+                        <div id="mirror-tasks" class="space-y-2"></div>
+                        <h4 class="text-xs font-bold text-slate-500 uppercase mt-6 mb-2">לוג אחרון:</h4>
+                        <div id="mirror-last-log" class="text-xs font-mono bg-white p-2 rounded border border-slate-200 text-slate-600">...</div>
+                    </div>
+                </div>
+                <div class="text-center mt-4">
+                    <button onclick="sendPushToTarget()" class="bg-blue-600 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg active:scale-95 transition"><i class="fas fa-bell"></i> שלח בדיקת צופר</button>
+                </div>
+            </div>
+        </section>
+    </main>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, query, where, onSnapshot, orderBy, limit, addDoc, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const app = initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" });
         const db = getFirestore(app);
+        let currentMirrorEmail = null;
 
-        // האזנה חיה
-        onSnapshot(collection(db, "users"), (snapshot) => {
-            const grid = document.getElementById('users-grid');
-            grid.innerHTML = '';
-            const now = new Date();
+        window.refreshUserList = () => {
+            const list = document.getElementById('support-users-list');
+            onSnapshot(collection(db, "users"), (snapshot) => {
+                list.innerHTML = '';
+                const now = new Date();
+                snapshot.forEach(doc => {
+                    const u = doc.data();
+                    const avatar = u.photoUrl || `https://ui-avatars.com/api/?name=${u.name}&background=${u.color || 'ccc'}&color=fff`;
+                    let statusColor = 'bg-gray-400';
+                    let isOnline = false;
+                    
+                    if (u.lastSeen) {
+                        const lastSeenDate = u.lastSeen.toDate();
+                        const diffSeconds = (now - lastSeenDate) / 1000;
+                        if (diffSeconds < 90) { // מחובר אם שידר ב-90 שניות אחרונות
+                            statusColor = 'bg-green-500 animate-pulse';
+                            isOnline = true;
+                        } else if (diffSeconds < 600) {
+                            statusColor = 'bg-yellow-500';
+                        }
+                    }
 
-            snapshot.forEach(doc => {
-                const u = doc.data();
-                
-                // חישוב זמן
-                let isOnline = false;
-                let lastSeenStr = 'מנותק';
-                
-                if (u.lastSeen) {
-                    const lastDate = u.lastSeen.toDate();
-                    const diffSec = (now - lastDate) / 1000;
-                    lastSeenStr = lastDate.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'});
-                    if (diffSec < 70) isOnline = true; // אם שידר ב-70 שניות אחרונות
-                }
-
-                const statusColor = isOnline ? 'bg-green-500' : 'bg-gray-300';
-                const statusBorder = isOnline ? 'border-green-500' : 'border-transparent';
-                const opacity = isOnline ? 'opacity-100' : 'opacity-60';
-
-                grid.innerHTML += `
-                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border ${statusBorder} transition-all duration-300 ${opacity}">
-                        <div class="flex items-center gap-3">
-                            <div class="relative">
-                                <img src="${u.photoUrl || 'https://ui-avatars.com/api/?name='+u.name}" class="w-10 h-10 rounded-full">
-                                <div class="absolute bottom-0 right-0 w-3 h-3 ${statusColor} border-2 border-white rounded-full"></div>
-                            </div>
-                            <div>
-                                <div class="font-bold text-sm text-slate-800">${u.name}</div>
-                                <div class="text-[10px] text-slate-500">${isOnline ? 'מחובר עכשיו' : 'נראה: ' + lastSeenStr}</div>
-                            </div>
+                    const el = document.createElement('div');
+                    el.className = 'flex-shrink-0 text-center cursor-pointer group bg-white p-3 rounded-2xl border border-slate-100 shadow-sm min-w-[90px] hover:border-blue-500 transition';
+                    el.onclick = () => startMirroring(u);
+                    el.innerHTML = `
+                        <div class="relative inline-block">
+                            <img src="${avatar}" class="w-12 h-12 rounded-full object-cover border-2 border-white shadow-md">
+                            <div class="absolute bottom-0 right-0 w-3.5 h-3.5 ${statusColor} border-2 border-white rounded-full"></div>
                         </div>
-                        <button onclick="pingUser('${u.email}', '${u.name}')" class="bg-white border border-slate-200 text-slate-600 w-8 h-8 rounded-full shadow-sm hover:text-blue-600 active:scale-90 transition">
-                            <i class="fas fa-bell"></i>
-                        </button>
-                    </div>
-                `;
-            });
-        });
-
-        window.pingUser = async (email, name) => {
-            const { value: msg } = await Swal.fire({
-                title: `שליחה ל-${name}`,
-                input: 'text',
-                inputPlaceholder: 'הודעה מתפרצת...',
-                showCancelButton: true,
-                confirmButtonText: 'שגר 🚀'
-            });
-
-            if (msg) {
-                await addDoc(collection(db, "tasks"), {
-                    title: "הודעה מראמי",
-                    desc: msg,
-                    assignedTo: email,
-                    status: 'pending',
-                    mustConfirm: true,
-                    createdAt: serverTimestamp()
+                        <div class="font-bold text-xs mt-2 text-slate-700 truncate w-20 mx-auto">${u.name.split(' ')[0]}</div>
+                        <div class="text-[9px] text-slate-400 mt-1">${u.device || 'Mobile'}</div>
+                    `;
+                    list.appendChild(el);
                 });
-                Swal.fire({icon: 'success', title: 'נשלח', timer: 1500, showConfirmButton: false});
+            });
+        };
+
+        window.startMirroring = (user) => {
+            currentMirrorEmail = user.email;
+            document.getElementById('mirror-area').classList.remove('hidden');
+            document.getElementById('mirror-target-name').innerText = user.name;
+            document.getElementById('mirror-last-log').innerText = user.lastAction || "אין נתונים";
+
+            const qTasks = query(collection(db, "tasks"), where("assignedTo", "==", user.email), where("status", "==", "pending"));
+            onSnapshot(qTasks, (snap) => {
+                const container = document.getElementById('mirror-tasks');
+                container.innerHTML = '';
+                if (snap.empty) container.innerHTML = '<div class="text-center text-gray-400 text-xs py-4">אין משימות</div>';
+                snap.forEach(d => {
+                    const t = d.data();
+                    container.innerHTML += `
+                        <div class="bg-white p-2 rounded border-l-2 border-red-500 shadow-sm mb-2 text-right">
+                            <div class="font-bold text-[10px] text-slate-700">${t.title}</div>
+                        </div>`;
+                });
+            });
+        };
+
+        window.closeMirror = () => { document.getElementById('mirror-area').classList.add('hidden'); currentMirrorEmail = null; };
+        
+        window.sendPushToTarget = async () => {
+            if(!currentMirrorEmail) return;
+            Swal.fire({ title: 'שולח...', timer: 1000, didOpen: () => Swal.showLoading() });
+            await addDoc(collection(db, "tasks"), {
+                title: "בדיקת טכנאי 🛠️", desc: "בדיקת מערכת התראות",
+                assignedTo: currentMirrorEmail, mustConfirm: true, status: 'pending', createdAt: serverTimestamp()
+            });
+            Swal.fire('נשלח', 'המסך של העובד אמור להבהב כעת', 'success');
+        };
+
+        window.toggleMenu = () => {
+            const sb = document.getElementById('sidebar');
+            const ov = document.getElementById('overlay');
+            if(sb.classList.contains('translate-x-full')) {
+                sb.classList.remove('translate-x-full'); ov.classList.remove('hidden');
+            } else {
+                sb.classList.add('translate-x-full'); ov.classList.add('hidden');
             }
         };
+
+        window.openApp = (page) => { if(page === 'users') window.location.href = 'admin-console.html'; else if(page === 'drive') window.location.href = 'documents-drive.html'; };
+        refreshUserList();
     </script>
 </body>
 </html>
