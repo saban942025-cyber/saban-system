@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SabanOS Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body { 
+            background: #0f172a; 
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #0f172a 80%);
+            height: 100vh; display: flex; align-items: center; justify-content: center; font-family: sans-serif;
+        }
+        .login-card {
+            background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1); padding: 40px;
+            border-radius: 24px; width: 90%; max-width: 400px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+        .input-field {
+            background: rgba(15, 23, 42, 0.6); border: 1px solid #334155;
+            color: white; width: 100%; padding: 14px; border-radius: 12px; margin-bottom: 16px;
+            outline: none; transition: 0.3s;
+        }
+        .input-field:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3); }
+        .login-btn {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            width: 100%; padding: 14px; border-radius: 12px; color: white; font-weight: bold; font-size: 16px;
+            margin-top: 10px; transition: 0.2s; box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+        }
+        .login-btn:active { transform: scale(0.96); }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <div class="mb-6">
+            <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/30">
+                <i class="fas fa-fingerprint text-3xl text-white"></i>
+            </div>
+            <h1 class="text-2xl font-black text-white">Saban<span class="text-blue-500">OS</span></h1>
+            <p class="text-slate-400 text-sm">מערכת ניהול ובקרה</p>
+        </div>
+
+        <form id="login-form" onsubmit="event.preventDefault(); handleLogin();">
+            <input type="email" id="email" class="input-field" placeholder="אימייל ארגוני" required>
+            <input type="password" id="password" class="input-field" placeholder="סיסמה" required>
+            <button type="submit" class="login-btn">כניסה למערכת</button>
+        </form>
+        
+        <div id="loader" class="hidden mt-4 text-blue-400 text-sm font-bold animate-pulse">מאמת פרטים...</div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, updatePassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const app = initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" });
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        window.handleLogin = async () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const loader = document.getElementById('loader');
+
+            loader.classList.remove('hidden');
+
+            try {
+                // 1. ניסיון התחברות
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+
+                // 2. בדיקה ב-DB אם צריך להחליף סיסמה
+                const userDoc = await getDoc(doc(db, "users", email));
+                
+                if (userDoc.exists() && userDoc.data().mustChangePassword) {
+                    loader.classList.add('hidden');
+                    // דרישת החלפת סיסמה
+                    await promptNewPassword(user, email);
+                } else {
+                    // הכל תקין - מעבר למוח
+                    window.location.href = "index.html";
+                }
+
+            } catch (error) {
+                loader.classList.add('hidden');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'שגיאת התחברות',
+                    text: 'שם משתמש או סיסמה שגויים',
+                    confirmButtonColor: '#ef4444'
+                });
+            }
+        };
+
+        async function promptNewPassword(user, email) {
+            const { value: newPass } = await Swal.fire({
+                title: 'החלפת סיסמה ראשונית',
+                text: 'מטעמי אבטחה, עליך לבחור סיסמה חדשה',
+                input: 'password',
+                inputPlaceholder: 'סיסמה חדשה (מינימום 6 תווים)',
+                allowOutsideClick: false,
+                confirmButtonText: 'שמור וכנס',
+                inputValidator: (value) => {
+                    if (!value || value.length < 6) return 'הסיסמה חייבת להיות בת 6 תווים לפחות';
+                }
+            });
+
+            if (newPass) {
+                try {
+                    await updatePassword(user, newPass);
+                    // עדכון ב-DB שלא צריך להחליף יותר
+                    await updateDoc(doc(db, "users", email), { mustChangePassword: false });
+                    
+                    Swal.fire('הצלחה', 'הסיסמה עודכנה!', 'success').then(() => {
+                        window.location.href = "index.html";
+                    });
+                } catch (e) {
+                    Swal.fire('שגיאה', 'לא ניתן לעדכן סיסמה כרגע', 'error');
+                }
+            }
+        }
+    </script>
+</body>
+</html>
