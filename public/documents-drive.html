@@ -37,7 +37,7 @@
         
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
         
-        // כתובות הסקריפטים שלך
+        // וודא שזה הלינק העדכני שיצרת
         const DOCS_API = "https://script.google.com/macros/s/AKfycbzu62mOPdMtttJVtVFncilG6rnxlfJ65ykMHNpGvkBzDoL3ECttcJ5uK2RAYIydveM9/exec";
         
         let dbFiles = [];
@@ -69,241 +69,55 @@
             `).join('');
         };
 
+        // --- תיקון: שליפת משתמשים אמיתיים ---
         window.shareDoc = async (url, name) => {
-            const { value: userId } = await Swal.fire({
-                title: 'למי לשלוח?',
+            // 1. שלוף את המשתמשים מ-Firebase
+            Swal.showLoading();
+            const usersSnap = await getDocs(collection(db, "users"));
+            let userOptions = { 'all': '📢 כולם (הודעה מתפרצת)' };
+            
+            usersSnap.forEach(doc => {
+                const u = doc.data();
+                // המפתח הוא האימייל (זה מה שחשוב!), הערך הוא השם
+                userOptions[u.email] = `${u.name} (${u.jobTitle || u.role})`; 
+            });
+            Swal.close();
+
+            // 2. הצג בחירה
+            const { value: selectedEmail } = await Swal.fire({
+                title: 'שליחת מסמך',
+                text: name,
                 input: 'select',
-                inputOptions: { 'all': '📢 כולם', 'vered': 'ורד', 'harel': 'הראל', 'yossi': 'יוסי' },
-                inputPlaceholder: 'בחר איש צוות',
+                inputOptions: userOptions,
+                inputPlaceholder: 'בחר עובד מהרשימה',
                 showCancelButton: true,
                 confirmButtonText: 'שגר התראה 🚀'
             });
 
-            if (userId) {
-                // יצירת המשימה שתפעיל את ה"מוח" בצד השני
+            if (selectedEmail) {
+                // 3. יצירת משימה עם האימייל המדויק
                 await addDoc(collection(db, "tasks"), {
                     title: "קיבלת מסמך חדש",
                     desc: name,
-                    docLink: url, // הלינק מועבר כאן
-                    assignedTo: userId,
-                    mustConfirm: true, // זה מה שמפעיל את הסירנה
-                    createdBy: 'Saban Drive',
+                    docLink: url,
+                    assignedTo: selectedEmail, // כאן נכנס האימייל המדויק (למשל vered@saban.os)
+                    mustConfirm: true,
+                    createdBy: localStorage.getItem('saban_user_email') || 'System',
                     createdAt: serverTimestamp(),
                     status: 'pending',
                     readBy: []
                 });
 
-                // שליחת Push לטלפון
-                fetch(DOCS_API, {
-                    method: "POST", mode: 'no-cors', headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ action: "send_push", title: "מסמך חדש בדרייב", message: name })
-                });
-
-                Swal.fire('נשלח!', 'המסמך הוקפץ למסך של העובד', 'success');
+                Swal.fire('נשלח!', 'ההתראה הוקפצה למסך של העובד.', 'success');
             }
         };
 
-        window.openUpload = async () => { /* קוד ההעלאה הרגיל שלך... */ };
+        window.openUpload = async () => { 
+            /* כאן תעתיק את פונקציית ההעלאה הרגילה שלך אם חסרה */ 
+            Swal.fire('פונקציית העלאה', 'יש להעתיק מהקוד הקודם', 'info');
+        };
 
         init();
-    </script>
-</body>
-</html>        </div>
-        <div class="flex overflow-x-auto pb-2 no-scrollbar">
-            <div class="filter-chip active" onclick="setFilter('all', this)">הכל</div>
-            <div class="filter-chip" onclick="setFilter('חשבונית', this)">💰 חשבונית</div>
-            <div class="filter-chip" onclick="setFilter('חוזה', this)">📜 חוזה</div>
-            <div class="filter-chip" onclick="setFilter('תוכנית', this)">🏗️ תוכנית</div>
-            <div class="filter-chip" onclick="setFilter('תמונה', this)">📷 תמונה</div>
-        </div>
-    </div>
-
-    <div id="doc-list" class="p-4 space-y-3 min-h-[300px]">
-        <div class="text-center pt-20 animate-pulse">
-            <div class="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full mx-auto mb-4 animate-spin"></div>
-            <div class="text-slate-400 text-sm font-medium">מסנכרן...</div>
-        </div>
-    </div>
-
-    <button class="fab-upload" onclick="openUpload()"><i class="fas fa-plus"></i></button>
-
-    <script type="module">
-        // הוספנו את getDocs כדי לשלוף משתמשים
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, serverTimestamp, getDocs, query } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        
-        const db = getFirestore(initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" }));
-        
-        // הלינקים שלך (וודא שהם מעודכנים)
-        const DOCS_API = "https://script.google.com/macros/s/AKfycbzu62mOPdMtttJVtVFncilG6rnxlfJ65ykMHNpGvkBzDoL3ECttcJ5uK2RAYIydveM9/exec";
-        const ALERTS_API = "https://script.google.com/macros/s/AKfycbzu62mOPdMtttJVtVFncilG6rnxlfJ65ykMHNpGvkBzDoL3ECttcJ5uK2RAYIydveM9/exec";
-
-        let dbFiles = [];
-        let currentFilter = 'all';
-
-        window.init = async () => { loadData(); };
-        
-        async function loadData() {
-            try {
-                const res = await fetch(DOCS_API + "?t=" + new Date().getTime());
-                const data = await res.json();
-                if (data.status === 'success') { dbFiles = data.files; renderList(); }
-            } catch (e) { console.error(e); }
-        }
-
-        function renderList() {
-            const container = document.getElementById('doc-list');
-            const term = document.getElementById('search').value.toLowerCase();
-            const filtered = dbFiles.filter(f => {
-                const matchText = f.name.toLowerCase().includes(term) || (f.desc && f.desc.toLowerCase().includes(term));
-                const matchTag = currentFilter === 'all' || (f.desc && f.desc.includes(currentFilter));
-                return matchText && matchTag;
-            });
-
-            if (filtered.length === 0) { container.innerHTML = '<div class="text-center text-slate-400 pt-10">ריק</div>'; return; }
-
-            container.innerHTML = filtered.map(f => {
-                let iconClass = 'ic-doc', icon = 'fa-file-alt';
-                if (f.type.includes('pdf')) { iconClass = 'ic-pdf'; icon = 'fa-file-pdf'; }
-                else if (f.type.includes('sheet') || f.type.includes('excel')) { iconClass = 'ic-xls'; icon = 'fa-file-excel'; }
-                else if (f.type.includes('image')) { iconClass = 'ic-img'; icon = 'fa-image'; }
-
-                return `
-                <div class="doc-card">
-                    <div class="flex items-center gap-4" onclick="window.open('${f.url}', '_blank')">
-                        <div class="icon-box ${iconClass}"><i class="fas ${icon}"></i></div>
-                        <div class="overflow-hidden">
-                            <div class="font-bold text-slate-800 text-sm truncate w-32">${f.name}</div>
-                            <div class="flex items-center gap-2 mt-1">
-                                <span class="bg-slate-100 text-slate-500 text-[10px] px-2 py-0.5 rounded font-bold">${f.desc || 'כללי'}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="flex items-center">
-                        <button class="share-btn" onclick="shareFile('${f.url}', '${f.name}')">
-                            <i class="fas fa-share-alt"></i>
-                        </button>
-                    </div>
-                </div>`;
-            }).join('');
-        }
-
-        window.shareFile = (url, name) => {
-            Swal.fire({
-                title: 'שתף מסמך',
-                text: name,
-                showCancelButton: true,
-                cancelButtonText: 'ביטול',
-                confirmButtonText: 'שלח בוואטסאפ 💚',
-                confirmButtonColor: '#25D366',
-                denyButtonText: 'הקפץ לצוות 🚨',
-                showDenyButton: true,
-                denyButtonColor: '#ef4444'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    const text = `היי, מצורף מסמך לעיונך: ${name} \n${url}`;
-                    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-                } else if (result.isDenied) {
-                    selectUserAndSend(url, name);
-                }
-            });
-        };
-
-        // --- התיקון: פונקציה ששולפת משתמשים אמיתיים ---
-        async function getUsersList() {
-            try {
-                const usersRef = collection(db, "users");
-                const snapshot = await getDocs(usersRef);
-                
-                let usersOptions = { 'all': '📢 כולם (הודעה מתפרצת)' };
-                
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    // מציג שם + תפקיד אם קיים
-                    usersOptions[doc.id] = data.name + (data.role ? ` (${data.role})` : '');
-                });
-                return usersOptions;
-            } catch (error) {
-                console.error("Error fetching users:", error);
-                // גיבוי למקרה של תקלה
-                return { 'all': '📢 כולם (שגיאת טעינת משתמשים)' };
-            }
-        }
-
-        async function selectUserAndSend(url, name) {
-            // קודם שולפים את המשתמשים
-            Swal.fire({ title: 'טוען אנשי קשר...', didOpen: () => Swal.showLoading() });
-            const realUsers = await getUsersList();
-            Swal.close();
-
-            // ואז מציגים את הבחירה
-            const { value: userId } = await Swal.fire({
-                title: 'בחר עובד להקפצה',
-                input: 'select',
-                inputOptions: realUsers, // משתמשים ברשימה האמיתית
-                inputPlaceholder: 'בחר נמען...',
-                showCancelButton: true,
-                confirmButtonText: 'שגר התראה 🚀'
-            });
-
-            if (userId) {
-                Swal.fire({ title: 'משגר...', didOpen: () => Swal.showLoading() });
-                
-                try {
-                    await addDoc(collection(db, "tasks"), {
-                        title: "מסמך לעיון דחוף: " + name,
-                        desc: "נשלח מהארכיון. יש לאשר צפייה.",
-                        docLink: url,
-                        assignedTo: userId,
-                        mustConfirm: true,
-                        createdBy: 'הראל',
-                        createdAt: serverTimestamp(),
-                        status: 'pending',
-                        readBy: []
-                    });
-
-                    fetch(ALERTS_API, {
-                        method: "POST",
-                        mode: 'no-cors',
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            action: "send_push",
-                            title: "מסמך דחוף מהראל",
-                            message: "לחץ לצפייה במסמך: " + name
-                        })
-                    });
-
-                    Swal.fire('נשלח!', 'המסמך יקפוץ לעובד על המסך.', 'success');
-                } catch (e) {
-                    Swal.fire('שגיאה', 'לא ניתן לשלוח כרגע', 'error');
-                }
-            }
-        }
-
-        window.setFilter = (tag, btn) => { currentFilter = tag; document.querySelectorAll('.filter-chip').forEach(el => el.classList.remove('active')); btn.classList.add('active'); renderList(); };
-        window.filterDocs = () => renderList();
-        
-        window.openUpload = async () => {
-            const { value: formValues } = await Swal.fire({
-                title: 'העלאה',
-                html: '<input type="file" id="up-file" class="swal2-input"><select id="up-tag" class="swal2-input"><option value="כללי">כללי</option><option value="חשבונית">חשבונית</option><option value="חוזה">חוזה</option><option value="תוכנית">תוכנית</option><option value="תמונה">תמונה</option></select>',
-                preConfirm: () => [document.getElementById('up-file').files[0], document.getElementById('up-tag').value]
-            });
-            if(formValues && formValues[0]) {
-                const reader = new FileReader();
-                reader.readAsDataURL(formValues[0]);
-                reader.onload = async () => {
-                    const base64 = reader.result.split(',')[1];
-                    Swal.fire({ title: 'מעלה...', didOpen: () => Swal.showLoading() });
-                    try {
-                        await fetch(DOCS_API, { method: "POST", mode: 'no-cors', headers:{"Content-Type":"application/json"}, body: JSON.stringify({action:"upload_file", fileName:formValues[0].name, mimeType:formValues[0].type, fileData:base64, tag:formValues[1]})});
-                        Swal.fire('הצלחה','','success'); setTimeout(loadData, 2000);
-                    } catch (e) { Swal.fire('שגיאה','','error'); }
-                }
-            }
-        };
-
-        loadData();
     </script>
 </body>
 </html>
