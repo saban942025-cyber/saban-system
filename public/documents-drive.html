@@ -3,113 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Saban Archive</title>
+    <title>Saban Archive Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <style>
-        /* עיצוב בהיר ומקצועי */
-        body { background: #f8fafc; color: #1e293b; font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding-bottom: 90px; -webkit-tap-highlight-color: transparent; }
+        /* עיצוב פרימיום נקי (Light Mode) */
+        body { background: #f8fafc; color: #334155; font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding-bottom: 100px; -webkit-tap-highlight-color: transparent; }
         
-        .header-section { background: white; padding: 20px 20px 10px 20px; position: sticky; top: 0; z-index: 40; border-bottom: 1px solid #e2e8f0; }
+        .header-sticky { background: rgba(255,255,255,0.95); backdrop-filter: blur(5px); padding: 16px 20px 10px 20px; position: sticky; top: 0; z-index: 40; border-bottom: 1px solid #e2e8f0; }
         
         .doc-card { 
-            background: white; border: 1px solid #e2e8f0; border-radius: 12px; 
+            background: white; border: 1px solid #e2e8f0; border-radius: 16px; 
             padding: 16px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02); transition: all 0.2s;
         }
         .doc-card:active { transform: scale(0.98); background: #f1f5f9; }
 
-        .icon-box { 
-            width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;
-        }
-        .ic-pdf { background: #fee2e2; color: #ef4444; } /* אדום */
-        .ic-xls { background: #dcfce7; color: #22c55e; } /* ירוק */
-        .ic-img { background: #f3e8ff; color: #a855f7; } /* סגול */
-        .ic-doc { background: #dbeafe; color: #3b82f6; } /* כחול */
+        .icon-box { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+        .ic-pdf { background: #fef2f2; color: #ef4444; } 
+        .ic-xls { background: #f0fdf4; color: #22c55e; } 
+        .ic-img { background: #faf5ff; color: #a855f7; } 
+        .ic-doc { background: #eff6ff; color: #3b82f6; } 
 
-        /* תגיות */
         .filter-chip { 
-            padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; 
-            background: #f1f5f9; color: #64748b; margin-left: 8px; cursor: pointer; border: 1px solid transparent;
+            padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; 
+            background: white; border: 1px solid #e2e8f0; color: #64748b; margin-left: 8px; cursor: pointer; transition: 0.2s; white-space: nowrap;
         }
-        .filter-chip.active { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+        .filter-chip.active { background: #2563eb; color: white; border-color: #2563eb; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2); }
 
-        /* כפתור צף */
-        .fab { 
-            position: fixed; bottom: 30px; left: 24px; width: 60px; height: 60px; 
-            background: #2563eb; color: white; border-radius: 50%; 
-            display: flex; align-items: center; justify-content: center; font-size: 24px; 
-            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.4); z-index: 50;
+        .fab-upload { 
+            position: fixed; bottom: 30px; left: 24px; width: 64px; height: 64px; 
+            background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; font-size: 26px; 
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.4); z-index: 50; transition: 0.2s;
         }
+        .fab-upload:active { transform: scale(0.9) rotate(90deg); }
     </style>
 </head>
 <body>
 
-    <div class="header-section">
+    <div class="header-sticky">
         <div class="flex justify-between items-center mb-4">
             <div>
-                <h1 class="text-2xl font-black text-slate-800">ארכיון מסמכים</h1>
-                <p class="text-xs text-slate-500 font-bold">ח.סבן תשתיות וניהול</p>
+                <h1 class="text-2xl font-black text-slate-800 tracking-tight">הארכיון</h1>
+                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">ח.סבן תשתיות</p>
             </div>
-            <div class="bg-slate-100 p-2 rounded-full text-slate-600">
-                <i class="fas fa-folder-open text-xl"></i>
+            <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+                <i class="fas fa-cloud-download-alt"></i>
             </div>
         </div>
 
         <div class="relative mb-4">
-            <input type="text" id="search" onkeyup="filterDocs()" placeholder="חיפוש לפי שם או תגית..." class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-10 text-sm focus:outline-none focus:border-blue-500 focus:bg-white transition">
-            <i class="fas fa-search absolute right-3 top-3.5 text-slate-400"></i>
+            <input type="text" id="search" onkeyup="filterDocs()" placeholder="חיפוש קובץ..." class="w-full bg-slate-100 border-none rounded-2xl py-3.5 px-12 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+            <i class="fas fa-search absolute right-4 top-3.5 text-slate-400"></i>
         </div>
 
         <div class="flex overflow-x-auto pb-2 no-scrollbar">
             <div class="filter-chip active" onclick="setFilter('all', this)">הכל</div>
-            <div class="filter-chip" onclick="setFilter('חשבונית', this)">חשבוניות</div>
-            <div class="filter-chip" onclick="setFilter('חוזה', this)">חוזים</div>
-            <div class="filter-chip" onclick="setFilter('תוכנית', this)">תוכניות</div>
-            <div class="filter-chip" onclick="setFilter('תמונה', this)">תמונות</div>
+            <div class="filter-chip" onclick="setFilter('חשבונית', this)">💰 חשבוניות</div>
+            <div class="filter-chip" onclick="setFilter('חוזה', this)">📜 חוזים</div>
+            <div class="filter-chip" onclick="setFilter('תוכנית', this)">🏗️ תוכניות</div>
+            <div class="filter-chip" onclick="setFilter('תמונה', this)">📷 תמונות</div>
         </div>
     </div>
 
-    <div id="doc-list" class="p-4 space-y-3">
-        <div class="text-center pt-20">
-            <i class="fas fa-circle-notch fa-spin text-blue-600 text-3xl mb-3"></i>
-            <div class="text-slate-400 text-sm">מושך נתונים מהארכיון...</div>
+    <div id="doc-list" class="p-4 space-y-3 min-h-[300px]">
+        <div class="text-center pt-20 animate-pulse">
+            <div class="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full mx-auto mb-4 animate-spin"></div>
+            <div class="text-slate-400 text-sm font-medium">מסנכרן עם הענן...</div>
         </div>
     </div>
 
-    <button class="fab" onclick="openUpload()">
+    <button class="fab-upload" onclick="openUpload()">
         <i class="fas fa-plus"></i>
     </button>
 
     <script>
-        // ✅ הלינק הישיר לסקריפט המסמכים (הפעיל והתקין)
-        const DOCS_API = "https://script.google.com/macros/s/AKfycbzu62mOPdMtttJVtVFncilG6rnxlfJ65ykMHNpGvkBzDoL3ECttcJ5uK2RAYIydveM9/exec";
+        // ✅ הכתובת שאושרה במלשינון
+        const API_URL = "https://script.google.com/macros/s/AKfycbzu62mOPdMtttJVtVFncilG6rnxlfJ65ykMHNpGvkBzDoL3ECttcJ5uK2RAYIydveM9/exec";
 
         let dbFiles = [];
         let currentFilter = 'all';
 
-        // 1. טעינת קבצים (REAL DATA)
-        async function init() {
+        // 1. טעינת קבצים
+        async function loadData() {
             try {
-                const res = await fetch(DOCS_API);
+                // הוספנו t=timestamp כדי שהדפדפן לא ישמור זיכרון ישן
+                const res = await fetch(API_URL + "?t=" + new Date().getTime());
                 const data = await res.json();
                 
                 if (data.status === 'success') {
                     dbFiles = data.files;
-                    render();
+                    renderList();
+                } else {
+                    showError("הסקריפט החזיר שגיאה לוגית");
                 }
             } catch (e) {
-                document.getElementById('doc-list').innerHTML = `
-                <div class="text-center text-red-500 pt-10">
-                    <i class="fas fa-wifi text-4xl mb-2"></i><br>שגיאת תקשורת
-                </div>`;
+                console.error(e);
+                showError("שגיאת תקשורת. בדוק חיבור אינטרנט.");
             }
         }
 
-        // 2. הצגת קבצים
-        function render() {
+        // 2. הצגת רשימה
+        function renderList() {
             const container = document.getElementById('doc-list');
             const term = document.getElementById('search').value.toLowerCase();
             
@@ -120,13 +118,16 @@
             });
 
             if (filtered.length === 0) {
-                container.innerHTML = '<div class="text-center text-slate-400 pt-10">לא נמצאו מסמכים</div>';
+                container.innerHTML = `
+                <div class="text-center text-slate-400 pt-10">
+                    <i class="fas fa-folder-open text-4xl mb-3 opacity-30"></i>
+                    <div>לא נמצאו מסמכים</div>
+                </div>`;
                 return;
             }
 
             container.innerHTML = filtered.map(f => {
-                let iconClass = 'ic-doc';
-                let icon = 'fa-file-alt';
+                let iconClass = 'ic-doc'; let icon = 'fa-file-alt';
                 
                 if (f.type.includes('pdf')) { iconClass = 'ic-pdf'; icon = 'fa-file-pdf'; }
                 else if (f.type.includes('sheet') || f.type.includes('csv') || f.type.includes('excel')) { iconClass = 'ic-xls'; icon = 'fa-file-excel'; }
@@ -139,7 +140,7 @@
                         <div class="overflow-hidden">
                             <div class="font-bold text-slate-800 text-sm truncate w-48">${f.name}</div>
                             <div class="flex items-center gap-2 mt-1">
-                                <span class="bg-slate-100 text-slate-500 text-[10px] px-2 py-0.5 rounded">${f.desc || 'כללי'}</span>
+                                <span class="bg-slate-100 text-slate-500 text-[10px] px-2 py-0.5 rounded font-bold">${f.desc || 'כללי'}</span>
                                 <span class="text-[10px] text-slate-400">${f.date ? f.date.split(',')[0] : ''}</span>
                             </div>
                         </div>
@@ -149,40 +150,52 @@
             }).join('');
         }
 
-        // 3. סינון
+        // 3. לוגיקה
         window.setFilter = (tag, btn) => {
             currentFilter = tag;
             document.querySelectorAll('.filter-chip').forEach(el => el.classList.remove('active'));
             btn.classList.add('active');
-            render();
+            renderList();
         };
-        window.filterDocs = () => render();
+        window.filterDocs = () => renderList();
 
-        // 4. העלאת קובץ (REAL UPLOAD)
+        function showError(msg) {
+            document.getElementById('doc-list').innerHTML = `
+            <div class="text-center text-red-500 pt-10 px-6">
+                <i class="fas fa-exclamation-triangle text-3xl mb-2"></i>
+                <div class="font-bold">אופס! תקלה.</div>
+                <div class="text-xs mt-2">${msg}</div>
+                <button onclick="loadData()" class="mt-4 bg-slate-200 px-4 py-2 rounded-full text-xs font-bold">נסה שוב</button>
+            </div>`;
+        }
+
+        // 4. העלאת קובץ
         window.openUpload = async () => {
             const { value: formValues } = await Swal.fire({
-                title: 'העלאת מסמך לארכיון',
+                title: 'העלאת קובץ חדש',
                 html: `
                     <div class="text-right">
-                        <label class="text-xs font-bold text-slate-500">קובץ:</label>
-                        <input type="file" id="up-file" class="w-full bg-slate-50 border p-2 rounded mb-3 text-sm">
-                        <label class="text-xs font-bold text-slate-500">תיוג:</label>
-                        <select id="up-tag" class="w-full bg-slate-50 border p-2 rounded text-sm font-bold">
-                            <option value="כללי">כללי</option>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">בחר קובץ:</label>
+                        <input type="file" id="up-file" class="w-full bg-slate-50 border border-slate-200 p-2 rounded-lg mb-4 text-sm">
+                        
+                        <label class="block text-xs font-bold text-slate-500 mb-1">סוג המסמך (תיוג):</label>
+                        <select id="up-tag" class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-lg text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="כללי">📁 כללי</option>
                             <option value="חשבונית">💰 חשבונית / קבלה</option>
-                            <option value="חוזה">📜 חוזה</option>
-                            <option value="תוכנית">🏗️ תוכנית עבודה</option>
+                            <option value="חוזה">📜 חוזה משפטי</option>
+                            <option value="תוכנית">🏗️ תוכנית ביצוע</option>
                             <option value="תמונה">📷 תמונה מהשטח</option>
                         </select>
                     </div>
                 `,
-                confirmButtonText: 'שמור בדרייב',
+                confirmButtonText: 'שמור בארכיון',
                 confirmButtonColor: '#2563eb',
                 showCancelButton: true,
+                cancelButtonText: 'ביטול',
                 preConfirm: () => {
                     const file = document.getElementById('up-file').files[0];
                     const tag = document.getElementById('up-tag').value;
-                    if (!file) Swal.showValidationMessage('חובה לבחור קובץ');
+                    if (!file) Swal.showValidationMessage('נא לבחור קובץ להעלאה');
                     return { file, tag };
                 }
             });
@@ -194,14 +207,15 @@
                     const base64 = reader.result.split(',')[1];
                     
                     Swal.fire({ 
-                        title: 'מעלה לארכיון...', 
-                        text: 'נא להמתין',
+                        title: 'מעלה לענן...', 
+                        text: 'אנא המתן, זה יכול לקחת רגע',
                         allowOutsideClick: false,
                         didOpen: () => Swal.showLoading() 
                     });
 
                     try {
-                        await fetch(DOCS_API, {
+                        // שליחה במצב עיוור (no-cors) כדי לעקוף חסימות
+                        await fetch(API_URL, {
                             method: "POST",
                             mode: 'no-cors',
                             headers: { "Content-Type": "application/json" },
@@ -214,17 +228,26 @@
                             })
                         });
 
-                        Swal.fire('הצלחה', 'המסמך נשמר ומאובטח', 'success');
-                        setTimeout(init, 2000); // רענון
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'הקובץ נשלח!',
+                            text: 'המסמך יעודכן ברשימה תוך מספר שניות',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                        
+                        // טעינה מחדש כדי לראות את הקובץ
+                        setTimeout(loadData, 3000);
+
                     } catch (e) {
-                        Swal.fire('שגיאה', 'ההעלאה נכשלה', 'error');
+                        Swal.fire('שגיאה', 'ההעלאה נכשלה. נסה שוב.', 'error');
                     }
                 };
             }
         };
 
-        // הפעלה
-        init();
+        // התחלה
+        loadData();
     </script>
 </body>
 </html>
