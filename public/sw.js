@@ -1,29 +1,30 @@
-const CACHE_NAME = 'saban-os-v1';
+// 1. ייבוא הסקריפט של OneSignal (חובה בשורה הראשונה!)
+importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
 
-// התקנה
+// 2. הגדרות PWA (התקנה וניהול גרסאות)
+const CACHE_NAME = 'saban-os-v2';
+
 self.addEventListener('install', (e) => {
-    self.skipWaiting();
+    self.skipWaiting(); // דריסת גרסה ישנה מיד
 });
 
-// הפעלה
 self.addEventListener('activate', (e) => {
-    return self.clients.claim();
+    e.waitUntil(self.clients.claim()); // השתלטות מיידית על הדף
 });
 
-// ניהול בקשות רשת
+// 3. ניהול בקשות רשת (Network First)
+// מנסה רשת, אם אין - לא נתקע (אפשר להוסיף כאן Cache בעתיד אם תרצה אופליין מלא)
 self.addEventListener('fetch', (e) => {
+    // נותן ל-OneSignal ו-Firebase לעבור חופשי
     const url = new URL(e.request.url);
-
-    // חוק ברזל: בקשות ל-Firebase, Google APIs או OneSignal - עוברות ישר לרשת (בלי Cache)
-    if (url.hostname.includes('firebase') || 
-        url.hostname.includes('googleapis') || 
-        url.hostname.includes('onesignal') ||
-        e.request.method === 'POST') {
-        return; // תן לדפדפן לטפל בזה רגיל
+    if (url.hostname.includes('onesignal') || url.hostname.includes('firebase')) {
+        return;
     }
-
-    // שאר הקבצים (HTML, CSS, JS) - נסה רשת, אם אין אז Cache
+    
     e.respondWith(
-        fetch(e.request).catch(() => caches.match(e.request))
+        fetch(e.request).catch(() => {
+            // כאן אפשר להחזיר דף אופליין אם רוצים, כרגע נחזיר שגיאה שקטה
+            return new Response("Offline"); 
+        })
     );
 });
