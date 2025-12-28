@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ברוכים הבאים - SabanOS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: #0f172a; color: white; font-family: -apple-system, BlinkMacSystemFont, sans-serif; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
+        .card { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); padding: 40px; border-radius: 30px; width: 100%; max-width: 380px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .step-icon { width: 60px; height: 60px; border-radius: 50%; background: #1e293b; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; font-size: 24px; color: #94a3b8; transition: 0.3s; border: 2px solid #334155; }
+        .step-active { border-color: #3b82f6; color: #3b82f6; background: rgba(59, 130, 246, 0.1); box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
+        .step-done { border-color: #10b981; color: white; background: #10b981; }
+        .btn-action { background: linear-gradient(135deg, #2563eb, #1d4ed8); width: 100%; padding: 16px; border-radius: 16px; font-weight: bold; font-size: 18px; margin-top: 30px; transition: 0.2s; box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4); }
+        .btn-action:active { transform: scale(0.96); }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <div class="mb-8">
+            <h1 class="text-3xl font-black mb-2">Saban<span class="text-blue-500">OS</span></h1>
+            <p class="text-slate-400">הגדרת אפליקציה ראשונית</p>
+        </div>
+
+        <div class="flex justify-center gap-4 mb-8">
+            <div id="step1" class="step-icon step-active"><i class="fas fa-volume-up"></i></div>
+            <div id="step2" class="step-icon"><i class="fas fa-bell"></i></div>
+            <div id="step3" class="step-icon"><i class="fas fa-check"></i></div>
+        </div>
+
+        <h2 id="title" class="text-xl font-bold mb-2">בדיקת מערכת שמע</h2>
+        <p id="desc" class="text-sm text-slate-400 px-4">על מנת לקבל התראות חירום וסירנה, עליך לאשר למערכת להשמיע צלילים.</p>
+
+        <button id="main-btn" onclick="nextStep()" class="btn-action">
+            הפעל סאונד בדיקה
+        </button>
+        
+        <div class="mt-6 text-[10px] text-slate-600">Secure Setup | Saban Infrastructure</div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        
+        // OneSignal Initialization
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        
+        function nextStep() {
+            if(currentStep === 1) {
+                // שלב 1: אישור סאונד (פותח את ה-AudioContext)
+                const audio = new Audio('https://cdn.freesound.org/previews/337/337000_5769786-lq.mp3');
+                audio.volume = 0.1;
+                audio.play().then(() => {
+                    audio.pause();
+                    document.getElementById('step1').classList.remove('step-active');
+                    document.getElementById('step1').classList.add('step-done');
+                    document.getElementById('step2').classList.add('step-active');
+                    
+                    document.getElementById('title').innerText = "אישור התראות";
+                    document.getElementById('desc').innerText = "כדי לקבל משימות בזמן אמת, עליך לאשר קבלת התראות בדפדפן.";
+                    document.getElementById('main-btn').innerText = "אשר התראות";
+                    currentStep = 2;
+                }).catch(() => {
+                    alert("אנא לחץ שוב - הדפדפן חסם את הסאונד");
+                });
+            } 
+            else if(currentStep === 2) {
+                // שלב 2: אישור התראות
+                document.getElementById('step2').classList.remove('step-active');
+                document.getElementById('step2').classList.add('step-done');
+                document.getElementById('step3').classList.add('step-active');
+
+                // טוען את OneSignal רק עכשיו
+                const script = document.createElement('script');
+                script.src = "https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js";
+                script.defer = true;
+                document.head.appendChild(script);
+                
+                OneSignalDeferred.push(async function(OneSignal) {
+                    await OneSignal.init({ appId: "07b81f2e-e812-424f-beca-36584b12ccf2" });
+                    OneSignal.Slidedown.promptPush(); // מבקש אישור
+                });
+
+                document.getElementById('title').innerText = "הכל מוכן!";
+                document.getElementById('desc').innerText = "המערכת הוגדרה בהצלחה. אתה מועבר למסך הכניסה.";
+                document.getElementById('main-btn').innerText = "כנס למערכת 🚀";
+                document.getElementById('main-btn').className = "btn-action bg-green-600";
+                currentStep = 3;
+            }
+            else if(currentStep === 3) {
+                // סיום - מעבר ללוגין
+                window.location.href = "login.html";
+            }
+        }
+    </script>
+</body>
+</html>
