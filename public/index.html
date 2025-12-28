@@ -18,37 +18,46 @@
     <style>
         body { margin: 0; padding: 0; background: #0f172a; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
         
-        /* מסך התנעה */
-        #permission-gate { position: fixed; inset: 0; background: #0f172a; z-index: 100000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
+        /* Start Gate */
+        #permission-gate { position: fixed; inset: 0; background: #0f172a; z-index: 100000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: white; }
         .start-btn { margin-top: 30px; background: #ef4444; width: 100px; height: 100px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px; border: 4px solid #b91c1c; animation: pulseRed 1.5s infinite; cursor: pointer; box-shadow: 0 0 30px rgba(239, 68, 68, 0.5); }
+        .start-btn:active { transform: scale(0.9); }
         @keyframes pulseRed { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 25px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
-        /* חוסם אדום */
+        /* Blocker */
         .blocker-overlay { position: fixed; inset: 0; background: rgba(220, 38, 38, 0.98); z-index: 99999; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px; color: white; text-align: center; }
-        .blocker-card { background: white; color: #1e293b; padding: 30px; border-radius: 24px; width: 100%; max-width: 360px; box-shadow: 0 25px 60px rgba(0,0,0,0.5); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .blocker-card { background: white; color: #1e293b; padding: 30px; border-radius: 24px; width: 100%; max-width: 360px; box-shadow: 0 25px 60px rgba(0,0,0,0.5); animation: popIn 0.3s; position: relative; }
         @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-        /* Header & Nav */
+        /* UI Elements */
         .app-header { height: 60px; background: white; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border-bottom: 1px solid #e2e8f0; }
         .main-stage { flex: 1; width: 100%; height: 100%; position: relative; background: #f8fafc; }
         iframe { width: 100%; height: 100%; border: none; }
         .bottom-nav { height: 65px; background: white; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-around; align-items: center; padding-bottom: env(safe-area-inset-bottom); }
         .nav-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; width: 60px; height: 100%; }
         .nav-btn.active { color: #2563eb; border-top: 2px solid #2563eb; }
+
+        /* רמקול חירום */
+        .unmute-btn {
+            position: absolute; top: 10px; right: 10px;
+            background: #fee2e2; color: #ef4444;
+            width: 40px; height: 40px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            animation: bounce 1s infinite; cursor: pointer;
+        }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
     </style>
 </head>
 <body>
 
     <div id="permission-gate">
         <h1 class="text-3xl font-black mb-2">Saban<span class="text-blue-500">OS</span></h1>
-        <p class="text-slate-400 text-sm">לחץ להפעלת משמרת</p>
+        <p class="text-slate-400 text-sm">לחץ להתחלת משמרת</p>
         <div class="start-btn" onclick="startSystem()">
             <i class="fas fa-power-off"></i>
         </div>
         <div id="loading-txt" class="mt-8 text-xs text-slate-500 font-mono">מזהה עובד...</div>
     </div>
-
-    <audio id="siren-sound" loop preload="auto" src="https://cdn.freesound.org/previews/337/337000_5769786-lq.mp3"></audio>
 
     <div class="app-header">
         <div onclick="goHome()" class="flex items-center gap-2">
@@ -74,11 +83,15 @@
 
     <div id="blocker" class="blocker-overlay">
         <div class="blocker-card">
+            <div class="unmute-btn" onclick="Siren.play()">
+                <i class="fas fa-volume-up"></i>
+            </div>
+
             <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce text-red-600 text-3xl">
                 <i class="fas fa-bell"></i>
             </div>
             <h2 class="text-2xl font-black mb-2">קריאה דחופה!</h2>
-            <div class="bg-red-50 p-4 rounded-xl border border-red-100 mb-4 font-bold text-red-900 text-lg" id="blocker-msg">...</div>
+            <div class="bg-red-50 p-4 rounded-xl border border-red-100 mb-4 font-bold text-red-900 text-lg leading-tight" id="blocker-msg">...</div>
             
             <div id="doc-action-area" class="hidden mb-4">
                 <button onclick="openAttachedDoc()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2">
@@ -104,24 +117,85 @@
         let currentUserData = null;
         let activeTaskId = null;
         let activeDocLink = null;
-        const audio = document.getElementById('siren-sound');
         let wakeLock = null;
 
-        // 1. כניסה למערכת
+        // --- מנוע סאונד דיגיטלי (ללא קבצים) ---
+        const Siren = {
+            ctx: null,
+            osc: null,
+            gain: null,
+            lfo: null,
+            
+            init: function() {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AudioContext();
+                // נגן צליל שקט כדי לשחרר את ה-Context
+                this.playSilent();
+            },
+            
+            playSilent: function() {
+                if(!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                gain.gain.value = 0.001; // שקט
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.1);
+            },
+
+            play: function() {
+                if (!this.ctx) this.init();
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+
+                // יצירת סירנה עולה-יורדת
+                this.osc = this.ctx.createOscillator();
+                this.gain = this.ctx.createGain();
+                this.lfo = this.ctx.createOscillator(); // שולט בגובה הצליל (LFO)
+                const lfoGain = this.ctx.createGain();
+
+                this.osc.type = 'sawtooth'; // צליל חד וחזק
+                this.lfo.type = 'sine';
+                this.lfo.frequency.value = 2; // מהירות הסירנה (ווי-וו-ווי-וו)
+
+                // חיבורים
+                this.lfo.connect(lfoGain);
+                lfoGain.connect(this.osc.frequency);
+                lfoGain.gain.value = 200; // טווח השינוי בתדר
+
+                this.osc.frequency.value = 600; // תדר בסיס
+                this.osc.connect(this.gain);
+                this.gain.connect(this.ctx.destination);
+                
+                this.gain.gain.value = 0.5; // עוצמה
+                
+                this.osc.start();
+                this.lfo.start();
+            },
+
+            stop: function() {
+                if(this.osc) {
+                    try {
+                        this.osc.stop();
+                        this.lfo.stop();
+                    } catch(e){}
+                    this.osc = null;
+                }
+            }
+        };
+
+        // 1. זיהוי משתמש
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 const userDoc = await getDoc(doc(db, "users", user.email));
                 if (userDoc.exists()) {
                     currentUserData = { uid: user.email, ...userDoc.data() };
                     document.getElementById('loading-txt').innerText = `מחובר כ: ${currentUserData.name}`;
-                    
                     document.getElementById('user-name-display').innerText = currentUserData.name;
                     document.getElementById('user-avatar').src = currentUserData.photoUrl || `https://ui-avatars.com/api/?name=${currentUserData.name}&background=${currentUserData.color}&color=fff`;
 
-                    // *** צימוד קריטי ל-OneSignal ***
                     OneSignalDeferred.push(function(OneSignal) {
-                        OneSignal.login(user.email); // זה מחבר את האימייל למכשיר!
-                        console.log("OneSignal Linked to:", user.email);
+                        OneSignal.login(user.email);
                     });
                 }
             } else {
@@ -129,43 +203,21 @@
             }
         });
 
-        // 2. הפעלת מנועים (כולל Hack לשמירה על סאונד חי)
+        // 2. הפעלת מערכת (חובה לחיצה)
         window.startSystem = async () => {
-            // ניגון התחלתי לשחרור חסימה
-            audio.volume = 0.01;
-            try {
-                await audio.play();
-                audio.pause();
-                audio.currentTime = 0;
-                audio.volume = 1.0;
-            } catch(e) { console.error("Audio block:", e); }
+            // אתחול מנוע הסאונד
+            Siren.init();
 
-            // הפעלת Keep-Alive לאודיו (נגן שקט ברקע)
-            startSilentOscillator();
-
-            // מניעת כיבוי מסך (במובייל)
+            // מניעת כיבוי מסך
             try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch(e) {}
 
             document.getElementById('permission-gate').style.display = 'none';
             document.getElementById('main-frame').src = 'dashboard.html';
+            
             startListening();
         };
 
-        // טכניקה לשמירת AudioContext פתוח
-        function startSilentOscillator() {
-            try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                gain.gain.value = 0.001; // כמעט שקט מוחלט
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.start();
-                // מנגן צליל בלתי נשמע שמחזיק את ה"רמקול" של הדפדפן פתוח
-            } catch(e) {}
-        }
-
-        // 3. האזנה להתראות
+        // 3. האזנה
         function startListening() {
             if (!currentUserData) return;
             
@@ -185,8 +237,7 @@
 
                 if (!foundUrgent) {
                     document.getElementById('blocker').style.display = 'none';
-                    audio.pause();
-                    audio.currentTime = 0;
+                    Siren.stop(); // עצירת סירנה
                 }
             });
         }
@@ -205,7 +256,9 @@
             }
             
             document.getElementById('blocker').style.display = 'flex';
-            audio.play().catch(e => console.log("Sound autoplay blocked by OS"));
+            
+            // הפעלת סירנה דיגיטלית
+            Siren.play();
         }
 
         window.openAttachedDoc = () => { if(activeDocLink) window.open(activeDocLink, '_blank'); };
@@ -215,7 +268,7 @@
             try {
                 await updateDoc(doc(db, "tasks", activeTaskId), { readBy: arrayUnion(currentUserData.uid) });
                 document.getElementById('blocker').style.display = 'none';
-                audio.pause();
+                Siren.stop(); // שקט
                 activeTaskId = null;
             } catch (e) { console.error(e); }
         };
