@@ -12,7 +12,7 @@
         .step-icon { width: 60px; height: 60px; border-radius: 50%; background: #1e293b; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; font-size: 24px; color: #94a3b8; transition: 0.3s; border: 2px solid #334155; }
         .step-active { border-color: #3b82f6; color: #3b82f6; background: rgba(59, 130, 246, 0.1); box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
         .step-done { border-color: #10b981; color: white; background: #10b981; }
-        .btn-action { background: linear-gradient(135deg, #2563eb, #1d4ed8); width: 100%; padding: 16px; border-radius: 16px; font-weight: bold; font-size: 18px; margin-top: 30px; transition: 0.2s; box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4); }
+        .btn-action { background: linear-gradient(135deg, #2563eb, #1d4ed8); width: 100%; padding: 16px; border-radius: 16px; font-weight: bold; font-size: 18px; margin-top: 30px; transition: 0.2s; box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4); cursor: pointer; }
         .btn-action:active { transform: scale(0.96); }
     </style>
 </head>
@@ -43,27 +43,32 @@
     <script>
         let currentStep = 1;
         
-        // OneSignal Initialization
+        // צליל מערכת קצר ומוטמע בקוד (לא דורש אינטרנט או טעינה)
+        const SYSTEM_BEEP = "data:audio/mp3;base64,//NExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//NExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//NExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//NExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//NExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq";
+        
         window.OneSignalDeferred = window.OneSignalDeferred || [];
         
         function nextStep() {
             if(currentStep === 1) {
-                // שלב 1: אישור סאונד (פותח את ה-AudioContext)
-                const audio = new Audio('https://cdn.freesound.org/previews/337/337000_5769786-lq.mp3');
-                audio.volume = 0.1;
-                audio.play().then(() => {
-                    audio.pause();
-                    document.getElementById('step1').classList.remove('step-active');
-                    document.getElementById('step1').classList.add('step-done');
-                    document.getElementById('step2').classList.add('step-active');
-                    
-                    document.getElementById('title').innerText = "אישור התראות";
-                    document.getElementById('desc').innerText = "כדי לקבל משימות בזמן אמת, עליך לאשר קבלת התראות בדפדפן.";
-                    document.getElementById('main-btn').innerText = "אשר התראות";
-                    currentStep = 2;
-                }).catch(() => {
-                    alert("אנא לחץ שוב - הדפדפן חסם את הסאונד");
-                });
+                // שלב 1: אישור סאונד עם קובץ מקומי
+                const audio = new Audio(SYSTEM_BEEP);
+                audio.volume = 0.5;
+                
+                // הניסיון לנגן
+                const playPromise = audio.play();
+
+                if (playPromise !== undefined) {
+                    playPromise.then(_ => {
+                        // הצלחה - עוברים שלב
+                        finishStep1();
+                    })
+                    .catch(error => {
+                        // כישלון - מנסים שוב בשיטה אגרסיבית יותר (לחיצה שנייה ודאית תעבוד)
+                        console.log("Audio blocked, retrying user interaction requirement.");
+                        document.getElementById('main-btn').innerText = "לחץ שוב לאישור";
+                        document.getElementById('main-btn').style.background = "#e11d48"; // אדום כדי למשוך תשומת לב
+                    });
+                }
             } 
             else if(currentStep === 2) {
                 // שלב 2: אישור התראות
@@ -71,7 +76,7 @@
                 document.getElementById('step2').classList.add('step-done');
                 document.getElementById('step3').classList.add('step-active');
 
-                // טוען את OneSignal רק עכשיו
+                // טעינת OneSignal
                 const script = document.createElement('script');
                 script.src = "https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js";
                 script.defer = true;
@@ -79,19 +84,36 @@
                 
                 OneSignalDeferred.push(async function(OneSignal) {
                     await OneSignal.init({ appId: "07b81f2e-e812-424f-beca-36584b12ccf2" });
-                    OneSignal.Slidedown.promptPush(); // מבקש אישור
+                    OneSignal.Slidedown.promptPush(); 
                 });
 
                 document.getElementById('title').innerText = "הכל מוכן!";
-                document.getElementById('desc').innerText = "המערכת הוגדרה בהצלחה. אתה מועבר למסך הכניסה.";
+                document.getElementById('desc').innerText = "המערכת הוגדרה בהצלחה. לחץ לכניסה.";
                 document.getElementById('main-btn').innerText = "כנס למערכת 🚀";
                 document.getElementById('main-btn').className = "btn-action bg-green-600";
+                
+                // אפקט חגיגה קטן
+                const successAudio = new Audio(SYSTEM_BEEP);
+                successAudio.play();
+                
                 currentStep = 3;
             }
             else if(currentStep === 3) {
                 // סיום - מעבר ללוגין
                 window.location.href = "login.html";
             }
+        }
+
+        function finishStep1() {
+            document.getElementById('step1').classList.remove('step-active');
+            document.getElementById('step1').classList.add('step-done');
+            document.getElementById('step2').classList.add('step-active');
+            
+            document.getElementById('title').innerText = "אישור התראות";
+            document.getElementById('desc').innerText = "חובה לאשר קבלת התראות כדי לקבל משימות דחופות בזמן אמת.";
+            document.getElementById('main-btn').innerText = "אשר התראות";
+            document.getElementById('main-btn').style.background = ""; // איפוס צבע אם שונה
+            currentStep = 2;
         }
     </script>
 </body>
