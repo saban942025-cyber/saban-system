@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Saban Debugger</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white p-10 font-mono">
+
+    <h1 class="text-2xl text-yellow-400 mb-6 font-bold">🔍 מלשינון מערכת (Saban Debugger)</h1>
+
+    <div class="mb-4">
+        <span class="text-gray-400">כתובת הסקריפט הנבדקת:</span><br>
+        <code class="text-xs text-blue-300 break-all" id="url-display">...</code>
+    </div>
+
+    <div class="space-y-4">
+        <div class="bg-gray-800 p-4 rounded border border-gray-700">
+            <div class="font-bold mb-2">מבחן 1: בדיקת גישה (GET)</div>
+            <button onclick="testConnection()" class="bg-blue-600 px-4 py-1 rounded text-sm hover:bg-blue-500">הרץ בדיקה</button>
+            <div id="result-get" class="mt-2 text-sm text-gray-300 whitespace-pre-wrap">ממתין...</div>
+        </div>
+
+        <div class="bg-gray-800 p-4 rounded border border-gray-700">
+            <div class="font-bold mb-2">מבחן 2: ניסיון העלאה (POST)</div>
+            <button onclick="testUpload()" class="bg-purple-600 px-4 py-1 rounded text-sm hover:bg-purple-500">הרץ בדיקה</button>
+            <div id="result-post" class="mt-2 text-sm text-gray-300 whitespace-pre-wrap">ממתין...</div>
+        </div>
+    </div>
+
+    <script>
+        // הכתובת החדשה שנתת לי
+        const TEST_URL = "https://script.google.com/macros/s/AKfycbzu62mOPdMtttJVtVFncilG6rnxlfJ65ykMHNpGvkBzDoL3ECttcJ5uK2RAYIydveM9/exec";
+        
+        document.getElementById('url-display').innerText = TEST_URL;
+
+        async function testConnection() {
+            const output = document.getElementById('result-get');
+            output.innerText = "⏳ מתחבר...";
+            output.className = "mt-2 text-sm text-yellow-300";
+
+            try {
+                const res = await fetch(TEST_URL);
+                
+                if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+                
+                const text = await res.text();
+                console.log("Raw response:", text);
+
+                try {
+                    const json = JSON.parse(text);
+                    if (json.status === 'success') {
+                        output.innerHTML = `✅ <span class="text-green-400">הצלחה!</span>\nנמצאו ${json.files.length} קבצים.\nדוגמה לקובץ ראשון: ${json.files[0] ? json.files[0].name : 'אין'}`;
+                    } else {
+                        output.innerHTML = `⚠️ <span class="text-orange-400">התחבר אבל החזיר שגיאה לוגית:</span>\n${JSON.stringify(json)}`;
+                    }
+                } catch (e) {
+                    output.innerHTML = `⚠️ <span class="text-orange-400">התחבר אבל התשובה אינה JSON תקין (אולי HTML שגיאה של גוגל?):</span>\n${text.substring(0, 100)}...`;
+                }
+
+            } catch (e) {
+                output.innerHTML = `❌ <span class="text-red-500">כישלון קריטי:</span>\n${e.message}\n(זה כנראה CORS או שהסקריפט לא מוגדר כ-Anyone)`;
+            }
+        }
+
+        async function testUpload() {
+            const output = document.getElementById('result-post');
+            output.innerText = "⏳ מנסה לשלוח...";
+            
+            try {
+                // שולח ב-no-cors כי זה מה שהדפדפן דורש לגוגל
+                await fetch(TEST_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'check_alive' })
+                });
+                output.innerHTML = `✅ <span class="text-green-400">נשלח (מצב עיוור - no-cors).</span>\nאם זה ירוק, התקשורת יוצאת החוצה.`;
+            } catch (e) {
+                output.innerHTML = `❌ <span class="text-red-500">נכשל:</span> ${e.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
