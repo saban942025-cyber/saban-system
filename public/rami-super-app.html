@@ -177,80 +177,91 @@
 
     </main>
 
-    <script type="module">
+  <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, query, where, onSnapshot, orderBy, limit, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, query, where, onSnapshot, orderBy, limit, addDoc, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const app = initializeApp({ apiKey: "AIzaSyA3qwgBX69Clu7pUdOnOEcfzUVyR7ADrNc", authDomain: "saban94-eb5f0.firebaseapp.com", projectId: "saban94-eb5f0" });
         const db = getFirestore(app);
 
         let currentMirrorEmail = null;
 
-        // 1. טעינת משתמשים לפאנל תמיכה
-        window.refreshUserList = async () => {
+        // טעינה וניטור חי של עובדים
+        window.refreshUserList = () => {
             const list = document.getElementById('support-users-list');
-            list.innerHTML = ''; // ניקוי
             
-            const q = query(collection(db, "users"));
-            const snapshot = await getDocs(q);
-            
-            snapshot.forEach(doc => {
-                const u = doc.data();
-                const avatar = u.photoUrl || `https://ui-avatars.com/api/?name=${u.name}&background=${u.color || 'ccc'}&color=fff`;
+            // האזנה חיה לטבלת המשתמשים (ולא סתם שליפה חד פעמית)
+            onSnapshot(collection(db, "users"), (snapshot) => {
+                list.innerHTML = '';
                 
-                const el = document.createElement('div');
-                el.className = 'flex-shrink-0 text-center cursor-pointer group';
-                el.onclick = () => startMirroring(u);
+                const now = new Date();
                 
-                el.innerHTML = `
-                    <div class="relative">
-                        <img src="${avatar}" class="w-14 h-14 rounded-2xl object-cover border-2 border-white shadow-md group-hover:scale-105 transition group-hover:border-blue-500">
-                        <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
-                    </div>
-                    <div class="text-[10px] font-bold mt-1 text-slate-600 truncate w-14">${u.name.split(' ')[0]}</div>
-                `;
-                list.appendChild(el);
+                snapshot.forEach(doc => {
+                    const u = doc.data();
+                    const avatar = u.photoUrl || `https://ui-avatars.com/api/?name=${u.name}&background=${u.color || 'ccc'}&color=fff`;
+                    
+                    // חישוב זמן פעילות אחרון
+                    let statusColor = 'bg-gray-400'; // מנותק
+                    let statusText = 'מנותק';
+                    let lastSeenText = 'לא ידוע';
+
+                    if (u.lastSeen) {
+                        const lastSeenDate = u.lastSeen.toDate();
+                        const diffMinutes = (now - lastSeenDate) / 1000 / 60;
+                        
+                        lastSeenText = lastSeenDate.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'});
+
+                        if (diffMinutes < 2) {
+                            statusColor = 'bg-green-500 animate-pulse'; // מחובר חי
+                            statusText = 'מחובר';
+                        } else if (diffMinutes < 10) {
+                            statusColor = 'bg-yellow-500'; // היה פה לא מזמן
+                            statusText = 'לא זמין';
+                        }
+                    }
+
+                    // כרטיס עובד
+                    const el = document.createElement('div');
+                    el.className = 'flex-shrink-0 text-center cursor-pointer group bg-white p-3 rounded-2xl border border-slate-100 shadow-sm min-w-[100px] hover:border-blue-500 transition';
+                    el.onclick = () => startMirroring(u);
+                    
+                    el.innerHTML = `
+                        <div class="relative inline-block">
+                            <img src="${avatar}" class="w-12 h-12 rounded-full object-cover border-2 border-white shadow-md">
+                            <div class="absolute bottom-0 right-0 w-3.5 h-3.5 ${statusColor} border-2 border-white rounded-full"></div>
+                        </div>
+                        <div class="font-bold text-xs mt-2 text-slate-700 truncate w-20 mx-auto">${u.name.split(' ')[0]}</div>
+                        <div class="text-[9px] text-slate-400">${lastSeenText}</div>
+                        <div class="text-[9px] font-bold text-blue-600 mt-1">${u.device || 'Mobile'}</div>
+                    `;
+                    list.appendChild(el);
+                });
             });
         };
 
-        // 2. הפעלת מצב שיקוף (Mirroring)
+        // התחלת שיקוף
         window.startMirroring = (user) => {
             currentMirrorEmail = user.email;
             document.getElementById('mirror-area').classList.remove('hidden');
             document.getElementById('mirror-target-name').innerText = user.name;
-            document.getElementById('mirror-tasks').innerHTML = '<div class="text-center text-gray-400 text-xs mt-4"><i class="fas fa-spinner fa-spin"></i> מתחבר למכשיר...</div>';
-
-            // האזנה חיה למשימות של העובד הספציפי
-            const qTasks = query(collection(db, "tasks"), where("assignedTo", "==", user.email), where("status", "==", "pending"));
             
+            // הצגת הפעילות האחרונה שנשמרה ב"דופק"
+            document.getElementById('mirror-last-log').innerText = user.lastAction || "אין פעילות רשומה";
+
+            // טעינת משימות פתוחות
+            const qTasks = query(collection(db, "tasks"), where("assignedTo", "==", user.email), where("status", "==", "pending"));
             onSnapshot(qTasks, (snap) => {
                 const container = document.getElementById('mirror-tasks');
                 container.innerHTML = '';
-                
-                if (snap.empty) {
-                    container.innerHTML = '<div class="text-center text-gray-400 text-xs py-4">אין משימות פתוחות</div>';
-                }
-
+                if (snap.empty) container.innerHTML = '<div class="text-center text-gray-400 text-xs py-4">אין משימות פתוחות</div>';
                 snap.forEach(d => {
                     const t = d.data();
                     container.innerHTML += `
-                        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm mb-2">
-                            <div class="font-bold text-xs text-slate-800">${t.title}</div>
-                            <div class="text-[10px] text-slate-500 truncate">${t.desc || ''}</div>
-                            ${t.mustConfirm ? '<span class="text-[8px] bg-red-100 text-red-600 px-1 rounded font-bold">ממתין לאישור</span>' : ''}
-                        </div>
-                    `;
+                        <div class="bg-white p-2 rounded border border-l-4 border-l-red-500 shadow-sm mb-2 text-right">
+                            <div class="font-bold text-xs">${t.title}</div>
+                            ${t.mustConfirm ? '<span class="text-[8px] bg-red-100 text-red-600 px-1 rounded">התראה אדומה</span>' : ''}
+                        </div>`;
                 });
-            });
-
-            // האזנה לפעולה האחרונה בלוג
-            const qLog = query(collection(db, "logs"), where("user", "==", user.name), orderBy("createdAt", "desc"), limit(1));
-            onSnapshot(qLog, (snap) => {
-                if(!snap.empty) {
-                    const log = snap.docs[0].data();
-                    const time = log.createdAt ? new Date(log.createdAt.seconds*1000).toLocaleTimeString() : '';
-                    document.getElementById('mirror-last-log').innerText = `[${time}] ${log.action}`;
-                }
             });
         };
 
@@ -259,36 +270,43 @@
             currentMirrorEmail = null;
         };
 
-        // שליחת התראת בדיקה לעובד המשוקף
+        // שליחת פינג (בדיקה)
         window.sendPushToTarget = async () => {
             if(!currentMirrorEmail) return;
-            // כאן נשתמש בלוגיקה של הדרייב לשליחת התראה
+            
+            Swal.fire({
+                title: 'שולח בדיקה...',
+                timer: 1500,
+                didOpen: () => Swal.showLoading()
+            });
+
+            // יצירת משימת בדיקה
             await addDoc(collection(db, "tasks"), {
-                title: "בדיקת טכנאי",
-                desc: "ראמי מבצע בדיקת תקינות למכשיר שלך",
-                assignedTo: currentMirrorEmail,
+                title: "בדיקת טכנאי 🛠️",
+                desc: "אם אתה רואה את זה - המערכת תקינה",
+                assignedTo: currentMirrorEmail, // אימייל מדויק!
                 mustConfirm: true,
                 status: 'pending',
-                createdAt: new Date()
+                createdAt: serverTimestamp(),
+                createdBy: 'Rami Admin'
             });
-            Swal.fire('נשלח', 'התראת בדיקה נשלחה למכשיר', 'success');
+
+            Swal.fire('נשלח!', 'אם העובד מחובר (ירוק), המסך שלו אמור להפוך לאדום עכשיו.', 'success');
         };
 
-        // UI Functions
         window.toggleMenu = () => {
-            const sb = document.getElementById('sidebar');
-            const ov = document.getElementById('overlay');
-            sb.classList.toggle('open');
-            ov.classList.toggle('open');
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('overlay').classList.toggle('open');
         };
 
-        window.openApp = (appId) => {
-            if(appId === 'users') window.location.href = 'admin-console.html';
-            if(appId === 'drive') window.location.href = 'documents-drive.html';
-            // אפשר להוסיף עוד ניתובים
+        window.openApp = (page) => {
+            // ניתוב לאפליקציות
+            if(page === 'users') window.location.href = 'admin-console.html';
+            else if(page === 'drive') window.location.href = 'documents-drive.html';
+            else Swal.fire('בקרוב', 'המודול בפיתוח', 'info');
         };
 
-        // טעינה ראשונית
+        // התחלה
         refreshUserList();
 
     </script>
