@@ -1,28 +1,13 @@
-const CACHE_NAME = 'saban-suite-v1';
-const ASSETS = [
-  './harel-app.html',
-  './driver-app.html',
-  './ali-app.html',
-  './oren-app.html',
-  './tamir-app.html',
-  './manifest-harel.json',
-  './manifest-driver.json',
-  './manifest-ali.json',
-  './manifest-oren.json',
-  './manifest-tamir.json',
-  'https://cdn.tailwindcss.com',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
-  'https://cdn.jsdelivr.net/npm/sweetalert2@11'
-];
-
+// Service Worker מינימלי להתקנת PWA
 self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
-  );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (e) => {
+  return self.clients.claim();
 });
 
 self.addEventListener('fetch', (e) => {
-  e.respondWith(
-    caches.match(e.request).then((response) => response || fetch(e.request))
-  );
+  // מעביר את כל הבקשות לרשת (כדי שתמיד תקבל גרסה מעודכנת ולא Cache ישן)
+  e.respondWith(fetch(e.request));
 });
